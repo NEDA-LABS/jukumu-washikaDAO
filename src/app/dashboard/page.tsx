@@ -1468,9 +1468,10 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
     setDownloadingReport(reportKey);
     
     try {
-      // Generate CSV data for monthly report
-      const csvData = await generateMonthlyReportCSV(reportDate, adminStats);
-      downloadCSV(csvData, `ripoti-ya-${reportDate.toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}.csv`);
+      const d = new Date();
+      d.setMonth(d.getMonth() - monthOffset);
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      window.open(`/dashboard/report?month=${encodeURIComponent(month)}&print=1`, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Error downloading report:', error);
       alert('Hitilafu imetokea wakati wa kupakua ripoti.');
@@ -1483,21 +1484,9 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
     setGeneratingReport(reportType);
     
     try {
-      let csvData = '';
-      
-      switch (reportType) {
-        case 'Takwimu za Jinsia':
-          csvData = await generateGenderReportCSV(adminStats);
-          break;
-        case 'Ukuaji wa Biashara':
-          csvData = await generateBusinessGrowthReportCSV(adminStats);
-          break;
-        case 'Athari za Kijamii':
-          csvData = await generateSocialImpactReportCSV(adminStats);
-          break;
-      }
-      
-      downloadCSV(csvData, `${reportType.toLowerCase().replace(/\s+/g, '-')}.csv`);
+      const d = new Date();
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      window.open(`/dashboard/report?month=${encodeURIComponent(month)}&print=1`, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Hitilafu imetokea wakati wa kutengeneza ripoti.');
@@ -1599,7 +1588,7 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
                 disabled={downloadingReport === `monthly-${report.offset}`}
                 className="text-orange-600 hover:text-orange-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {downloadingReport === `monthly-${report.offset}` ? 'Inapakua...' : 'Pakua'}
+                {downloadingReport === `monthly-${report.offset}` ? 'Inafungua...' : 'Pakua PDF'}
               </button>
             </div>
           )) : (
@@ -1620,7 +1609,7 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
                 disabled={generatingReport === report}
                 className="text-orange-600 hover:text-orange-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generatingReport === report ? 'Inatengeneza...' : 'Tengeneza'}
+                {generatingReport === report ? 'Inafungua...' : 'Angalia PDF'}
               </button>
             </div>
           )) : (
