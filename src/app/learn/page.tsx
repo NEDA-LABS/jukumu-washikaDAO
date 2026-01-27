@@ -24,11 +24,14 @@ export default function LearnPortal() {
   const [language, setLanguage] = useState<'sw' | 'en'>('en');
   const [user, setUser] = useState<any>(null);
   const [progress, setProgress] = useState({
-    totalModules: 12,
+    totalModules: 0,
     completedModules: 0,
     currentLevel: 'Beginner',
     points: 0,
   });
+  const [loadingTracks, setLoadingTracks] = useState(true);
+  const [tracksError, setTracksError] = useState<string | null>(null);
+  const [trainingModules, setTrainingModules] = useState<any[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -36,6 +39,33 @@ export default function LearnPortal() {
       setUser(JSON.parse(userData));
       // TODO: Fetch user's learning progress
     }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoadingTracks(true);
+      setTracksError(null);
+      try {
+        const res = await fetch('/api/public/training');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || 'Failed to load training');
+        if (cancelled) return;
+        const modules = Array.isArray(data) ? data : [];
+        setTrainingModules(modules);
+        setProgress((p) => ({ ...p, totalModules: modules.length }));
+      } catch (e) {
+        if (cancelled) return;
+        setTracksError(e instanceof Error ? e.message : 'Failed to load training');
+      } finally {
+        if (!cancelled) setLoadingTracks(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const content = {
@@ -59,87 +89,15 @@ export default function LearnPortal() {
 
   const t = content[language];
 
-  // Learning tracks
-  const learningTracks = [
-    {
-      id: 'financial-basics',
-      icon: CurrencyDollarIcon,
-      title: language === 'en' ? 'Financial Basics' : 'Misingi ya Fedha',
-      description: language === 'en' 
-        ? 'Saving, budgeting, and goal-setting for Tanzanian women'
-        : 'Kuweka akiba, bajeti, na kuweka malengo kwa wanawake wa Tanzania',
-      modules: 8,
-      duration: '4 weeks',
-      level: 'Beginner',
-      color: 'bg-green-500',
-      locked: false,
-    },
-    {
-      id: 'mobile-money',
-      icon: GlobeAltIcon,
-      title: language === 'en' ? 'Mobile Money Mastery' : 'Ufundi wa Pesa za Simu',
-      description: language === 'en'
-        ? 'M-Pesa, Tigo Pesa, Airtel Money management'
-        : 'Usimamizi wa M-Pesa, Tigo Pesa, Airtel Money',
-      modules: 6,
-      duration: '3 weeks',
-      level: 'Beginner',
-      color: 'bg-blue-500',
-      locked: false,
-    },
-    {
-      id: 'vicoba-groups',
-      icon: UserGroupIcon,
-      title: language === 'en' ? 'VICOBA & Savings Groups' : 'VICOBA & Vikundi vya Akiba',
-      description: language === 'en'
-        ? 'Community savings, upatu, and group financial management'
-        : 'Akiba za jamii, upatu, na usimamizi wa fedha za kikundi',
-      modules: 5,
-      duration: '2 weeks',
-      level: 'Intermediate',
-      color: 'bg-purple-500',
-      locked: false,
-    },
-    {
-      id: 'small-business',
-      icon: ChartBarIcon,
-      title: language === 'en' ? 'Small Business Finance' : 'Fedha za Biashara Ndogo',
-      description: language === 'en'
-        ? 'Financial basics for women entrepreneurs in Tanzania'
-        : 'Misingi ya fedha kwa wajasiriamali wanawake Tanzania',
-      modules: 7,
-      duration: '4 weeks',
-      level: 'Intermediate',
-      color: 'bg-orange-500',
-      locked: progress.completedModules < 3,
-    },
-    {
-      id: 'digital-literacy',
-      icon: ShieldCheckIcon,
-      title: language === 'en' ? 'Digital & Internet Safety' : 'Usalama wa Dijitali & Mtandao',
-      description: language === 'en'
-        ? 'Safe internet use, scam awareness, and digital security'
-        : 'Matumizi salama ya mtandao, ufahamu wa ulaghai, na usalama wa dijitali',
-      modules: 6,
-      duration: '3 weeks',
-      level: 'Beginner',
-      color: 'bg-red-500',
-      locked: false,
-    },
-    {
-      id: 'crypto-sandbox',
-      icon: SparklesIcon,
-      title: language === 'en' ? 'Crypto Sandbox (Safe Practice)' : 'Mazoezi Salama ya Crypto',
-      description: language === 'en'
-        ? 'Learn blockchain & crypto in a risk-free environment'
-        : 'Jifunze blockchain & crypto katika mazingira salama',
-      modules: 10,
-      duration: '5 weeks',
-      level: 'Advanced',
-      color: 'bg-indigo-500',
-      locked: progress.completedModules < 5,
-    },
-  ];
+  const getModuleIcon = (category: string | null | undefined) => {
+    const c = String(category || '').toLowerCase();
+    if (c.includes('finance') || c.includes('fedha')) return CurrencyDollarIcon;
+    if (c.includes('business') || c.includes('biashara')) return ChartBarIcon;
+    if (c.includes('leadership') || c.includes('uongozi')) return UserGroupIcon;
+    if (c.includes('security') || c.includes('usalama')) return ShieldCheckIcon;
+    if (c.includes('internet') || c.includes('digital') || c.includes('dijitali')) return GlobeAltIcon;
+    return BookOpenIcon;
+  };
 
   // AI Features
   const aiFeatures = [
@@ -270,72 +228,64 @@ export default function LearnPortal() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             {language === 'en' ? 'Learning Tracks' : 'Njia za Kujifunza'}
           </h2>
+          {tracksError && (
+            <div className="bg-white border border-red-200 rounded-lg p-6 text-sm text-red-700">
+              {tracksError}
+            </div>
+          )}
+          {loadingTracks && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 text-sm text-gray-700">
+              {language === 'en' ? 'Loading training...' : 'Inapakia mafunzo...'}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {learningTracks.map((track) => (
+            {!loadingTracks && !tracksError && trainingModules.map((track) => {
+              const Icon = getModuleIcon(track.category);
+              const modulesCount = Number(track.lesson_count || 0);
+              const level = String(track.level || 'Beginner');
+              return (
               <div
                 key={track.id}
-                className={`bg-white rounded-lg border-2 transition-all overflow-hidden ${
-                  track.locked 
-                    ? 'border-gray-200 opacity-60' 
-                    : 'border-gray-200 hover:border-orange-400 cursor-pointer hover:shadow-md'
-                }`}
-                onClick={() => !track.locked && router.push(`/learn/${track.id}`)}
+                className="bg-white rounded-lg border-2 transition-all overflow-hidden border-gray-200 hover:border-orange-400 cursor-pointer hover:shadow-md"
+                onClick={() => router.push(`/learn/${track.id}`)}
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-lg ${
-                      track.locked ? 'bg-gray-100' : 'bg-orange-50'
-                    }`}>
-                      <track.icon className={`h-8 w-8 ${
-                        track.locked ? 'text-gray-400' : 'text-orange-600'
-                      }`} />
+                    <div className="p-3 rounded-lg bg-orange-50">
+                      <Icon className="h-8 w-8 text-orange-600" />
                     </div>
-                    {track.locked ? (
-                      <LockClosedIcon className="h-6 w-6 text-gray-400" />
-                    ) : (
-                      <CheckCircleIcon className="h-6 w-6 text-green-500" />
-                    )}
+                    <CheckCircleIcon className="h-6 w-6 text-green-500" />
                   </div>
                   
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{track.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{track.description}</p>
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{track.description || ''}</p>
                   
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-4 pb-4 border-b border-gray-200">
                     <span className="flex items-center">
                       <BookOpenIcon className="h-4 w-4 mr-1 text-gray-500" />
-                      {track.modules} {language === 'en' ? 'modules' : 'moduli'}
+                      {modulesCount} {language === 'en' ? 'lessons' : 'masomo'}
                     </span>
-                    <span>{track.duration}</span>
+                    <span>{track.duration_hours ? `${track.duration_hours}h` : ''}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      track.level === 'Beginner' ? 'bg-green-100 text-green-700' :
-                      track.level === 'Intermediate' ? 'bg-blue-100 text-blue-700' :
+                      level === 'beginner' || level === 'Beginner' ? 'bg-green-100 text-green-700' :
+                      level === 'intermediate' || level === 'Intermediate' ? 'bg-blue-100 text-blue-700' :
                       'bg-purple-100 text-purple-700'
                     }`}>
-                      {track.level}
+                      {level}
                     </span>
                     
-                    {!track.locked && (
-                      <span className="text-orange-600 font-semibold flex items-center text-sm">
-                        {language === 'en' ? 'Start' : 'Anza'}
-                        <ArrowRightIcon className="h-4 w-4 ml-1" />
-                      </span>
-                    )}
+                    <span className="text-orange-600 font-semibold flex items-center text-sm">
+                      {language === 'en' ? 'Start' : 'Anza'}
+                      <ArrowRightIcon className="h-4 w-4 ml-1" />
+                    </span>
                   </div>
-                  
-                  {track.locked && (
-                    <p className="text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                      {language === 'en' 
-                        ? `Complete ${5 - progress.completedModules} more modules to unlock`
-                        : `Kamilisha moduli ${5 - progress.completedModules} zaidi kufungua`
-                      }
-                    </p>
-                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

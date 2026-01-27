@@ -11,6 +11,11 @@ export async function GET() {
         ALTER TABLE training_lessons 
         ADD COLUMN IF NOT EXISTS educational_content_id INTEGER REFERENCES educational_content(id) ON DELETE CASCADE
       `);
+
+      await client.query(`
+        ALTER TABLE training_lessons
+        ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'sw'
+      `);
       
       // Step 2: Update existing lessons to reference educational_content instead of training_modules
       // First, let's see what educational content exists
@@ -46,6 +51,7 @@ export async function GET() {
         migratedLessons,
         changes: [
           'Added educational_content_id column to training_lessons',
+          'Added language column to training_lessons',
           'Removed conflicting sample training modules',
           'Made training_module_id optional',
           'System now ready for lesson management on existing educational content'

@@ -13,6 +13,7 @@ export async function GET(
     const result = await client.query(`
       SELECT 
         id,
+        language,
         title,
         content,
         lesson_order,
@@ -42,7 +43,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, content, lesson_order, duration_minutes, lesson_type, video_url } = body;
+    const { title, content, lesson_order, duration_minutes, lesson_type, video_url, language } = body;
     
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
@@ -68,10 +69,10 @@ export async function POST(
     }
     
     const result = await client.query(`
-      INSERT INTO training_lessons (educational_content_id, title, content, lesson_order, duration_minutes, lesson_type, video_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO training_lessons (educational_content_id, language, title, content, lesson_order, duration_minutes, lesson_type, video_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [id, title, content, order, duration_minutes || 15, lesson_type || 'text', video_url]);
+    `, [id, language || 'sw', title, content, order, duration_minutes || 15, lesson_type || 'text', video_url]);
     
     client.release();
     

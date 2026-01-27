@@ -1633,12 +1633,22 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
   const [showLessonForm, setShowLessonForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<any>(null);
   const [lessonForm, setLessonForm] = useState({
+    language: 'sw',
     title: '',
     content: '',
     duration_minutes: 15,
     lesson_type: 'text',
     video_url: ''
   });
+  const [showAiLessonGenerator, setShowAiLessonGenerator] = useState(false);
+  const [aiLanguage, setAiLanguage] = useState<'sw' | 'en'>('sw');
+  const [aiLessonCount, setAiLessonCount] = useState(6);
+  const [aiDifficulty, setAiDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
+  const [aiTopicPrompt, setAiTopicPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiGeneratedLessons, setAiGeneratedLessons] = useState<any[] | null>(null);
   const [contentForm, setContentForm] = useState({
     title: '',
     description: '',
@@ -1763,6 +1773,61 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
     }
   };
 
+  const handleGenerateLessonsWithAI = async (saveToCourse: boolean) => {
+    if (!managingLessons) return;
+
+    if (!aiTopicPrompt.trim()) {
+      alert('Tafadhali andika maelezo ya mada unayotaka AI itengeneze.');
+      return;
+    }
+
+    if (saveToCourse && (!aiGeneratedLessons || aiGeneratedLessons.length === 0)) {
+      alert('Hakuna masomo ya kuhifadhi. Tafadhali tengeneza kwanza.');
+      return;
+    }
+
+    setAiError(null);
+    saveToCourse ? setAiSaving(true) : setAiGenerating(true);
+
+    try {
+      const response = await fetch('/api/admin/ai/generate-lessons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          educationalContentId: managingLessons.id,
+          language: aiLanguage,
+          lessonCount: aiLessonCount,
+          difficulty: aiDifficulty,
+          topicPrompt: aiTopicPrompt,
+          saveToCourse
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAiError(data?.error || 'Imeshindikana kutengeneza masomo.');
+        return;
+      }
+
+      if (saveToCourse) {
+        setAiGeneratedLessons(null);
+        setShowAiLessonGenerator(false);
+        setAiTopicPrompt('');
+        await handleManageLessons(managingLessons);
+        alert('Masomo yamehifadhiwa kwa mafanikio!');
+        return;
+      }
+
+      setAiGeneratedLessons(Array.isArray(data?.lessons) ? data.lessons : []);
+    } catch (error) {
+      console.error('Error generating lessons with AI:', error);
+      setAiError('Hitilafu imetokea wakati wa kutengeneza masomo.');
+    } finally {
+      setAiGenerating(false);
+      setAiSaving(false);
+    }
+  };
+
   const handleLessonSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -1782,6 +1847,7 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
         setShowLessonForm(false);
         setEditingLesson(null);
         setLessonForm({
+          language: 'sw',
           title: '',
           content: '',
           duration_minutes: 15,
@@ -2053,8 +2119,19 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
                 <div className="flex space-x-2">
                   <button
                     onClick={() => {
+                      setShowAiLessonGenerator((s) => !s);
+                      setAiError(null);
+                      setAiGeneratedLessons(null);
+                    }}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+                  >
+                    AI Generate
+                  </button>
+                  <button
+                    onClick={() => {
                       setEditingLesson(null);
                       setLessonForm({
+                        language: 'sw',
                         title: '',
                         content: '',
                         duration_minutes: 15,
@@ -2076,6 +2153,117 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
                   </button>
                 </div>
               </div>
+
+              {showAiLessonGenerator && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">AI Lesson Generator</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                          <select
+                            value={aiLanguage}
+                            onChange={(e) => setAiLanguage(e.target.value as 'sw' | 'en')}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="sw">Swahili</option>
+                            <option value="en">English</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                          <select
+                            value={aiDifficulty}
+                            onChange={(e) => setAiDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Lesson count</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={aiLessonCount}
+                            onChange={(e) => setAiLessonCount(parseInt(e.target.value || '1'))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button
+                            onClick={() => handleGenerateLessonsWithAI(false)}
+                            disabled={aiGenerating || aiSaving}
+                            className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {aiGenerating ? 'Inatengeneza...' : 'Generate Preview'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Topic prompt</label>
+                        <textarea
+                          value={aiTopicPrompt}
+                          onChange={(e) => setAiTopicPrompt(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          rows={3}
+                          placeholder="Mfano: Financial Basics - budgeting, saving, debt management..."
+                        />
+                      </div>
+
+                      {aiError && (
+                        <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+                          {aiError}
+                        </div>
+                      )}
+
+                      {aiGeneratedLessons && (
+                        <div className="mt-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold text-gray-900">Preview ({aiGeneratedLessons.length})</h5>
+                            <button
+                              onClick={() => handleGenerateLessonsWithAI(true)}
+                              disabled={aiSaving || aiGenerating}
+                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {aiSaving ? 'Inahifadhi...' : 'Save to Course'}
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {aiGeneratedLessons.map((l: any, idx: number) => (
+                              <div key={idx} className="bg-white border border-orange-200 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-gray-900">{l.title}</div>
+                                  <div className="text-xs text-gray-500">{l.duration_minutes} min • {aiLanguage.toUpperCase()}</div>
+                                </div>
+                                <div className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                                  {String(l.content || '').slice(0, 400)}{String(l.content || '').length > 400 ? '...' : ''}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShowAiLessonGenerator(false);
+                        setAiError(null);
+                        setAiGeneratedLessons(null);
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                      title="Close"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Lesson Form */}
               {showLessonForm && (
@@ -2110,6 +2298,20 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
                           required
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Language
+                      </label>
+                      <select
+                        value={(lessonForm as any).language || 'sw'}
+                        onChange={(e) => setLessonForm({ ...(lessonForm as any), language: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="sw">Swahili</option>
+                        <option value="en">English</option>
+                      </select>
                     </div>
                     
                     <div>
@@ -2161,6 +2363,9 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
                               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
                                 Somo {lesson.lesson_order}
                               </span>
+                              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded">
+                                {(lesson.language || 'sw').toUpperCase()}
+                              </span>
                               <span className="text-sm text-gray-500">
                                 {lesson.duration_minutes} dakika
                               </span>
@@ -2175,6 +2380,7 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
                               onClick={() => {
                                 setEditingLesson(lesson);
                                 setLessonForm({
+                                  language: lesson.language || 'sw',
                                   title: lesson.title,
                                   content: lesson.content,
                                   duration_minutes: lesson.duration_minutes,

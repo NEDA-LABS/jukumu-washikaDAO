@@ -44,7 +44,7 @@ export async function PUT(
   try {
     const { id, lessonId } = await params;
     const body = await request.json();
-    const { title, content, duration_minutes, lesson_type, video_url } = body;
+    const { title, content, duration_minutes, lesson_type, video_url, language } = body;
     
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
@@ -64,12 +64,19 @@ export async function PUT(
     }
     
     // Update the lesson
-    const result = await client.query(`
-      UPDATE training_lessons 
-      SET title = $1, content = $2, duration_minutes = $3, lesson_type = $4, video_url = $5, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6 AND training_module_id = $7
-      RETURNING *
-    `, [title, content, duration_minutes || 15, lesson_type || 'text', video_url, lessonId, id]);
+    const result = await client.query(
+      `UPDATE training_lessons 
+       SET title = $1,
+           content = $2,
+           duration_minutes = $3,
+           lesson_type = $4,
+           video_url = $5,
+           language = COALESCE($6, language),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7 AND training_module_id = $8
+       RETURNING *`,
+      [title, content, duration_minutes || 15, lesson_type || 'text', video_url, language || null, lessonId, id]
+    );
     
     client.release();
     

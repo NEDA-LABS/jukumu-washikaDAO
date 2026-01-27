@@ -26,6 +26,8 @@ export async function GET() {
         CREATE TABLE IF NOT EXISTS training_lessons (
           id SERIAL PRIMARY KEY,
           training_module_id INTEGER REFERENCES training_modules(id) ON DELETE CASCADE,
+          educational_content_id INTEGER REFERENCES educational_content(id) ON DELETE CASCADE,
+          language VARCHAR(10) DEFAULT 'sw' CHECK (language IN ('sw', 'en')),
           title VARCHAR(255) NOT NULL,
           content TEXT NOT NULL,
           lesson_order INTEGER NOT NULL,
@@ -35,6 +37,32 @@ export async function GET() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+
+      // Backfill schema changes for existing databases
+      await client.query(`
+        ALTER TABLE training_lessons
+        ADD COLUMN IF NOT EXISTS educational_content_id INTEGER REFERENCES educational_content(id) ON DELETE CASCADE
+      `);
+      await client.query(`
+        ALTER TABLE training_lessons
+        ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'sw'
+      `);
+      await client.query(`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'training_lessons'
+              AND column_name = 'language'
+          ) THEN
+            ALTER TABLE training_lessons
+              DROP CONSTRAINT IF EXISTS training_lessons_language_check;
+            ALTER TABLE training_lessons
+              ADD CONSTRAINT training_lessons_language_check CHECK (language IN ('sw', 'en'));
+          END IF;
+        END $$;
       `);
       
       // Create lesson_progress table
@@ -62,6 +90,8 @@ export async function GET() {
       
       // Create indexes
       await client.query('CREATE INDEX IF NOT EXISTS idx_training_lessons_module ON training_lessons(training_module_id)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_training_lessons_educational_content ON training_lessons(educational_content_id)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_training_lessons_language ON training_lessons(language)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_lesson_progress_member ON lesson_progress(member_id)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson ON lesson_progress(lesson_id)');
       
@@ -72,7 +102,7 @@ export async function GET() {
         message: 'Training lesson tables created successfully. Admins can now add lessons to their training modules.',
         existingLessons: lessonCount,
         tablesCreated: ['training_lessons', 'lesson_progress'],
-        indexesCreated: 3,
+        indexesCreated: 5,
         nextStep: 'Use /api/admin/training-modules/[id]/lessons to add lessons to training modules'
       });
       

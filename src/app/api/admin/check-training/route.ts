@@ -33,7 +33,7 @@ export async function GET() {
         lessonCount = parseInt(lessonsResult.rows[0].count);
         
         if (lessonCount > 0) {
-          const sampleLessons = await client.query('SELECT id, title, training_module_id FROM training_lessons LIMIT 5');
+          const sampleLessons = await client.query('SELECT id, language, title, training_module_id FROM training_lessons LIMIT 5');
           lessons = sampleLessons.rows;
         }
       }

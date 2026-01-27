@@ -227,6 +227,39 @@ CREATE TABLE content_progress (
     UNIQUE(user_id, content_id)
 );
 
+-- Training lessons (supports both training_modules and educational_content)
+CREATE TABLE training_lessons (
+    id SERIAL PRIMARY KEY,
+    training_module_id INTEGER REFERENCES training_modules(id) ON DELETE CASCADE,
+    educational_content_id INTEGER REFERENCES educational_content(id) ON DELETE CASCADE,
+    language VARCHAR(10) DEFAULT 'sw' CHECK (language IN ('sw', 'en')),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    lesson_order INTEGER NOT NULL,
+    duration_minutes INTEGER DEFAULT 15,
+    lesson_type VARCHAR(50) DEFAULT 'text' CHECK (lesson_type IN ('text', 'video', 'quiz', 'interactive')),
+    video_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Lesson progress tracking
+CREATE TABLE lesson_progress (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    lesson_id INTEGER REFERENCES training_lessons(id) ON DELETE CASCADE,
+    completed BOOLEAN DEFAULT false,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(member_id, lesson_id)
+);
+
+CREATE INDEX idx_training_lessons_module ON training_lessons(training_module_id);
+CREATE INDEX idx_training_lessons_educational_content ON training_lessons(educational_content_id);
+CREATE INDEX idx_training_lessons_language ON training_lessons(language);
+CREATE INDEX idx_lesson_progress_member ON lesson_progress(member_id);
+CREATE INDEX idx_lesson_progress_lesson ON lesson_progress(lesson_id);
+
 -- System Settings
 CREATE TABLE system_settings (
     id SERIAL PRIMARY KEY,

@@ -18,150 +18,193 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
   const resolvedParams = use(params);
   const router = useRouter();
   const [language, setLanguage] = useState<'sw' | 'en'>('en');
-  const [showAIChat, setShowAIChat] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'ai'; message: string }>>([]);
   const [selectedModule, setSelectedModule] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPlan, setAiPlan] = useState<{ title: string; steps: Array<{ title: string; description: string }> } | null>(null);
 
-  // Track modules data
-  const trackModules: Record<string, any> = {
-    'financial-basics': {
-      title: { en: 'Financial Basics', sw: 'Misingi ya Fedha' },
-      description: { 
-        en: 'Master the fundamentals of personal finance',
-        sw: 'Jifunze misingi ya fedha za kibinafsi'
-      },
-      modules: [
-        {
-          id: 1,
-          title: { en: 'Understanding Money & Value', sw: 'Kuelewa Pesa & Thamani' },
-          duration: '30 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 2,
-          title: { en: 'Setting Financial Goals', sw: 'Kuweka Malengo ya Kifedha' },
-          duration: '25 min',
-          type: 'interactive',
-          completed: false,
-        },
-        {
-          id: 3,
-          title: { en: 'The Power of Saving', sw: 'Nguvu ya Kuweka Akiba' },
-          duration: '35 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 4,
-          title: { en: 'Creating a Budget', sw: 'Kutengeneza Bajeti' },
-          duration: '40 min',
-          type: 'practice',
-          completed: false,
-        },
-        {
-          id: 5,
-          title: { en: 'Managing Debt Wisely', sw: 'Kusimamia Deni kwa Busara' },
-          duration: '30 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 6,
-          title: { en: 'Emergency Funds', sw: 'Akiba ya Dharura' },
-          duration: '20 min',
-          type: 'interactive',
-          completed: false,
-        },
-        {
-          id: 7,
-          title: { en: 'Interest Rates Explained', sw: 'Maelezo ya Riba' },
-          duration: '35 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 8,
-          title: { en: 'Final Assessment & Certificate', sw: 'Tathmini ya Mwisho & Cheti' },
-          duration: '45 min',
-          type: 'assessment',
-          locked: true,
-        },
-      ],
-    },
-    'mobile-money': {
-      title: { en: 'Mobile Money Mastery', sw: 'Ufundi wa Pesa za Simu' },
-      description: {
-        en: 'Master M-Pesa, Tigo Pesa, and digital payments',
-        sw: 'Jifunze M-Pesa, Tigo Pesa, na malipo ya kidijitali'
-      },
-      modules: [
-        {
-          id: 1,
-          title: { en: 'Introduction to Mobile Money', sw: 'Utangulizi wa Pesa za Simu' },
-          duration: '25 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 2,
-          title: { en: 'M-Pesa Complete Guide', sw: 'Mwongozo Kamili wa M-Pesa' },
-          duration: '40 min',
-          type: 'interactive',
-          completed: false,
-        },
-        {
-          id: 3,
-          title: { en: 'Tigo Pesa & Airtel Money', sw: 'Tigo Pesa & Airtel Money' },
-          duration: '35 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 4,
-          title: { en: 'Fees & Cost Management', sw: 'Usimamizi wa Ada & Gharama' },
-          duration: '30 min',
-          type: 'practice',
-          completed: false,
-        },
-        {
-          id: 5,
-          title: { en: 'Mobile Money Security', sw: 'Usalama wa Pesa za Simu' },
-          duration: '25 min',
-          type: 'video',
-          completed: false,
-        },
-        {
-          id: 6,
-          title: { en: 'Final Assessment', sw: 'Tathmini ya Mwisho' },
-          duration: '30 min',
-          type: 'assessment',
-          locked: true,
-        },
-      ],
-    },
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [moduleData, setModuleData] = useState<any | null>(null);
+  const [lessons, setLessons] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      setModuleData(null);
+      setLessons([]);
+      try {
+        const id = resolvedParams.trackId;
+        const res = await fetch(`/api/public/training/${encodeURIComponent(id)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || 'Failed to load training');
+        if (cancelled) return;
+        setModuleData(data?.module || null);
+        setLessons(Array.isArray(data?.lessons) ? data.lessons : []);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : 'Failed to load training');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedParams.trackId]);
+
+  const filteredLessons = lessons.filter((l) => (l.language || 'sw') === language);
+
+  const callLearningAI = async (payload: { message: string; action: 'chat' | 'tip' | 'goal' | 'plan' | 'progress' }) => {
+    setAiLoading(true);
+
+    const requestBody = {
+      language,
+      moduleId: resolvedParams.trackId,
+      moduleTitle: moduleData?.title,
+      moduleDescription: moduleData?.description,
+      lessons: filteredLessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        preview: l.preview,
+        duration_minutes: l.duration_minutes,
+        lesson_type: l.lesson_type,
+        language: l.language
+      })),
+      message: payload.message,
+      history: chatHistory.slice(-20),
+      action: payload.action
+    };
+
+    try {
+      // Plan stays JSON (structured)
+      if (payload.action === 'plan') {
+        const res = await fetch('/api/ai/learning', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) {
+            setToast({
+              message: language === 'en' ? 'Please log in to continue.' : 'Tafadhali ingia ili kuendelea.',
+              type: 'info'
+            });
+            return;
+          }
+          throw new Error(data?.error || 'AI request failed');
+        }
+
+        const reply = typeof data?.reply === 'string' ? data.reply : '';
+        const plan = data?.plan && typeof data.plan === 'object' ? data.plan : null;
+
+        if (reply) setChatHistory((prev) => [...prev, { role: 'ai', message: reply }]);
+        if (plan) setAiPlan(plan);
+        return;
+      }
+
+      // Stream response for chat/tip/goal/progress
+      setChatHistory((prev) => [...prev, { role: 'ai', message: '' }]);
+
+      const res = await fetch('/api/ai/learning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setToast({
+            message: language === 'en' ? 'Please log in to continue.' : 'Tafadhali ingia ili kuendelea.',
+            type: 'info'
+          });
+          return;
+        }
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'AI request failed');
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No response body');
+      const decoder = new TextDecoder('utf-8');
+      let buf = '';
+
+      const appendDelta = (delta: string) => {
+        setChatHistory((prev) => {
+          const next = [...prev];
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i].role === 'ai') {
+              next[i] = { ...next[i], message: (next[i].message || '') + delta };
+              break;
+            }
+          }
+          return next;
+        });
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        const chunks = buf.split('\n\n');
+        buf = chunks.pop() || '';
+
+        for (const chunk of chunks) {
+          const line = chunk.trim();
+          if (!line.startsWith('data:')) continue;
+          const jsonStr = line.slice('data:'.length).trim();
+          try {
+            const evt = JSON.parse(jsonStr) as any;
+            if (evt?.type === 'delta' && typeof evt.delta === 'string') {
+              appendDelta(evt.delta);
+            }
+            if (evt?.type === 'error' && typeof evt.error === 'string') {
+              setToast({ message: evt.error, type: 'error' });
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } catch (e) {
+      setToast({
+        message: e instanceof Error ? e.message : (language === 'en' ? 'AI request failed' : 'Ombi la AI limeshindwa'),
+        type: 'error'
+      });
+    } finally {
+      setAiLoading(false);
+    }
   };
-
-  const currentTrack = trackModules[resolvedParams.trackId] || trackModules['financial-basics'];
 
   const handleAIChat = async () => {
     if (!aiMessage.trim()) return;
-
-    // Add user message to chat
-    setChatHistory([...chatHistory, { role: 'user', message: aiMessage }]);
-
-    // Simulate AI response (in production, this would call your AI API)
-    const aiResponse = language === 'en'
-      ? `I understand you're asking about "${aiMessage}". Let me help you with that based on Tanzanian context...`
-      : `Ninaelewa unauliza kuhusu "${aiMessage}". Hebu nikusaidie kwa muktadha wa Tanzania...`;
-
-    setTimeout(() => {
-      setChatHistory(prev => [...prev, { role: 'ai', message: aiResponse }]);
-    }, 1000);
-
+    const userMsg = aiMessage;
     setAiMessage('');
+    setChatHistory((prev) => [...prev, { role: 'user', message: userMsg }]);
+    await callLearningAI({ message: userMsg, action: 'chat' });
+  };
+
+  const handleQuickAction = async (action: 'tip' | 'goal' | 'plan' | 'progress') => {
+    const msg =
+      action === 'tip'
+        ? (language === 'en' ? 'Give me a personalized tip for this module.' : 'Nipe ushauri binafsi kwa moduli hii.')
+        : action === 'goal'
+          ? (language === 'en' ? 'Help me set a learning goal for the next 7 days.' : 'Nisaidie kuweka lengo la kujifunza kwa siku 7 zijazo.')
+          : action === 'plan'
+            ? (language === 'en' ? 'Create a learning plan for this module.' : 'Tengeneza mpango wa kujifunza kwa moduli hii.')
+            : (language === 'en' ? 'Analyze my progress and tell me what to do next.' : 'Changanua maendeleo yangu na uniambie nifanye nini next.');
+
+    setChatHistory((prev) => [...prev, { role: 'user', message: msg }]);
+    await callLearningAI({ message: msg, action });
   };
 
   const startModule = (moduleId: number) => {
@@ -201,12 +244,12 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Track Header */}
         <div className="bg-white border-2 border-orange-200 rounded-lg p-8 mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900">{currentTrack.title[language]}</h1>
-          <p className="text-gray-600 text-lg mb-4">{currentTrack.description[language]}</p>
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">{moduleData?.title || (loading ? (language === 'en' ? 'Loading...' : 'Inapakia...') : '')}</h1>
+          <p className="text-gray-600 text-lg mb-4">{moduleData?.description || ''}</p>
           <div className="flex items-center space-x-6 text-gray-700">
             <span className="flex items-center">
               <PlayCircleIcon className="h-5 w-5 mr-2 text-orange-600" />
-              {currentTrack.modules.length} {language === 'en' ? 'Modules' : 'Moduli'}
+              {filteredLessons.length} {language === 'en' ? 'Lessons' : 'Masomo'}
             </span>
             <span className="flex items-center">
               <span className="text-gray-600 mr-2">{language === 'en' ? 'Progress:' : 'Maendeleo:'}</span>
@@ -215,6 +258,12 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
           </div>
         </div>
 
+        {error && (
+          <div className="bg-white border border-red-200 rounded-lg p-6 text-sm text-red-700 mb-8">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Modules List */}
           <div className="lg:col-span-2">
@@ -222,40 +271,34 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
               {language === 'en' ? 'Course Modules' : 'Moduli za Kozi'}
             </h2>
             <div className="space-y-4">
-              {currentTrack.modules.map((module: any, index: number) => (
+              {loading ? (
+                <div className="bg-white rounded-lg p-6 border border-gray-200 text-sm text-gray-700">
+                  {language === 'en' ? 'Loading lessons...' : 'Inapakia masomo...'}
+                </div>
+              ) : filteredLessons.length === 0 ? (
+                <div className="bg-white rounded-lg p-6 border border-gray-200 text-sm text-gray-700">
+                  {language === 'en' ? 'No lessons found for this language.' : 'Hakuna masomo kwa lugha hii.'}
+                </div>
+              ) : filteredLessons.map((module: any, index: number) => (
                 <div
                   key={module.id}
-                  className={`bg-white rounded-lg p-6 border-2 transition-all ${
-                    module.locked
-                      ? 'border-gray-200 opacity-60'
-                      : 'border-gray-200 hover:border-orange-400 cursor-pointer hover:shadow-sm'
-                  }`}
-                  onClick={() => !module.locked && startModule(module.id)}
+                  className="bg-white rounded-lg p-6 border-2 transition-all border-gray-200 hover:border-orange-400 cursor-pointer hover:shadow-sm"
+                  onClick={() => startModule(module.id)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
                       <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
-                        module.completed
-                          ? 'bg-green-50 border-2 border-green-200'
-                          : module.locked
-                          ? 'bg-gray-50 border-2 border-gray-200'
-                          : 'bg-orange-50 border-2 border-orange-200'
+                        'bg-orange-50 border-2 border-orange-200'
                       }`}>
-                        {module.completed ? (
-                          <CheckCircleIcon className="h-6 w-6 text-green-600" />
-                        ) : module.locked ? (
-                          <LockClosedIcon className="h-6 w-6 text-gray-400" />
-                        ) : (
-                          <span className="text-orange-600 font-bold text-lg">{index + 1}</span>
-                        )}
+                        <span className="text-orange-600 font-bold text-lg">{index + 1}</span>
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-2">
-                          {module.title[language]}
+                          {module.title}
                         </h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <span className="flex items-center">
-                            <span className="text-gray-500 mr-1">⏱</span> {module.duration}
+                            <span className="text-gray-500 mr-1">⏱</span> {module.duration_minutes} min
                           </span>
                           <span className="capitalize px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
                             {module.type}
@@ -263,11 +306,9 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
                         </div>
                       </div>
                     </div>
-                    {!module.locked && !module.completed && (
-                      <button className="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium">
-                        {language === 'en' ? 'Start' : 'Anza'}
-                      </button>
-                    )}
+                    <button className="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                      {language === 'en' ? 'Start' : 'Anza'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -334,10 +375,11 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={handleAIChat}
-                    className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-medium"
+                    disabled={aiLoading}
+                    className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
-                    {language === 'en' ? 'Send' : 'Tuma'}
+                    {aiLoading ? (language === 'en' ? 'Thinking...' : 'Inafikiria...') : (language === 'en' ? 'Send' : 'Tuma')}
                   </button>
                   <button className="p-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <MicrophoneIcon className="h-5 w-5 text-gray-600" />
@@ -348,20 +390,58 @@ export default function LearningTrackPage({ params }: { params: Promise<{ trackI
                 </div>
               </div>
 
+              {aiPlan && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                    {language === 'en' ? 'Your Learning Plan' : 'Mpango Wako wa Kujifunza'}
+                  </h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="font-semibold text-gray-900 mb-3">{aiPlan.title}</div>
+                    <div className="space-y-3">
+                      {aiPlan.steps.map((s, idx) => (
+                        <div key={idx} className="bg-white border border-gray-200 rounded-lg p-3">
+                          <div className="text-sm font-semibold text-gray-900">{idx + 1}. {s.title}</div>
+                          <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{s.description}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Quick Actions */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">
                   {language === 'en' ? 'Quick Actions' : 'Vitendo vya Haraka'}
                 </h4>
                 <div className="space-y-2">
-                  <button className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900">
+                  <button
+                    onClick={() => handleQuickAction('tip')}
+                    disabled={aiLoading}
+                    className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     {language === 'en' ? '💡 Get a personalized tip' : '💡 Pata ushauri binafsi'}
                   </button>
-                  <button className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900">
+                  <button
+                    onClick={() => handleQuickAction('progress')}
+                    disabled={aiLoading}
+                    className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     {language === 'en' ? '📊 Analyze my progress' : '📊 Changanua maendeleo yangu'}
                   </button>
-                  <button className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900">
+                  <button
+                    onClick={() => handleQuickAction('goal')}
+                    disabled={aiLoading}
+                    className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     {language === 'en' ? '🎯 Set a learning goal' : '🎯 Weka lengo la kujifunza'}
+                  </button>
+                  <button
+                    onClick={() => handleQuickAction('plan')}
+                    disabled={aiLoading}
+                    className="w-full text-left px-4 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg text-sm transition-colors text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {language === 'en' ? '🗺️ Generate a learning plan' : '🗺️ Tengeneza mpango wa kujifunza'}
                   </button>
                 </div>
               </div>

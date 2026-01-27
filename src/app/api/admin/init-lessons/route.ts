@@ -11,6 +11,8 @@ export async function GET() {
         CREATE TABLE IF NOT EXISTS training_lessons (
           id SERIAL PRIMARY KEY,
           training_module_id INTEGER,
+          educational_content_id INTEGER,
+          language VARCHAR(10) DEFAULT 'sw',
           title VARCHAR(255) NOT NULL,
           content TEXT NOT NULL,
           lesson_order INTEGER NOT NULL,
