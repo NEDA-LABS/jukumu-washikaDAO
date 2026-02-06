@@ -345,8 +345,10 @@ function MembersSection({ members, groups, loadAdminData }: { members: any[]; gr
   });
   
   const filteredMembers = members.filter(member => {
-    const matchesSearch = member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const name = String(member?.full_name || '').toLowerCase();
+    const email = String(member?.email || '').toLowerCase();
+    const matchesSearch = name.includes(term) || email.includes(term);
     const matchesStatus = !statusFilter || member.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
