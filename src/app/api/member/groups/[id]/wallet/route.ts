@@ -3,6 +3,8 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { CdpClient } from '@coinbase/cdp-sdk';
 
+export const runtime = 'nodejs';
+
 const NETWORK = 'base';
 const USDC_BASE_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
@@ -244,7 +246,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error) {
     console.error('Member group wallet GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+    const envError = getEnvConfigError();
+    if (envError) {
+      return NextResponse.json(
+        { error: 'Server wallet configuration error', details: envError },
+        { status: 500 }
+      );
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: message
+      },
+      { status: 500 }
+    );
   } finally {
     client.release();
   }
@@ -325,7 +343,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (error) {
     console.error('Member group wallet POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+    const envError = getEnvConfigError();
+    if (envError) {
+      return NextResponse.json(
+        { error: 'Server wallet configuration error', details: envError },
+        { status: 500 }
+      );
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: message
+      },
+      { status: 500 }
+    );
   } finally {
     client.release();
   }
