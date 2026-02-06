@@ -741,6 +741,11 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
+  const [groupProposals, setGroupProposals] = useState<any[]>([]);
+  const [groupWallet, setGroupWallet] = useState<any>(null);
+  const [groupWalletBalances, setGroupWalletBalances] = useState<any>(null);
+  const [groupWalletWarning, setGroupWalletWarning] = useState<string>('');
+  const [groupTransfers, setGroupTransfers] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [groupForm, setGroupForm] = useState({
@@ -753,6 +758,11 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
   const handleViewGroup = async (group: any) => {
     setSelectedGroup(group);
     setGroupMembers([]);
+    setGroupProposals([]);
+    setGroupWallet(null);
+    setGroupWalletBalances(null);
+    setGroupWalletWarning('');
+    setGroupTransfers([]);
     setShowGroupDetails(true)
     
     // Fetch group members
@@ -765,6 +775,36 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
     } catch (error) {
       console.error('Error fetching group members:', error);
       setGroupMembers([]);
+    }
+
+    // Fetch proposals + vote summary
+    try {
+      const proposalsResponse = await fetch(`/api/admin/groups/${group.id}/proposals`);
+      if (proposalsResponse.ok) {
+        const proposalsData = await proposalsResponse.json();
+        setGroupProposals(proposalsData.proposals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching group proposals:', error);
+      setGroupProposals([]);
+    }
+
+    // Fetch wallet + transfer history
+    try {
+      const walletResponse = await fetch(`/api/admin/groups/${group.id}/wallet`);
+      if (walletResponse.ok) {
+        const walletData = await walletResponse.json();
+        setGroupWallet(walletData.wallet || null);
+        setGroupWalletBalances(walletData.balances || null);
+        setGroupWalletWarning(typeof walletData.warning === 'string' ? walletData.warning : '');
+        setGroupTransfers(walletData.recentTransfers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching group wallet:', error);
+      setGroupWallet(null);
+      setGroupWalletBalances(null);
+      setGroupWalletWarning('');
+      setGroupTransfers([]);
     }
   };
 
@@ -1245,6 +1285,145 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
                       <p className="text-sm text-gray-400 mt-1">Members wataonekana hapa baada ya kuongezwa kwenye kundi</p>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Proposals */}
+              <div className="bg-white border border-gray-200 rounded-lg mt-6">
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Proposals</h3>
+                </div>
+                <div className="p-4">
+                  {groupProposals.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Votes</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {groupProposals.map((p) => (
+                            <tr key={p.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-2">
+                                <div className="text-sm font-medium text-gray-900">{p.title}</div>
+                                {p.description ? <div className="text-xs text-gray-500 mt-0.5">{p.description}</div> : null}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  p.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {p.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <div className="text-xs text-gray-700">Yes: {p.yes_votes || 0}</div>
+                                <div className="text-xs text-gray-700">No: {p.no_votes || 0}</div>
+                                <div className="text-xs text-gray-700">Abstain: {p.abstain_votes || 0}</div>
+                                <div className="text-xs text-gray-500">Total: {p.total_votes || 0}</div>
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{p.created_by_name || '—'}</td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ') : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <DocumentTextIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500">No proposals bado</p>
+                      <p className="text-sm text-gray-400 mt-1">Proposals zitaonekana hapa baada ya kuanzishwa</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Wallet & Transfers */}
+              <div className="bg-white border border-gray-200 rounded-lg mt-6">
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Wallet & Transaction History</h3>
+                </div>
+                <div className="p-4 space-y-4">
+                  {groupWallet ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-900"><strong className="text-gray-900">Network:</strong> {groupWallet.network || '—'}</div>
+                        <div className="text-sm text-gray-900 mt-1"><strong className="text-gray-900">Address:</strong> {groupWallet.address || '—'}</div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-900"><strong className="text-gray-900">USDC:</strong> {groupWalletBalances?.usdc?.amountBaseUnits ?? '—'}</div>
+                        <div className="text-sm text-gray-900 mt-1"><strong className="text-gray-900">ETH:</strong> {groupWalletBalances?.eth?.amountBaseUnits ?? '—'}</div>
+                        {groupWalletWarning ? (
+                          <div className="text-xs text-orange-700 mt-2">{groupWalletWarning}</div>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <CurrencyDollarIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                      <p className="text-gray-500">No wallet bado</p>
+                    </div>
+                  )}
+
+                  <div className="border border-gray-200 rounded-lg">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-900">Transfers</h4>
+                    </div>
+                    <div className="p-4">
+                      {groupTransfers.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (base units)</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approvals</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tx Hash</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {groupTransfers.map((t) => (
+                                <tr key={t.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2 text-xs text-gray-900">{t.to_address}</td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{String(t.amount_base_units ?? '')}</td>
+                                  <td className="px-4 py-2 whitespace-nowrap">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                      t.status === 'executed' ? 'bg-green-100 text-green-800' :
+                                      t.status === 'approved' ? 'bg-blue-100 text-blue-800' :
+                                      t.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {t.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {t.approval_count ?? 0}/{t.approvals_required ?? 0}
+                                  </td>
+                                  <td className="px-4 py-2 text-xs text-gray-900">{t.executed_tx_hash || '—'}</td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {t.created_at ? new Date(t.created_at).toLocaleDateString('sw-TZ') : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-gray-500">No transfers bado</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
