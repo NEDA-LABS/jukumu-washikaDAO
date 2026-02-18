@@ -120,6 +120,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Always attempt email-based linkage as final fallback
+    // This covers cases where member was pre-created by admin with same email
+    if (trimmedEmail) {
+      await client.query(
+        `
+        UPDATE members
+        SET user_id = $1
+        WHERE user_id IS NULL
+          AND lower(email) = lower($2)
+          AND NOT EXISTS (SELECT 1 FROM members m2 WHERE m2.user_id = $1)
+        `,
+        [user.id, trimmedEmail]
+      );
+    }
+
     await client.query('COMMIT');
 
     return NextResponse.json({

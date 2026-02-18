@@ -11,40 +11,86 @@ export async function GET(request: NextRequest) {
     }
 
     const client = await pool.connect();
-    
-    // Get member profile with group information
-    const result = await client.query(`
-      SELECT 
-        m.id,
-        m.full_name,
-        m.email,
-        m.phone,
-        m.location,
-        m.business_type,
-        m.business_name,
-        m.business_description,
-        m.gender,
-        m.age,
-        m.monthly_revenue,
-        m.employee_count,
-        m.status,
-        m.created_at,
-        g.name as group_name,
-        g.id as group_id,
-        gm.role as group_role
-      FROM members m
-      LEFT JOIN group_members gm ON m.id = gm.member_id
-      LEFT JOIN groups g ON gm.group_id = g.id
-      WHERE m.user_id = $1
-    `, [userId]);
-    
-    client.release();
-    
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Member profile not found' }, { status: 404 });
+
+    try {
+      // Primary lookup: member linked to this user
+      let result = await client.query(`
+        SELECT 
+          m.id,
+          m.full_name,
+          m.email,
+          m.phone,
+          m.location,
+          m.business_type,
+          m.business_name,
+          m.business_description,
+          m.gender,
+          m.age,
+          m.monthly_revenue,
+          m.employee_count,
+          m.status,
+          m.created_at,
+          g.name as group_name,
+          g.id as group_id,
+          gm.role as group_role
+        FROM members m
+        LEFT JOIN group_members gm ON m.id = gm.member_id
+        LEFT JOIN groups g ON gm.group_id = g.id
+        WHERE m.user_id = $1
+      `, [userId]);
+
+      // Self-healing fallback: if no linked member found, try matching by email
+      if (result.rows.length === 0) {
+        const userRes = await client.query(
+          'SELECT email FROM users WHERE id = $1 LIMIT 1',
+          [userId]
+        );
+        if (userRes.rows.length > 0) {
+          const userEmail = (userRes.rows[0] as { email: string }).email;
+          // Link the unlinked member to this user (safe: only if user_id IS NULL)
+          await client.query(
+            `UPDATE members SET user_id = $1
+             WHERE user_id IS NULL
+               AND lower(email) = lower($2)
+               AND NOT EXISTS (SELECT 1 FROM members m2 WHERE m2.user_id = $1)`,
+            [userId, userEmail]
+          );
+          // Re-fetch after linking
+          result = await client.query(`
+            SELECT 
+              m.id,
+              m.full_name,
+              m.email,
+              m.phone,
+              m.location,
+              m.business_type,
+              m.business_name,
+              m.business_description,
+              m.gender,
+              m.age,
+              m.monthly_revenue,
+              m.employee_count,
+              m.status,
+              m.created_at,
+              g.name as group_name,
+              g.id as group_id,
+              gm.role as group_role
+            FROM members m
+            LEFT JOIN group_members gm ON m.id = gm.member_id
+            LEFT JOIN groups g ON gm.group_id = g.id
+            WHERE m.user_id = $1
+          `, [userId]);
+        }
+      }
+
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Member profile not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(result.rows[0]);
+    } finally {
+      client.release();
     }
-    
-    return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('Database error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const client = await pool.connect();
   try {
     // Map authenticated user -> member profile
-    const memberRes = await client.query(
+    let memberRes = await client.query(
       `
       SELECT id
       FROM members
@@ -20,6 +20,28 @@ export async function GET(request: NextRequest) {
       `,
       [auth.userId]
     );
+
+    // Self-healing fallback: link by email if user_id not set
+    if (memberRes.rows.length === 0) {
+      const userRes = await client.query(
+        'SELECT email FROM users WHERE id = $1 LIMIT 1',
+        [auth.userId]
+      );
+      if (userRes.rows.length > 0) {
+        const userEmail = (userRes.rows[0] as { email: string }).email;
+        await client.query(
+          `UPDATE members SET user_id = $1
+           WHERE user_id IS NULL
+             AND lower(email) = lower($2)
+             AND NOT EXISTS (SELECT 1 FROM members m2 WHERE m2.user_id = $1)`,
+          [auth.userId, userEmail]
+        );
+        memberRes = await client.query(
+          `SELECT id FROM members WHERE user_id = $1 LIMIT 1`,
+          [auth.userId]
+        );
+      }
+    }
 
     if (memberRes.rows.length === 0) {
       return NextResponse.json({ error: 'Member profile not found' }, { status: 404 });
