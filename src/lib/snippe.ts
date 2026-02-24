@@ -11,16 +11,28 @@ async function snippeRequest<T>(
   path: string,
   body?: Record<string, unknown>
 ): Promise<T> {
-  const res = await fetch(`${SNIPPE_BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Authorization': `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${SNIPPE_BASE_URL}${path}`, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${getApiKey()}`,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    throw new Error(`Snippe API network error: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
-  const json = await res.json();
+  const rawText = await res.text();
+  let json: unknown;
+  try {
+    json = JSON.parse(rawText);
+  } catch {
+    throw new Error(`Snippe API returned non-JSON (${res.status}): ${rawText.slice(0, 200)}`);
+  }
+
   if (!res.ok) {
     throw new Error(
       `Snippe API error ${res.status}: ${JSON.stringify(json)}`

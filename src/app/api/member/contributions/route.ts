@@ -25,7 +25,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'groupId is required' }, { status: 400 });
   }
 
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (err) {
+    console.error('DB connect error:', err);
+    return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+  }
   try {
     // Get member profile
     const memberRes = await client.query(
