@@ -623,13 +623,19 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      try { data = JSON.parse(rawText); } catch { /* non-JSON body */ }
       if (!res.ok) {
-        setPayError(data.error || 'Hitilafu imetokea');
+        setPayError((data.error as string) || `Hitilafu ${res.status}: ${rawText.slice(0, 120)}`);
+        return;
+      }
+      if (!data.checkout_url) {
+        setPayError('Hakuna checkout URL iliyopokelewa kutoka seva');
         return;
       }
       // Redirect to Snippe hosted checkout
-      window.location.href = data.checkout_url;
+      window.location.href = data.checkout_url as string;
     } catch {
       setPayError('Hitilafu imetokea. Jaribu tena.');
     } finally {
