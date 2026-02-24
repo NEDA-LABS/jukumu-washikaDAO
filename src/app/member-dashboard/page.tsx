@@ -740,7 +740,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         <div className="space-y-4">
           <div className="grid gap-4">
             {myGroups.map((g) => (
-              <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange-200 transition-colors">
+              <div key={g.id} onClick={() => router.push(`/member-dashboard/groups/${g.id}`)} className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{g.name}</h3>
@@ -753,23 +753,18 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <p className="text-sm font-medium text-orange-600">
                       TSH {parseInt(g.monthly_contribution || 0).toLocaleString()}/month
                     </p>
-                    <button
-                      onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
-                      className="text-xs text-blue-600 hover:underline mt-1 block"
-                    >
-                      View Details →
-                    </button>
+                    <p className="text-xs text-blue-600 mt-1">Bonyeza kuona →</p>
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2 border-t border-gray-100">
                   <button
-                    onClick={() => handleOpenPayment(g, 'contribution')}
+                    onClick={(e) => { e.stopPropagation(); handleOpenPayment(g, 'contribution'); }}
                     className="flex-1 px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
                   >
                     💳 Lipa Mchango
                   </button>
                   <button
-                    onClick={() => handleOpenPayment(g, 'topup')}
+                    onClick={(e) => { e.stopPropagation(); handleOpenPayment(g, 'topup'); }}
                     className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                   >
                     ➕ Weka Mfuko
