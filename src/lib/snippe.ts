@@ -1,4 +1,4 @@
-const SNIPPE_BASE_URL = 'https://api.snippe.sh';
+const SNIPPE_BASE_URL = 'https://www.snippe.sh/api';
 
 function getApiKey(): string {
   const key = process.env.SNIPPE_API_KEY;
