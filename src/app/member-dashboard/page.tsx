@@ -1,5 +1,5 @@
 'use client';
-
+/* build:20260224-1410 */
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
