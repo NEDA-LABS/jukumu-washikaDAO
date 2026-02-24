@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
-import { createPaymentSession } from '@/lib/snippe';
+import { createMobilePayment } from '@/lib/snippe';
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +22,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
   }
 
-  let body: { amount: number };
+  let body: { amount: number; phone_number?: string };
   try {
     body = await request.json();
   } catch {
@@ -69,15 +69,24 @@ export async function POST(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://jukumu.netlify.app';
     const webhookUrl = `${appUrl}/api/webhooks/snippe`;
 
-    const session = await createPaymentSession({
+    // Use phone from request body, fallback to member profile phone
+    const phoneNumber = body.phone_number || member.phone;
+    if (!phoneNumber) {
+      return NextResponse.json({ error: 'Nambari ya simu inahitajika' }, { status: 400 });
+    }
+
+    const nameParts = member.full_name.trim().split(/\s+/);
+    const firstname = nameParts[0] || 'Member';
+    const lastname = nameParts.slice(1).join(' ') || firstname;
+
+    const payment = await createMobilePayment({
       amount,
-      description: `Amana kwa Mfuko wa ${group.name}`,
+      phone_number: phoneNumber.replace(/^\+/, ''),
       customer: {
-        name: member.full_name,
-        phone: member.phone,
-        email: member.email,
+        firstname,
+        lastname,
+        email: member.email || undefined,
       },
-      redirect_url: `${appUrl}/member-dashboard/groups/${groupId}`,
       webhook_url: webhookUrl,
       metadata: {
         payment_type: 'group_topup',
@@ -88,8 +97,8 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      checkout_url: session.data.checkout_url,
-      reference: session.data.reference,
+      reference: payment.data.reference,
+      status: payment.data.status,
       amount,
       group: group.name,
     });

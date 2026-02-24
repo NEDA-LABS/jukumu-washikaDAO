@@ -507,8 +507,11 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [user, setUser] = useState<any>(null);
   const [paymentModal, setPaymentModal] = useState<{ group: any; type: 'contribution' | 'topup' } | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [payPhone, setPayPhone] = useState('');
   const [payLoading, setPayLoading] = useState(false);
   const [payError, setPayError] = useState('');
+  const [payStatus, setPayStatus] = useState<'input' | 'waiting' | 'success' | 'failed'>('input');
+  const [payReference, setPayReference] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -598,8 +601,18 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
   const handleOpenPayment = (group: any, type: 'contribution' | 'topup') => {
     setPayAmount(type === 'contribution' ? String(parseInt(group.monthly_contribution || '0')) : '');
+    setPayPhone(memberProfile?.phone || '');
     setPayError('');
+    setPayStatus('input');
+    setPayReference('');
     setPaymentModal({ group, type });
+  };
+
+  const handleClosePayment = () => {
+    setPaymentModal(null);
+    setPayError('');
+    setPayStatus('input');
+    setPayReference('');
   };
 
   const handlePay = async () => {
@@ -609,6 +622,10 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       setPayError('Ingiza kiasi sahihi (TZS)');
       return;
     }
+    if (!payPhone || payPhone.length < 9) {
+      setPayError('Ingiza nambari sahihi ya simu');
+      return;
+    }
     setPayLoading(true);
     setPayError('');
     try {
@@ -616,8 +633,8 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         ? '/api/member/contributions'
         : `/api/member/groups/${paymentModal.group.id}/topup`;
       const body = paymentModal.type === 'contribution'
-        ? { groupId: paymentModal.group.id, amount }
-        : { amount };
+        ? { groupId: paymentModal.group.id, amount, phone_number: payPhone }
+        : { amount, phone_number: payPhone };
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -630,17 +647,43 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         setPayError((data.error as string) || `Hitilafu ${res.status}: ${rawText.slice(0, 120)}`);
         return;
       }
-      if (!data.checkout_url) {
-        setPayError('Hakuna checkout URL iliyopokelewa kutoka seva');
-        return;
-      }
-      // Redirect to Snippe hosted checkout
-      window.location.href = data.checkout_url as string;
+      // USSD push sent successfully — show waiting screen and start polling
+      setPayReference(data.reference as string);
+      setPayStatus('waiting');
+      pollPaymentStatus(data.reference as string);
     } catch {
       setPayError('Hitilafu imetokea. Jaribu tena.');
     } finally {
       setPayLoading(false);
     }
+  };
+
+  const pollPaymentStatus = (reference: string) => {
+    let attempts = 0;
+    const maxAttempts = 60; // poll for up to 5 minutes (every 5s)
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(interval);
+        setPayStatus('failed');
+        setPayError('Muda wa malipo umekwisha. Jaribu tena.');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/member/contributions?groupId=${paymentModal?.group?.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const payment = (data.payments || []).find((p: any) => p.reference === reference);
+        if (payment?.status === 'completed') {
+          clearInterval(interval);
+          setPayStatus('success');
+        } else if (payment?.status === 'failed') {
+          clearInterval(interval);
+          setPayStatus('failed');
+          setPayError(payment.failure_reason || 'Malipo yameshindwa.');
+        }
+      } catch { /* ignore polling errors */ }
+    }, 5000);
   };
 
   const getStatusBadge = (status: string) => {
@@ -804,52 +847,140 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         </div>
       )}
 
-      {/* Snippe Payment Modal */}
+      {/* Snippe USSD Push Payment Modal */}
       {paymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-              {paymentModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">{paymentModal.group.name}</p>
 
-            {paymentModal.type === 'contribution' && (
-              <p className="text-xs text-gray-500 mb-3">
-                Mchango wa kawaida: TSH {parseInt(paymentModal.group.monthly_contribution || '0').toLocaleString()}/mwezi
-              </p>
+            {/* INPUT SCREEN */}
+            {payStatus === 'input' && (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {paymentModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">{paymentModal.group.name}</p>
+
+                {paymentModal.type === 'contribution' && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Mchango wa kawaida: TSH {parseInt(paymentModal.group.monthly_contribution || '0').toLocaleString()}/mwezi
+                  </p>
+                )}
+
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={payAmount}
+                  onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
+                  placeholder="e.g. 50000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nambari ya Simu</label>
+                <input
+                  type="tel"
+                  value={payPhone}
+                  onChange={(e) => { setPayPhone(e.target.value); setPayError(''); }}
+                  placeholder="255712345678"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+                {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
+
+                <p className="text-xs text-gray-400 mb-4">
+                  Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN yako kuthibitisha malipo.
+                </p>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleClosePayment}
+                    disabled={payLoading}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Ghairi
+                  </button>
+                  <button
+                    onClick={handlePay}
+                    disabled={payLoading}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
+                  </button>
+                </div>
+              </>
             )}
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
-            <input
-              type="number"
-              min="1"
-              value={payAmount}
-              onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
-              placeholder="e.g. 50000"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-            {payError && <p className="text-xs text-red-600 mb-3">{payError}</p>}
+            {/* WAITING SCREEN */}
+            {payStatus === 'waiting' && (
+              <div className="text-center py-4">
+                <div className="inline-block w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Inasubiri Uthibitisho...</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong>
+                </p>
+                <p className="text-xs text-gray-400 mb-4">
+                  Tafadhali ingiza PIN yako kwenye simu yako kuthibitisha malipo ya TSH {parseInt(payAmount).toLocaleString()}
+                </p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-orange-700">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
+                </div>
+                <button
+                  onClick={handleClosePayment}
+                  className="text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  Ghairi
+                </button>
+              </div>
+            )}
 
-            <p className="text-xs text-gray-400 mb-4">
-              Utalipwa kupitia Airtel Money, M-Pesa, au QR code kwenye ukurasa unaofuata.
-            </p>
+            {/* SUCCESS SCREEN */}
+            {payStatus === 'success' && (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-green-800 mb-2">Malipo Yamefanikiwa!</h3>
+                <p className="text-sm text-gray-600 mb-1">
+                  TSH {parseInt(payAmount).toLocaleString()} - {paymentModal.group.name}
+                </p>
+                <p className="text-xs text-gray-400 mb-4">Ref: {payReference}</p>
+                <button
+                  onClick={handleClosePayment}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Funga
+                </button>
+              </div>
+            )}
 
-            <div className="flex space-x-3">
-              <button
-                onClick={() => { setPaymentModal(null); setPayError(''); }}
-                disabled={payLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Ghairi
-              </button>
-              <button
-                onClick={handlePay}
-                disabled={payLoading}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                {payLoading ? 'Inasubiri...' : 'Endelea Kulipa'}
-              </button>
-            </div>
+            {/* FAILED SCREEN */}
+            {payStatus === 'failed' && (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Malipo Yameshindwa</h3>
+                {payError && <p className="text-sm text-red-600 mb-4">{payError}</p>}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleClosePayment}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Funga
+                  </button>
+                  <button
+                    onClick={() => { setPayStatus('input'); setPayError(''); }}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    Jaribu Tena
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}

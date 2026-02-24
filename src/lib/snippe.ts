@@ -83,6 +83,47 @@ export async function createPaymentSession(
   });
 }
 
+/* ── Mobile Money USSD Push Payment ── */
+
+export interface SnippeMobilePaymentResponse {
+  status: string;
+  code: number;
+  data: {
+    reference: string;
+    status: string;
+    payment_type: string;
+    amount: { currency: string; value: number };
+    api_version: string;
+    expires_at: string;
+    object: string;
+  };
+}
+
+export interface CreateMobilePaymentParams {
+  amount: number;
+  currency?: string;
+  phone_number: string;
+  customer: { firstname: string; lastname: string; email?: string };
+  webhook_url?: string;
+  metadata?: Record<string, string>;
+}
+
+export async function createMobilePayment(
+  params: CreateMobilePaymentParams
+): Promise<SnippeMobilePaymentResponse> {
+  return snippeRequest<SnippeMobilePaymentResponse>('POST', '/v1/payments', {
+    payment_type: 'mobile',
+    details: {
+      amount: params.amount,
+      currency: params.currency ?? 'TZS',
+    },
+    phone_number: params.phone_number,
+    customer: params.customer,
+    webhook_url: params.webhook_url,
+    metadata: params.metadata,
+  });
+}
+
 export interface SnippePayoutResponse {
   status: number;
   data: {

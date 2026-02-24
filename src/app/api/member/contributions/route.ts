@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
-import { createPaymentSession } from '@/lib/snippe';
+import { createMobilePayment } from '@/lib/snippe';
 
 export async function POST(request: NextRequest) {
   if (!process.env.SNIPPE_API_KEY) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { groupId: number; amount?: number; month?: string };
+  let body: { groupId: number; amount?: number; month?: string; phone_number?: string };
   try {
     body = await request.json();
   } catch {
@@ -78,15 +78,25 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://jukumu.netlify.app';
     const webhookUrl = `${appUrl}/api/webhooks/snippe`;
 
-    const session = await createPaymentSession({
+    // Use phone from request body, fallback to member profile phone
+    const phoneNumber = body.phone_number || member.phone;
+    if (!phoneNumber) {
+      return NextResponse.json({ error: 'Nambari ya simu inahitajika' }, { status: 400 });
+    }
+
+    // Split full name into first/last for Snippe API
+    const nameParts = member.full_name.trim().split(/\s+/);
+    const firstname = nameParts[0] || 'Member';
+    const lastname = nameParts.slice(1).join(' ') || firstname;
+
+    const payment = await createMobilePayment({
       amount: amountTzs,
-      description: `Mchango wa mwezi ${contributionMonth} - ${group.name}`,
+      phone_number: phoneNumber.replace(/^\+/, ''),
       customer: {
-        name: member.full_name,
-        phone: member.phone,
-        email: member.email,
+        firstname,
+        lastname,
+        email: member.email || undefined,
       },
-      redirect_url: `${appUrl}/member-dashboard`,
       webhook_url: webhookUrl,
       metadata: {
         payment_type: 'contribution',
@@ -98,8 +108,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      checkout_url: session.data.checkout_url,
-      reference: session.data.reference,
+      reference: payment.data.reference,
+      status: payment.data.status,
       amount: amountTzs,
       month: contributionMonth,
       group: group.name,
