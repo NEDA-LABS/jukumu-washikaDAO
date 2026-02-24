@@ -505,6 +505,10 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [joinMessage, setJoinMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [paymentModal, setPaymentModal] = useState<{ group: any; type: 'contribution' | 'topup' } | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -592,6 +596,47 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
     }
   };
 
+  const handleOpenPayment = (group: any, type: 'contribution' | 'topup') => {
+    setPayAmount(type === 'contribution' ? String(parseInt(group.monthly_contribution || '0')) : '');
+    setPayError('');
+    setPaymentModal({ group, type });
+  };
+
+  const handlePay = async () => {
+    if (!paymentModal) return;
+    const amount = parseInt(payAmount);
+    if (!amount || amount <= 0) {
+      setPayError('Ingiza kiasi sahihi (TZS)');
+      return;
+    }
+    setPayLoading(true);
+    setPayError('');
+    try {
+      const endpoint = paymentModal.type === 'contribution'
+        ? '/api/member/contributions'
+        : `/api/member/groups/${paymentModal.group.id}/topup`;
+      const body = paymentModal.type === 'contribution'
+        ? { groupId: paymentModal.group.id, amount }
+        : { amount };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPayError(data.error || 'Hitilafu imetokea');
+        return;
+      }
+      // Redirect to Snippe hosted checkout
+      window.location.href = data.checkout_url;
+    } catch {
+      setPayError('Hitilafu imetokea. Jaribu tena.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -618,12 +663,8 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         <div className="space-y-4">
           <div className="grid gap-4">
             {myGroups.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
-                className="border border-gray-200 rounded-lg p-4 text-left hover:border-orange-300 hover:bg-orange-50/40 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-4">
+              <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange-200 transition-colors">
+                <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{g.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">Role: {g.member_role || 'member'}</p>
@@ -635,10 +676,29 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <p className="text-sm font-medium text-orange-600">
                       TSH {parseInt(g.monthly_contribution || 0).toLocaleString()}/month
                     </p>
-                    <p className="text-xs text-gray-500">Open</p>
+                    <button
+                      onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
+                      className="text-xs text-blue-600 hover:underline mt-1 block"
+                    >
+                      View Details →
+                    </button>
                   </div>
                 </div>
-              </button>
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => handleOpenPayment(g, 'contribution')}
+                    className="flex-1 px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    💳 Lipa Mchango
+                  </button>
+                  <button
+                    onClick={() => handleOpenPayment(g, 'topup')}
+                    className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    ➕ Weka Mfuko
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -735,6 +795,56 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Snippe Payment Modal */}
+      {paymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              {paymentModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">{paymentModal.group.name}</p>
+
+            {paymentModal.type === 'contribution' && (
+              <p className="text-xs text-gray-500 mb-3">
+                Mchango wa kawaida: TSH {parseInt(paymentModal.group.monthly_contribution || '0').toLocaleString()}/mwezi
+              </p>
+            )}
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+            <input
+              type="number"
+              min="1"
+              value={payAmount}
+              onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
+              placeholder="e.g. 50000"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            {payError && <p className="text-xs text-red-600 mb-3">{payError}</p>}
+
+            <p className="text-xs text-gray-400 mb-4">
+              Utalipwa kupitia Airtel Money, M-Pesa, au QR code kwenye ukurasa unaofuata.
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => { setPaymentModal(null); setPayError(''); }}
+                disabled={payLoading}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Ghairi
+              </button>
+              <button
+                onClick={handlePay}
+                disabled={payLoading}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {payLoading ? 'Inasubiri...' : 'Endelea Kulipa'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
