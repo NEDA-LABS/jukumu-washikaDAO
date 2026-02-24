@@ -1,4 +1,4 @@
-const SNIPPE_BASE_URL = 'https://www.snippe.sh/api';
+const SNIPPE_BASE_URL = 'https://api.snippe.sh';
 
 function getApiKey(): string {
   const key = process.env.SNIPPE_API_KEY;
@@ -18,8 +18,10 @@ async function snippeRequest<T>(
       headers: {
         'Authorization': `Bearer ${getApiKey()}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: body ? JSON.stringify(body) : undefined,
+      redirect: 'follow',
     });
   } catch (err) {
     throw new Error(`Snippe API network error: ${err instanceof Error ? err.message : String(err)}`);
