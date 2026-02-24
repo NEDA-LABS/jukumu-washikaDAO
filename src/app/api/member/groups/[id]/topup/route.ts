@@ -82,11 +82,7 @@ export async function POST(
     const payment = await createMobilePayment({
       amount,
       phone_number: phoneNumber.replace(/^\+/, ''),
-      customer: {
-        firstname,
-        lastname,
-        email: member.email || undefined,
-      },
+      customer: { firstname, lastname },
       webhook_url: webhookUrl,
       metadata: {
         payment_type: 'group_topup',

@@ -103,7 +103,7 @@ export interface CreateMobilePaymentParams {
   amount: number;
   currency?: string;
   phone_number: string;
-  customer: { firstname: string; lastname: string; email?: string };
+  customer: { firstname: string; lastname: string };
   webhook_url?: string;
   metadata?: Record<string, string>;
 }
@@ -118,7 +118,11 @@ export async function createMobilePayment(
       currency: params.currency ?? 'TZS',
     },
     phone_number: params.phone_number,
-    customer: params.customer,
+    customer: {
+      firstname: params.customer.firstname,
+      lastname: params.customer.lastname,
+      email: `${params.phone_number}@payments.jukumu.app`,
+    },
     webhook_url: params.webhook_url,
     metadata: params.metadata,
   });
