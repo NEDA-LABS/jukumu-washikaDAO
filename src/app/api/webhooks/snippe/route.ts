@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import crypto from 'crypto';
+
+function verifySignature(rawBody: string, signature: string, secret: string): boolean {
+  try {
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 async function ensureSnippeSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
   // Add payment_reference to monthly_contributions if it doesn't exist yet
@@ -42,9 +52,20 @@ async function ensureSnippeSchema(client: { query: (sql: string, params?: unknow
 }
 
 export async function POST(request: NextRequest) {
+  const rawBody = await request.text();
+
+  // Verify HMAC signature if secret is configured
+  const webhookSecret = process.env.SNIPPE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const signature = request.headers.get('x-webhook-signature') ?? '';
+    if (!signature || !verifySignature(rawBody, signature, webhookSecret)) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
