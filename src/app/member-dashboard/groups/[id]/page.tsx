@@ -129,7 +129,7 @@ export default function MemberGroupDetailsPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'leadership' | 'decisions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'leadership' | 'decisions' | 'fedha'>('overview');
   const [error, setError] = useState<string>('');
 
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
@@ -148,6 +148,31 @@ export default function MemberGroupDetailsPage() {
   const [proposalTitle, setProposalTitle] = useState('');
   const [proposalDescription, setProposalDescription] = useState('');
   const [proposalSubmitting, setProposalSubmitting] = useState(false);
+
+  // Finances / Payments state
+  const [groupPayments, setGroupPayments] = useState<any[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<{ total_collected: number; total_disbursed: number; this_month_collected: number; this_month_payers: number }>({ total_collected: 0, total_disbursed: 0, this_month_collected: 0, this_month_payers: 0 });
+  const [memberPaymentStatus, setMemberPaymentStatus] = useState<any[]>([]);
+  const [isLeader, setIsLeader] = useState(false);
+
+  // USSD Pay modal state
+  const [payModal, setPayModal] = useState<{ type: 'contribution' | 'topup' } | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payPhone, setPayPhone] = useState('');
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState('');
+  const [payStatus, setPayStatus] = useState<'input' | 'waiting' | 'success' | 'failed'>('input');
+  const [payReference, setPayReference] = useState('');
+
+  // Disbursement form state
+  const [disbursePhone, setDisbursePhone] = useState('');
+  const [disburseName, setDisburseName] = useState('');
+  const [disburseAmount, setDisburseAmount] = useState('');
+  const [disburseProvider, setDisburseProvider] = useState('airtel');
+  const [disburseDesc, setDisburseDesc] = useState('');
+  const [disburseLoading, setDisburseLoading] = useState(false);
+  const [disburseError, setDisburseError] = useState('');
+  const [disburseSuccess, setDisburseSuccess] = useState('');
 
   const canCreateProposal = useMemo(() => {
     const r = membership?.role;
@@ -181,19 +206,20 @@ export default function MemberGroupDetailsPage() {
       setWalletTransfersError('');
 
       try {
-        const [groupRes, membersRes, leadershipRes, proposalsRes, walletRes, transfersRes] = await Promise.all([
+        const [groupRes, membersRes, leadershipRes, proposalsRes, walletRes, transfersRes, paymentsRes] = await Promise.all([
           fetch(`/api/member/groups/${groupId}`),
           fetch(`/api/member/groups/${groupId}/members`),
           fetch(`/api/member/groups/${groupId}/leadership`),
           fetch(`/api/member/groups/${groupId}/proposals`),
           fetch(`/api/member/groups/${groupId}/wallet`),
-          fetch(`/api/member/groups/${groupId}/wallet/transfers`)
+          fetch(`/api/member/groups/${groupId}/wallet/transfers`),
+          fetch(`/api/member/groups/${groupId}/payments`)
         ]);
 
         if (cancelled) return;
 
         if (
-          [groupRes.status, membersRes.status, leadershipRes.status, proposalsRes.status, walletRes.status, transfersRes.status].includes(
+          [groupRes.status, membersRes.status, leadershipRes.status, proposalsRes.status, walletRes.status, transfersRes.status, paymentsRes.status].includes(
             401
           )
         ) {
@@ -238,6 +264,14 @@ export default function MemberGroupDetailsPage() {
           setWalletTransfers([]);
           setWalletTransfersError(transfersJson?.error || 'Imeshindikana kupakua transfers za wallet.');
         }
+
+        const paymentsJson = await paymentsRes.json().catch(() => null);
+        if (paymentsRes.ok) {
+          setGroupPayments(Array.isArray(paymentsJson?.payments) ? paymentsJson.payments : []);
+          setPaymentSummary(paymentsJson?.summary || { total_collected: 0, total_disbursed: 0, this_month_collected: 0, this_month_payers: 0 });
+          setMemberPaymentStatus(Array.isArray(paymentsJson?.memberPayments) ? paymentsJson.memberPayments : []);
+          setIsLeader(!!paymentsJson?.isLeader);
+        }
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Imeshindikana kupakua taarifa.');
@@ -251,6 +285,136 @@ export default function MemberGroupDetailsPage() {
       cancelled = true;
     };
   }, [groupId, router]);
+
+  const loadGroupPayments = async () => {
+    if (!groupId) return;
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/payments`);
+      if (res.ok) {
+        const data = await res.json();
+        setGroupPayments(data.payments || []);
+        setPaymentSummary(data.summary || { total_collected: 0, total_disbursed: 0, this_month_collected: 0, this_month_payers: 0 });
+        setMemberPaymentStatus(data.memberPayments || []);
+        setIsLeader(!!data.isLeader);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleOpenPay = (type: 'contribution' | 'topup') => {
+    setPayAmount(type === 'contribution' ? String(Number.parseFloat(String(group?.monthly_contribution || 0))) : '');
+    setPayPhone('');
+    setPayError('');
+    setPayStatus('input');
+    setPayReference('');
+    setPayModal({ type });
+  };
+
+  const handleClosePay = () => {
+    setPayModal(null);
+    setPayError('');
+    setPayStatus('input');
+    setPayReference('');
+  };
+
+  const handlePay = async () => {
+    if (!payModal || !groupId) return;
+    const amount = parseInt(payAmount);
+    if (!amount || amount <= 0) { setPayError('Ingiza kiasi sahihi (TZS)'); return; }
+    if (!payPhone || payPhone.length < 9) { setPayError('Ingiza nambari sahihi ya simu'); return; }
+    setPayLoading(true);
+    setPayError('');
+    try {
+      const endpoint = payModal.type === 'contribution'
+        ? '/api/member/contributions'
+        : `/api/member/groups/${groupId}/topup`;
+      const body = payModal.type === 'contribution'
+        ? { groupId: Number(groupId), amount, phone_number: payPhone }
+        : { amount, phone_number: payPhone };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      try { data = JSON.parse(rawText); } catch { /* non-JSON */ }
+      if (!res.ok) {
+        setPayError((data.error as string) || `Hitilafu ${res.status}: ${rawText.slice(0, 120)}`);
+        return;
+      }
+      setPayReference(data.reference as string);
+      setPayStatus('waiting');
+      pollPaymentStatus(data.reference as string);
+    } catch {
+      setPayError('Hitilafu imetokea. Jaribu tena.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
+  const pollPaymentStatus = (reference: string) => {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > 60) { clearInterval(interval); setPayStatus('failed'); setPayError('Muda wa malipo umekwisha.'); return; }
+      try {
+        const res = await fetch(`/api/member/contributions?groupId=${groupId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const payment = (data.payments || []).find((p: any) => p.reference === reference);
+        if (payment?.status === 'completed') {
+          clearInterval(interval);
+          setPayStatus('success');
+          loadGroupPayments();
+        } else if (payment?.status === 'failed') {
+          clearInterval(interval);
+          setPayStatus('failed');
+          setPayError(payment.failure_reason || 'Malipo yameshindwa.');
+        }
+      } catch { /* ignore */ }
+    }, 5000);
+  };
+
+  const handleDisburse = async () => {
+    if (!groupId) return;
+    if (!disbursePhone || !disburseName || !disburseAmount) {
+      setDisburseError('Jaza taarifa zote zinazohitajika');
+      return;
+    }
+    const amount = parseInt(disburseAmount);
+    if (!amount || amount <= 0) { setDisburseError('Kiasi lazima kiwe zaidi ya 0'); return; }
+    setDisburseLoading(true);
+    setDisburseError('');
+    setDisburseSuccess('');
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/disburse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientPhone: disbursePhone,
+          recipientName: disburseName,
+          provider: disburseProvider,
+          amount,
+          description: disburseDesc || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setDisburseError(data?.error || 'Imeshindikana kutuma fedha.');
+        return;
+      }
+      setDisburseSuccess(`Malipo ya TSH ${amount.toLocaleString()} kwa ${disburseName} yametumwa! Ref: ${data?.reference}`);
+      setDisbursePhone('');
+      setDisburseName('');
+      setDisburseAmount('');
+      setDisburseDesc('');
+      loadGroupPayments();
+    } catch {
+      setDisburseError('Hitilafu imetokea.');
+    } finally {
+      setDisburseLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -333,6 +497,14 @@ export default function MemberGroupDetailsPage() {
                 Leadership
               </button>
               <button
+                onClick={() => setActiveTab('fedha')}
+                className={`py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'fedha' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                }`}
+              >
+                Fedha
+              </button>
+              <button
                 onClick={() => setActiveTab('decisions')}
                 className={`py-3 text-sm font-medium border-b-2 ${
                   activeTab === 'decisions' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
@@ -360,6 +532,42 @@ export default function MemberGroupDetailsPage() {
                   <div className="border border-gray-200 rounded-lg p-4">
                     <p className="text-xs text-gray-500">Leader</p>
                     <p className="text-lg font-semibold text-gray-900">{group?.leader_name || '—'}</p>
+                  </div>
+                </div>
+
+                {/* Pay Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleOpenPay('contribution')}
+                    className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    💳 Lipa Mchango
+                  </button>
+                  <button
+                    onClick={() => handleOpenPay('topup')}
+                    className="flex-1 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    ➕ Weka Mfuko
+                  </button>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="border border-green-200 bg-green-50 rounded-lg p-3">
+                    <p className="text-xs text-green-600">Jumla Iliyokusanywa</p>
+                    <p className="text-lg font-semibold text-green-800">TSH {paymentSummary.total_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-3">
+                    <p className="text-xs text-blue-600">Mwezi Huu</p>
+                    <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="border border-orange-200 bg-orange-50 rounded-lg p-3">
+                    <p className="text-xs text-orange-600">Waliolipa Mwezi Huu</p>
+                    <p className="text-lg font-semibold text-orange-800">{paymentSummary.this_month_payers}</p>
+                  </div>
+                  <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
+                    <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
+                    <p className="text-lg font-semibold text-purple-800">TSH {paymentSummary.total_disbursed.toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -803,6 +1011,7 @@ export default function MemberGroupDetailsPage() {
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      {isLeader && <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mchango Mwezi Huu</th>}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -814,6 +1023,19 @@ export default function MemberGroupDetailsPage() {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{roleLabel(m.role)}</td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{m.status || 'active'}</td>
+                        {isLeader && (
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            {(() => {
+                              const mp = memberPaymentStatus.find((p: any) => p.member_id === m.id);
+                              if (!mp) return <span className="text-xs text-gray-400">—</span>;
+                              return mp.paid_this_month ? (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Amelipa</span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Hajalipa</span>
+                              );
+                            })()}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -840,6 +1062,178 @@ export default function MemberGroupDetailsPage() {
                 ))}
 
                 {leadership.length === 0 && <p className="text-sm text-gray-600">No leadership assigned yet.</p>}
+              </div>
+            )}
+
+            {activeTab === 'fedha' && (
+              <div className="space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="border border-green-200 bg-green-50 rounded-lg p-3">
+                    <p className="text-xs text-green-600">Jumla Iliyokusanywa</p>
+                    <p className="text-lg font-semibold text-green-800">TSH {paymentSummary.total_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-3">
+                    <p className="text-xs text-blue-600">Mwezi Huu</p>
+                    <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="border border-orange-200 bg-orange-50 rounded-lg p-3">
+                    <p className="text-xs text-orange-600">Waliolipa</p>
+                    <p className="text-lg font-semibold text-orange-800">{paymentSummary.this_month_payers} / {members.length}</p>
+                  </div>
+                  <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
+                    <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
+                    <p className="text-lg font-semibold text-purple-800">TSH {paymentSummary.total_disbursed.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Pay Buttons */}
+                <div className="flex gap-3">
+                  <button onClick={() => handleOpenPay('contribution')} className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+                    💳 Lipa Mchango
+                  </button>
+                  <button onClick={() => handleOpenPay('topup')} className="flex-1 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                    ➕ Weka Mfuko
+                  </button>
+                </div>
+
+                {/* Member Payment Status (Leaders only) */}
+                {isLeader && memberPaymentStatus.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                    <p className="text-sm font-medium text-gray-900 mb-3">Hali ya Michango - {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}</p>
+                    <div className="space-y-2">
+                      {memberPaymentStatus.map((mp: any) => (
+                        <div key={mp.member_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{mp.full_name}</p>
+                            <p className="text-xs text-gray-500">{mp.phone || ''}</p>
+                          </div>
+                          {mp.paid_this_month ? (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Amelipa ✓</span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Hajalipa</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Disbursement Form (Leaders only) */}
+                {isLeader && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                    <p className="text-sm font-medium text-gray-900 mb-1">Tuma Fedha kwa Mwanachama</p>
+                    <p className="text-xs text-gray-500 mb-3">Tuma pesa moja kwa moja kwa simu ya mwanachama kupitia mobile money.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Jina la Mpokeaji</label>
+                        <input
+                          value={disburseName}
+                          onChange={(e) => { setDisburseName(e.target.value); setDisburseError(''); }}
+                          placeholder="e.g. John Doe"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Nambari ya Simu</label>
+                        <input
+                          value={disbursePhone}
+                          onChange={(e) => { setDisbursePhone(e.target.value); setDisburseError(''); }}
+                          placeholder="255712345678"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+                        <input
+                          type="number"
+                          value={disburseAmount}
+                          onChange={(e) => { setDisburseAmount(e.target.value); setDisburseError(''); }}
+                          placeholder="e.g. 50000"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Mtandao</label>
+                        <select
+                          value={disburseProvider}
+                          onChange={(e) => setDisburseProvider(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        >
+                          <option value="airtel">Airtel Money</option>
+                          <option value="mpesa">M-Pesa</option>
+                          <option value="tigopesa">Tigo Pesa</option>
+                          <option value="halopesa">Halo Pesa</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Maelezo (si lazima)</label>
+                      <input
+                        value={disburseDesc}
+                        onChange={(e) => setDisburseDesc(e.target.value)}
+                        placeholder="e.g. Malipo ya mkopo"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    </div>
+                    {disburseError && <p className="text-xs text-red-600 mt-2">{disburseError}</p>}
+                    {disburseSuccess && <p className="text-xs text-green-600 mt-2">{disburseSuccess}</p>}
+                    <button
+                      onClick={handleDisburse}
+                      disabled={disburseLoading}
+                      className="mt-3 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {disburseLoading ? 'Inatuma...' : 'Tuma Fedha'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Payment History */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <p className="text-sm font-medium text-gray-900 mb-3">Historia ya Malipo</p>
+                  {groupPayments.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tarehe</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aina</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mwanachama</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Kiasi</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hali</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {groupPayments.map((p: any) => (
+                            <tr key={p.reference} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-xs text-gray-600">
+                                {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-gray-700">
+                                {p.payment_type === 'contribution' ? 'Mchango' : p.payment_type === 'group_topup' ? 'Mfuko' : 'Malipo'}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-gray-700">{p.member_name || p.customer_name || '—'}</td>
+                              <td className="px-3 py-2 text-xs text-gray-900 text-right font-medium">
+                                {p.payment_type === 'disbursement' ? '-' : '+'}TSH {parseInt(p.amount_tzs || 0).toLocaleString()}
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                  p.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                  p.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {p.status === 'completed' ? 'Imekamilika' : p.status === 'failed' ? 'Imeshindwa' : 'Inasubiri'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">Hakuna malipo bado.</p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -991,6 +1385,105 @@ export default function MemberGroupDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* USSD Push Payment Modal */}
+      {payModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+
+            {payStatus === 'input' && (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {payModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">{group?.name}</p>
+
+                {payModal.type === 'contribution' && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Mchango wa kawaida: TSH {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
+                  </p>
+                )}
+
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+                <input
+                  type="number" min="1" value={payAmount}
+                  onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
+                  placeholder="e.g. 50000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nambari ya Simu</label>
+                <input
+                  type="tel" value={payPhone}
+                  onChange={(e) => { setPayPhone(e.target.value); setPayError(''); }}
+                  placeholder="255712345678"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+                {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
+
+                <p className="text-xs text-gray-400 mb-4">
+                  Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN yako kuthibitisha malipo.
+                </p>
+
+                <div className="flex space-x-3">
+                  <button onClick={handleClosePay} disabled={payLoading}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+                    Ghairi
+                  </button>
+                  <button onClick={handlePay} disabled={payLoading}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
+                    {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {payStatus === 'waiting' && (
+              <div className="text-center py-4">
+                <div className="inline-block w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Inasubiri Uthibitisho...</h3>
+                <p className="text-sm text-gray-600 mb-2">Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong></p>
+                <p className="text-xs text-gray-400 mb-4">Tafadhali ingiza PIN yako kwenye simu yako kuthibitisha malipo ya TSH {parseInt(payAmount).toLocaleString()}</p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-orange-700">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
+                </div>
+                <button onClick={handleClosePay} className="text-sm text-gray-500 hover:text-gray-700 underline">Ghairi</button>
+              </div>
+            )}
+
+            {payStatus === 'success' && (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-green-800 mb-2">Malipo Yamefanikiwa!</h3>
+                <p className="text-sm text-gray-600 mb-1">TSH {parseInt(payAmount).toLocaleString()} - {group?.name}</p>
+                <p className="text-xs text-gray-400 mb-4">Ref: {payReference}</p>
+                <button onClick={handleClosePay} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Funga</button>
+              </div>
+            )}
+
+            {payStatus === 'failed' && (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Malipo Yameshindwa</h3>
+                {payError && <p className="text-sm text-red-600 mb-4">{payError}</p>}
+                <div className="flex space-x-3">
+                  <button onClick={handleClosePay} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Funga</button>
+                  <button onClick={() => { setPayStatus('input'); setPayError(''); }} className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Jaribu Tena</button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

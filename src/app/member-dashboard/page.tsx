@@ -306,6 +306,15 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <button 
+              onClick={() => onNavigate('group')}
+              className="w-full text-left p-3 border border-orange-200 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors duration-200"
+            >
+              <div className="flex items-center space-x-3">
+                <CurrencyDollarIcon className="h-5 w-5 text-orange-600" />
+                <span className="text-sm font-medium text-orange-900">💳 Lipa Mchango</span>
+              </div>
+            </button>
+            <button 
               onClick={() => onNavigate('learning')}
               className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors duration-200"
             >
@@ -512,6 +521,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [payError, setPayError] = useState('');
   const [payStatus, setPayStatus] = useState<'input' | 'waiting' | 'success' | 'failed'>('input');
   const [payReference, setPayReference] = useState('');
+  const [paymentsByGroup, setPaymentsByGroup] = useState<Record<number, any[]>>({});
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -522,8 +532,25 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       loadMyGroups();
       loadAvailableGroups();
       loadJoinRequests();
+      loadAllPayments();
     }
   }, [memberProfile]);
+
+  const loadAllPayments = async () => {
+    try {
+      const res = await fetch('/api/member/contributions');
+      if (res.ok) {
+        const data = await res.json();
+        const grouped: Record<number, any[]> = {};
+        for (const p of (data.payments || [])) {
+          const gid = p.group_id;
+          if (!grouped[gid]) grouped[gid] = [];
+          grouped[gid].push(p);
+        }
+        setPaymentsByGroup(grouped);
+      }
+    } catch { /* ignore */ }
+  };
 
   const loadMyGroups = async () => {
     try {
@@ -677,6 +704,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         if (payment?.status === 'completed') {
           clearInterval(interval);
           setPayStatus('success');
+          loadAllPayments();
         } else if (payment?.status === 'failed') {
           clearInterval(interval);
           setPayStatus('failed');
@@ -747,6 +775,33 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     ➕ Weka Mfuko
                   </button>
                 </div>
+                {/* Recent payments for this group */}
+                {(paymentsByGroup[g.id] || []).length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 mb-2">Malipo ya Hivi Karibuni</p>
+                    <div className="space-y-1">
+                      {(paymentsByGroup[g.id] || []).slice(0, 3).map((p: any) => (
+                        <div key={p.reference} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              p.status === 'completed' ? 'bg-green-500' :
+                              p.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                            }`}></span>
+                            <span className="text-gray-700">
+                              TSH {parseInt(p.amount_tzs || 0).toLocaleString()}
+                            </span>
+                            <span className="text-gray-400">
+                              {p.payment_type === 'contribution' ? 'Mchango' : 'Mfuko'}
+                            </span>
+                          </div>
+                          <span className="text-gray-400">
+                            {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' }) : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
