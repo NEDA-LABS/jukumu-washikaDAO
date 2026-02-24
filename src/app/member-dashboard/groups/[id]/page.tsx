@@ -358,18 +358,17 @@ export default function MemberGroupDetailsPage() {
       attempts++;
       if (attempts > 60) { clearInterval(interval); setPayStatus('failed'); setPayError('Muda wa malipo umekwisha.'); return; }
       try {
-        const res = await fetch(`/api/member/contributions?groupId=${groupId}`);
+        const res = await fetch(`/api/member/payments/status?reference=${encodeURIComponent(reference)}`);
         if (!res.ok) return;
         const data = await res.json();
-        const payment = (data.payments || []).find((p: any) => p.reference === reference);
-        if (payment?.status === 'completed') {
+        if (data.status === 'completed') {
           clearInterval(interval);
           setPayStatus('success');
           loadGroupPayments();
-        } else if (payment?.status === 'failed') {
+        } else if (data.status === 'failed') {
           clearInterval(interval);
           setPayStatus('failed');
-          setPayError(payment.failure_reason || 'Malipo yameshindwa.');
+          setPayError(data.failure_reason || 'Malipo yameshindwa.');
         }
       } catch { /* ignore */ }
     }, 5000);

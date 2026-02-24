@@ -697,18 +697,17 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         return;
       }
       try {
-        const res = await fetch(`/api/member/contributions?groupId=${paymentModal?.group?.id}`);
+        const res = await fetch(`/api/member/payments/status?reference=${encodeURIComponent(reference)}`);
         if (!res.ok) return;
         const data = await res.json();
-        const payment = (data.payments || []).find((p: any) => p.reference === reference);
-        if (payment?.status === 'completed') {
+        if (data.status === 'completed') {
           clearInterval(interval);
           setPayStatus('success');
           loadAllPayments();
-        } else if (payment?.status === 'failed') {
+        } else if (data.status === 'failed') {
           clearInterval(interval);
           setPayStatus('failed');
-          setPayError(payment.failure_reason || 'Malipo yameshindwa.');
+          setPayError(data.failure_reason || 'Malipo yameshindwa.');
         }
       } catch { /* ignore polling errors */ }
     }, 5000);
