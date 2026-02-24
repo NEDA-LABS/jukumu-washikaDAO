@@ -4,6 +4,10 @@ import { getAuthTokenPayload } from '@/lib/auth';
 import { createPaymentSession } from '@/lib/snippe';
 
 export async function POST(request: NextRequest) {
+  if (!process.env.SNIPPE_API_KEY) {
+    return NextResponse.json({ error: 'Payment service not configured (SNIPPE_API_KEY missing)' }, { status: 503 });
+  }
+
   const auth = getAuthTokenPayload(request);
   if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
