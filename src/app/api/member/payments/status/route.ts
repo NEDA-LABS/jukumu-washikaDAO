@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { getPaymentStatus } from '@/lib/snippe';
 import pool from '@/lib/db';
+import { ensureSnippeSchema } from '@/lib/snippe-db';
 
 export async function GET(request: NextRequest) {
   const auth = getAuthTokenPayload(request);
@@ -46,16 +47,34 @@ export async function GET(request: NextRequest) {
     const snippeRes = await getPaymentStatus(reference);
     const status = snippeRes.data.status;
 
-    // If Snippe says completed but webhook hasn't arrived yet, record it in DB
+    // If Snippe says completed/failed, ensure DB is up to date (upsert)
     if (status === 'completed' || status === 'failed') {
       const client2 = await pool.connect();
       try {
-        await client2.query(
-          `UPDATE snippe_payments SET status = $1 WHERE reference = $2 AND status NOT IN ('completed', 'failed')`,
+        await ensureSnippeSchema(client2);
+        // Update existing row first
+        const updateRes = await client2.query(
+          `UPDATE snippe_payments SET status = $1, completed_at = CASE WHEN $1 = 'completed' THEN NOW() ELSE completed_at END
+           WHERE reference = $2 AND status NOT IN ('completed', 'failed')
+           RETURNING id`,
           [status, reference]
         );
-      } catch {
-        // non-critical — webhook will handle it eventually
+        // If no row existed to update, insert a minimal record so summary queries work
+        if (updateRes.rowCount === 0) {
+          const existsRes = await client2.query(
+            `SELECT id FROM snippe_payments WHERE reference = $1`, [reference]
+          );
+          if (existsRes.rows.length === 0) {
+            await client2.query(
+              `INSERT INTO snippe_payments (reference, event_type, status, amount_tzs, payment_type, completed_at)
+               VALUES ($1, $2, $3, $4, 'contribution', CASE WHEN $3 = 'completed' THEN NOW() ELSE NULL END)
+               ON CONFLICT (reference) DO NOTHING`,
+              [reference, `payment.${status}`, status, snippeRes.data.amount?.value ?? 0]
+            );
+          }
+        }
+      } catch (dbErr) {
+        console.error('Status endpoint DB upsert error:', dbErr);
       } finally {
         client2.release();
       }

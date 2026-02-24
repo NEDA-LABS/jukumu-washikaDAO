@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { createMobilePayment } from '@/lib/snippe';
+import { insertPendingPayment } from '@/lib/snippe-db';
 
 export async function POST(request: NextRequest) {
   if (!process.env.SNIPPE_API_KEY) {
@@ -94,6 +95,23 @@ export async function POST(request: NextRequest) {
       phone_number: phoneNumber.replace(/^\+/, ''),
       customer: { firstname, lastname },
       webhook_url: webhookUrl,
+      metadata: {
+        payment_type: 'contribution',
+        member_id: String(member.id),
+        group_id: String(group.id),
+        contribution_month: contributionMonth,
+      },
+    });
+
+    // Pre-insert pending record so polling & summary queries work even if webhook is slow
+    await insertPendingPayment(client, {
+      reference: payment.data.reference,
+      amount: amountTzs,
+      phone: phoneNumber.replace(/^\+/, ''),
+      customerName: member.full_name,
+      paymentType: 'contribution',
+      memberId: member.id,
+      groupId: group.id,
       metadata: {
         payment_type: 'contribution',
         member_id: String(member.id),
