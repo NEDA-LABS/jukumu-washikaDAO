@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <Header />
       <main>
         <RegistrationSection title="Jisajili kwa washikaDAU" />

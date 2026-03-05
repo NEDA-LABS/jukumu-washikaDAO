@@ -87,29 +87,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-accent to-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="flex items-center justify-center space-x-2 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-red-500">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-primary to-destructive">
               <span className="text-xl font-bold text-white">W</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">WashikaDAU</h1>
+              <h1 className="text-2xl font-bold text-foreground">JUKUMU</h1>
             </div>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Ingia kwenye akaunti yako</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="text-3xl font-bold text-foreground">Ingia kwenye akaunti yako</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             Au{' '}
-            <Link href="/register" className="font-medium text-orange-600 hover:text-orange-500">
+            <Link href="/register" className="font-medium text-primary hover:text-primary/80">
               jisajili kama mwanachama mpya
             </Link>
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-card rounded-xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -118,7 +118,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="identifier" className="block text-sm font-medium text-muted-foreground mb-2">
                 Barua pepe au nambari ya simu
               </label>
               <input
@@ -128,13 +128,13 @@ export default function LoginPage() {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                 placeholder="07xx xxx xxx au email@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-muted-foreground mb-2">
                 Nywila
               </label>
               <div className="relative">
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200 pr-12"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200 pr-12"
                   placeholder="Weka nywila yako"
                 />
                 <button
@@ -168,15 +168,15 @@ export default function LoginPage() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
                   Nikumbuke
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-orange-600 hover:text-orange-500">
+                <a href="#" className="font-medium text-primary hover:text-primary/80">
                   Umesahau nywila?
                 </a>
               </div>
@@ -185,7 +185,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {isLoading ? (
                 <div className="flex items-center">

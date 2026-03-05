@@ -417,25 +417,25 @@ export default function MemberGroupDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start justify-between gap-4">
           <div>
             <button
               onClick={() => router.push('/member-dashboard?section=group')}
-              className="text-sm text-orange-700 hover:text-orange-800"
+              className="text-sm text-primary hover:text-accent-foreground"
             >
               ← Back to My Groups
             </button>
-            <h1 className="mt-2 text-2xl font-bold text-gray-900">{group?.name || 'Group'}</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="mt-2 text-2xl font-bold text-foreground">{group?.name || 'Group'}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Role: <span className="font-medium">{roleLabel(membership?.role)}</span>
             </p>
           </div>
@@ -449,15 +449,15 @@ export default function MemberGroupDetailsPage() {
               disabled={!canCreateProposal}
               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                 canCreateProposal
-                  ? 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                  : 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
               }`}
             >
               Create Proposal
             </button>
             <button
               onClick={() => alert('Coming soon: Vote on proposals')}
-              className="px-4 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
             >
               Vote
             </button>
@@ -468,13 +468,13 @@ export default function MemberGroupDetailsPage() {
           <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
         )}
 
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="border-b border-gray-200 px-4">
+        <div className="mt-6 bg-card rounded-lg shadow-sm border border-border">
+          <div className="border-b border-border px-4">
             <nav className="flex gap-6">
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'overview' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                  activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 Overview
@@ -482,7 +482,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={() => setActiveTab('members')}
                 className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'members' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                  activeTab === 'members' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 Members
@@ -490,7 +490,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={() => setActiveTab('leadership')}
                 className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'leadership' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                  activeTab === 'leadership' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 Leadership
@@ -498,7 +498,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={() => setActiveTab('fedha')}
                 className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'fedha' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                  activeTab === 'fedha' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 Fedha
@@ -506,7 +506,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={() => setActiveTab('decisions')}
                 className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'decisions' ? 'border-orange-600 text-orange-700' : 'border-transparent text-gray-600'
+                  activeTab === 'decisions' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 Decisions
@@ -518,19 +518,19 @@ export default function MemberGroupDetailsPage() {
             {activeTab === 'overview' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <p className="text-xs text-gray-500">Monthly Contribution</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                  <div className="border border-border rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground">Monthly Contribution</p>
+                    <p className="text-lg font-semibold text-foreground">
                       TSH {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
                     </p>
                   </div>
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <p className="text-xs text-gray-500">Members</p>
-                    <p className="text-lg font-semibold text-gray-900">{group?.member_count ?? members.length}</p>
+                  <div className="border border-border rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground">Members</p>
+                    <p className="text-lg font-semibold text-foreground">{group?.member_count ?? members.length}</p>
                   </div>
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <p className="text-xs text-gray-500">Leader</p>
-                    <p className="text-lg font-semibold text-gray-900">{group?.leader_name || '—'}</p>
+                  <div className="border border-border rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground">Leader</p>
+                    <p className="text-lg font-semibold text-foreground">{group?.leader_name || '—'}</p>
                   </div>
                 </div>
 
@@ -538,7 +538,7 @@ export default function MemberGroupDetailsPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleOpenPay('contribution')}
-                    className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                    className="flex-1 px-4 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     💳 Lipa Mchango
                   </button>
@@ -560,9 +560,9 @@ export default function MemberGroupDetailsPage() {
                     <p className="text-xs text-blue-600">Mwezi Huu</p>
                     <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
                   </div>
-                  <div className="border border-orange-200 bg-orange-50 rounded-lg p-3">
-                    <p className="text-xs text-orange-600">Waliolipa Mwezi Huu</p>
-                    <p className="text-lg font-semibold text-orange-800">{paymentSummary.this_month_payers}</p>
+                  <div className="border border-primary/20 bg-accent rounded-lg p-3">
+                    <p className="text-xs text-primary">Waliolipa Mwezi Huu</p>
+                    <p className="text-lg font-semibold text-accent-foreground">{paymentSummary.this_month_payers}</p>
                   </div>
                   <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
                     <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
@@ -570,11 +570,11 @@ export default function MemberGroupDetailsPage() {
                   </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                <div className="border border-border rounded-lg p-4 bg-card">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Group Wallet (USDC)</p>
-                      <p className="text-sm text-gray-600 mt-1">Visible to all group members.</p>
+                      <p className="text-sm font-medium text-foreground">Group Wallet (USDC)</p>
+                      <p className="text-sm text-muted-foreground mt-1">Visible to all group members.</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {walletSummary?.wallet === null && canCreateProposal && (
@@ -611,8 +611,8 @@ export default function MemberGroupDetailsPage() {
                           }}
                           className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
                             walletLoading
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
+                              ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
+                              : 'bg-primary text-white border-primary hover:bg-primary/90'
                           }`}
                         >
                           {walletLoading ? 'Creating...' : 'Create Wallet'}
@@ -644,7 +644,7 @@ export default function MemberGroupDetailsPage() {
                               setWalletLoading(false);
                             }
                           }}
-                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700 hover:bg-gray-50"
+                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
                         >
                           Refresh
                         </button>
@@ -660,20 +660,20 @@ export default function MemberGroupDetailsPage() {
 
                   {walletSummary?.wallet && (
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-500">Address</p>
-                        <p className="text-sm font-semibold text-gray-900 mt-1">{shortAddress(walletSummary.wallet.address)}</p>
-                        <p className="text-xs text-gray-500 mt-1">Network: {walletSummary.wallet.network}</p>
+                      <div className="border border-border rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">Address</p>
+                        <p className="text-sm font-semibold text-foreground mt-1">{shortAddress(walletSummary.wallet.address)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Network: {walletSummary.wallet.network}</p>
                       </div>
-                      <div className="border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-500">USDC Balance</p>
-                        <p className="text-sm font-semibold text-gray-900 mt-1">
+                      <div className="border border-border rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">USDC Balance</p>
+                        <p className="text-sm font-semibold text-foreground mt-1">
                           {formatBaseUnits(walletSummary.balances?.usdc?.amountBaseUnits, walletSummary.balances?.usdc?.decimals ?? 6)} USDC
                         </p>
                       </div>
-                      <div className="border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-500">ETH (Gas)</p>
-                        <p className="text-sm font-semibold text-gray-900 mt-1">
+                      <div className="border border-border rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">ETH (Gas)</p>
+                        <p className="text-sm font-semibold text-foreground mt-1">
                           {formatBaseUnits(walletSummary.balances?.eth?.amountBaseUnits, walletSummary.balances?.eth?.decimals ?? 18)} ETH
                         </p>
                       </div>
@@ -682,20 +682,20 @@ export default function MemberGroupDetailsPage() {
 
                   {walletSummary?.wallet && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-900">Recent Transfers</p>
+                      <p className="text-sm font-medium text-foreground">Recent Transfers</p>
                       <div className="mt-2 space-y-2">
                         {(walletSummary.recentTransfers || []).map((t) => (
-                          <div key={t.id} className="border border-gray-200 rounded-lg p-3">
+                          <div key={t.id} className="border border-border rounded-lg p-3">
                             <div className="flex items-start justify-between gap-4">
                               <div>
-                                <p className="text-sm font-semibold text-gray-900">
+                                <p className="text-sm font-semibold text-foreground">
                                   To: {shortAddress(t.to_address)}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   Amount: {formatBaseUnits(t.amount_base_units, 6)} USDC
                                 </p>
                               </div>
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-800 border border-gray-200">
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
                                 {t.status}
                               </span>
                             </div>
@@ -703,18 +703,18 @@ export default function MemberGroupDetailsPage() {
                         ))}
 
                         {(walletSummary.recentTransfers || []).length === 0 && (
-                          <p className="text-sm text-gray-600">No transfers yet.</p>
+                          <p className="text-sm text-muted-foreground">No transfers yet.</p>
                         )}
                       </div>
                     </div>
                   )}
 
                   {walletSummary?.wallet && (
-                    <div className="mt-6 border-t border-gray-200 pt-4">
+                    <div className="mt-6 border-t border-border pt-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Manage Transfers</p>
-                          <p className="text-sm text-gray-600 mt-1">USDC only. Requires 2-of-3 approvals (Mwenyekiti/Katibu/MwekaHazina).</p>
+                          <p className="text-sm font-medium text-foreground">Manage Transfers</p>
+                          <p className="text-sm text-muted-foreground mt-1">USDC only. Requires 2-of-3 approvals (Mwenyekiti/Katibu/MwekaHazina).</p>
                         </div>
                         <button
                           disabled={walletTransfersLoading}
@@ -740,7 +740,7 @@ export default function MemberGroupDetailsPage() {
                               setWalletTransfersLoading(false);
                             }
                           }}
-                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700 hover:bg-gray-50"
+                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
                         >
                           Refresh
                         </button>
@@ -800,20 +800,20 @@ export default function MemberGroupDetailsPage() {
                           }}
                         >
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">To address</label>
+                            <label className="block text-sm font-medium text-muted-foreground">To address</label>
                             <input
                               value={transferToAddress}
                               onChange={(e) => setTransferToAddress(e.target.value)}
-                              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                               placeholder="0x..."
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Amount (USDC)</label>
+                            <label className="block text-sm font-medium text-muted-foreground">Amount (USDC)</label>
                             <input
                               value={transferAmount}
                               onChange={(e) => setTransferAmount(e.target.value)}
-                              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                               placeholder="e.g. 10.5"
                             />
                           </div>
@@ -823,8 +823,8 @@ export default function MemberGroupDetailsPage() {
                               disabled={transferSubmitting}
                               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                                 transferSubmitting
-                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                  : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
+                                  ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
+                                  : 'bg-primary text-white border-primary hover:bg-primary/90'
                               }`}
                             >
                               {transferSubmitting ? 'Submitting...' : 'Propose Transfer'}
@@ -835,15 +835,15 @@ export default function MemberGroupDetailsPage() {
 
                       <div className="mt-4 space-y-2">
                         {walletTransfers.map((t) => (
-                          <div key={t.id} className="border border-gray-200 rounded-lg p-3">
+                          <div key={t.id} className="border border-border rounded-lg p-3">
                             <div className="flex items-start justify-between gap-4">
                               <div>
-                                <p className="text-sm font-semibold text-gray-900">Transfer #{t.id}</p>
-                                <p className="text-xs text-gray-500 mt-1">To: {shortAddress(t.to_address)}</p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-sm font-semibold text-foreground">Transfer #{t.id}</p>
+                                <p className="text-xs text-muted-foreground mt-1">To: {shortAddress(t.to_address)}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
                                   Amount: {formatBaseUnits(t.amount_base_units, 6)} USDC
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   Approvals: {t.approval_count ?? 0}/{t.approvals_required}
                                 </p>
                                 {t.executed_tx_hash && (
@@ -851,14 +851,14 @@ export default function MemberGroupDetailsPage() {
                                     href={`https://basescan.org/tx/${t.executed_tx_hash}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs text-orange-700 hover:text-orange-800 mt-1 inline-block"
+                                    className="text-xs text-primary hover:text-accent-foreground mt-1 inline-block"
                                   >
                                     View on BaseScan
                                   </a>
                                 )}
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-800 border border-gray-200">
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
                                   {t.status}
                                 </span>
 
@@ -897,7 +897,7 @@ export default function MemberGroupDetailsPage() {
                                         }
                                       }}
                                       disabled={walletTransfersLoading}
-                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700 hover:bg-gray-50"
+                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
                                     >
                                       Approve
                                     </button>
@@ -938,7 +938,7 @@ export default function MemberGroupDetailsPage() {
                                         }
                                       }}
                                       disabled={walletTransfersLoading}
-                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-orange-600 text-white border-orange-600 hover:bg-orange-700"
+                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-primary text-white border-primary hover:bg-primary/90"
                                     >
                                       Execute
                                     </button>
@@ -950,7 +950,7 @@ export default function MemberGroupDetailsPage() {
                         ))}
 
                         {walletTransfers.length === 0 && (
-                          <p className="text-sm text-gray-600">No transfer proposals yet.</p>
+                          <p className="text-sm text-muted-foreground">No transfer proposals yet.</p>
                         )}
                       </div>
                     </div>
@@ -958,20 +958,20 @@ export default function MemberGroupDetailsPage() {
 
                   {walletSummary?.wallet === null && !walletLoading && !walletError && (
                     <div className="mt-3">
-                      <p className="text-sm text-gray-600">No wallet created yet.</p>
+                      <p className="text-sm text-muted-foreground">No wallet created yet.</p>
                     </div>
                   )}
                 </div>
 
-                <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                <div className="border border-border rounded-lg p-4 bg-card">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Recent Proposals</p>
-                      <p className="text-sm text-gray-600 mt-1">Visible to all group members.</p>
+                      <p className="text-sm font-medium text-foreground">Recent Proposals</p>
+                      <p className="text-sm text-muted-foreground mt-1">Visible to all group members.</p>
                     </div>
                     <button
                       onClick={() => setActiveTab('decisions')}
-                      className="text-sm text-orange-700 hover:text-orange-800"
+                      className="text-sm text-primary hover:text-accent-foreground"
                     >
                       View all
                     </button>
@@ -982,21 +982,21 @@ export default function MemberGroupDetailsPage() {
                       <button
                         key={p.id}
                         onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                        className="w-full text-left border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                        className="w-full text-left border border-border rounded-lg p-3 hover:bg-muted transition-colors"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{p.title}</p>
-                            <p className="text-xs text-gray-500 mt-1">Created by: {p.created_by_name || '—'}</p>
+                            <p className="text-sm font-semibold text-foreground">{p.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Created by: {p.created_by_name || '—'}</p>
                           </div>
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-800 border border-gray-200">
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
                             {String(p.status)}
                           </span>
                         </div>
                       </button>
                     ))}
 
-                    {recentProposals.length === 0 && <p className="text-sm text-gray-600">No proposals yet.</p>}
+                    {recentProposals.length === 0 && <p className="text-sm text-muted-foreground">No proposals yet.</p>}
                   </div>
                 </div>
               </div>
@@ -1005,23 +1005,23 @@ export default function MemberGroupDetailsPage() {
             {activeTab === 'members' && (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      {isLeader && <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mchango Mwezi Huu</th>}
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                      {isLeader && <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mchango Mwezi Huu</th>}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-card divide-y divide-gray-200">
                     {members.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50">
+                      <tr key={m.id} className="hover:bg-muted">
                         <td className="px-4 py-2 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{m.full_name}</div>
-                          <div className="text-xs text-gray-500">{m.email || m.phone || ''}</div>
+                          <div className="text-sm font-medium text-foreground">{m.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{m.email || m.phone || ''}</div>
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{roleLabel(m.role)}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{m.status || 'active'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-foreground">{roleLabel(m.role)}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-foreground">{m.status || 'active'}</td>
                         {isLeader && (
                           <td className="px-4 py-2 whitespace-nowrap">
                             {(() => {
@@ -1040,27 +1040,27 @@ export default function MemberGroupDetailsPage() {
                   </tbody>
                 </table>
 
-                {members.length === 0 && <p className="text-sm text-gray-600">No members found.</p>}
+                {members.length === 0 && <p className="text-sm text-muted-foreground">No members found.</p>}
               </div>
             )}
 
             {activeTab === 'leadership' && (
               <div className="space-y-3">
                 {leadership.map((l) => (
-                  <div key={l.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={l.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{l.full_name}</p>
-                        <p className="text-xs text-gray-500">{l.email || ''}</p>
+                        <p className="text-sm font-semibold text-foreground">{l.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{l.email || ''}</p>
                       </div>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-orange-50 text-orange-800 border border-orange-200">
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-accent text-accent-foreground border border-primary/20">
                         {roleLabel(l.role)}
                       </span>
                     </div>
                   </div>
                 ))}
 
-                {leadership.length === 0 && <p className="text-sm text-gray-600">No leadership assigned yet.</p>}
+                {leadership.length === 0 && <p className="text-sm text-muted-foreground">No leadership assigned yet.</p>}
               </div>
             )}
 
@@ -1076,9 +1076,9 @@ export default function MemberGroupDetailsPage() {
                     <p className="text-xs text-blue-600">Mwezi Huu</p>
                     <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
                   </div>
-                  <div className="border border-orange-200 bg-orange-50 rounded-lg p-3">
-                    <p className="text-xs text-orange-600">Waliolipa</p>
-                    <p className="text-lg font-semibold text-orange-800">{paymentSummary.this_month_payers} / {members.length}</p>
+                  <div className="border border-primary/20 bg-accent rounded-lg p-3">
+                    <p className="text-xs text-primary">Waliolipa</p>
+                    <p className="text-lg font-semibold text-accent-foreground">{paymentSummary.this_month_payers} / {members.length}</p>
                   </div>
                   <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
                     <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
@@ -1088,7 +1088,7 @@ export default function MemberGroupDetailsPage() {
 
                 {/* Pay Buttons */}
                 <div className="flex gap-3">
-                  <button onClick={() => handleOpenPay('contribution')} className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+                  <button onClick={() => handleOpenPay('contribution')} className="flex-1 px-4 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90">
                     💳 Lipa Mchango
                   </button>
                   <button onClick={() => handleOpenPay('topup')} className="flex-1 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
@@ -1098,14 +1098,14 @@ export default function MemberGroupDetailsPage() {
 
                 {/* Member Payment Status (Leaders only) */}
                 {isLeader && memberPaymentStatus.length > 0 && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <p className="text-sm font-medium text-gray-900 mb-3">Hali ya Michango - {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}</p>
+                  <div className="border border-border rounded-lg p-4 bg-card">
+                    <p className="text-sm font-medium text-foreground mb-3">Hali ya Michango - {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}</p>
                     <div className="space-y-2">
                       {memberPaymentStatus.map((mp: any) => (
                         <div key={mp.member_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{mp.full_name}</p>
-                            <p className="text-xs text-gray-500">{mp.phone || ''}</p>
+                            <p className="text-sm font-medium text-foreground">{mp.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{mp.phone || ''}</p>
                           </div>
                           {mp.paid_this_month ? (
                             <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Amelipa ✓</span>
@@ -1120,45 +1120,45 @@ export default function MemberGroupDetailsPage() {
 
                 {/* Disbursement Form (Leaders only) */}
                 {isLeader && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <p className="text-sm font-medium text-gray-900 mb-1">Tuma Fedha kwa Mwanachama</p>
-                    <p className="text-xs text-gray-500 mb-3">Tuma pesa moja kwa moja kwa simu ya mwanachama kupitia mobile money.</p>
+                  <div className="border border-border rounded-lg p-4 bg-card">
+                    <p className="text-sm font-medium text-foreground mb-1">Tuma Fedha kwa Mwanachama</p>
+                    <p className="text-xs text-muted-foreground mb-3">Tuma pesa moja kwa moja kwa simu ya mwanachama kupitia mobile money.</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Jina la Mpokeaji</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Jina la Mpokeaji</label>
                         <input
                           value={disburseName}
                           onChange={(e) => { setDisburseName(e.target.value); setDisburseError(''); }}
                           placeholder="e.g. John Doe"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Nambari ya Simu</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Nambari ya Simu</label>
                         <input
                           value={disbursePhone}
                           onChange={(e) => { setDisbursePhone(e.target.value); setDisburseError(''); }}
                           placeholder="255712345678"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
                         <input
                           type="number"
                           value={disburseAmount}
                           onChange={(e) => { setDisburseAmount(e.target.value); setDisburseError(''); }}
                           placeholder="e.g. 50000"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Mtandao</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Mtandao</label>
                         <select
                           value={disburseProvider}
                           onChange={(e) => setDisburseProvider(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="airtel">Airtel Money</option>
                           <option value="mpesa">M-Pesa</option>
@@ -1168,12 +1168,12 @@ export default function MemberGroupDetailsPage() {
                       </div>
                     </div>
                     <div className="mt-3">
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Maelezo (si lazima)</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Maelezo (si lazima)</label>
                       <input
                         value={disburseDesc}
                         onChange={(e) => setDisburseDesc(e.target.value)}
                         placeholder="e.g. Malipo ya mkopo"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
                     {disburseError && <p className="text-xs text-red-600 mt-2">{disburseError}</p>}
@@ -1189,31 +1189,31 @@ export default function MemberGroupDetailsPage() {
                 )}
 
                 {/* Payment History */}
-                <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Historia ya Malipo</p>
+                <div className="border border-border rounded-lg p-4 bg-card">
+                  <p className="text-sm font-medium text-foreground mb-3">Historia ya Malipo</p>
                   {groupPayments.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-muted">
                           <tr>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tarehe</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aina</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mwanachama</th>
-                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Kiasi</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hali</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Tarehe</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Aina</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Mwanachama</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Kiasi</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Hali</th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-card divide-y divide-gray-200">
                           {groupPayments.map((p: any) => (
-                            <tr key={p.reference} className="hover:bg-gray-50">
-                              <td className="px-3 py-2 text-xs text-gray-600">
+                            <tr key={p.reference} className="hover:bg-muted">
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
                                 {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                               </td>
-                              <td className="px-3 py-2 text-xs text-gray-700">
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
                                 {p.payment_type === 'contribution' ? 'Mchango' : p.payment_type === 'group_topup' ? 'Mfuko' : 'Malipo'}
                               </td>
-                              <td className="px-3 py-2 text-xs text-gray-700">{p.member_name || p.customer_name || '—'}</td>
-                              <td className="px-3 py-2 text-xs text-gray-900 text-right font-medium">
+                              <td className="px-3 py-2 text-xs text-muted-foreground">{p.member_name || p.customer_name || '—'}</td>
+                              <td className="px-3 py-2 text-xs text-foreground text-right font-medium">
                                 {p.payment_type === 'disbursement' ? '-' : '+'}TSH {parseInt(p.amount_tzs || 0).toLocaleString()}
                               </td>
                               <td className="px-3 py-2">
@@ -1230,7 +1230,7 @@ export default function MemberGroupDetailsPage() {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-600">Hakuna malipo bado.</p>
+                    <p className="text-sm text-muted-foreground">Hakuna malipo bado.</p>
                   )}
                 </div>
               </div>
@@ -1239,15 +1239,15 @@ export default function MemberGroupDetailsPage() {
             {activeTab === 'decisions' && (
               <div className="space-y-3">
                 {showCreateProposal && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <div className="border border-border rounded-lg p-4 bg-card">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Create Proposal</p>
-                        <p className="text-sm text-gray-600 mt-1">Only leadership roles can create proposals.</p>
+                        <p className="text-sm font-medium text-foreground">Create Proposal</p>
+                        <p className="text-sm text-muted-foreground mt-1">Only leadership roles can create proposals.</p>
                       </div>
                       <button
                         onClick={() => setShowCreateProposal(false)}
-                        className="text-sm text-gray-600 hover:text-gray-800"
+                        className="text-sm text-muted-foreground hover:text-gray-800"
                       >
                         Close
                       </button>
@@ -1308,20 +1308,20 @@ export default function MemberGroupDetailsPage() {
                       }}
                     >
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Title</label>
+                        <label className="block text-sm font-medium text-muted-foreground">Title</label>
                         <input
                           value={proposalTitle}
                           onChange={(e) => setProposalTitle(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           placeholder="e.g. Increase monthly contribution"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <label className="block text-sm font-medium text-muted-foreground">Description</label>
                         <textarea
                           value={proposalDescription}
                           onChange={(e) => setProposalDescription(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           placeholder="Explain the proposal..."
                           rows={4}
                         />
@@ -1332,8 +1332,8 @@ export default function MemberGroupDetailsPage() {
                           disabled={proposalSubmitting || !canCreateProposal}
                           className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                             proposalSubmitting || !canCreateProposal
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
+                              ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
+                              : 'bg-primary text-white border-primary hover:bg-primary/90'
                           }`}
                         >
                           {proposalSubmitting ? 'Creating...' : 'Create'}
@@ -1341,7 +1341,7 @@ export default function MemberGroupDetailsPage() {
                         <button
                           type="button"
                           onClick={() => setShowCreateProposal(false)}
-                          className="px-4 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700 hover:bg-gray-50"
+                          className="px-4 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
                         >
                           Cancel
                         </button>
@@ -1350,24 +1350,24 @@ export default function MemberGroupDetailsPage() {
                   </div>
                 )}
 
-                <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                  <p className="text-sm font-medium text-gray-900">Proposals</p>
-                  <p className="text-sm text-gray-600 mt-1">Latest proposals for this group.</p>
+                <div className="border border-border rounded-lg p-4 bg-card">
+                  <p className="text-sm font-medium text-foreground">Proposals</p>
+                  <p className="text-sm text-muted-foreground mt-1">Latest proposals for this group.</p>
                 </div>
 
                 {proposals.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                    className="w-full text-left border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors"
+                    className="w-full text-left border border-border rounded-lg p-4 bg-card hover:bg-muted transition-colors"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{p.title}</p>
-                        {p.description && <p className="text-sm text-gray-700 mt-1">{p.description}</p>}
-                        <p className="text-xs text-gray-500 mt-2">Created by: {p.created_by_name || '—'}</p>
+                        <p className="text-sm font-semibold text-foreground">{p.title}</p>
+                        {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-2">Created by: {p.created_by_name || '—'}</p>
                       </div>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-800 border border-gray-200">
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
                         {String(p.status)}
                       </span>
                     </div>
@@ -1375,8 +1375,8 @@ export default function MemberGroupDetailsPage() {
                 ))}
 
                 {proposals.length === 0 && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <p className="text-sm text-gray-600">No proposals yet.</p>
+                  <div className="border border-border rounded-lg p-4 bg-card">
+                    <p className="text-sm text-muted-foreground">No proposals yet.</p>
                   </div>
                 )}
               </div>
@@ -1388,35 +1388,35 @@ export default function MemberGroupDetailsPage() {
       {/* USSD Push Payment Modal */}
       {payModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-sm mx-4">
 
             {payStatus === 'input' && (
               <>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                <h3 className="text-lg font-semibold text-foreground mb-1">
                   {payModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">{group?.name}</p>
+                <p className="text-sm text-muted-foreground mb-4">{group?.name}</p>
 
                 {payModal.type === 'contribution' && (
-                  <p className="text-xs text-gray-500 mb-3">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Mchango wa kawaida: TSH {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
                   </p>
                 )}
 
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kiasi (TZS)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
                 <input
                   type="number" min="1" value={payAmount}
                   onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
                   placeholder="e.g. 50000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 border border-border rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
 
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nambari ya Simu</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Nambari ya Simu</label>
                 <input
                   type="tel" value={payPhone}
                   onChange={(e) => { setPayPhone(e.target.value); setPayError(''); }}
                   placeholder="255712345678"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 border border-border rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
 
@@ -1426,11 +1426,11 @@ export default function MemberGroupDetailsPage() {
 
                 <div className="flex space-x-3">
                   <button onClick={handleClosePay} disabled={payLoading}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+                    className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted disabled:opacity-50">
                     Ghairi
                   </button>
                   <button onClick={handlePay} disabled={payLoading}
-                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
+                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50">
                     {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
                   </button>
                 </div>
@@ -1439,14 +1439,14 @@ export default function MemberGroupDetailsPage() {
 
             {payStatus === 'waiting' && (
               <div className="text-center py-4">
-                <div className="inline-block w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Inasubiri Uthibitisho...</h3>
-                <p className="text-sm text-gray-600 mb-2">Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong></p>
+                <div className="inline-block w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Inasubiri Uthibitisho...</h3>
+                <p className="text-sm text-muted-foreground mb-2">Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong></p>
                 <p className="text-xs text-gray-400 mb-4">Tafadhali ingiza PIN yako kwenye simu yako kuthibitisha malipo ya TSH {parseInt(payAmount).toLocaleString()}</p>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-orange-700">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
+                <div className="bg-accent border border-primary/20 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-primary">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
                 </div>
-                <button onClick={handleClosePay} className="text-sm text-gray-500 hover:text-gray-700 underline">Ghairi</button>
+                <button onClick={handleClosePay} className="text-sm text-muted-foreground hover:text-muted-foreground underline">Ghairi</button>
               </div>
             )}
 
@@ -1458,7 +1458,7 @@ export default function MemberGroupDetailsPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-green-800 mb-2">Malipo Yamefanikiwa!</h3>
-                <p className="text-sm text-gray-600 mb-1">TSH {parseInt(payAmount).toLocaleString()} - {group?.name}</p>
+                <p className="text-sm text-muted-foreground mb-1">TSH {parseInt(payAmount).toLocaleString()} - {group?.name}</p>
                 <p className="text-xs text-gray-400 mb-4">Ref: {payReference}</p>
                 <button onClick={handleClosePay} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Funga</button>
               </div>
@@ -1474,8 +1474,8 @@ export default function MemberGroupDetailsPage() {
                 <h3 className="text-lg font-semibold text-red-800 mb-2">Malipo Yameshindwa</h3>
                 {payError && <p className="text-sm text-red-600 mb-4">{payError}</p>}
                 <div className="flex space-x-3">
-                  <button onClick={handleClosePay} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Funga</button>
-                  <button onClick={() => { setPayStatus('input'); setPayError(''); }} className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Jaribu Tena</button>
+                  <button onClick={handleClosePay} className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted">Funga</button>
+                  <button onClick={() => { setPayStatus('input'); setPayError(''); }} className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Jaribu Tena</button>
                 </div>
               </div>
             )}

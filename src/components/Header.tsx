@@ -17,16 +17,16 @@ export default function Header() {
   ];
 
   return (
-    <header className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-200">
+    <header className="fixed w-full top-0 z-50 bg-card/80 backdrop-blur border-b border-border">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="flex w-full items-center justify-between py-5">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900">
-                <span className="text-lg font-bold text-white">J</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground">
+                <span className="text-lg font-bold text-background">J</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">JUKUMU</h1>
+                <h1 className="text-xl font-bold text-foreground">JUKUMU</h1>
               </div>
             </Link>
           </div>
@@ -36,7 +36,7 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-100"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-muted"
               >
                 <span>{item.name}</span>
               </Link>
@@ -47,7 +47,7 @@ export default function Header() {
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
-              className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+              className="rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors duration-200"
             >
               <span>{language === 'sw' ? 'EN' : 'SW'}</span>
             </button>
@@ -55,7 +55,7 @@ export default function Header() {
             {/* Login Button */}
             <Link
               href="/login"
-              className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors duration-200"
+              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors duration-200"
             >
               {t('nav.login')}
             </Link>
@@ -64,7 +64,7 @@ export default function Header() {
             <div className="flex lg:hidden">
               <button
                 type="button"
-                className="rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                className="rounded-md bg-card p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 <span className="sr-only">Open menu</span>
@@ -85,7 +85,7 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                className="rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span>{item.name}</span>

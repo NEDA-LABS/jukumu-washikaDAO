@@ -120,12 +120,12 @@ export default function RegistrationSection({ title }: { title?: string }) {
 
   if (isSubmitted) {
     return (
-      <section id="join" className="py-16 bg-gradient-to-br from-green-50 to-blue-50">
+      <section id="join" className="py-16 bg-gradient-to-br from-success/10 to-muted">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-white rounded-xl p-8 shadow-lg">
+          <div className="bg-card rounded-xl p-8 shadow-lg">
             <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Asante!</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Asante!</h2>
+            <p className="text-muted-foreground mb-6">
               Ombi lako limepokelewa. Timu yetu itawasiliana nawe hivi karibuni.
             </p>
             <button
@@ -145,7 +145,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   age: '',
                 });
               }}
-              className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-200"
             >
               Sajili Mwingine
             </button>
@@ -156,7 +156,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
   }
 
   return (
-    <section id="join" className="relative py-24 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-hidden">
+    <section id="join" className="relative py-24 bg-gradient-to-br from-accent via-destructive/5 to-muted overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -169,13 +169,13 @@ export default function RegistrationSection({ title }: { title?: string }) {
           {/* Left Side - Images and Info */}
           <div className="space-y-8">
             <div className="text-left">
-              <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-6">
-                <span className="text-orange-600 text-sm font-semibold">Jiunge Nasi</span>
+              <div className="inline-flex items-center px-4 py-2 bg-accent rounded-full mb-6">
+                <span className="text-primary text-sm font-semibold">Jiunge Nasi</span>
               </div>
-              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
                 {title ?? t('registration.title')}
               </h2>
-              <p className="text-xl text-gray-600 leading-relaxed mb-8">
+              <p className="text-xl text-muted-foreground leading-relaxed mb-8">
                 Jiunge na jamii ya wajasiriamali na uanze safari yako ya mafanikio kupitia ushirikiano na mafunzo ya kisasa.
               </p>
               
@@ -185,19 +185,19 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <CheckCircleIcon className="h-5 w-5 text-green-600" />
                   </div>
-                  <span className="text-gray-700">Mafunzo ya biashara bila malipo</span>
+                  <span className="text-muted-foreground">Mafunzo ya biashara bila malipo</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <CheckCircleIcon className="h-5 w-5 text-green-600" />
                   </div>
-                  <span className="text-gray-700">Uongozi wa kikundi na msaada wa mtandao</span>
+                  <span className="text-muted-foreground">Uongozi wa kikundi na msaada wa mtandao</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <CheckCircleIcon className="h-5 w-5 text-green-600" />
                   </div>
-                  <span className="text-gray-700">Fursa za uwekezaji na ukuaji wa biashara</span>
+                  <span className="text-muted-foreground">Fursa za uwekezaji na ukuaji wa biashara</span>
                 </div>
               </div>
             </div>
@@ -244,10 +244,10 @@ export default function RegistrationSection({ title }: { title?: string }) {
           </div>
 
           {/* Right Side - Registration Form */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-12">
+          <div className="bg-card rounded-3xl shadow-2xl p-8 lg:p-12">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Jaza Fomu</h3>
-              <p className="text-gray-600">Hatua ya kwanza ya kujiunge na JUKUMU</p>
+              <h3 className="text-2xl font-bold text-foreground mb-2">Jaza Fomu</h3>
+              <p className="text-muted-foreground">Hatua ya kwanza ya kujiunge na JUKUMU</p>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -259,7 +259,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Full Name */}
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-muted-foreground mb-2">
                   {t('registration.name')} *
                 </label>
                 <input
@@ -269,14 +269,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="Jina lako kamili"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-muted-foreground mb-2">
                   Barua Pepe (si lazima)
                 </label>
                 <input
@@ -285,14 +285,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="email@example.com"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-muted-foreground mb-2">
                   Nambari ya Simu *
                 </label>
                 <input
@@ -302,14 +302,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="+255 123 456 789"
                 />
               </div>
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-muted-foreground mb-2">
                   Nywila *
                 </label>
                 <input
@@ -319,14 +319,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="Weka nywila yako"
                 />
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted-foreground mb-2">
                   Thibitisha Nywila *
                 </label>
                 <input
@@ -336,14 +336,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="Rudia nywila yako"
                 />
               </div>
 
               {/* Location */}
               <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="location" className="block text-sm font-medium text-muted-foreground mb-2">
                   {t('registration.location')} *
                 </label>
                 <input
@@ -353,14 +353,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.location}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="Mji/Mkoa"
                 />
               </div>
 
               {/* Business Type */}
               <div>
-                <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="businessType" className="block text-sm font-medium text-muted-foreground mb-2">
                   {t('registration.business_type')} *
                 </label>
                 <select
@@ -369,7 +369,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.businessType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200 text-gray-900"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200 text-foreground"
                 >
                   <option value="">Chagua aina ya biashara</option>
                   <option value="kilimo">Kilimo</option>
@@ -384,7 +384,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
 
               {/* ID Type */}
               <div>
-                <label htmlFor="idType" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="idType" className="block text-sm font-medium text-muted-foreground mb-2">
                   Aina ya Kitambulisho *
                 </label>
                 <select
@@ -393,7 +393,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.idType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200 text-gray-900"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200 text-foreground"
                 >
                   <option value="">Chagua aina ya kitambulisho</option>
                   <option value="national_id">Kitambulisho cha Taifa</option>
@@ -404,7 +404,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
 
               {/* ID Number */}
               <div>
-                <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="idNumber" className="block text-sm font-medium text-muted-foreground mb-2">
                   Nambari ya Kitambulisho *
                 </label>
                 <input
@@ -414,14 +414,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.idNumber}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                   placeholder="Ingiza nambari ya kitambulisho"
                 />
               </div>
 
               {/* Gender */}
               <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="gender" className="block text-sm font-medium text-muted-foreground mb-2">
                   {t('registration.gender')} *
                 </label>
                 <select
@@ -430,7 +430,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   required
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200 text-gray-900"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200 text-foreground"
                 >
                   <option value="">Chagua jinsia</option>
                   <option value="mwanamke">Mwanamke</option>
@@ -441,7 +441,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
 
             {/* Age */}
             <div className="md:w-1/2">
-              <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="age" className="block text-sm font-medium text-muted-foreground mb-2">
                 {t('registration.age')} *
               </label>
               <input
@@ -453,7 +453,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                 max="100"
                 value={formData.age}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-200"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                 placeholder="Umri wako"
               />
             </div>
@@ -463,7 +463,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center px-8 py-4 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-flex items-center px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {isSubmitting ? (
                   <>

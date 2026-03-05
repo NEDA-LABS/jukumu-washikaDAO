@@ -1,48 +1,103 @@
 @import "tailwindcss";
 
+/* ── JUKUMU Design Tokens ── */
+/* Light theme (default) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ds-background: #ffffff;
+  --ds-foreground: #0a0a0a;
+  --ds-card: #ffffff;
+  --ds-card-foreground: #0a0a0a;
+  --ds-muted: #f4f4f5;
+  --ds-muted-foreground: #71717a;
+  --ds-border: #e4e4e7;
+  --ds-input: #e4e4e7;
+  --ds-primary: #ea580c;
+  --ds-primary-foreground: #ffffff;
+  --ds-secondary: #f97316;
+  --ds-secondary-foreground: #ffffff;
+  --ds-accent: #fff7ed;
+  --ds-accent-foreground: #9a3412;
+  --ds-destructive: #dc2626;
+  --ds-destructive-foreground: #ffffff;
+  --ds-success: #16a34a;
+  --ds-success-foreground: #ffffff;
+  --ds-warning: #ca8a04;
+  --ds-warning-foreground: #ffffff;
+  --ds-ring: #ea580c;
+  --ds-radius-sm: 0.375rem;
+  --ds-radius-md: 0.5rem;
+  --ds-radius-lg: 0.75rem;
+  --ds-radius-xl: 1rem;
 }
 
+/* Dark theme */
+:root.dark {
+  --ds-background: #0a0a0a;
+  --ds-foreground: #fafafa;
+  --ds-card: #18181b;
+  --ds-card-foreground: #fafafa;
+  --ds-muted: #27272a;
+  --ds-muted-foreground: #a1a1aa;
+  --ds-border: #3f3f46;
+  --ds-input: #3f3f46;
+  --ds-primary: #f97316;
+  --ds-primary-foreground: #ffffff;
+  --ds-secondary: #ea580c;
+  --ds-secondary-foreground: #ffffff;
+  --ds-accent: #431407;
+  --ds-accent-foreground: #fed7aa;
+  --ds-destructive: #ef4444;
+  --ds-destructive-foreground: #ffffff;
+  --ds-success: #22c55e;
+  --ds-success-foreground: #ffffff;
+  --ds-warning: #eab308;
+  --ds-warning-foreground: #000000;
+  --ds-ring: #f97316;
+}
+
+/* ── Map tokens to Tailwind v4 theme ── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--ds-background);
+  --color-foreground: var(--ds-foreground);
+  --color-card: var(--ds-card);
+  --color-card-foreground: var(--ds-card-foreground);
+  --color-muted: var(--ds-muted);
+  --color-muted-foreground: var(--ds-muted-foreground);
+  --color-border: var(--ds-border);
+  --color-input: var(--ds-input);
+  --color-primary: var(--ds-primary);
+  --color-primary-foreground: var(--ds-primary-foreground);
+  --color-secondary: var(--ds-secondary);
+  --color-secondary-foreground: var(--ds-secondary-foreground);
+  --color-accent: var(--ds-accent);
+  --color-accent-foreground: var(--ds-accent-foreground);
+  --color-destructive: var(--ds-destructive);
+  --color-destructive-foreground: var(--ds-destructive-foreground);
+  --color-success: var(--ds-success);
+  --color-success-foreground: var(--ds-success-foreground);
+  --color-warning: var(--ds-warning);
+  --color-warning-foreground: var(--ds-warning-foreground);
+  --color-ring: var(--ds-ring);
+
+  /* Typography */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Radii */
+  --radius-sm: var(--ds-radius-sm);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --radius-xl: var(--ds-radius-xl);
+
+  /* Animations */
+  --animate-blink: blink 0.6s step-end infinite;
+  --animate-slide-in: slide-in 0.3s ease-out;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
+@keyframes blink {
+  50% { opacity: 0; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-input,
-textarea,
-select {
-  color: #111827;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #9ca3af;
-}
-
-select:disabled,
-input:disabled,
-textarea:disabled {
-  color: #6b7280;
-}
-
-/* Toast Animation */
 @keyframes slide-in {
   from {
     transform: translateX(100%);
@@ -54,6 +109,26 @@ textarea:disabled {
   }
 }
 
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out;
+body {
+  background: var(--ds-background);
+  color: var(--ds-foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+input,
+textarea,
+select {
+  color: var(--ds-foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ds-muted-foreground);
+}
+
+select:disabled,
+input:disabled,
+textarea:disabled {
+  color: var(--ds-muted-foreground);
+  opacity: 0.7;
 }

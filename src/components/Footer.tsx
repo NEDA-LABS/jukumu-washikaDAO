@@ -9,23 +9,23 @@ export default function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-foreground text-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-red-500">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-primary to-destructive">
                 <span className="text-sm font-bold text-white">J</span>
               </div>
               <div>
                 <h3 className="text-lg font-bold">JUKUMU Fund</h3>
               </div>
             </div>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               {t('tagline')}
             </p>
-            <p className="text-gray-400 text-xs">
+            <p className="text-muted/70 text-xs">
               Kujenga uchumi wa mzunguko endelevu kupitia ushirikiano na uongozi wa kijamii.
             </p>
           </div>
@@ -35,19 +35,19 @@ export default function Footer() {
             <h4 className="text-lg font-semibold">{t('footer.contact')}</h4>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <EnvelopeIcon className="h-5 w-5 text-orange-400" />
-                <span className="text-gray-300 text-sm">info@jukumufund.co.tz</span>
+                <EnvelopeIcon className="h-5 w-5 text-primary" />
+                <span className="text-muted text-sm">info@jukumufund.co.tz</span>
               </div>
               <div className="flex items-center space-x-3">
-                <PhoneIcon className="h-5 w-5 text-orange-400" />
+                <PhoneIcon className="h-5 w-5 text-primary" />
                 <div className="flex flex-col space-y-1">
-                  <span className="text-gray-300 text-sm">+255 746 134 450</span>
-                  <span className="text-gray-300 text-sm">+255 687 161 651</span>
+                  <span className="text-muted text-sm">+255 746 134 450</span>
+                  <span className="text-muted text-sm">+255 687 161 651</span>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <MapPinIcon className="h-5 w-5 text-orange-400" />
-                <span className="text-gray-300 text-sm">Dar es Salaam, Tanzania</span>
+                <MapPinIcon className="h-5 w-5 text-primary" />
+                <span className="text-muted text-sm">Dar es Salaam, Tanzania</span>
               </div>
             </div>
           </div>
@@ -57,22 +57,22 @@ export default function Footer() {
             <h3 className="text-lg font-semibold">{t('footer.quick_links')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/#home" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <a href="/#home" className="text-muted hover:text-white transition-colors duration-200">
                   <span>{t('nav.home')}</span>
                 </a>
               </li>
               <li>
-                <a href="/#about" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <a href="/#about" className="text-muted hover:text-white transition-colors duration-200">
                   <span>{t('nav.about')}</span>
                 </a>
               </li>
               <li>
-                <a href="/register" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <a href="/register" className="text-muted hover:text-white transition-colors duration-200">
                   <span>{t('nav.join')}</span>
                 </a>
               </li>
               <li>
-                <a href="/investor" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <a href="/investor" className="text-muted hover:text-white transition-colors duration-200">
                   <span>{t('nav.investor')}</span>
                 </a>
               </li>
@@ -98,11 +98,11 @@ export default function Footer() {
             </div>
             
             <div className="space-y-2 pt-4">
-              <h5 className="text-sm font-semibold text-gray-400">{t('footer.legal')}</h5>
-              <Link href="/privacy" className="block text-gray-400 hover:text-orange-400 transition-colors duration-200 text-xs">
+              <h5 className="text-sm font-semibold text-muted/70">{t('footer.legal')}</h5>
+              <Link href="/privacy" className="block text-muted/70 hover:text-primary transition-colors duration-200 text-xs">
                 {t('footer.privacy')}
               </Link>
-              <Link href="/terms" className="block text-gray-400 hover:text-orange-400 transition-colors duration-200 text-xs">
+              <Link href="/terms" className="block text-muted/70 hover:text-primary transition-colors duration-200 text-xs">
                 {t('footer.terms')}
               </Link>
             </div>
@@ -110,8 +110,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400 text-sm">
+        <div className="border-t border-muted/20 mt-8 pt-8 text-center">
+          <p className="text-muted/70 text-sm">
             © 2024 JUKUMU Fund. Haki zote zimehifadhiwa.
           </p>
         </div>

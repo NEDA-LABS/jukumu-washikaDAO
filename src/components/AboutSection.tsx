@@ -32,7 +32,7 @@ export default function AboutSection() {
   ];
 
   return (
-    <section id="about" className="relative py-24 bg-white overflow-hidden">
+    <section id="about" className="relative py-24 bg-background overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-0">
         <div className="absolute inset-0" style={{
@@ -44,11 +44,11 @@ export default function AboutSection() {
         {/* How It Works - Redesigned */}
         <div className="space-y-10">
           <div className="text-center">
-            <div className="text-sm font-semibold text-gray-500 tracking-wide uppercase mb-6">Mchakato Wetu</div>
-            <h3 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <div className="text-sm font-semibold text-muted-foreground tracking-wide uppercase mb-6">Mchakato Wetu</div>
+            <h3 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
               {t('how_it_works.title')}
             </h3>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Fuata hatua hizi nne za kimsingi kujiunge na jamii yetu ya wajasiriamali
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function AboutSection() {
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                     viewport={{ once: true, amount: 0.4 }}
                   >
-                    <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="relative h-56 sm:h-64">
                         <Image
                           src={feature.image}
@@ -76,20 +76,20 @@ export default function AboutSection() {
                       </div>
                       <div className="p-8">
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-full border border-orange-200 text-orange-700 bg-orange-50 flex items-center justify-center font-semibold">
+                          <div className="w-10 h-10 rounded-full border border-primary/20 text-primary bg-accent flex items-center justify-center font-semibold">
                             {index + 1}
                           </div>
-                          <div className="h-px flex-1 bg-gray-200"></div>
+                          <div className="h-px flex-1 bg-border"></div>
                         </div>
-                        <h4 className="text-2xl font-semibold text-gray-900 mb-3">{feature.title}</h4>
-                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                        <h4 className="text-2xl font-semibold text-foreground mb-3">{feature.title}</h4>
+                        <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
             </div>
-            <div className="text-center text-sm text-gray-500">Teleza kushoto/kulia kuona hatua zote</div>
+            <div className="text-center text-sm text-muted-foreground">Teleza kushoto/kulia kuona hatua zote</div>
           </div>
         </div>
       </div>
