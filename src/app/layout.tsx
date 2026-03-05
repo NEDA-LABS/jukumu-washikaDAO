@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import ToastProvider from '@/components/ToastProvider'
 import { appConfig } from '@/app.config'
 
@@ -26,11 +27,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="sw">
+    <html lang="sw" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <LanguageProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Header() {
   const { language, toggleLanguage, t } = useLanguage();
@@ -51,6 +52,9 @@ export default function Header() {
             >
               <span>{language === 'sw' ? 'EN' : 'SW'}</span>
             </button>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Login Button */}
             <Link
