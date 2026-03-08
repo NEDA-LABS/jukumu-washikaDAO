@@ -89,15 +89,22 @@ async function ntzsRequest<T>(
     options.body = JSON.stringify(body);
   }
 
+  console.log(`[nTZS] ${method} ${url}`);
+
   const res = await fetch(url, options);
 
-  const data = await res.json().catch(() => ({
-    error: 'parse_error',
-    message: `Failed to parse response (HTTP ${res.status})`,
-  }));
+  const rawText = await res.text();
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    console.error(`[nTZS] Non-JSON response (HTTP ${res.status}):`, rawText.slice(0, 500));
+    data = { error: 'parse_error', message: `Non-JSON response (HTTP ${res.status}): ${rawText.slice(0, 200)}` };
+  }
 
   if (!res.ok) {
-    throw new NtzsApiError(res.status, data);
+    console.error(`[nTZS] Error ${res.status}:`, JSON.stringify(data));
+    throw new NtzsApiError(res.status, data as { error: string; message: string });
   }
 
   return data as T;

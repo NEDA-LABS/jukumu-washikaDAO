@@ -81,10 +81,15 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof NtzsApiError) {
       console.error('nTZS provision error:', error.status, error.body);
-      return NextResponse.json({ error: error.body.message || 'Wallet provisioning failed' }, { status: error.status });
+      return NextResponse.json({
+        error: error.body.message || error.body.error || 'Wallet provisioning failed',
+        details: error.body,
+        ntzsStatus: error.status,
+      }, { status: error.status });
     }
-    console.error('Provision error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Provision error:', errMsg);
+    return NextResponse.json({ error: errMsg || 'Internal server error' }, { status: 500 });
   } finally {
     client.release();
   }
