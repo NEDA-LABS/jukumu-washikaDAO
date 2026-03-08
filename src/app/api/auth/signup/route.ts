@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
+import { ntzs, NtzsApiError } from '@/lib/ntzs';
+import { ensureNtzsSchema, linkMemberWallet } from '@/lib/ntzs-db';
 
 let cachedPasswordColumn: 'password_hash' | 'password' | null = null;
 
@@ -137,12 +139,45 @@ export async function POST(request: NextRequest) {
 
     await client.query('COMMIT');
 
+    // Provision nTZS wallet (non-blocking — signup succeeds even if nTZS is down)
+    let walletAddress: string | null = null;
+    try {
+      await ensureNtzsSchema(client);
+
+      // Find the linked member record
+      const memberRes = await client.query(
+        `SELECT id, phone, email FROM members WHERE user_id = $1 LIMIT 1`,
+        [user.id]
+      );
+
+      if (memberRes.rows.length > 0) {
+        const member = memberRes.rows[0] as { id: number; phone: string | null; email: string | null };
+        const ntzsUser = await ntzs.users.create({
+          externalId: `member_${member.id}`,
+          email: member.email || undefined,
+          phone: member.phone ? normalizePhone(member.phone) : undefined,
+        });
+
+        await linkMemberWallet(client, member.id, ntzsUser.id, ntzsUser.walletAddress);
+        walletAddress = ntzsUser.walletAddress;
+        console.log(`nTZS wallet provisioned for member ${member.id}: ${ntzsUser.walletAddress}`);
+      }
+    } catch (walletErr) {
+      // Log but don't fail signup
+      if (walletErr instanceof NtzsApiError) {
+        console.error(`nTZS wallet provisioning failed (${walletErr.status}):`, walletErr.body);
+      } else {
+        console.error('nTZS wallet provisioning failed:', walletErr);
+      }
+    }
+
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         fullName: user.full_name,
-        role: user.role
+        role: user.role,
+        walletAddress,
       }
     }, { status: 201 });
   } catch (error) {

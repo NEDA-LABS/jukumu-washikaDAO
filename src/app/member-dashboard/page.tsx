@@ -12,8 +12,10 @@ import {
   ArrowRightOnRectangleIcon,
   AcademicCapIcon,
   BookOpenIcon,
-  UserIcon
+  UserIcon,
+  WalletIcon,
 } from '@heroicons/react/24/outline';
+import WalletDashboard from '@/components/WalletDashboard';
 
 export default function MemberDashboard() {
   const { } = useLanguage();
@@ -154,6 +156,7 @@ export default function MemberDashboard() {
 
   const menuItems = [
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
+    { id: 'wallet', name: 'Wallet', icon: WalletIcon },
     { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'group', name: 'My Group', icon: UserGroupIcon },
     { id: 'investments', name: 'My Investments', icon: CurrencyDollarIcon },
@@ -165,6 +168,8 @@ export default function MemberDashboard() {
     switch (activeSection) {
       case 'overview':
         return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} />;
+      case 'wallet':
+        return <WalletDashboard userId={user?.id || 0} />;
       case 'profile':
         return <ProfileSection memberProfile={memberProfile} user={user} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       case 'group':

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { ntzs, NtzsApiError } from '@/lib/ntzs';
+import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
 
 export async function GET() {
   try {
@@ -74,13 +76,33 @@ export async function POST(request: NextRequest) {
           VALUES ($1, $2, CURRENT_DATE, 'leader', 'active')
         `, [result.rows[0].id, leaderId]);
       }
+
+      // Provision nTZS wallet for the group (non-blocking)
+      let walletAddress: string | null = null;
+      try {
+        await ensureNtzsSchema(client);
+        const groupId = result.rows[0].id;
+        const ntzsUser = await ntzs.users.create({
+          externalId: `group_${groupId}`,
+          email: `group_${groupId}@groups.jukumu`,
+        });
+        await linkGroupWallet(client, groupId, ntzsUser.id, ntzsUser.walletAddress);
+        walletAddress = ntzsUser.walletAddress;
+        console.log(`nTZS wallet provisioned for group ${groupId}: ${ntzsUser.walletAddress}`);
+      } catch (walletErr) {
+        if (walletErr instanceof NtzsApiError) {
+          console.error(`nTZS group wallet error (${walletErr.status}):`, walletErr.body);
+        } else {
+          console.error('nTZS group wallet error:', walletErr);
+        }
+      }
       
       client.release();
       
       return NextResponse.json({ 
         success: true, 
         message: 'Kundi limeanzishwa kwa mafanikio!',
-        group: result.rows[0] 
+        group: { ...result.rows[0], walletAddress },
       }, { status: 201 });
     } catch (dbError) {
       client.release();
