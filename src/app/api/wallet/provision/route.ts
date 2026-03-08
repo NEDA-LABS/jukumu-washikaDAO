@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check API key before calling nTZS
+    if (!process.env.NTZS_API_KEY) {
+      console.error('NTZS_API_KEY not configured');
+      return NextResponse.json({ error: 'Wallet service is not configured. Contact admin.' }, { status: 503 });
+    }
+
     // Normalize phone
     const phone = member.phone?.replace(/\D/g, '') || undefined;
     let normalizedPhone = phone;

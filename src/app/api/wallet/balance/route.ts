@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
+import { ensureNtzsSchema } from '@/lib/ntzs-db';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
   const client = await pool.connect();
 
   try {
+    await ensureNtzsSchema(client);
+
     let ntzsUserId: string | null = null;
     let walletAddress: string | null = null;
     let entityName: string = '';
@@ -44,6 +47,11 @@ export async function GET(request: NextRequest) {
 
     if (!ntzsUserId) {
       return NextResponse.json({ balanceTzs: 0, walletAddress: null, name: entityName, provisioned: false });
+    }
+
+    // If nTZS API key isn't configured, return wallet info without live balance
+    if (!process.env.NTZS_API_KEY) {
+      return NextResponse.json({ balanceTzs: 0, walletAddress, name: entityName, provisioned: true });
     }
 
     const { balanceTzs } = await ntzs.users.getBalance(ntzsUserId);
