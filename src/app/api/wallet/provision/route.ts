@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     await ensureNtzsSchema(client);
 
     const memberRes = await client.query(
-      `SELECT m.id, m.ntzs_user_id, m.ntzs_wallet_address, m.phone, m.email, m.full_name
+      `SELECT m.id, m.ntzs_user_id, m.ntzs_wallet_address, m.phone, m.email, m.full_name, u.email as user_email
        FROM members m JOIN users u ON u.id = m.user_id
        WHERE u.id = $1 LIMIT 1`,
       [userId]
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       ntzs_wallet_address: string | null;
       phone: string | null;
       email: string | null;
+      user_email: string | null;
       full_name: string;
     };
 
@@ -63,9 +64,13 @@ export async function POST(request: NextRequest) {
       normalizedPhone = `255${phone}`;
     }
 
+    // For phone-only users, members.email is NULL but users.email holds a synthetic
+    // "{phone}@phone.jukumu" address. Use it as fallback so nTZS always gets an email.
+    const ntzsEmail = member.email || member.user_email || undefined;
+
     const ntzsUser = await ntzs.users.create({
       externalId: `member_${member.id}`,
-      email: member.email || undefined,
+      email: ntzsEmail,
       phone: normalizedPhone,
     });
 
