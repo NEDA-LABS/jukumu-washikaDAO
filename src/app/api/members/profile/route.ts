@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         WHERE m.user_id = $1
       `, [userId]);
 
-      // Self-healing fallback: if no linked member found, try matching by email
+      // Self-healing fallback: if no linked member found, try matching by email or phone
       if (result.rows.length === 0) {
         const userRes = await client.query(
           'SELECT email FROM users WHERE id = $1 LIMIT 1',
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         );
         if (userRes.rows.length > 0) {
           const userEmail = (userRes.rows[0] as { email: string }).email;
-          // Link the unlinked member to this user (safe: only if user_id IS NULL)
+          // Try email match first (standard users)
           await client.query(
             `UPDATE members SET user_id = $1
              WHERE user_id IS NULL
@@ -55,6 +55,19 @@ export async function GET(request: NextRequest) {
                AND NOT EXISTS (SELECT 1 FROM members m2 WHERE m2.user_id = $1)`,
             [userId, userEmail]
           );
+          // Phone-only users have users.email = "{phone}@phone.jukumu" — extract the
+          // digits and also try linking by member.phone for those users.
+          const phoneOnlyMatch = userEmail.match(/^(\d+)@phone\.jukumu$/);
+          if (phoneOnlyMatch) {
+            const phoneDigits = phoneOnlyMatch[1];
+            await client.query(
+              `UPDATE members SET user_id = $1
+               WHERE user_id IS NULL
+                 AND regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $2
+                 AND NOT EXISTS (SELECT 1 FROM members m2 WHERE m2.user_id = $1)`,
+              [userId, phoneDigits]
+            );
+          }
           // Re-fetch after linking
           result = await client.query(`
             SELECT 

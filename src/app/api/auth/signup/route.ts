@@ -152,9 +152,11 @@ export async function POST(request: NextRequest) {
 
       if (memberRes.rows.length > 0) {
         const member = memberRes.rows[0] as { id: number; phone: string | null; email: string | null };
+        // For phone-only users, members.email is NULL — fall back to the synthetic
+        // "{phone}@phone.jukumu" address stored in users.email so nTZS always gets an email.
         const ntzsUser = await ntzs.users.create({
           externalId: `member_${member.id}`,
-          email: member.email || undefined,
+          email: member.email || user.email || undefined,
           phone: member.phone ? normalizePhone(member.phone) : undefined,
         });
 
