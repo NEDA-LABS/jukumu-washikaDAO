@@ -386,6 +386,8 @@ export default function MemberGroupDetailsPage() {
           setPayStatus('success');
           showToast('Malipo yamefanikiwa!', 'success');
           loadGroupPayments();
+          setTimeout(() => loadGroupPayments(), 3000);
+          setTimeout(() => loadGroupPayments(), 8000);
         } else if (data.status === 'failed') {
           clearInterval(interval);
           setPayStatus('failed');
@@ -451,12 +453,12 @@ export default function MemberGroupDetailsPage() {
     );
   }
 
-  const tabs: { id: typeof activeTab; label: string }[] = [
-    { id: 'overview',  label: 'Muhtasari' },
-    { id: 'members',   label: 'Wanachama' },
-    { id: 'leadership',label: 'Uongozi' },
-    { id: 'fedha',     label: 'Fedha' },
-    { id: 'decisions', label: 'Maamuzi' },
+  const tabs: { id: typeof activeTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview',   label: 'Muhtasari',  icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+    { id: 'members',    label: 'Wanachama', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { id: 'leadership', label: 'Uongozi',   icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
+    { id: 'fedha',      label: 'Fedha',     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
+    { id: 'decisions',  label: 'Maamuzi',   icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
   ];
 
   // ── animated counters for hero banner ──
@@ -547,25 +549,39 @@ export default function MemberGroupDetailsPage() {
           <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
         )}
 
-        {/* ── Tab bar ── */}
-        <div className="flex gap-1 bg-white/[0.03] rounded-xl p-1 mb-6 overflow-x-auto scrollbar-none">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`flex-1 min-w-max py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                activeTab === t.id
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'text-white/40 hover:text-white/70'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {/* ── Side nav + content layout ── */}
+        <div className="flex gap-5 items-start">
 
-        {/* ── Tab content ── */}
-        <div>
+          {/* ── Sidebar (desktop) ── */}
+          <aside className="hidden md:flex flex-col w-44 shrink-0 sticky top-6">
+            <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+              {tabs.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === t.id
+                      ? 'bg-orange-500/10 text-orange-400 border-l-2 border-orange-500'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03] border-l-2 border-transparent'
+                  } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
+                >
+                  <span className={activeTab === t.id ? 'text-orange-400' : 'text-white/25'}>{t.icon}</span>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {canCreateProposal && (
+              <button
+                onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
+                className="mt-3 w-full px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
+              >
+                + Pendekezo
+              </button>
+            )}
+          </aside>
+
+          {/* ── Content area ── */}
+          <div className="flex-1 min-w-0">
           {activeTab === 'overview' && (
             <div className="space-y-4">
 
@@ -1197,8 +1213,28 @@ export default function MemberGroupDetailsPage() {
               ))}
             </div>
           )}
+
+          </div>
         </div>
       </div>
+
+      {/* ── Mobile bottom nav ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111] border-t border-white/[0.07] flex">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-all ${
+              activeTab === t.id ? 'text-orange-400' : 'text-white/30'
+            }`}
+          >
+            <span className={activeTab === t.id ? 'text-orange-400' : 'text-white/25'}>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {/* spacer so content isn't hidden behind mobile nav */}
+      <div className="md:hidden h-16" />
 
       {/* ── Payment modal ── */}
       {payModal && (
