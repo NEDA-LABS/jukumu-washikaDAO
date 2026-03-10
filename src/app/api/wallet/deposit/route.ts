@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Normalize phone
     const normalizedPhone = phone.replace(/\D/g, '');
 
-    // Create deposit via nTZS (triggers M-Pesa STK push)
+    // Create deposit via nTZS (triggers mobile money prompt)
     const deposit = await ntzs.deposits.create({
       userId: member.ntzs_user_id,
       amountTzs,
@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
       amountTzs,
       phone: normalizedPhone,
       purpose: 'deposit',
-      note: `M-Pesa deposit by ${member.full_name}`,
+      note: `Mobile money deposit by ${member.full_name}`,
     });
 
     return NextResponse.json({
       depositId: deposit.id,
       status: deposit.status,
       amountTzs,
-      message: 'M-Pesa STK push sent. Please confirm on your phone.',
+      message: 'Mobile top-up request sent. Please confirm on your phone.',
     });
   } catch (error) {
     if (error instanceof NtzsApiError) {

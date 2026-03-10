@@ -5,23 +5,27 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Spline must be loaded client-side only (no SSR)
-const Spline = dynamic(() => import('@splinetool/react-spline'), {
-  ssr: false,
-  loading: () => <div className="absolute inset-0 bg-black" />,
-});
+// TODO: Fix Spline import - temporarily disabled
+// const Spline = dynamic(() => import('@splinetool/react-spline/next'), {
+//   ssr: false,
+//   loading: () => <div className="absolute inset-0 bg-black" />,
+// });
 
 function HeroSplineBackground() {
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-auto overflow-hidden">
-      {/* hue-rotate shifts the blue/purple cubes to orange to match brand */}
-      <div style={{ width: '100%', height: '100%', filter: 'hue-rotate(165deg) saturate(1.4)' }}>
-        <Spline
-          style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
-          scene="https://prod.spline.design/dJqTIQ-tE3ULUPMi/scene.splinecode"
-        />
-      </div>
-      {/* Gradient vignette so text stays readable — sits on top of the filtered scene */}
+    <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+      {/* Temporary gradient background until Spline is fixed */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff6b35 100%),
+            radial-gradient(circle at 20% 50%, rgba(255,107,53,0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(247,147,30,0.3) 0%, transparent 50%)
+          `,
+        }}
+      />
+      {/* Gradient vignette so text stays readable */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

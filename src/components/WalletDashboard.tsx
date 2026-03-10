@@ -191,7 +191,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
         <WalletIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-xl font-semibold text-foreground mb-2">Tengeneza Wallet Yako</h3>
         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-          Anza kutumia pesa za kidijitali. Wallet yako itakuwezesha kupokea, kutuma, na kutoa pesa kwa urahisi kupitia M-Pesa.
+          Anza kutumia pesa za kidijitali. Wallet yako itakuwezesha kupokea, kutuma, na kutoa pesa kwa urahisi kupitia simu yako.
         </p>
         <button
           onClick={provisionWallet}
@@ -295,7 +295,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
           <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h3 className="font-semibold text-foreground">
-                {modal === 'deposit' ? 'Weka Pesa (M-Pesa)' : modal === 'withdraw' ? 'Toa Pesa (M-Pesa)' : 'Hamisha Pesa'}
+                {modal === 'deposit' ? 'Weka Pesa' : modal === 'withdraw' ? 'Toa Pesa' : 'Hamisha Pesa'}
               </h3>
               <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground">
                 <XMarkIcon className="h-5 w-5" />
@@ -320,7 +320,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
               {/* Phone (for deposit/withdraw) */}
               {(modal === 'deposit' || modal === 'withdraw') && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Namba ya Simu (M-Pesa)</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Namba ya Simu</label>
                   <input
                     type="tel"
                     required

@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
       amountTzs,
       phone: normalizedPhone,
       purpose: 'withdrawal',
-      note: `M-Pesa withdrawal by ${member.full_name}`,
+      note: `Mobile money withdrawal by ${member.full_name}`,
     });
 
     return NextResponse.json({
       withdrawalId: withdrawal.id,
       status: withdrawal.status,
       amountTzs,
-      message: 'Withdrawal initiated. TZS will be sent to your M-Pesa.',
+      message: 'Withdrawal initiated. TZS will be sent to your mobile money.',
     });
   } catch (error) {
     if (error instanceof NtzsApiError) {

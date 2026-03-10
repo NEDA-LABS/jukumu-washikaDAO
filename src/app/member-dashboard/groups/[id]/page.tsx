@@ -1161,7 +1161,7 @@ export default function MemberGroupDetailsPage() {
                           className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="airtel">Airtel Money</option>
-                          <option value="mpesa">M-Pesa</option>
+                          <option value="mpesa">Vodacom</option>
                           <option value="tigopesa">Tigo Pesa</option>
                           <option value="halopesa">Halo Pesa</option>
                         </select>

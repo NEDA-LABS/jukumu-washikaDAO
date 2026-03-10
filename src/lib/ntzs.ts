@@ -129,10 +129,10 @@ export const ntzsUsers = {
     ntzsRequest<NtzsBalance>('GET', `/users/${userId}/balance`),
 };
 
-// ── Deposits (On-Ramp: M-Pesa → nTZS) ──
+// ── Deposits (On-Ramp: Mobile Money → nTZS) ──
 
 export const ntzsDeposits = {
-  /** Initiate M-Pesa deposit. User gets STK push. */
+  /** Initiate mobile money deposit. User gets a payment prompt on their phone. */
   create: (params: {
     userId: string;
     amountTzs: number;
@@ -159,10 +159,10 @@ export const ntzsTransfers = {
     ntzsRequest<NtzsTransfer>('GET', `/transfers/${transferId}`),
 };
 
-// ── Withdrawals (Off-Ramp: nTZS → M-Pesa) ──
+// ── Withdrawals (Off-Ramp: nTZS → Mobile Money) ──
 
 export const ntzsWithdrawals = {
-  /** Burn nTZS and send TZS to M-Pesa */
+  /** Burn nTZS and send TZS to mobile money */
   create: (params: {
     userId: string;
     amountTzs: number;
