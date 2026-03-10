@@ -124,9 +124,9 @@ export const ntzsUsers = {
   get: (userId: string) =>
     ntzsRequest<NtzsUser>('GET', `/users/${userId}`),
 
-  /** Get user's on-chain nTZS balance */
+  /** Get user's on-chain nTZS balance (balance is on the user profile object) */
   getBalance: (userId: string) =>
-    ntzsRequest<NtzsBalance>('GET', `/users/${userId}/balance`),
+    ntzsRequest<NtzsUser>('GET', `/users/${userId}`),
 };
 
 // ── Deposits (On-Ramp: Mobile Money → nTZS) ──

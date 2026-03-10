@@ -54,21 +54,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ balanceTzs: 0, walletAddress, name: entityName, provisioned: true });
     }
 
-    const { balanceTzs } = await ntzs.users.getBalance(ntzsUserId);
+    try {
+      const userProfile = await ntzs.users.getBalance(ntzsUserId);
+      const balanceTzs = userProfile.balanceTzs ?? 0;
+      const resolvedWalletAddress = walletAddress || userProfile.walletAddress;
 
-    return NextResponse.json({
-      balanceTzs,
-      walletAddress,
-      name: entityName,
-      provisioned: true,
-    });
-  } catch (error) {
-    if (error instanceof NtzsApiError) {
-      console.error('nTZS balance error:', error.status, error.body);
-      return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 502 });
+      return NextResponse.json({
+        balanceTzs,
+        walletAddress: resolvedWalletAddress,
+        name: entityName,
+        provisioned: true,
+      });
+    } catch (apiError) {
+      if (apiError instanceof NtzsApiError) {
+        console.error('nTZS balance API error:', apiError.status, apiError.body);
+      } else {
+        console.error('nTZS balance fetch error:', apiError);
+      }
+      // API failed but wallet IS provisioned in DB — return 0 balance, don't show setup screen
+      return NextResponse.json({ balanceTzs: 0, walletAddress, name: entityName, provisioned: true });
     }
-    console.error('Balance error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    console.error('Balance DB error:', error);
+    // DB failed — we don't know provisioned state, show 0 but don't prompt wallet creation
+    return NextResponse.json({ balanceTzs: 0, walletAddress: null, name: '', provisioned: true });
   } finally {
     client.release();
   }
