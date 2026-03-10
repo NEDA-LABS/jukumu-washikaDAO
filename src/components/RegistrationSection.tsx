@@ -121,7 +121,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
 
   const fi = 'w-full px-4 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all';
   const lbl = 'block text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5';
-  const sel = `${fi} text-white/70`;
+  const sel = `${fi} text-white/70 [&>option]:bg-[#111] [&>option]:text-white`;
 
   if (isSubmitted) {
     return (

@@ -23,7 +23,7 @@ const translations = {
     
     // Hero Section
     'hero.title': 'Washika DAU – Kuunganisha Wajasiriamali na Ustawi wa Jamii',
-    'hero.subtitle': 'Tunajenga uchumi endelevu kwa kuwawezesha wajasiriamali wadogo.',
+    'hero.subtitle': 'Akiba. Mafunzo. Uwekezaji. Kila kitu unachohitaji kukua kiuchumi — katika jamii moja iliyounganishwa.',
     'hero.cta.entrepreneur': 'Jisajili Sasa',
     'hero.cta.investor': 'Shirikiana Nasi',
     'hero.learn_more': 'Jifunze',
@@ -79,7 +79,7 @@ const translations = {
     'footer.terms': 'Masharti',
     
     // Common
-    'tagline': 'Kuwawezesha Wajasiriamali, Kujenga Uchumi wa Mzunguko.',
+    'tagline': 'Jukwaa la Wajasiriamali Tanzania',
   },
   en: {
     // Header

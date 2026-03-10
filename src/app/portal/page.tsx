@@ -213,7 +213,7 @@ function ProfileSection({ user }: { user: any }) {
               name="businessType"
               value={profile.businessType}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-lg bg-[#1a1a1a] border border-white/10 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
             >
               <option value="kilimo">Kilimo</option>
               <option value="ufugaji">Ufugaji</option>
@@ -459,7 +459,7 @@ function FundingSection() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Madhumuni ya Fedha
               </label>
-              <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+              <select className="w-full px-4 py-3 rounded-lg bg-[#1a1a1a] border border-white/10 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white">
                 <option>Kuongeza mazao</option>
                 <option>Kununua vifaa</option>
                 <option>Kuongeza wafanyakazi</option>

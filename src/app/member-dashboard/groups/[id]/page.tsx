@@ -1055,7 +1055,7 @@ export default function MemberGroupDetailsPage() {
                     <div>
                       <label className="block text-xs text-white/40 mb-1">Mtandao</label>
                       <select value={disburseProvider} onChange={e => setDisburseProvider(e.target.value)}
-                        className={dkInput + ' bg-[#111] [&>option]:bg-[#111]'}>
+                        className="w-full px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-white/10 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white">
                         <option value="airtel">Airtel Money</option>
                         <option value="mpesa">Vodacom M-Pesa</option>
                         <option value="tigopesa">Tigo Pesa</option>

@@ -376,7 +376,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
                     <select
                       value={formData.purpose}
                       onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
                     >
                       <option value="contribution">Mchango kwa Kundi</option>
                       <option value="p2p">Tuma kwa Mwanachama</option>

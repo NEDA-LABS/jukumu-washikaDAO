@@ -20,7 +20,7 @@ function HeroContent() {
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
           Washika DAU
           <span className="block text-white/75 text-3xl sm:text-4xl lg:text-5xl font-normal mt-2">
-            Kuunganisha Wajasiriamali
+            Pamoja Tunajengana
           </span>
         </h1>
       </div>
