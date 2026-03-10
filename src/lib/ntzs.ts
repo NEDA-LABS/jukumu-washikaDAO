@@ -132,11 +132,11 @@ export const ntzsUsers = {
 // ── Deposits (On-Ramp: Mobile Money → nTZS) ──
 
 export const ntzsDeposits = {
-  /** Initiate mobile money deposit. User gets a payment prompt on their phone. */
+  /** Initiate M-Pesa deposit. User gets STK push. */
   create: (params: {
     userId: string;
     amountTzs: number;
-    phone: string;
+    phoneNumber: string;
   }) => ntzsRequest<NtzsDeposit>('POST', '/deposits', params),
 
   /** Check deposit status */
@@ -162,11 +162,11 @@ export const ntzsTransfers = {
 // ── Withdrawals (Off-Ramp: nTZS → Mobile Money) ──
 
 export const ntzsWithdrawals = {
-  /** Burn nTZS and send TZS to mobile money */
+  /** Burn nTZS and send TZS to M-Pesa */
   create: (params: {
     userId: string;
     amountTzs: number;
-    phone: string;
+    phoneNumber: string;
   }) => ntzsRequest<NtzsWithdrawal>('POST', '/withdrawals', params),
 
   /** Check withdrawal status */

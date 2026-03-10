@@ -99,6 +99,13 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
     setSubmitting(true);
     setFeedback(null);
 
+    // Validate userId
+    if (!userId || userId === 0) {
+      setFeedback({ type: 'error', message: 'User session expired. Please log in again.' });
+      setSubmitting(false);
+      return;
+    }
+
     try {
       let endpoint: string;
       let body: Record<string, unknown>;

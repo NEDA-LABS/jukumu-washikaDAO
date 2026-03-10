@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const deposit = await ntzs.deposits.create({
       userId: member.ntzs_user_id,
       amountTzs,
-      phone: normalizedPhone,
+      phoneNumber: normalizedPhone,
     });
 
     // Record in local ledger

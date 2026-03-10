@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const withdrawal = await ntzs.withdrawals.create({
       userId: member.ntzs_user_id,
       amountTzs,
-      phone: normalizedPhone,
+      phoneNumber: normalizedPhone,
     });
 
     await recordTransaction(client, {
