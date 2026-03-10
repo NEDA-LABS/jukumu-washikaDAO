@@ -170,7 +170,7 @@ export default function MemberDashboard() {
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} />;
+        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
       case 'wallet':
         return <WalletDashboard userId={user?.id || 0} />;
       case 'profile':
@@ -184,7 +184,7 @@ export default function MemberDashboard() {
       case 'settings':
         return <MemberSettingsSection />;
       default:
-        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} />;
+        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
     }
   };
 
@@ -300,65 +300,84 @@ export default function MemberDashboard() {
   );
 }
 
-function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void }) {
+function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void; userId: number }) {
+  const [balanceTzs, setBalanceTzs] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/wallet/balance?userId=${userId}`)
+      .then(r => r.json())
+      .then(d => setBalanceTzs(d.balanceTzs ?? 0))
+      .catch(() => setBalanceTzs(0))
+      .finally(() => setBalanceLoading(false));
+  }, [userId]);
+
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const expectedReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.expected_return || 0), 0);
   const isActive = memberProfile?.status === 'active';
 
   const stats = [
-    {
-      name: 'Hali ya Uanachama',
-      value: isActive ? 'Hai' : 'Inasubiri',
-      icon: UserIcon,
-      accent: isActive ? 'text-emerald-400' : 'text-yellow-400',
-      bg: isActive ? 'bg-emerald-500/10' : 'bg-yellow-500/10',
-      dot: isActive ? 'bg-emerald-400' : 'bg-yellow-400',
-    },
-    {
-      name: 'Kundi Langu',
-      value: memberProfile?.group_name || 'Hujajiunga',
-      icon: UserGroupIcon,
-      accent: 'text-blue-400',
-      bg: 'bg-blue-500/10',
-      dot: 'bg-blue-400',
-    },
-    {
-      name: 'Uwekezaji Wangu',
-      value: `TSh ${totalInvestment.toLocaleString()}`,
-      icon: CurrencyDollarIcon,
-      accent: 'text-orange-400',
-      bg: 'bg-orange-500/10',
-      dot: 'bg-orange-400',
-    },
-    {
-      name: 'Faida Inayotarajiwa',
-      value: `TSh ${expectedReturns.toLocaleString()}`,
-      icon: ChartBarIcon,
-      accent: 'text-purple-400',
-      bg: 'bg-purple-500/10',
-      dot: 'bg-purple-400',
-    },
+    { name: 'Hali ya Uanachama', value: isActive ? 'Hai' : 'Inasubiri', icon: UserIcon, accent: isActive ? 'text-emerald-400' : 'text-yellow-400', bg: isActive ? 'bg-emerald-500/10' : 'bg-yellow-500/10' },
+    { name: 'Kundi Langu', value: memberProfile?.group_name || 'Hujajiunga', icon: UserGroupIcon, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { name: 'Uwekezaji Wangu', value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, accent: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { name: 'Faida Inayotarajiwa', value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, accent: 'text-purple-400', bg: 'bg-purple-500/10' },
   ];
 
   const displayActivities = recentActivities.length > 0
     ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString('sw-TZ') }))
     : [{ action: 'Umejiunga na Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('sw-TZ') : 'Leo' }];
 
-  const quickActions = [
-    { label: 'Weka Pesa', sub: 'Deposit via M-Pesa', icon: WalletIcon, section: 'wallet', accent: 'bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20' },
-    { label: 'Kundi Langu', sub: 'Angalia shughuli za kundi', icon: UserGroupIcon, section: 'group', accent: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20' },
-    { label: 'Mafunzo', sub: 'Endelea na masomo', icon: AcademicCapIcon, section: 'learning', accent: 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20' },
-    { label: 'Uwekezaji', sub: 'Fuatilia mapato yako', icon: CurrencyDollarIcon, section: 'investments', accent: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20' },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Greeting */}
       <div>
         <h2 className="text-2xl font-semibold text-white">
           Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
         </h2>
         <p className="text-sm text-white/40 mt-0.5">Hapa kuna muhtasari wa akaunti yako</p>
+      </div>
+
+      {/* ── Wallet hero card ── */}
+      <div className="rounded-2xl bg-gradient-to-br from-orange-500/20 via-[#1a1a1a] to-[#1a1a1a] border border-orange-500/20 p-6">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs text-white/40 mb-1 uppercase tracking-wider">Salio la Wallet</p>
+            {balanceLoading ? (
+              <div className="h-9 w-40 rounded-lg bg-white/5 animate-pulse" />
+            ) : (
+              <p className="text-3xl font-bold text-white">
+                TSh <span className="text-orange-400">{(balanceTzs ?? 0).toLocaleString()}</span>
+              </p>
+            )}
+            <p className="text-xs text-white/30 mt-1">nTZS · salio la sasa</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
+            <WalletIcon className="h-5 w-5 text-orange-400" />
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => onNavigate('wallet')}
+            className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors"
+          >
+            + Weka Pesa
+          </button>
+          <button
+            onClick={() => onNavigate('wallet')}
+            className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-sm font-medium border border-white/10 transition-colors"
+          >
+            Toa Pesa
+          </button>
+          <button
+            onClick={() => onNavigate('wallet')}
+            className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-sm font-medium border border-white/10 transition-colors"
+          >
+            Hamisha
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -376,7 +395,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
         ))}
       </div>
 
-      {/* Bottom row */}
+      {/* Activity + nav shortcuts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent activity */}
         <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
@@ -394,19 +413,27 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
           </div>
         </div>
 
-        {/* Quick actions */}
+        {/* Nav shortcuts */}
         <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Vitendo vya Haraka</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {quickActions.map((qa) => (
+          <h3 className="text-sm font-semibold text-white mb-4">Nenda Haraka</h3>
+          <div className="space-y-2">
+            {[
+              { label: 'Wallet Yangu', sub: 'Historia na mabadiliko ya salio', icon: WalletIcon, section: 'wallet' },
+              { label: 'Kundi Langu', sub: 'Angalia wanachama na shughuli', icon: UserGroupIcon, section: 'group' },
+              { label: 'Mafunzo', sub: 'Endelea na masomo', icon: AcademicCapIcon, section: 'learning' },
+              { label: 'Uwekezaji', sub: 'Fuatilia mapato yako', icon: CurrencyDollarIcon, section: 'investments' },
+            ].map((item) => (
               <button
-                key={qa.section}
-                onClick={() => onNavigate(qa.section)}
-                className={`rounded-lg border p-3 text-left transition-all ${qa.accent}`}
+                key={item.section}
+                onClick={() => onNavigate(item.section)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left group"
               >
-                <qa.icon className="h-4 w-4 text-white/60 mb-2" />
-                <p className="text-sm font-medium text-white">{qa.label}</p>
-                <p className="text-xs text-white/40 mt-0.5 leading-tight">{qa.sub}</p>
+                <item.icon className="h-4 w-4 text-white/30 group-hover:text-orange-400 transition-colors shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm text-white/70 group-hover:text-white transition-colors">{item.label}</p>
+                  <p className="text-xs text-white/25">{item.sub}</p>
+                </div>
+                <span className="ml-auto text-white/20 group-hover:text-orange-400 transition-colors text-sm">→</span>
               </button>
             ))}
           </div>
