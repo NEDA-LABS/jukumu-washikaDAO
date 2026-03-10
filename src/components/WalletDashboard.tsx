@@ -62,14 +62,42 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
       const res = await fetch(`/api/wallet/transactions?userId=${userId}&limit=10`);
       const data = await res.json();
       setTransactions(data.transactions || []);
+      return data.transactions || [];
     } catch {
       console.error('Failed to fetch transactions');
+      return [];
     }
   }, [userId]);
 
+  const syncTransactions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/wallet/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (data.synced > 0) {
+        await fetchBalance();
+        await fetchTransactions();
+      }
+    } catch {
+      console.error('Failed to sync transactions');
+    }
+  }, [userId, fetchBalance, fetchTransactions]);
+
   useEffect(() => {
-    Promise.all([fetchBalance(), fetchTransactions()]).finally(() => setLoading(false));
-  }, [fetchBalance, fetchTransactions]);
+    const load = async () => {
+      const [, txs] = await Promise.all([fetchBalance(), fetchTransactions()]);
+      setLoading(false);
+      // Auto-sync if any pending transactions exist
+      const hasPending = txs.some((t: { status: string }) =>
+        ['pending', 'submitted', 'processing'].includes(t.status)
+      );
+      if (hasPending) syncTransactions();
+    };
+    load();
+  }, [fetchBalance, fetchTransactions, syncTransactions]);
 
   const provisionWallet = async () => {
     setProvisioning(true);
@@ -140,11 +168,10 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
       if (res.ok) {
         setFeedback({ type: 'success', message: data.message || 'Imefanikiwa!' });
         setFormData({ amount: '', phone: '', groupId: '', toMemberId: '', purpose: 'contribution' });
-        // Refresh data after short delay
-        setTimeout(() => {
-          fetchBalance();
-          fetchTransactions();
-        }, 2000);
+        // Refresh immediately then poll for status updates
+        setTimeout(() => { fetchBalance(); fetchTransactions(); }, 2000);
+        setTimeout(() => syncTransactions(), 8000);
+        setTimeout(() => syncTransactions(), 20000);
         setTimeout(() => setModal(null), 3000);
       } else {
         setFeedback({ type: 'error', message: data.error || 'Imeshindikana' });
