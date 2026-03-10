@@ -14,7 +14,7 @@ export default function JoinCtaSection() {
           <div className="rounded-3xl border border-border bg-muted p-10 sm:p-12 text-center shadow-sm">
             <div className="text-sm font-semibold text-muted-foreground tracking-wide uppercase mb-4">Jiunge</div>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-              {t('registration.title')}
+              Jiunge na sisi Leo
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
               {t('hero.subtitle')}

@@ -282,7 +282,7 @@ export default function AdminReportPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 print-card">
           <div className="flex items-start justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Ripoti ya JUKUMU</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Ripoti ya Washika DAU</h1>
               <p className="mt-1 text-sm text-gray-600">Ripoti ya mwezi na ripoti maalum (nyaraka moja)</p>
               <p className="mt-2 text-sm text-gray-600">Kipindi: {new Date(data.period.start).toLocaleDateString('sw-TZ')} - {new Date(data.period.end).toLocaleDateString('sw-TZ')}</p>
             </div>
@@ -403,7 +403,7 @@ export default function AdminReportPage() {
             </div>
 
             <div className="mt-8 text-xs text-gray-500">
-              <p>Ripoti hii imetengenezwa moja kwa moja kutoka kwenye mfumo wa JUKUMU. Kwa maswali au marekebisho ya data, tafadhali wasiliana na msimamizi wa mfumo.</p>
+              <p>Ripoti hii imetengenezwa moja kwa moja kutoka kwenye mfumo wa Washika DAU. Kwa maswali au marekebisho ya data, tafadhali wasiliana na msimamizi wa mfumo.</p>
             </div>
           </div>
         </div>

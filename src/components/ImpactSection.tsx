@@ -57,9 +57,9 @@ export default function ImpactSection() {
 
   const testimonials = [
     {
-      name: 'Mwanachama wa JUKUMU',
+      name: 'Mwanachama wa Washika DAU',
       role: 'Kundi la Biashara - Tanzania',
-      quote: 'JUKUMU ni mfumo mpya wa kuwezesha wajasiriamali. Tunasubiri wanachama wajisajili.',
+      quote: 'Washika DAU ni mfumo mpya wa kuwezesha wajasiriamali. Tunasubiri wanachama wajisajili.',
       image: '/PXL_20250527_143914521.PORTRAIT.jpg',
     },
     {
@@ -71,7 +71,7 @@ export default function ImpactSection() {
     {
       name: 'Mwanzilishi wa Biashara',
       role: 'Kundi la Uongozi - Tanzania',
-      quote: 'Tunatarajia kuona mafanikio makubwa kupitia ushirikiano na JUKUMU.',
+      quote: 'Tunatarajia kuona mafanikio makubwa kupitia ushirikiano na Washika DAU.',
       image: '/PXL_20250722_105646219.PORTRAIT.jpg',
     },
   ];

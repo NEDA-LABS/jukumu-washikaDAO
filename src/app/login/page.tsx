@@ -96,7 +96,7 @@ export default function LoginPage() {
               <span className="text-xl font-bold text-white">W</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">JUKUMU</h1>
+              <h1 className="text-2xl font-bold text-foreground">Washika DAU</h1>
             </div>
           </Link>
           <h2 className="text-3xl font-bold text-foreground">Ingia kwenye akaunti yako</h2>

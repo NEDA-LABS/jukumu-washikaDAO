@@ -184,7 +184,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashibodi ya Msimamizi</h1>
-              <p className="mt-1 text-sm text-gray-500">Simamia mfumo wa JUKUMU</p>
+              <p className="mt-1 text-sm text-gray-500">Simamia mfumo wa Washika DAU</p>
             </div>
             <div className="flex items-center space-x-4">
               <NotificationCenter userId={1} className="" />
