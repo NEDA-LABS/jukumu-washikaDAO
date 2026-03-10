@@ -1,8 +1,26 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastProvider';
+
+function useCountUp(target: number, duration = 900) {
+  const [value, setValue] = useState(0);
+  const raf = useRef<number>(0);
+  useEffect(() => {
+    if (target === 0) { setValue(0); return; }
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(ease * target));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, duration]);
+  return value;
+}
 
 type Membership = {
   member_id: number;
@@ -441,39 +459,88 @@ export default function MemberGroupDetailsPage() {
     { id: 'decisions', label: 'Maamuzi' },
   ];
 
+  // ── animated counters for hero banner ──
+  const animTotal    = useCountUp(paymentSummary.total_collected);
+  const animMonth    = useCountUp(paymentSummary.this_month_collected);
+  const animPayers   = useCountUp(paymentSummary.this_month_payers);
+  const animMembers  = useCountUp(group?.member_count ?? members.length);
+
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <button
-              onClick={() => router.push('/member-dashboard?section=group')}
-              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-2"
-            >
-              ← Rudi Makundi Yangu
-            </button>
-            <h1 className="text-xl font-semibold text-white">{group?.name || 'Kundi'}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                {roleLabel(membership?.role)}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                group?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
-              }`}>
-                {group?.status || 'active'}
-              </span>
+        {/* ── Back nav ── */}
+        <button
+          onClick={() => router.push('/member-dashboard?section=group')}
+          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-4"
+        >
+          ← Rudi Makundi Yangu
+        </button>
+
+        {/* ── Hero banner ── */}
+        <div className="relative rounded-2xl overflow-hidden mb-6">
+          {/* gradient bg */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/30 via-orange-500/10 to-transparent" />
+          <div className="absolute inset-0 bg-[#141414]" style={{ zIndex: -1 }} />
+          {/* decorative circles */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-orange-500/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-orange-500/5 blur-xl pointer-events-none" />
+
+          <div className="relative p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex items-start gap-4">
+                {/* group avatar */}
+                <div className="w-12 h-12 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0">
+                  <span className="text-xl font-bold text-orange-400">
+                    {(group?.name || 'G').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">{group?.name || 'Kundi'}</h1>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/15 text-orange-400 border border-orange-500/25">
+                      {roleLabel(membership?.role)}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      group?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
+                    }`}>
+                      {group?.status || 'active'}
+                    </span>
+                    {group?.founded_date && (
+                      <span className="text-xs text-white/25">
+                        Ilianzishwa {new Date(group.founded_date).getFullYear()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {canCreateProposal && (
+                <button
+                  onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
+                  className="shrink-0 self-start sm:self-auto px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                >
+                  + Pendekezo
+                </button>
+              )}
+            </div>
+
+            {/* hero stat row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-white/[0.06]">
+              {[
+                { label: 'Wanachama', value: animMembers.toLocaleString(), unit: '' },
+                { label: 'Mchango/Mwezi', value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
+                { label: 'Jumla Iliyokusanywa', value: `TSh ${animTotal.toLocaleString()}`, unit: '' },
+                { label: 'Waliolipa Mwezi Huu', value: String(animPayers), unit: `/ ${group?.member_count ?? members.length}` },
+              ].map((s, i) => (
+                <div key={i}>
+                  <p className="text-xs text-white/30 mb-0.5">{s.label}</p>
+                  <p className="text-base font-bold text-white tabular-nums">
+                    {s.value}<span className="text-white/30 font-normal text-xs ml-0.5">{s.unit}</span>
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-          {canCreateProposal && (
-            <button
-              onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-              className="shrink-0 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
-            >
-              + Pendekezo
-            </button>
-          )}
         </div>
 
         {error && (
@@ -481,7 +548,7 @@ export default function MemberGroupDetailsPage() {
         )}
 
         {/* ── Tab bar ── */}
-        <div className="flex gap-1 bg-white/[0.03] rounded-xl p-1 mb-6 overflow-x-auto">
+        <div className="flex gap-1 bg-white/[0.03] rounded-xl p-1 mb-6 overflow-x-auto scrollbar-none">
           {tabs.map(t => (
             <button
               key={t.id}
@@ -622,7 +689,7 @@ export default function MemberGroupDetailsPage() {
                     <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Miamala ya Hivi Karibuni</p>
                     <div className="space-y-2">
                       {(walletSummary.recentTransfers || []).length === 0 ? (
-                        <p className="text-xs text-white/25 py-2">Hakuna miamala bado.</p>
+                        <p className="text-xs text-white/20 py-3 text-center">— Hakuna miamala bado —</p>
                       ) : (walletSummary.recentTransfers || []).map((t) => (
                         <div key={t.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
                           <div>
@@ -712,7 +779,7 @@ export default function MemberGroupDetailsPage() {
 
                     <div className="mt-4 space-y-2">
                       {walletTransfers.length === 0 ? (
-                        <p className="text-xs text-white/25 py-2">Hakuna mapendekezo ya transfer bado.</p>
+                        <p className="text-xs text-white/20 py-3 text-center">— Hakuna mapendekezo ya transfer bado —</p>
                       ) : walletTransfers.map((t) => (
                         <div key={t.id} className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
                           <div className="flex items-start justify-between gap-3">
@@ -782,7 +849,7 @@ export default function MemberGroupDetailsPage() {
                 )}
 
                 {walletSummary?.wallet === null && !walletLoading && !walletError && (
-                  <p className="text-xs text-white/25 mt-3">Hakuna wallet iliyoundwa bado.</p>
+                  <p className="text-xs text-white/20 mt-3 text-center">— Hakuna wallet iliyoundwa bado —</p>
                 )}
               </div>
 
@@ -796,7 +863,7 @@ export default function MemberGroupDetailsPage() {
                 </div>
                 <div className="space-y-2">
                   {recentProposals.length === 0 ? (
-                    <p className="text-xs text-white/25 py-2">Hakuna mapendekezo bado.</p>
+                    <p className="text-xs text-white/20 py-3 text-center">— Hakuna mapendekezo bado —</p>
                   ) : recentProposals.map((p) => (
                     <button key={p.id}
                       onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
@@ -822,7 +889,13 @@ export default function MemberGroupDetailsPage() {
           {activeTab === 'members' && (
             <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
               {members.length === 0 ? (
-                <p className="p-6 text-sm text-white/30">Hakuna wanachama waliopo.</p>
+                <div className="flex flex-col items-center justify-center py-14 px-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <p className="text-sm font-medium text-white/30">Hakuna wanachama bado</p>
+                  <p className="text-xs text-white/15 mt-1">Wanachama wataonekana hapa baada ya kujiunga</p>
+                </div>
               ) : (
                 <div className="divide-y divide-white/5">
                   {members.map((m) => {
@@ -864,8 +937,12 @@ export default function MemberGroupDetailsPage() {
           {activeTab === 'leadership' && (
             <div className="space-y-2">
               {leadership.length === 0 ? (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-6 text-center">
-                  <p className="text-sm text-white/30">Hakuna uongozi uliowekwa bado.</p>
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 flex flex-col items-center justify-center py-14 px-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                  </div>
+                  <p className="text-sm font-medium text-white/30">Hakuna uongozi bado</p>
+                  <p className="text-xs text-white/15 mt-1">Viongozi watateuliwa na msimamizi</p>
                 </div>
               ) : leadership.map((l) => (
                 <div key={l.id} className="rounded-xl bg-[#1a1a1a] border border-white/5 px-4 py-3 flex items-center justify-between gap-4">
@@ -990,7 +1067,13 @@ export default function MemberGroupDetailsPage() {
                   <p className="text-sm font-semibold text-white">Historia ya Malipo</p>
                 </div>
                 {groupPayments.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-white/30">Hakuna malipo bado.</p>
+                  <div className="flex flex-col items-center justify-center py-12 px-6">
+                    <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    </div>
+                    <p className="text-sm font-medium text-white/30">Hakuna malipo bado</p>
+                    <p className="text-xs text-white/15 mt-1">Malipo yataonekana hapa baada ya kukusanywa</p>
+                  </div>
                 ) : (
                   <div className="divide-y divide-white/5">
                     {groupPayments.map((p: any) => (
@@ -1088,8 +1171,12 @@ export default function MemberGroupDetailsPage() {
               )}
 
               {proposals.length === 0 ? (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-8 text-center">
-                  <p className="text-sm text-white/30">Hakuna mapendekezo bado.</p>
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 flex flex-col items-center justify-center py-14 px-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                  </div>
+                  <p className="text-sm font-medium text-white/30">Hakuna mapendekezo bado</p>
+                  <p className="text-xs text-white/15 mt-1">Bonyeza &quot;+ Pendekezo&quot; kuunda la kwanza</p>
                 </div>
               ) : proposals.map((p) => (
                 <button key={p.id}
