@@ -33,13 +33,14 @@ function HeroContent() {
         <div className="flex flex-col sm:flex-row gap-3 pointer-events-auto">
           <Link
             href="/register"
-            className="inline-flex items-center justify-center px-8 py-3.5 bg-primary text-primary-foreground font-semibold rounded-2xl hover:bg-primary/90 transition-all duration-200 hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.03] active:scale-100"
           >
-            Jiunge
+            Jiunge Sasa
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
           </Link>
           <Link
             href="/learn"
-            className="inline-flex items-center justify-center px-8 py-3.5 border border-white text-white font-semibold rounded-2xl hover:bg-white hover:text-black transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 backdrop-blur-sm text-white text-sm font-semibold rounded-xl border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-200"
           >
             {t('hero.learn_more')}
           </Link>
