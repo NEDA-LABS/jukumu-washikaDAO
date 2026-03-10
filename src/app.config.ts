@@ -37,8 +37,8 @@ type ThemeTokens = {
 
 export const appConfig = {
   site: {
-    name: 'Jukumu',
-    description: 'Jukumu - Savings & Investment Groups Management Platform',
+    name: 'Washika DAU',
+    description: 'Washika DAU - Savings & Investment Groups Management Platform',
     url: 'https://jukumu.netlify.app',
     locale: 'sw',
   },

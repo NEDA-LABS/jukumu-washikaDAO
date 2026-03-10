@@ -208,7 +208,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                 <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-xl">
                   <Image
                     src="/PXL_20250531_074211116.PORTRAIT.jpg"
-                    alt="JUKUMU member"
+                    alt="Washika DAU member"
                     fill
                     className="object-cover"
                   />
@@ -247,7 +247,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
           <div className="bg-card rounded-3xl shadow-2xl p-8 lg:p-12">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-foreground mb-2">Jaza Fomu</h3>
-              <p className="text-muted-foreground">Hatua ya kwanza ya kujiunge na JUKUMU</p>
+              <p className="text-muted-foreground">Hatua ya kwanza ya kujiunge na Washika DAU</p>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -14,10 +14,10 @@ export const metadata: Metadata = {
   description: appConfig.site.description,
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: '32x32' }
+      { url: '/logo.svg', type: 'image/svg+xml' },
     ],
-    apple: { url: '/favicon.svg', type: 'image/svg+xml' }
+    shortcut: '/logo.svg',
+    apple: { url: '/logo.svg', type: 'image/svg+xml' },
   }
 }
 

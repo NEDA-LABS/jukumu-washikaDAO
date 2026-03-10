@@ -77,7 +77,7 @@ export default function MemberPortal() {
                 <span className="text-lg font-bold text-white">J</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">JUKUMU Portal</h1>
+                <h1 className="text-xl font-bold text-gray-900">Washika DAU Portal</h1>
                 <p className="text-sm text-gray-600">Karibu, {user.fullName || user.email}</p>
               </div>
             </div>
@@ -508,7 +508,7 @@ function AnnouncementsSection() {
     {
       title: 'Mafanikio ya Kundi',
       date: '2024-08-20',
-      content: 'Hongera! Kundi letu limepata uwekezaji wa TSH 500,000 kutoka JUKUMU Fund.',
+      content: 'Hongera! Kundi letu limepata uwekezaji wa TSH 500,000 kutoka Washika DAU Fund.',
       priority: 'low',
     },
   ];

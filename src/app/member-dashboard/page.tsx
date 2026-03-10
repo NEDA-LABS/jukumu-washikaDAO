@@ -196,7 +196,7 @@ export default function MemberDashboard() {
                 <span className="text-lg font-bold text-white">J</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">JUKUMU</h1>
+                <h1 className="text-xl font-bold text-foreground">Washika DAU</h1>
                 <p className="text-sm text-muted-foreground">Welcome, {user.fullName || user.email}</p>
               </div>
             </div>
@@ -267,7 +267,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
     action: activity.action_text,
     time: new Date(activity.activity_date).toLocaleDateString('en-US')
   })) : [
-    { action: 'Joined JUKUMU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('en-US') : 'Today' }
+    { action: 'Joined Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('en-US') : 'Today' }
   ];
 
   return (

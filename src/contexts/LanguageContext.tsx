@@ -22,14 +22,14 @@ const translations = {
     'nav.login': 'Ingia',
     
     // Hero Section
-    'hero.title': 'JUKUMU – Kuunganisha Wajasiriamali na Ustawi wa Jamii',
+    'hero.title': 'Washika DAU – Kuunganisha Wajasiriamali na Ustawi wa Jamii',
     'hero.subtitle': 'Tunajenga uchumi endelevu kwa kuwawezesha wajasiriamali wadogo.',
     'hero.cta.entrepreneur': 'Jisajili Sasa',
     'hero.cta.investor': 'Shirikiana Nasi',
     'hero.learn_more': 'Jifunze',
     
     // About Section
-    'about.title': 'Kuhusu JUKUMU',
+    'about.title': 'Kuhusu Washika DAU',
     'about.vision.title': 'Maono',
     'about.vision.text': 'Kuwa kitovu cha maendeleo ya kijamii na kiuchumi kinacholenga kujenga uchumi wa mzunguko endelevu.',
     'about.mission.title': 'Dhamira',
@@ -38,11 +38,11 @@ const translations = {
     'about.values.text': 'Uwazi, Ushirikiano, Uongozi, na Maendeleo Endelevu.',
     
     // How It Works
-    'how_it_works.title': 'Jinsi JUKUMU Inavyofanya Kazi',
+    'how_it_works.title': 'Jinsi Washika DAU Inavyofanya Kazi',
     'how_it_works.step1.title': 'Uanachama na Mafunzo',
     'how_it_works.step1.text': 'Wajasiriamali wanajiunga kupitia vikundi, kulipa ada ndogo ya kila mwezi, na kupata mafunzo.',
     'how_it_works.step2.title': 'Uwekezaji wa Mtaji',
-    'how_it_works.step2.text': 'JUKUMU inawekeza katika vikundi, hisa ya 30% ya uongozi.',
+    'how_it_works.step2.text': 'Washika DAU inawekeza katika vikundi, hisa ya 30% ya uongozi.',
     'how_it_works.step3.title': 'Uchumi wa Mzunguko',
     'how_it_works.step3.text': 'Rasilimali zinazunguka ndani ya mtandao.',
     'how_it_works.step4.title': 'Ustawi wa Pamoja',
@@ -56,7 +56,7 @@ const translations = {
     'impact.growing': 'Mtandao Unaokua',
     
     // Registration
-    'registration.title': 'Jisajili kwa JUKUMU',
+    'registration.title': 'Jisajili kwa Washika DAU',
     'registration.name': 'Jina Kamili',
     'registration.contact': 'Mawasiliano (Simu/Barua pepe)',
     'registration.location': 'Mahali',
@@ -67,7 +67,7 @@ const translations = {
     'registration.submit': 'Wasilisha',
     
     // Investor Section
-    'investor.title': 'Kwa Nini Uwekeze na JUKUMU?',
+    'investor.title': 'Kwa Nini Uwekeze na Washika DAU?',
     'investor.subtitle': 'Mfumo wa hisa ya 30%, uongozi wa kijamii, athari endelevu.',
     'investor.cta': 'Pakua Hati za Mwekezaji',
     
@@ -92,14 +92,14 @@ const translations = {
     'nav.login': 'Login',
     
     // Hero Section
-    'hero.title': 'JUKUMU – Connecting Entrepreneurs with Community Prosperity',
+    'hero.title': 'Washika DAU – Connecting Entrepreneurs with Community Prosperity',
     'hero.subtitle': 'We empower small entrepreneurs through training, networks, and economic leadership for a sustainable circular economy.',
     'hero.cta.entrepreneur': 'Register Now',
     'hero.cta.investor': 'Partner With Us',
     'hero.learn_more': 'Learn More',
     
     // About Section
-    'about.title': 'About JUKUMU',
+    'about.title': 'About Washika DAU',
     'about.vision.title': 'Vision',
     'about.vision.text': 'To be a center for social and economic development that aims to build a sustainable circular economy.',
     'about.mission.title': 'Mission',
@@ -108,11 +108,11 @@ const translations = {
     'about.values.text': 'Transparency, Collaboration, Leadership, and Sustainable Development.',
     
     // How It Works
-    'how_it_works.title': 'How JUKUMU Works',
+    'how_it_works.title': 'How Washika DAU Works',
     'how_it_works.step1.title': 'Membership & Training',
     'how_it_works.step1.text': 'Entrepreneurs join via groups, pay small monthly fees, and receive training.',
     'how_it_works.step2.title': 'Capital Investment',
-    'how_it_works.step2.text': 'JUKUMU invests in groups with a 30% equity stake.',
+    'how_it_works.step2.text': 'Washika DAU invests in groups with a 30% equity stake.',
     'how_it_works.step3.title': 'Circular Economy',
     'how_it_works.step3.text': 'Resources circulate within the network.',
     'how_it_works.step4.title': 'Shared Prosperity',
@@ -126,7 +126,7 @@ const translations = {
     'impact.growing': 'Growing Network',
     
     // Registration
-    'registration.title': 'Register with JUKUMU',
+    'registration.title': 'Register with Washika DAU',
     'registration.name': 'Full Name',
     'registration.contact': 'Contact (Phone/Email)',
     'registration.location': 'Location',
@@ -137,7 +137,7 @@ const translations = {
     'registration.submit': 'Submit',
     
     // Investor Section
-    'investor.title': 'Why Invest with JUKUMU?',
+    'investor.title': 'Why Invest with Washika DAU?',
     'investor.subtitle': '30% equity model, community-driven, sustainable impact.',
     'investor.cta': 'Download Investor Deck',
     

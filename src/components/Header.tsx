@@ -1,14 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import ThemeToggle from '@/components/ThemeToggle';
+import Logo from '@/components/Logo';
 
 export default function Header() {
   const { language, toggleLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const current = window.scrollY;
+      // Always show at the very top
+      if (current < 10) {
+        setVisible(true);
+      } else {
+        setVisible(current < lastScrollY.current);
+      }
+      lastScrollY.current = current;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const navigation = [
     { name: t('nav.home'), href: '/#home' },
@@ -18,17 +36,12 @@ export default function Header() {
   ];
 
   return (
-    <header className="fixed w-full top-0 z-50 bg-card/80 backdrop-blur border-b border-border">
+    <header className={`fixed w-full top-0 z-50 bg-card/80 backdrop-blur border-b border-border transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="flex w-full items-center justify-between py-5">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground">
-                <span className="text-lg font-bold text-background">J</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">JUKUMU</h1>
-              </div>
+            <Link href="/" className="flex items-center">
+              <Logo className="h-11 w-auto" />
             </Link>
           </div>
 

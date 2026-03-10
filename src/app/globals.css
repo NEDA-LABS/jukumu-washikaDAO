@@ -13,7 +13,7 @@
   --ds-input: #e4e4e7;
   --ds-primary: #ea580c;
   --ds-primary-foreground: #ffffff;
-  --ds-secondary: #f97316;
+  --ds-secondary: #1c1917;
   --ds-secondary-foreground: #ffffff;
   --ds-accent: #fff7ed;
   --ds-accent-foreground: #9a3412;
@@ -42,8 +42,8 @@
   --ds-input: #3f3f46;
   --ds-primary: #f97316;
   --ds-primary-foreground: #ffffff;
-  --ds-secondary: #ea580c;
-  --ds-secondary-foreground: #ffffff;
+  --ds-secondary: #fafaf9;
+  --ds-secondary-foreground: #1c1917;
   --ds-accent: #431407;
   --ds-accent-foreground: #fed7aa;
   --ds-destructive: #ef4444;
