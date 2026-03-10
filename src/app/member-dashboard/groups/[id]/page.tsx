@@ -445,6 +445,12 @@ export default function MemberGroupDetailsPage() {
   // ── shared dark input style ──
   const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50';
 
+  // ── animated counters — must be above any early return (Rules of Hooks) ──
+  const animTotal    = useCountUp(paymentSummary.total_collected);
+  const animMonth    = useCountUp(paymentSummary.this_month_collected);
+  const animPayers   = useCountUp(paymentSummary.this_month_payers);
+  const animMembers  = useCountUp(group?.member_count ?? members.length);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
@@ -460,12 +466,6 @@ export default function MemberGroupDetailsPage() {
     { id: 'fedha',      label: 'Fedha',     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
     { id: 'decisions',  label: 'Maamuzi',   icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
   ];
-
-  // ── animated counters for hero banner ──
-  const animTotal    = useCountUp(paymentSummary.total_collected);
-  const animMonth    = useCountUp(paymentSummary.this_month_collected);
-  const animPayers   = useCountUp(paymentSummary.this_month_payers);
-  const animMembers  = useCountUp(group?.member_count ?? members.length);
 
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
