@@ -87,38 +87,81 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-accent to-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="flex items-center justify-center space-x-2 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-primary to-destructive">
-              <span className="text-xl font-bold text-white">W</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Washika DAU</h1>
-            </div>
-          </Link>
-          <h2 className="text-3xl font-bold text-foreground">Ingia kwenye akaunti yako</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Au{' '}
-            <Link href="/register" className="font-medium text-primary hover:text-primary/80">
-              jisajili kama mwanachama mpya
-            </Link>
-          </p>
+    <div className="min-h-screen bg-[#0d0d0d] flex">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-r border-white/[0.05] relative overflow-hidden">
+        {/* Glow */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+
+        <Link href="/" className="flex items-center gap-3 relative z-10">
+          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+            <span className="text-lg font-black text-white">W</span>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white leading-none">Washika DAU</p>
+            <p className="text-[10px] text-white/30 mt-0.5">Jukumu Platform</p>
+          </div>
+        </Link>
+
+        <div className="relative z-10 space-y-8">
+          <div>
+            <h2 className="text-3xl font-bold text-white leading-tight mb-3">
+              Karibu tena<br />kwenye jamii yako
+            </h2>
+            <p className="text-sm text-white/40 leading-relaxed">
+              Ingia kuendelea na safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { icon: '📈', label: 'Fuatilia uwekezaji wako' },
+              { icon: '🎓', label: 'Endelea na masomo na vyeti' },
+              { icon: '👥', label: 'Shirikiana na kundi lako' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+                <span className="text-lg">{item.icon}</span>
+                <p className="text-sm text-white/60">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Login Form */}
-        <div className="bg-card rounded-xl shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <p className="text-[10px] text-white/20 relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <Link href="/" className="flex items-center gap-3 mb-10 lg:hidden">
+            <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <span className="text-base font-black text-white">W</span>
+            </div>
+            <p className="text-sm font-bold text-white">Washika DAU</p>
+          </Link>
+
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-white mb-1">Ingia</h1>
+            <p className="text-sm text-white/40">
+              Bado huna akaunti?{' '}
+              <Link href="/register" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+                Jisajili hapa
+              </Link>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-muted-foreground mb-2">
+              <label htmlFor="identifier" className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
                 Barua pepe au nambari ya simu
               </label>
               <input
@@ -128,15 +171,20 @@ export default function LoginPage() {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
+                className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all"
                 placeholder="07xx xxx xxx au email@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-muted-foreground mb-2">
-                Nywila
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-xs font-medium text-white/40 uppercase tracking-wider">
+                  Nywila
+                </label>
+                <a href="#" className="text-xs text-orange-400/70 hover:text-orange-400 transition-colors">
+                  Umesahau?
+                </a>
+              </div>
               <div className="relative">
                 <input
                   id="password"
@@ -145,59 +193,42 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200 pr-12"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all pr-11"
                   placeholder="Weka nywila yako"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-white/25 hover:text-white/50 transition-colors"
                 >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
+                  {showPassword ? <EyeSlashIcon className="h-4.5 w-4.5" /> : <EyeIcon className="h-4.5 w-4.5" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
-                  Nikumbuke
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a href="#" className="font-medium text-primary hover:text-primary/80">
-                  Umesahau nywila?
-                </a>
-              </div>
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="w-4 h-4 accent-orange-500 rounded"
+              />
+              <label htmlFor="remember-me" className="text-xs text-white/40">Nikumbuke kwenye kifaa hiki</label>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20 mt-2"
             >
               {isLoading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                   Inaingia...
-                </div>
-              ) : (
-                'Ingia'
-              )}
+                </span>
+              ) : 'Ingia'}
             </button>
           </form>
-
         </div>
       </div>
     </div>
