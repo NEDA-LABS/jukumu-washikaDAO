@@ -415,1022 +415,732 @@ export default function MemberGroupDetailsPage() {
     }
   };
 
+  // ── shared dark input style ──
+  const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50';
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
   }
 
+  const tabs: { id: typeof activeTab; label: string }[] = [
+    { id: 'overview',  label: 'Muhtasari' },
+    { id: 'members',   label: 'Wanachama' },
+    { id: 'leadership',label: 'Uongozi' },
+    { id: 'fedha',     label: 'Fedha' },
+    { id: 'decisions', label: 'Maamuzi' },
+  ];
+
   return (
-    <div className="min-h-screen bg-muted">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-start justify-between gap-4">
+    <div className="min-h-screen bg-[#0d0d0d]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <button
               onClick={() => router.push('/member-dashboard?section=group')}
-              className="text-sm text-primary hover:text-accent-foreground"
+              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-2"
             >
-              ← Back to My Groups
+              ← Rudi Makundi Yangu
             </button>
-            <h1 className="mt-2 text-2xl font-bold text-foreground">{group?.name || 'Group'}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Role: <span className="font-medium">{roleLabel(membership?.role)}</span>
-            </p>
+            <h1 className="text-xl font-semibold text-white">{group?.name || 'Kundi'}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                {roleLabel(membership?.role)}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                group?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
+              }`}>
+                {group?.status || 'active'}
+              </span>
+            </div>
           </div>
-
-          <div className="flex gap-2">
+          {canCreateProposal && (
             <button
-              onClick={() => {
-                setActiveTab('decisions');
-                setShowCreateProposal(true);
-              }}
-              disabled={!canCreateProposal}
-              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                canCreateProposal
-                  ? 'bg-primary text-white border-primary hover:bg-primary/90'
-                  : 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
-              }`}
+              onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
+              className="shrink-0 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
             >
-              Create Proposal
+              + Pendekezo
             </button>
-            <button
-              onClick={() => alert('Coming soon: Vote on proposals')}
-              className="px-4 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
-            >
-              Vote
-            </button>
-          </div>
+          )}
         </div>
 
         {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+          <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
         )}
 
-        <div className="mt-6 bg-card rounded-lg shadow-sm border border-border">
-          <div className="border-b border-border px-4">
-            <nav className="flex gap-6">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('members')}
-                className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'members' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                Members
-              </button>
-              <button
-                onClick={() => setActiveTab('leadership')}
-                className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'leadership' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                Leadership
-              </button>
-              <button
-                onClick={() => setActiveTab('fedha')}
-                className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'fedha' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                Fedha
-              </button>
-              <button
-                onClick={() => setActiveTab('decisions')}
-                className={`py-3 text-sm font-medium border-b-2 ${
-                  activeTab === 'decisions' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                Decisions
-              </button>
-            </nav>
-          </div>
+        {/* ── Tab bar ── */}
+        <div className="flex gap-1 bg-white/[0.03] rounded-xl p-1 mb-6 overflow-x-auto">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`flex-1 min-w-max py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                activeTab === t.id
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'text-white/40 hover:text-white/70'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-          <div className="p-4">
-            {activeTab === 'overview' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-border rounded-lg p-4">
-                    <p className="text-xs text-muted-foreground">Monthly Contribution</p>
-                    <p className="text-lg font-semibold text-foreground">
-                      TSH {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="border border-border rounded-lg p-4">
-                    <p className="text-xs text-muted-foreground">Members</p>
-                    <p className="text-lg font-semibold text-foreground">{group?.member_count ?? members.length}</p>
-                  </div>
-                  <div className="border border-border rounded-lg p-4">
-                    <p className="text-xs text-muted-foreground">Leader</p>
-                    <p className="text-lg font-semibold text-foreground">{group?.leader_name || '—'}</p>
-                  </div>
+        {/* ── Tab content ── */}
+        <div>
+          {activeTab === 'overview' && (
+            <div className="space-y-4">
+
+              {/* Group stat cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                  <p className="text-xs text-white/30 mb-1">Mchango/Mwezi</p>
+                  <p className="text-base font-semibold text-orange-400">
+                    TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
+                  </p>
                 </div>
-
-                {/* Pay Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleOpenPay('contribution')}
-                    className="flex-1 px-4 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    💳 Lipa Mchango
-                  </button>
-                  <button
-                    onClick={() => handleOpenPay('topup')}
-                    className="flex-1 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    ➕ Weka Mfuko
-                  </button>
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                  <p className="text-xs text-white/30 mb-1">Wanachama</p>
+                  <p className="text-base font-semibold text-white">{group?.member_count ?? members.length}</p>
                 </div>
-
-                {/* Financial Summary */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="border border-green-200 bg-green-50 rounded-lg p-3">
-                    <p className="text-xs text-green-600">Jumla Iliyokusanywa</p>
-                    <p className="text-lg font-semibold text-green-800">TSH {paymentSummary.total_collected.toLocaleString()}</p>
-                  </div>
-                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-3">
-                    <p className="text-xs text-blue-600">Mwezi Huu</p>
-                    <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
-                  </div>
-                  <div className="border border-primary/20 bg-accent rounded-lg p-3">
-                    <p className="text-xs text-primary">Waliolipa Mwezi Huu</p>
-                    <p className="text-lg font-semibold text-accent-foreground">{paymentSummary.this_month_payers}</p>
-                  </div>
-                  <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
-                    <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
-                    <p className="text-lg font-semibold text-purple-800">TSH {paymentSummary.total_disbursed.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="border border-border rounded-lg p-4 bg-card">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Group Wallet (USDC)</p>
-                      <p className="text-sm text-muted-foreground mt-1">Visible to all group members.</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {walletSummary?.wallet === null && canCreateProposal && (
-                        <button
-                          disabled={walletLoading}
-                          onClick={async () => {
-                            if (!groupId) return;
-                            setWalletLoading(true);
-                            setWalletError('');
-                            try {
-                              const res = await fetch(`/api/member/groups/${groupId}/wallet`, { method: 'POST' });
-                              const json = await res.json().catch(() => null);
-                              if (!res.ok) {
-                                setWalletError(json?.error || 'Imeshindikana kuunda wallet.');
-                                return;
-                              }
-                              const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
-                              const refreshJson = await refresh.json().catch(() => null);
-                              if (refresh.ok) setWalletSummary((refreshJson as WalletSummary) || null);
-                              else setWalletError(refreshJson?.error || 'Imeshindikana kupakua taarifa za wallet.');
-
-                              const transfers = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                              const transfersJson = await transfers.json().catch(() => null);
-                              if (transfers.ok) {
-                                setWalletTransfers(
-                                  Array.isArray(transfersJson?.transfers) ? (transfersJson.transfers as WalletTransferRow[]) : []
-                                );
-                              }
-                            } catch (err) {
-                              setWalletError(err instanceof Error ? err.message : 'Imeshindikana kuunda wallet.');
-                            } finally {
-                              setWalletLoading(false);
-                            }
-                          }}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                            walletLoading
-                              ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
-                              : 'bg-primary text-white border-primary hover:bg-primary/90'
-                          }`}
-                        >
-                          {walletLoading ? 'Creating...' : 'Create Wallet'}
-                        </button>
-                      )}
-                      {walletSummary?.wallet && (
-                        <button
-                          disabled={walletLoading}
-                          onClick={async () => {
-                            if (!groupId) return;
-                            setWalletLoading(true);
-                            setWalletError('');
-                            try {
-                              const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
-                              const refreshJson = await refresh.json().catch(() => null);
-                              if (refresh.ok) setWalletSummary((refreshJson as WalletSummary) || null);
-                              else setWalletError(refreshJson?.error || 'Imeshindikana kupakua taarifa za wallet.');
-
-                              const transfers = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                              const transfersJson = await transfers.json().catch(() => null);
-                              if (transfers.ok) {
-                                setWalletTransfers(
-                                  Array.isArray(transfersJson?.transfers) ? (transfersJson.transfers as WalletTransferRow[]) : []
-                                );
-                              }
-                            } catch (err) {
-                              setWalletError(err instanceof Error ? err.message : 'Imeshindikana kupakua taarifa za wallet.');
-                            } finally {
-                              setWalletLoading(false);
-                            }
-                          }}
-                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
-                        >
-                          Refresh
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {walletError && (
-                    <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                      {walletError}
-                    </div>
-                  )}
-
-                  {walletSummary?.wallet && (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="border border-border rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="text-sm font-semibold text-foreground mt-1">{shortAddress(walletSummary.wallet.address)}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Network: {walletSummary.wallet.network}</p>
-                      </div>
-                      <div className="border border-border rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">USDC Balance</p>
-                        <p className="text-sm font-semibold text-foreground mt-1">
-                          {formatBaseUnits(walletSummary.balances?.usdc?.amountBaseUnits, walletSummary.balances?.usdc?.decimals ?? 6)} USDC
-                        </p>
-                      </div>
-                      <div className="border border-border rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">ETH (Gas)</p>
-                        <p className="text-sm font-semibold text-foreground mt-1">
-                          {formatBaseUnits(walletSummary.balances?.eth?.amountBaseUnits, walletSummary.balances?.eth?.decimals ?? 18)} ETH
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {walletSummary?.wallet && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-foreground">Recent Transfers</p>
-                      <div className="mt-2 space-y-2">
-                        {(walletSummary.recentTransfers || []).map((t) => (
-                          <div key={t.id} className="border border-border rounded-lg p-3">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm font-semibold text-foreground">
-                                  To: {shortAddress(t.to_address)}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Amount: {formatBaseUnits(t.amount_base_units, 6)} USDC
-                                </p>
-                              </div>
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
-                                {t.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-
-                        {(walletSummary.recentTransfers || []).length === 0 && (
-                          <p className="text-sm text-muted-foreground">No transfers yet.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {walletSummary?.wallet && (
-                    <div className="mt-6 border-t border-border pt-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Manage Transfers</p>
-                          <p className="text-sm text-muted-foreground mt-1">USDC only. Requires 2-of-3 approvals (Mwenyekiti/Katibu/MwekaHazina).</p>
-                        </div>
-                        <button
-                          disabled={walletTransfersLoading}
-                          onClick={async () => {
-                            if (!groupId) return;
-                            setWalletTransfersLoading(true);
-                            setWalletTransfersError('');
-                            try {
-                              const transfers = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                              const transfersJson = await transfers.json().catch(() => null);
-                              if (!transfers.ok) {
-                                setWalletTransfersError(transfersJson?.error || 'Imeshindikana kupakua transfers za wallet.');
-                                return;
-                              }
-                              setWalletTransfers(
-                                Array.isArray(transfersJson?.transfers) ? (transfersJson.transfers as WalletTransferRow[]) : []
-                              );
-                            } catch (err) {
-                              setWalletTransfersError(
-                                err instanceof Error ? err.message : 'Imeshindikana kupakua transfers za wallet.'
-                              );
-                            } finally {
-                              setWalletTransfersLoading(false);
-                            }
-                          }}
-                          className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
-                        >
-                          Refresh
-                        </button>
-                      </div>
-
-                      {walletTransfersError && (
-                        <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                          {walletTransfersError}
-                        </div>
-                      )}
-
-                      {canProposeTransfer && (
-                        <form
-                          className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3"
-                          onSubmit={async (e) => {
-                            e.preventDefault();
-                            if (!groupId) return;
-                            if (!walletSummary?.wallet) return;
-
-                            const to = transferToAddress.trim();
-                            const amt = transferAmount.trim();
-                            if (!to || !amt) {
-                              setWalletTransfersError('To address and amount are required.');
-                              return;
-                            }
-
-                            setTransferSubmitting(true);
-                            setWalletTransfersError('');
-                            try {
-                              const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ toAddress: to, amount: amt })
-                              });
-
-                              const json = await res.json().catch(() => null);
-                              if (!res.ok) {
-                                setWalletTransfersError(json?.error || 'Imeshindikana kuanzisha transfer.');
-                                return;
-                              }
-
-                              setTransferToAddress('');
-                              setTransferAmount('');
-
-                              const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                              const refreshJson = await refresh.json().catch(() => null);
-                              if (refresh.ok) {
-                                setWalletTransfers(
-                                  Array.isArray(refreshJson?.transfers) ? (refreshJson.transfers as WalletTransferRow[]) : []
-                                );
-                              }
-                            } catch (err) {
-                              setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana kuanzisha transfer.');
-                            } finally {
-                              setTransferSubmitting(false);
-                            }
-                          }}
-                        >
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-muted-foreground">To address</label>
-                            <input
-                              value={transferToAddress}
-                              onChange={(e) => setTransferToAddress(e.target.value)}
-                              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                              placeholder="0x..."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-muted-foreground">Amount (USDC)</label>
-                            <input
-                              value={transferAmount}
-                              onChange={(e) => setTransferAmount(e.target.value)}
-                              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                              placeholder="e.g. 10.5"
-                            />
-                          </div>
-                          <div className="md:col-span-3 flex items-center gap-2">
-                            <button
-                              type="submit"
-                              disabled={transferSubmitting}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                                transferSubmitting
-                                  ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
-                                  : 'bg-primary text-white border-primary hover:bg-primary/90'
-                              }`}
-                            >
-                              {transferSubmitting ? 'Submitting...' : 'Propose Transfer'}
-                            </button>
-                          </div>
-                        </form>
-                      )}
-
-                      <div className="mt-4 space-y-2">
-                        {walletTransfers.map((t) => (
-                          <div key={t.id} className="border border-border rounded-lg p-3">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm font-semibold text-foreground">Transfer #{t.id}</p>
-                                <p className="text-xs text-muted-foreground mt-1">To: {shortAddress(t.to_address)}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Amount: {formatBaseUnits(t.amount_base_units, 6)} USDC
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Approvals: {t.approval_count ?? 0}/{t.approvals_required}
-                                </p>
-                                {t.executed_tx_hash && (
-                                  <a
-                                    href={`https://basescan.org/tx/${t.executed_tx_hash}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-xs text-primary hover:text-accent-foreground mt-1 inline-block"
-                                  >
-                                    View on BaseScan
-                                  </a>
-                                )}
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
-                                  {t.status}
-                                </span>
-
-                                {canApproveOrExecuteTransfer && t.status !== 'executed' && (
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={async () => {
-                                        if (!groupId) return;
-                                        setWalletTransfersLoading(true);
-                                        setWalletTransfersError('');
-                                        try {
-                                          const res = await fetch(
-                                            `/api/member/groups/${groupId}/wallet/transfers/${t.id}/approve`,
-                                            { method: 'POST' }
-                                          );
-                                          const json = await res.json().catch(() => null);
-                                          if (!res.ok) {
-                                            setWalletTransfersError(json?.error || 'Imeshindikana ku-approve transfer.');
-                                            return;
-                                          }
-                                          const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                                          const refreshJson = await refresh.json().catch(() => null);
-                                          if (refresh.ok) {
-                                            setWalletTransfers(
-                                              Array.isArray(refreshJson?.transfers)
-                                                ? (refreshJson.transfers as WalletTransferRow[])
-                                                : []
-                                            );
-                                          }
-                                        } catch (err) {
-                                          setWalletTransfersError(
-                                            err instanceof Error ? err.message : 'Imeshindikana ku-approve transfer.'
-                                          );
-                                        } finally {
-                                          setWalletTransfersLoading(false);
-                                        }
-                                      }}
-                                      disabled={walletTransfersLoading}
-                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        if (!groupId) return;
-                                        setWalletTransfersLoading(true);
-                                        setWalletTransfersError('');
-                                        try {
-                                          const res = await fetch(
-                                            `/api/member/groups/${groupId}/wallet/transfers/${t.id}/execute`,
-                                            { method: 'POST' }
-                                          );
-                                          const json = await res.json().catch(() => null);
-                                          if (!res.ok) {
-                                            setWalletTransfersError(json?.error || 'Imeshindikana ku-execute transfer.');
-                                            return;
-                                          }
-                                          const refreshWallet = await fetch(`/api/member/groups/${groupId}/wallet`);
-                                          const refreshWalletJson = await refreshWallet.json().catch(() => null);
-                                          if (refreshWallet.ok) setWalletSummary((refreshWalletJson as WalletSummary) || null);
-
-                                          const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                                          const refreshJson = await refresh.json().catch(() => null);
-                                          if (refresh.ok) {
-                                            setWalletTransfers(
-                                              Array.isArray(refreshJson?.transfers)
-                                                ? (refreshJson.transfers as WalletTransferRow[])
-                                                : []
-                                            );
-                                          }
-                                        } catch (err) {
-                                          setWalletTransfersError(
-                                            err instanceof Error ? err.message : 'Imeshindikana ku-execute transfer.'
-                                          );
-                                        } finally {
-                                          setWalletTransfersLoading(false);
-                                        }
-                                      }}
-                                      disabled={walletTransfersLoading}
-                                      className="px-3 py-2 rounded-lg text-sm font-medium border bg-primary text-white border-primary hover:bg-primary/90"
-                                    >
-                                      Execute
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-
-                        {walletTransfers.length === 0 && (
-                          <p className="text-sm text-muted-foreground">No transfer proposals yet.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {walletSummary?.wallet === null && !walletLoading && !walletError && (
-                    <div className="mt-3">
-                      <p className="text-sm text-muted-foreground">No wallet created yet.</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border border-border rounded-lg p-4 bg-card">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Recent Proposals</p>
-                      <p className="text-sm text-muted-foreground mt-1">Visible to all group members.</p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab('decisions')}
-                      className="text-sm text-primary hover:text-accent-foreground"
-                    >
-                      View all
-                    </button>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {recentProposals.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                        className="w-full text-left border border-border rounded-lg p-3 hover:bg-muted transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{p.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">Created by: {p.created_by_name || '—'}</p>
-                          </div>
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
-                            {String(p.status)}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-
-                    {recentProposals.length === 0 && <p className="text-sm text-muted-foreground">No proposals yet.</p>}
-                  </div>
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                  <p className="text-xs text-white/30 mb-1">Kiongozi</p>
+                  <p className="text-base font-semibold text-white truncate">{group?.leader_name || '—'}</p>
                 </div>
               </div>
-            )}
 
-            {activeTab === 'members' && (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                      {isLeader && <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mchango Mwezi Huu</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-card divide-y divide-gray-200">
-                    {members.map((m) => (
-                      <tr key={m.id} className="hover:bg-muted">
-                        <td className="px-4 py-2 whitespace-nowrap">
-                          <div className="text-sm font-medium text-foreground">{m.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{m.email || m.phone || ''}</div>
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-foreground">{roleLabel(m.role)}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-foreground">{m.status || 'active'}</td>
-                        {isLeader && (
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            {(() => {
-                              const mp = memberPaymentStatus.find((p: any) => p.member_id === m.id);
-                              if (!mp) return <span className="text-xs text-gray-400">—</span>;
-                              return mp.paid_this_month ? (
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Amelipa</span>
-                              ) : (
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Hajalipa</span>
-                              );
-                            })()}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {members.length === 0 && <p className="text-sm text-muted-foreground">No members found.</p>}
-              </div>
-            )}
-
-            {activeTab === 'leadership' && (
-              <div className="space-y-3">
-                {leadership.map((l) => (
-                  <div key={l.id} className="border border-border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{l.full_name}</p>
-                        <p className="text-xs text-muted-foreground">{l.email || ''}</p>
-                      </div>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-accent text-accent-foreground border border-primary/20">
-                        {roleLabel(l.role)}
-                      </span>
-                    </div>
+              {/* Financial summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
+                  { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
+                  { label: 'Waliolipa Mwezi Huu',  value: String(paymentSummary.this_month_payers), accent: 'text-orange-400' },
+                  { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
+                ].map((c, i) => (
+                  <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-3">
+                    <p className="text-xs text-white/30 mb-1">{c.label}</p>
+                    <p className={`text-sm font-semibold ${c.accent}`}>{c.value}</p>
                   </div>
                 ))}
-
-                {leadership.length === 0 && <p className="text-sm text-muted-foreground">No leadership assigned yet.</p>}
               </div>
-            )}
 
-            {activeTab === 'fedha' && (
-              <div className="space-y-6">
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="border border-green-200 bg-green-50 rounded-lg p-3">
-                    <p className="text-xs text-green-600">Jumla Iliyokusanywa</p>
-                    <p className="text-lg font-semibold text-green-800">TSH {paymentSummary.total_collected.toLocaleString()}</p>
+              {/* Group wallet card */}
+              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Wallet ya Kundi (USDC)</p>
+                    <p className="text-xs text-white/30 mt-0.5">Inaonekana kwa wanachama wote.</p>
                   </div>
-                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-3">
-                    <p className="text-xs text-blue-600">Mwezi Huu</p>
-                    <p className="text-lg font-semibold text-blue-800">TSH {paymentSummary.this_month_collected.toLocaleString()}</p>
-                  </div>
-                  <div className="border border-primary/20 bg-accent rounded-lg p-3">
-                    <p className="text-xs text-primary">Waliolipa</p>
-                    <p className="text-lg font-semibold text-accent-foreground">{paymentSummary.this_month_payers} / {members.length}</p>
-                  </div>
-                  <div className="border border-purple-200 bg-purple-50 rounded-lg p-3">
-                    <p className="text-xs text-purple-600">Jumla Iliyotumwa</p>
-                    <p className="text-lg font-semibold text-purple-800">TSH {paymentSummary.total_disbursed.toLocaleString()}</p>
+                  <div className="flex gap-2">
+                    {walletSummary?.wallet === null && canCreateProposal && (
+                      <button
+                        disabled={walletLoading}
+                        onClick={async () => {
+                          if (!groupId) return;
+                          setWalletLoading(true); setWalletError('');
+                          try {
+                            const res = await fetch(`/api/member/groups/${groupId}/wallet`, { method: 'POST' });
+                            const json = await res.json().catch(() => null);
+                            if (!res.ok) { setWalletError(json?.error || 'Imeshindikana kuunda wallet.'); return; }
+                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
+                            const rj = await refresh.json().catch(() => null);
+                            if (refresh.ok) setWalletSummary((rj as WalletSummary) || null);
+                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                            const trj = await tr.json().catch(() => null);
+                            if (tr.ok) setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
+                          } catch (err) { setWalletError(err instanceof Error ? err.message : 'Imeshindikana kuunda wallet.'); }
+                          finally { setWalletLoading(false); }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
+                      >
+                        {walletLoading ? 'Inaunda...' : 'Unda Wallet'}
+                      </button>
+                    )}
+                    {walletSummary?.wallet && (
+                      <button
+                        disabled={walletLoading}
+                        onClick={async () => {
+                          if (!groupId) return;
+                          setWalletLoading(true); setWalletError('');
+                          try {
+                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
+                            const rj = await refresh.json().catch(() => null);
+                            if (refresh.ok) setWalletSummary((rj as WalletSummary) || null);
+                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                            const trj = await tr.json().catch(() => null);
+                            if (tr.ok) setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
+                          } catch (err) { setWalletError(err instanceof Error ? err.message : 'Imeshindikana kupakua.'); }
+                          finally { setWalletLoading(false); }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 disabled:opacity-50 transition-colors"
+                      >
+                        Refresh
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Pay Buttons */}
-                <div className="flex gap-3">
-                  <button onClick={() => handleOpenPay('contribution')} className="flex-1 px-4 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90">
-                    💳 Lipa Mchango
-                  </button>
-                  <button onClick={() => handleOpenPay('topup')} className="flex-1 px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
-                    ➕ Weka Mfuko
-                  </button>
-                </div>
+                {walletError && (
+                  <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{walletError}</div>
+                )}
 
-                {/* Member Payment Status (Leaders only) */}
-                {isLeader && memberPaymentStatus.length > 0 && (
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-sm font-medium text-foreground mb-3">Hali ya Michango - {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}</p>
+                {walletSummary?.wallet && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
+                      <p className="text-xs text-white/30 mb-1">Anwani</p>
+                      <p className="text-sm font-mono text-white">{shortAddress(walletSummary.wallet.address)}</p>
+                      <p className="text-xs text-white/20 mt-0.5">{walletSummary.wallet.network}</p>
+                    </div>
+                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
+                      <p className="text-xs text-white/30 mb-1">Salio la USDC</p>
+                      <p className="text-sm font-semibold text-blue-400">
+                        {formatBaseUnits(walletSummary.balances?.usdc?.amountBaseUnits, walletSummary.balances?.usdc?.decimals ?? 6)} USDC
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
+                      <p className="text-xs text-white/30 mb-1">ETH (Gas)</p>
+                      <p className="text-sm font-semibold text-white/60">
+                        {formatBaseUnits(walletSummary.balances?.eth?.amountBaseUnits, walletSummary.balances?.eth?.decimals ?? 18)} ETH
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {walletSummary?.wallet && (
+                  <div>
+                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Miamala ya Hivi Karibuni</p>
                     <div className="space-y-2">
-                      {memberPaymentStatus.map((mp: any) => (
-                        <div key={mp.member_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                      {(walletSummary.recentTransfers || []).length === 0 ? (
+                        <p className="text-xs text-white/25 py-2">Hakuna miamala bado.</p>
+                      ) : (walletSummary.recentTransfers || []).map((t) => (
+                        <div key={t.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
                           <div>
-                            <p className="text-sm font-medium text-foreground">{mp.full_name}</p>
-                            <p className="text-xs text-muted-foreground">{mp.phone || ''}</p>
+                            <p className="text-xs text-white/70">→ {shortAddress(t.to_address)}</p>
+                            <p className="text-xs text-white/30 mt-0.5">{formatBaseUnits(t.amount_base_units, 6)} USDC</p>
                           </div>
-                          {mp.paid_this_month ? (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Amelipa ✓</span>
-                          ) : (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Hajalipa</span>
-                          )}
+                          <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40">{t.status}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Disbursement Form (Leaders only) */}
-                {isLeader && (
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-sm font-medium text-foreground mb-1">Tuma Fedha kwa Mwanachama</p>
-                    <p className="text-xs text-muted-foreground mb-3">Tuma pesa moja kwa moja kwa simu ya mwanachama kupitia mobile money.</p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {walletSummary?.wallet && (
+                  <div className="mt-5 pt-4 border-t border-white/5">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Jina la Mpokeaji</label>
-                        <input
-                          value={disburseName}
-                          onChange={(e) => { setDisburseName(e.target.value); setDisburseError(''); }}
-                          placeholder="e.g. John Doe"
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Nambari ya Simu</label>
-                        <input
-                          value={disbursePhone}
-                          onChange={(e) => { setDisbursePhone(e.target.value); setDisburseError(''); }}
-                          placeholder="255712345678"
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
-                        <input
-                          type="number"
-                          value={disburseAmount}
-                          onChange={(e) => { setDisburseAmount(e.target.value); setDisburseError(''); }}
-                          placeholder="e.g. 50000"
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Mtandao</label>
-                        <select
-                          value={disburseProvider}
-                          onChange={(e) => setDisburseProvider(e.target.value)}
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="airtel">Airtel Money</option>
-                          <option value="mpesa">Vodacom</option>
-                          <option value="tigopesa">Tigo Pesa</option>
-                          <option value="halopesa">Halo Pesa</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Maelezo (si lazima)</label>
-                      <input
-                        value={disburseDesc}
-                        onChange={(e) => setDisburseDesc(e.target.value)}
-                        placeholder="e.g. Malipo ya mkopo"
-                        className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    </div>
-                    {disburseError && <p className="text-xs text-red-600 mt-2">{disburseError}</p>}
-                    {disburseSuccess && <p className="text-xs text-green-600 mt-2">{disburseSuccess}</p>}
-                    <button
-                      onClick={handleDisburse}
-                      disabled={disburseLoading}
-                      className="mt-3 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {disburseLoading ? 'Inatuma...' : 'Tuma Fedha'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Payment History */}
-                <div className="border border-border rounded-lg p-4 bg-card">
-                  <p className="text-sm font-medium text-foreground mb-3">Historia ya Malipo</p>
-                  {groupPayments.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-muted">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Tarehe</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Aina</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Mwanachama</th>
-                            <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Kiasi</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Hali</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-card divide-y divide-gray-200">
-                          {groupPayments.map((p: any) => (
-                            <tr key={p.reference} className="hover:bg-muted">
-                              <td className="px-3 py-2 text-xs text-muted-foreground">
-                                {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                              </td>
-                              <td className="px-3 py-2 text-xs text-muted-foreground">
-                                {p.payment_type === 'contribution' ? 'Mchango' : p.payment_type === 'group_topup' ? 'Mfuko' : 'Malipo'}
-                              </td>
-                              <td className="px-3 py-2 text-xs text-muted-foreground">{p.member_name || p.customer_name || '—'}</td>
-                              <td className="px-3 py-2 text-xs text-foreground text-right font-medium">
-                                {p.payment_type === 'disbursement' ? '-' : '+'}TSH {parseInt(p.amount_tzs || 0).toLocaleString()}
-                              </td>
-                              <td className="px-3 py-2">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                  p.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  p.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {p.status === 'completed' ? 'Imekamilika' : p.status === 'failed' ? 'Imeshindwa' : 'Inasubiri'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Hakuna malipo bado.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'decisions' && (
-              <div className="space-y-3">
-                {showCreateProposal && (
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Create Proposal</p>
-                        <p className="text-sm text-muted-foreground mt-1">Only leadership roles can create proposals.</p>
+                        <p className="text-sm font-semibold text-white">Simamia Miamala</p>
+                        <p className="text-xs text-white/30 mt-0.5">USDC pekee. Inahitaji idhini 2-kati-ya-3.</p>
                       </div>
                       <button
-                        onClick={() => setShowCreateProposal(false)}
-                        className="text-sm text-muted-foreground hover:text-gray-800"
+                        disabled={walletTransfersLoading}
+                        onClick={async () => {
+                          if (!groupId) return;
+                          setWalletTransfersLoading(true); setWalletTransfersError('');
+                          try {
+                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                            const trj = await tr.json().catch(() => null);
+                            if (!tr.ok) { setWalletTransfersError(trj?.error || 'Imeshindikana kupakua.'); return; }
+                            setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
+                          } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana kupakua.'); }
+                          finally { setWalletTransfersLoading(false); }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/40 border border-white/10 disabled:opacity-50 transition-colors"
                       >
-                        Close
+                        Refresh
                       </button>
                     </div>
 
-                    {!canCreateProposal && (
-                      <div className="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
-                        You do not have permission to create proposals.
-                      </div>
+                    {walletTransfersError && (
+                      <div className="mb-3 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{walletTransfersError}</div>
                     )}
 
-                    <form
-                      className="mt-4 space-y-3"
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!groupId) return;
-                        if (!canCreateProposal) return;
+                    {canProposeTransfer && (
+                      <form
+                        className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3"
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!groupId || !walletSummary?.wallet) return;
+                          const to = transferToAddress.trim();
+                          const amt = transferAmount.trim();
+                          if (!to || !amt) { setWalletTransfersError('Anwani na kiasi vinahitajika.'); return; }
+                          setTransferSubmitting(true); setWalletTransfersError('');
+                          try {
+                            const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ toAddress: to, amount: amt }),
+                            });
+                            const json = await res.json().catch(() => null);
+                            if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana kuanzisha transfer.'); return; }
+                            setTransferToAddress(''); setTransferAmount('');
+                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                            const rj = await refresh.json().catch(() => null);
+                            if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
+                          } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                          finally { setTransferSubmitting(false); }
+                        }}
+                      >
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-white/40 mb-1">Anwani ya Mpokeaji</label>
+                          <input value={transferToAddress} onChange={e => setTransferToAddress(e.target.value)} className={dkInput} placeholder="0x..." />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-white/40 mb-1">Kiasi (USDC)</label>
+                          <input value={transferAmount} onChange={e => setTransferAmount(e.target.value)} className={dkInput} placeholder="e.g. 10.5" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <button type="submit" disabled={transferSubmitting}
+                            className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors">
+                            {transferSubmitting ? 'Inatuma...' : 'Pendekeza Transfer'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
 
-                        const t = proposalTitle.trim();
-                        const d = proposalDescription.trim();
-                        if (!t) {
-                          setError('Proposal title is required.');
-                          return;
-                        }
-
-                        setProposalSubmitting(true);
-                        setError('');
-                        try {
-                          const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title: t, description: d })
-                          });
-
-                          if (res.status === 401) {
-                            router.push('/login');
-                            return;
-                          }
-
-                          const json = await res.json().catch(() => null);
-                          if (!res.ok) {
-                            setError(json?.error || 'Imeshindikana kuunda pendekezo.');
-                            return;
-                          }
-
-                          const created = json?.proposal as ProposalRow | undefined;
-                          if (created) {
-                            setProposals((prev) => [created, ...prev]);
-                          }
-                          setProposalTitle('');
-                          setProposalDescription('');
-                          setShowCreateProposal(false);
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : 'Imeshindikana kuunda pendekezo.');
-                        } finally {
-                          setProposalSubmitting(false);
-                        }
-                      }}
-                    >
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">Title</label>
-                        <input
-                          value={proposalTitle}
-                          onChange={(e) => setProposalTitle(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                          placeholder="e.g. Increase monthly contribution"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">Description</label>
-                        <textarea
-                          value={proposalDescription}
-                          onChange={(e) => setProposalDescription(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                          placeholder="Explain the proposal..."
-                          rows={4}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="submit"
-                          disabled={proposalSubmitting || !canCreateProposal}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                            proposalSubmitting || !canCreateProposal
-                              ? 'bg-gray-100 text-gray-400 border-border cursor-not-allowed'
-                              : 'bg-primary text-white border-primary hover:bg-primary/90'
-                          }`}
-                        >
-                          {proposalSubmitting ? 'Creating...' : 'Create'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowCreateProposal(false)}
-                          className="px-4 py-2 rounded-lg text-sm font-medium border bg-card text-muted-foreground hover:bg-muted"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
+                    <div className="mt-4 space-y-2">
+                      {walletTransfers.length === 0 ? (
+                        <p className="text-xs text-white/25 py-2">Hakuna mapendekezo ya transfer bado.</p>
+                      ) : walletTransfers.map((t) => (
+                        <div key={t.id} className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-medium text-white">Transfer #{t.id}</p>
+                              <p className="text-xs text-white/30 mt-0.5">→ {shortAddress(t.to_address)}</p>
+                              <p className="text-xs text-white/30">{formatBaseUnits(t.amount_base_units, 6)} USDC</p>
+                              <p className="text-xs text-white/20">Idhini: {t.approval_count ?? 0}/{t.approvals_required}</p>
+                              {t.executed_tx_hash && (
+                                <a href={`https://basescan.org/tx/${t.executed_tx_hash}`} target="_blank" rel="noreferrer"
+                                  className="text-xs text-orange-400 hover:text-orange-300 mt-0.5 inline-block">
+                                  Angalia BaseScan →
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40">{t.status}</span>
+                              {canApproveOrExecuteTransfer && t.status !== 'executed' && (
+                                <div className="flex gap-1.5">
+                                  <button
+                                    disabled={walletTransfersLoading}
+                                    onClick={async () => {
+                                      if (!groupId) return;
+                                      setWalletTransfersLoading(true); setWalletTransfersError('');
+                                      try {
+                                        const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/approve`, { method: 'POST' });
+                                        const json = await res.json().catch(() => null);
+                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); return; }
+                                        const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                                        const rj = await refresh.json().catch(() => null);
+                                        if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
+                                      } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                                      finally { setWalletTransfersLoading(false); }
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 disabled:opacity-50 transition-colors"
+                                  >Idhinisha</button>
+                                  <button
+                                    disabled={walletTransfersLoading}
+                                    onClick={async () => {
+                                      if (!groupId) return;
+                                      setWalletTransfersLoading(true); setWalletTransfersError('');
+                                      try {
+                                        const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/execute`, { method: 'POST' });
+                                        const json = await res.json().catch(() => null);
+                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); return; }
+                                        const rw = await fetch(`/api/member/groups/${groupId}/wallet`);
+                                        const rwj = await rw.json().catch(() => null);
+                                        if (rw.ok) setWalletSummary((rwj as WalletSummary) || null);
+                                        const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
+                                        const rj = await refresh.json().catch(() => null);
+                                        if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
+                                      } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                                      finally { setWalletTransfersLoading(false); }
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg text-xs bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
+                                  >Tekeleza</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                <div className="border border-border rounded-lg p-4 bg-card">
-                  <p className="text-sm font-medium text-foreground">Proposals</p>
-                  <p className="text-sm text-muted-foreground mt-1">Latest proposals for this group.</p>
-                </div>
+                {walletSummary?.wallet === null && !walletLoading && !walletError && (
+                  <p className="text-xs text-white/25 mt-3">Hakuna wallet iliyoundwa bado.</p>
+                )}
+              </div>
 
-                {proposals.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                    className="w-full text-left border border-border rounded-lg p-4 bg-card hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{p.title}</p>
-                        {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
-                        <p className="text-xs text-muted-foreground mt-2">Created by: {p.created_by_name || '—'}</p>
-                      </div>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-muted text-gray-800 border border-border">
-                        {String(p.status)}
-                      </span>
-                    </div>
+              {/* Recent proposals preview */}
+              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-white">Mapendekezo ya Hivi Karibuni</p>
+                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-orange-400 hover:text-orange-300 transition-colors">
+                    Angalia yote →
                   </button>
-                ))}
+                </div>
+                <div className="space-y-2">
+                  {recentProposals.length === 0 ? (
+                    <p className="text-xs text-white/25 py-2">Hakuna mapendekezo bado.</p>
+                  ) : recentProposals.map((p) => (
+                    <button key={p.id}
+                      onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
+                      className="w-full text-left rounded-lg bg-white/[0.03] border border-white/5 hover:border-orange-500/20 hover:bg-orange-500/5 px-3 py-2.5 transition-all"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm text-white/80 truncate">{p.title}</p>
+                          <p className="text-xs text-white/25 mt-0.5">{p.created_by_name || '—'}</p>
+                        </div>
+                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs ${
+                          p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
+                        }`}>{p.status}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-                {proposals.length === 0 && (
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-sm text-muted-foreground">No proposals yet.</p>
+          {/* ── Members tab ── */}
+          {activeTab === 'members' && (
+            <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
+              {members.length === 0 ? (
+                <p className="p-6 text-sm text-white/30">Hakuna wanachama waliopo.</p>
+              ) : (
+                <div className="divide-y divide-white/5">
+                  {members.map((m) => {
+                    const mp = memberPaymentStatus.find((p: any) => p.member_id === m.id);
+                    return (
+                      <div key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-orange-400">
+                              {m.full_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm text-white truncate">{m.full_name}</p>
+                            <p className="text-xs text-white/25 truncate">{m.email || m.phone || ''}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${
+                            m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-orange-500/10 text-orange-400'
+                            : m.role === 'katibu' || m.role === 'mwekahazina' ? 'bg-blue-500/10 text-blue-400'
+                            : 'bg-white/5 text-white/30'
+                          }`}>{roleLabel(m.role)}</span>
+                          {isLeader && mp && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${
+                              mp.paid_this_month ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                            }`}>{mp.paid_this_month ? 'Amelipa' : 'Hajalipa'}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Leadership tab ── */}
+          {activeTab === 'leadership' && (
+            <div className="space-y-2">
+              {leadership.length === 0 ? (
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-6 text-center">
+                  <p className="text-sm text-white/30">Hakuna uongozi uliowekwa bado.</p>
+                </div>
+              ) : leadership.map((l) => (
+                <div key={l.id} className="rounded-xl bg-[#1a1a1a] border border-white/5 px-4 py-3 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-semibold text-blue-400">{l.full_name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white">{l.full_name}</p>
+                      <p className="text-xs text-white/25">{l.email || ''}</p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                    {roleLabel(l.role)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Fedha tab ── */}
+          {activeTab === 'fedha' && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
+                  { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
+                  { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-orange-400' },
+                  { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
+                ].map((c, i) => (
+                  <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-3">
+                    <p className="text-xs text-white/30 mb-1">{c.label}</p>
+                    <p className={`text-sm font-semibold ${c.accent}`}>{c.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pay buttons */}
+              <div className="flex gap-3">
+                <button onClick={() => handleOpenPay('contribution')}
+                  className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+                  Lipa Mchango
+                </button>
+                <button onClick={() => handleOpenPay('topup')}
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-medium transition-colors">
+                  Weka Mfuko
+                </button>
+              </div>
+
+              {/* Member payment status (leader only) */}
+              {isLeader && memberPaymentStatus.length > 0 && (
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                  <p className="text-sm font-semibold text-white mb-3">
+                    Hali ya Michango — {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}
+                  </p>
+                  <div className="divide-y divide-white/5">
+                    {memberPaymentStatus.map((mp: any) => (
+                      <div key={mp.member_id} className="flex items-center justify-between py-2.5">
+                        <div>
+                          <p className="text-sm text-white">{mp.full_name}</p>
+                          <p className="text-xs text-white/25">{mp.phone || ''}</p>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          mp.paid_this_month ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                        }`}>{mp.paid_this_month ? 'Amelipa ✓' : 'Hajalipa'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Disbursement form (leader only) */}
+              {isLeader && (
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                  <p className="text-sm font-semibold text-white mb-0.5">Tuma Fedha kwa Mwanachama</p>
+                  <p className="text-xs text-white/30 mb-4">Tuma pesa moja kwa moja kupitia mobile money.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Jina la Mpokeaji</label>
+                      <input value={disburseName} onChange={e => { setDisburseName(e.target.value); setDisburseError(''); }}
+                        placeholder="e.g. John Doe" className={dkInput} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Nambari ya Simu</label>
+                      <input value={disbursePhone} onChange={e => { setDisbursePhone(e.target.value); setDisburseError(''); }}
+                        placeholder="255712345678" className={dkInput} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Kiasi (TZS)</label>
+                      <input type="number" value={disburseAmount} onChange={e => { setDisburseAmount(e.target.value); setDisburseError(''); }}
+                        placeholder="e.g. 50000" className={dkInput} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Mtandao</label>
+                      <select value={disburseProvider} onChange={e => setDisburseProvider(e.target.value)}
+                        className={dkInput + ' bg-[#111] [&>option]:bg-[#111]'}>
+                        <option value="airtel">Airtel Money</option>
+                        <option value="mpesa">Vodacom M-Pesa</option>
+                        <option value="tigopesa">Tigo Pesa</option>
+                        <option value="halopesa">Halo Pesa</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs text-white/40 mb-1">Maelezo (si lazima)</label>
+                      <input value={disburseDesc} onChange={e => setDisburseDesc(e.target.value)}
+                        placeholder="e.g. Malipo ya mkopo" className={dkInput} />
+                    </div>
+                  </div>
+                  {disburseError && <p className="text-xs text-red-400 mt-2">{disburseError}</p>}
+                  {disburseSuccess && <p className="text-xs text-emerald-400 mt-2">{disburseSuccess}</p>}
+                  <button onClick={handleDisburse} disabled={disburseLoading}
+                    className="mt-4 px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    {disburseLoading ? 'Inatuma...' : 'Tuma Fedha'}
+                  </button>
+                </div>
+              )}
+
+              {/* Payment history */}
+              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/5">
+                  <p className="text-sm font-semibold text-white">Historia ya Malipo</p>
+                </div>
+                {groupPayments.length === 0 ? (
+                  <p className="px-5 py-6 text-sm text-white/30">Hakuna malipo bado.</p>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {groupPayments.map((p: any) => (
+                      <div key={p.reference} className="flex items-center justify-between gap-3 px-5 py-3">
+                        <div className="min-w-0">
+                          <p className="text-sm text-white/80 truncate">{p.member_name || p.customer_name || '—'}</p>
+                          <p className="text-xs text-white/25 mt-0.5">
+                            {p.payment_type === 'contribution' ? 'Mchango' : p.payment_type === 'group_topup' ? 'Mfuko' : 'Malipo'}
+                            {' · '}
+                            {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' }) : '—'}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className={`text-sm font-semibold ${p.payment_type === 'disbursement' ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {p.payment_type === 'disbursement' ? '−' : '+'}TSh {parseInt(p.amount_tzs || 0).toLocaleString()}
+                          </p>
+                          <span className={`text-xs ${
+                            p.status === 'completed' ? 'text-emerald-400' :
+                            p.status === 'failed' ? 'text-red-400' : 'text-yellow-400'
+                          }`}>
+                            {p.status === 'completed' ? 'Imekamilika' : p.status === 'failed' ? 'Imeshindwa' : 'Inasubiri'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ── Decisions tab ── */}
+          {activeTab === 'decisions' && (
+            <div className="space-y-3">
+              {showCreateProposal && (
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Unda Pendekezo</p>
+                      <p className="text-xs text-white/30 mt-0.5">Nafasi ya uongozi pekee.</p>
+                    </div>
+                    <button onClick={() => setShowCreateProposal(false)} className="text-white/30 hover:text-white/60 text-sm transition-colors">✕</button>
+                  </div>
+
+                  {!canCreateProposal && (
+                    <div className="mb-4 px-3 py-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
+                      Huna ruhusa ya kuunda mapendekezo.
+                    </div>
+                  )}
+
+                  <form className="space-y-3" onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!groupId || !canCreateProposal) return;
+                    const t = proposalTitle.trim();
+                    const d = proposalDescription.trim();
+                    if (!t) { setError('Kichwa cha pendekezo kinahitajika.'); return; }
+                    setProposalSubmitting(true); setError('');
+                    try {
+                      const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: t, description: d }),
+                      });
+                      if (res.status === 401) { router.push('/login'); return; }
+                      const json = await res.json().catch(() => null);
+                      if (!res.ok) { setError(json?.error || 'Imeshindikana kuunda pendekezo.'); return; }
+                      const created = json?.proposal as ProposalRow | undefined;
+                      if (created) setProposals(prev => [created, ...prev]);
+                      setProposalTitle(''); setProposalDescription(''); setShowCreateProposal(false);
+                    } catch (err) { setError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                    finally { setProposalSubmitting(false); }
+                  }}>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Kichwa</label>
+                      <input value={proposalTitle} onChange={e => setProposalTitle(e.target.value)}
+                        className={dkInput} placeholder="e.g. Ongeza mchango wa kila mwezi" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">Maelezo</label>
+                      <textarea value={proposalDescription} onChange={e => setProposalDescription(e.target.value)}
+                        className={dkInput + ' resize-none'} placeholder="Eleza pendekezo lako..." rows={4} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={proposalSubmitting || !canCreateProposal}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors">
+                        {proposalSubmitting ? 'Inaunda...' : 'Unda'}
+                      </button>
+                      <button type="button" onClick={() => setShowCreateProposal(false)}
+                        className="px-4 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 transition-colors">
+                        Ghairi
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {proposals.length === 0 ? (
+                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-8 text-center">
+                  <p className="text-sm text-white/30">Hakuna mapendekezo bado.</p>
+                </div>
+              ) : proposals.map((p) => (
+                <button key={p.id}
+                  onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
+                  className="w-full text-left rounded-xl bg-[#1a1a1a] border border-white/5 hover:border-orange-500/20 hover:bg-orange-500/5 p-4 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">{p.title}</p>
+                      {p.description && <p className="text-xs text-white/40 mt-1 line-clamp-2">{p.description}</p>}
+                      <p className="text-xs text-white/20 mt-2">na {p.created_by_name || '—'}</p>
+                    </div>
+                    <span className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
+                    }`}>{p.status}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* USSD Push Payment Modal */}
+      {/* ── Payment modal ── */}
       {payModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-sm mx-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-[#1a1a1a] border border-white/10 p-6">
 
             {payStatus === 'input' && (
               <>
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  {payModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
+                <h3 className="text-base font-semibold text-white mb-1">
+                  {payModal.type === 'contribution' ? 'Lipa Mchango' : 'Weka Fedha Mfukoni'}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">{group?.name}</p>
-
+                <p className="text-xs text-white/30 mb-4">{group?.name}</p>
                 {payModal.type === 'contribution' && (
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Mchango wa kawaida: TSH {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
+                  <p className="text-xs text-orange-400/70 mb-4 px-3 py-2 rounded-lg bg-orange-500/5 border border-orange-500/10">
+                    Mchango wa kawaida: TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
                   </p>
                 )}
-
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
-                <input
-                  type="number" min="1" value={payAmount}
-                  onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
-                  placeholder="e.g. 50000"
-                  className="w-full px-3 py-2 border border-border rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Nambari ya Simu</label>
-                <input
-                  type="tel" value={payPhone}
-                  onChange={(e) => { setPayPhone(e.target.value); setPayError(''); }}
-                  placeholder="255712345678"
-                  className="w-full px-3 py-2 border border-border rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
-
-                <p className="text-xs text-gray-400 mb-4">
-                  Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN yako kuthibitisha malipo.
-                </p>
-
-                <div className="flex space-x-3">
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1">Kiasi (TZS)</label>
+                    <input type="number" min="1" value={payAmount}
+                      onChange={e => { setPayAmount(e.target.value); setPayError(''); }}
+                      placeholder="e.g. 50000" className={dkInput} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1">Nambari ya Simu</label>
+                    <input type="tel" value={payPhone}
+                      onChange={e => { setPayPhone(e.target.value); setPayError(''); }}
+                      placeholder="255712345678" className={dkInput} />
+                  </div>
+                </div>
+                {payError && <p className="text-xs text-red-400 mb-3">{payError}</p>}
+                <p className="text-xs text-white/20 mb-5">Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN kuthibitisha.</p>
+                <div className="flex gap-2">
                   <button onClick={handleClosePay} disabled={payLoading}
-                    className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted disabled:opacity-50">
+                    className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm hover:bg-white/5 disabled:opacity-50 transition-colors">
                     Ghairi
                   </button>
                   <button onClick={handlePay} disabled={payLoading}
-                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50">
+                    className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
                   </button>
                 </div>
@@ -1439,47 +1149,47 @@ export default function MemberGroupDetailsPage() {
 
             {payStatus === 'waiting' && (
               <div className="text-center py-4">
-                <div className="inline-block w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Inasubiri Uthibitisho...</h3>
-                <p className="text-sm text-muted-foreground mb-2">Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong></p>
-                <p className="text-xs text-gray-400 mb-4">Tafadhali ingiza PIN yako kwenye simu yako kuthibitisha malipo ya TSH {parseInt(payAmount).toLocaleString()}</p>
-                <div className="bg-accent border border-primary/20 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-primary">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
+                <div className="w-14 h-14 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mx-auto mb-4" />
+                <h3 className="text-base font-semibold text-white mb-2">Inasubiri Uthibitisho...</h3>
+                <p className="text-sm text-white/40 mb-1">Arifa imetumwa kwa <span className="text-white">{payPhone}</span></p>
+                <p className="text-xs text-white/25 mb-4">Ingiza PIN kwenye simu yako kuthibitisha TSh {parseInt(payAmount).toLocaleString()}</p>
+                <div className="px-4 py-3 rounded-xl bg-orange-500/5 border border-orange-500/10 mb-4">
+                  <p className="text-xs text-orange-400/70">Usifunge ukurasa huu hadi malipo yakamilike.</p>
                 </div>
-                <button onClick={handleClosePay} className="text-sm text-muted-foreground hover:text-muted-foreground underline">Ghairi</button>
+                <button onClick={handleClosePay} className="text-xs text-white/25 hover:text-white/50 underline transition-colors">Ghairi</button>
               </div>
             )}
 
             {payStatus === 'success' && (
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-green-800 mb-2">Malipo Yamefanikiwa!</h3>
-                <p className="text-sm text-muted-foreground mb-1">TSH {parseInt(payAmount).toLocaleString()} - {group?.name}</p>
-                <p className="text-xs text-gray-400 mb-4">Ref: {payReference}</p>
-                <button onClick={handleClosePay} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Funga</button>
+                <h3 className="text-base font-semibold text-white mb-1">Malipo Yamefanikiwa!</h3>
+                <p className="text-sm text-white/40 mb-1">TSh {parseInt(payAmount).toLocaleString()} — {group?.name}</p>
+                <p className="text-xs text-white/20 mb-5">Ref: {payReference}</p>
+                <button onClick={handleClosePay} className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors">Funga</button>
               </div>
             )}
 
             {payStatus === 'failed' && (
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Malipo Yameshindwa</h3>
-                {payError && <p className="text-sm text-red-600 mb-4">{payError}</p>}
-                <div className="flex space-x-3">
-                  <button onClick={handleClosePay} className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted">Funga</button>
-                  <button onClick={() => { setPayStatus('input'); setPayError(''); }} className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Jaribu Tena</button>
+                <h3 className="text-base font-semibold text-white mb-2">Malipo Yameshindwa</h3>
+                {payError && <p className="text-sm text-red-400 mb-4">{payError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={handleClosePay} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm hover:bg-white/5 transition-colors">Funga</button>
+                  <button onClick={() => { setPayStatus('input'); setPayError(''); }}
+                    className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Jaribu Tena</button>
                 </div>
               </div>
             )}
-
           </div>
         </div>
       )}
