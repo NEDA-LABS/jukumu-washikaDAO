@@ -14,6 +14,8 @@ import {
   BookOpenIcon,
   UserIcon,
   WalletIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import WalletDashboard from '@/components/WalletDashboard';
 
@@ -28,6 +30,7 @@ export default function MemberDashboard() {
   const [memberTraining, setMemberTraining] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check authentication and load member data
   useEffect(() => {
@@ -185,68 +188,113 @@ export default function MemberDashboard() {
     }
   };
 
+  const activeName = menuItems.find(m => m.id === activeSection)?.name || 'Overview';
+
   return (
-    <div className="min-h-screen bg-muted">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-red-500">
-                <span className="text-lg font-bold text-white">J</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Washika DAU</h1>
-                <p className="text-sm text-muted-foreground">Welcome, {user.fullName || user.email}</p>
-              </div>
+    <div className="min-h-screen bg-[#0d0d0d] flex">
+
+      {/* ── Mobile overlay ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar ── */}
+      <aside className={`
+        fixed top-0 left-0 h-full w-60 bg-[#111111] border-r border-white/5
+        flex flex-col z-30 transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:flex
+      `}>
+        {/* Brand */}
+        <div className="px-5 py-6 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shrink-0">
+              <span className="text-sm font-bold text-white">J</span>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">Washika DAU</p>
+              <p className="text-xs text-white/40 truncate">{user.fullName || user.email}</p>
+            </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <nav className="bg-card rounded-lg shadow-sm p-4">
-              <ul className="space-y-2">
-                {menuItems.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors duration-200 ${
-                        activeSection === item.id
-                          ? 'bg-accent text-primary'
-                          : 'text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {menuItems.map((item) => {
+            const active = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm
+                  transition-all duration-150
+                  ${ active
+                    ? 'bg-orange-500/15 text-orange-400 font-medium'
+                    : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                  }
+                `}
+              >
+                <item.icon className={`h-4.5 w-4.5 shrink-0 ${ active ? 'text-orange-400' : '' }`} />
+                <span>{item.name}</span>
+                {active && <span className="ml-auto w-1 h-4 rounded-full bg-orange-400" />}
+              </button>
+            );
+          })}
+        </nav>
 
-          {/* Main Content */}
-          <div className="lg:col-span-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              renderContent()
-            )}
+        {/* Logout pinned to bottom */}
+        <div className="px-3 py-4 border-t border-white/5">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+          >
+            <ArrowRightOnRectangleIcon className="h-4.5 w-4.5 shrink-0" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Top bar (mobile only — shows hamburger + page title) */}
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-[#111111] border-b border-white/5 sticky top-0 z-10">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5"
+          >
+            <Bars3Icon className="h-5 w-5" />
+          </button>
+          <span className="text-sm font-medium text-white">{activeName}</span>
+        </header>
+
+        {/* Page title bar (desktop) */}
+        <div className="hidden lg:flex items-center justify-between px-8 pt-8 pb-2">
+          <h1 className="text-xl font-semibold text-white">{activeName}</h1>
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+              <span className="text-xs font-bold text-white">
+                {(user.fullName || user.email || 'U')[0].toUpperCase()}
+              </span>
+            </div>
+            <span className="text-sm text-white/50">{user.fullName || user.email}</span>
           </div>
         </div>
+
+        {/* Content */}
+        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
+            </div>
+          ) : (
+            renderContent()
+          )}
+        </main>
       </div>
     </div>
   );
@@ -255,97 +303,112 @@ export default function MemberDashboard() {
 function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void }) {
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const expectedReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.expected_return || 0), 0);
-  
+  const isActive = memberProfile?.status === 'active';
+
   const stats = [
-    { name: 'Membership Status', value: memberProfile?.status === 'active' ? 'Active' : 'Pending', color: memberProfile?.status === 'active' ? 'bg-green-500' : 'bg-yellow-500' },
-    { name: 'My Group', value: memberProfile?.group_name || 'None', color: 'bg-blue-500' },
-    { name: 'My Investment', value: totalInvestment > 0 ? `TSH ${totalInvestment.toLocaleString()}` : 'TSH 0', color: 'bg-primary' },
-    { name: 'Expected Returns', value: expectedReturns > 0 ? `TSH ${expectedReturns.toLocaleString()}` : 'TSH 0', color: 'bg-purple-500' },
+    {
+      name: 'Hali ya Uanachama',
+      value: isActive ? 'Hai' : 'Inasubiri',
+      icon: UserIcon,
+      accent: isActive ? 'text-emerald-400' : 'text-yellow-400',
+      bg: isActive ? 'bg-emerald-500/10' : 'bg-yellow-500/10',
+      dot: isActive ? 'bg-emerald-400' : 'bg-yellow-400',
+    },
+    {
+      name: 'Kundi Langu',
+      value: memberProfile?.group_name || 'Hujajiunga',
+      icon: UserGroupIcon,
+      accent: 'text-blue-400',
+      bg: 'bg-blue-500/10',
+      dot: 'bg-blue-400',
+    },
+    {
+      name: 'Uwekezaji Wangu',
+      value: `TSh ${totalInvestment.toLocaleString()}`,
+      icon: CurrencyDollarIcon,
+      accent: 'text-orange-400',
+      bg: 'bg-orange-500/10',
+      dot: 'bg-orange-400',
+    },
+    {
+      name: 'Faida Inayotarajiwa',
+      value: `TSh ${expectedReturns.toLocaleString()}`,
+      icon: ChartBarIcon,
+      accent: 'text-purple-400',
+      bg: 'bg-purple-500/10',
+      dot: 'bg-purple-400',
+    },
   ];
 
-  const displayActivities = recentActivities.length > 0 ? recentActivities.map(activity => ({
-    action: activity.action_text,
-    time: new Date(activity.activity_date).toLocaleDateString('en-US')
-  })) : [
-    { action: 'Joined Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('en-US') : 'Today' }
+  const displayActivities = recentActivities.length > 0
+    ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString('sw-TZ') }))
+    : [{ action: 'Umejiunga na Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('sw-TZ') : 'Leo' }];
+
+  const quickActions = [
+    { label: 'Weka Pesa', sub: 'Deposit via M-Pesa', icon: WalletIcon, section: 'wallet', accent: 'bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20' },
+    { label: 'Kundi Langu', sub: 'Angalia shughuli za kundi', icon: UserGroupIcon, section: 'group', accent: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20' },
+    { label: 'Mafunzo', sub: 'Endelea na masomo', icon: AcademicCapIcon, section: 'learning', accent: 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20' },
+    { label: 'Uwekezaji', sub: 'Fuatilia mapato yako', icon: CurrencyDollarIcon, section: 'investments', accent: 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-card rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mr-4`}>
-                <ChartBarIcon className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.name}</p>
-                <p className="text-xl font-bold text-foreground">{stat.value}</p>
-              </div>
+      {/* Greeting */}
+      <div>
+        <h2 className="text-2xl font-semibold text-white">
+          Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
+        </h2>
+        <p className="text-sm text-white/40 mt-0.5">Hapa kuna muhtasari wa akaunti yako</p>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {stats.map((s, i) => (
+          <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4 flex flex-col gap-3">
+            <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+              <s.icon className={`h-4 w-4 ${s.accent}`} />
+            </div>
+            <div>
+              <p className="text-xs text-white/40 mb-0.5">{s.name}</p>
+              <p className="text-sm font-semibold text-white leading-tight">{s.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Recent Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activities</h3>
-          <div className="space-y-4">
-            {displayActivities.slice(0, 4).map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recent activity */}
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">Shughuli za Hivi Karibuni</h3>
+          <div className="space-y-3">
+            {displayActivities.slice(0, 5).map((a, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm text-white/80 truncate">{a.action}</p>
+                  <p className="text-xs text-white/30 mt-0.5">{a.time}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-card rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button 
-              onClick={() => onNavigate('group')}
-              className="w-full text-left p-3 border border-primary/20 rounded-lg bg-accent hover:bg-accent transition-colors duration-200"
-            >
-              <div className="flex items-center space-x-3">
-                <CurrencyDollarIcon className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium text-accent-foreground">💳 Lipa Mchango</span>
-              </div>
-            </button>
-            <button 
-              onClick={() => onNavigate('learning')}
-              className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent hover:border-primary/30 transition-colors duration-200"
-            >
-              <div className="flex items-center space-x-3">
-                <BookOpenIcon className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium text-foreground">View Training</span>
-              </div>
-            </button>
-            <button 
-              onClick={() => onNavigate('group')}
-              className="w-full text-left p-3 border border-border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
-            >
-              <div className="flex items-center space-x-3">
-                <UserGroupIcon className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-foreground">View Group</span>
-              </div>
-            </button>
-            <button 
-              onClick={() => onNavigate('investments')}
-              className="w-full text-left p-3 border border-border rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors duration-200"
-            >
-              <div className="flex items-center space-x-3">
-                <CurrencyDollarIcon className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-foreground">Track Investments</span>
-              </div>
-            </button>
+        {/* Quick actions */}
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">Vitendo vya Haraka</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {quickActions.map((qa) => (
+              <button
+                key={qa.section}
+                onClick={() => onNavigate(qa.section)}
+                className={`rounded-lg border p-3 text-left transition-all ${qa.accent}`}
+              >
+                <qa.icon className="h-4 w-4 text-white/60 mb-2" />
+                <p className="text-sm font-medium text-white">{qa.label}</p>
+                <p className="text-xs text-white/40 mt-0.5 leading-tight">{qa.sub}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>
