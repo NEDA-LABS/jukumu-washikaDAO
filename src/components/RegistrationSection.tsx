@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function RegistrationSection({ title }: { title?: string }) {
   const { t } = useLanguage();
@@ -153,9 +154,8 @@ export default function RegistrationSection({ title }: { title?: string }) {
   return (
     <div className="min-h-screen bg-[#0d0d0d] flex">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-[38%] xl:w-[35%] flex-col justify-between p-12 bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-r border-white/[0.05] relative overflow-hidden shrink-0">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+      <div className="hidden lg:flex lg:w-[38%] xl:w-[35%] flex-col justify-between p-12 border-r border-white/[0.05] relative overflow-hidden shrink-0">
+        <AnimatedBackground />
 
         <Link href="/" className="flex items-center gap-3 relative z-10">
           <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -178,14 +178,14 @@ export default function RegistrationSection({ title }: { title?: string }) {
           </div>
           <div className="space-y-2.5">
             {[
-              { icon: '🎓', label: 'Mafunzo ya biashara na vyeti' },
-              { icon: '👥', label: 'Vikundi vya akiba na uwekezaji' },
-              { icon: '📲', label: 'Malipo ya M-Pesa yaliyosalimishwa' },
-              { icon: '📈', label: 'Fuatilia ukuaji wa biashara yako' },
-            ].map((item, i) => (
+              'Mafunzo ya biashara na vyeti',
+              'Vikundi vya akiba na uwekezaji',
+              'Malipo ya M-Pesa yaliyosalimishwa',
+              'Fuatilia ukuaji wa biashara yako',
+            ].map((label, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <span className="text-base">{item.icon}</span>
-                <p className="text-xs text-white/55">{item.label}</p>
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                <p className="text-xs text-white/55">{label}</p>
               </div>
             ))}
           </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function LoginPage() {
   const { } = useLanguage();
@@ -89,10 +90,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-r border-white/[0.05] relative overflow-hidden">
-        {/* Glow */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 border-r border-white/[0.05] relative overflow-hidden">
+        <AnimatedBackground />
 
         <Link href="/" className="flex items-center gap-3 relative z-10">
           <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -116,12 +115,12 @@ export default function LoginPage() {
 
           <div className="space-y-3">
             {[
-              { icon: '📈', label: 'Fuatilia uwekezaji wako' },
-              { icon: '🎓', label: 'Endelea na masomo na vyeti' },
-              { icon: '👥', label: 'Shirikiana na kundi lako' },
+              { label: 'Fuatilia uwekezaji wako' },
+              { label: 'Endelea na masomo na vyeti' },
+              { label: 'Shirikiana na kundi lako' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <span className="text-lg">{item.icon}</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
                 <p className="text-sm text-white/60">{item.label}</p>
               </div>
             ))}

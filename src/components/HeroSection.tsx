@@ -1,43 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-// TODO: Fix Spline import - temporarily disabled
-// const Spline = dynamic(() => import('@splinetool/react-spline/next'), {
-//   ssr: false,
-//   loading: () => <div className="absolute inset-0 bg-black" />,
-// });
-
-function HeroSplineBackground() {
-  return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
-      {/* Temporary gradient background until Spline is fixed */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: `
-            linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff6b35 100%),
-            radial-gradient(circle at 20% 50%, rgba(255,107,53,0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 50%, rgba(247,147,30,0.3) 0%, transparent 50%)
-          `,
-        }}
-      />
-      {/* Gradient vignette so text stays readable */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, transparent 70%),
-            linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.85) 100%)
-          `,
-        }}
-      />
-    </div>
-  );
-}
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 function HeroContent() {
   const { t } = useLanguage();
@@ -103,8 +69,8 @@ export default function HeroSection() {
 
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-black">
-      {/* 3D Spline background */}
-      <HeroSplineBackground />
+      {/* Animated canvas background */}
+      <AnimatedBackground />
 
       {/* Hero copy — fades out on scroll */}
       <div
