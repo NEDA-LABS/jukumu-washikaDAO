@@ -43,8 +43,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Wallet not provisioned. Please contact support.' }, { status: 400 });
     }
 
-    // Normalize phone
-    const normalizedPhone = phone.replace(/\D/g, '');
+    // Check API key before calling nTZS
+    if (!process.env.NTZS_API_KEY) {
+      console.error('NTZS_API_KEY not configured');
+      return NextResponse.json({ error: 'Wallet service is not configured. Contact admin.' }, { status: 503 });
+    }
+
+    // Normalize phone to 255XXXXXXXXX format
+    let normalizedPhone = phone.replace(/\D/g, '');
+    if (normalizedPhone.length === 10 && normalizedPhone.startsWith('0')) {
+      normalizedPhone = `255${normalizedPhone.slice(1)}`;
+    } else if (normalizedPhone.length === 9) {
+      normalizedPhone = `255${normalizedPhone}`;
+    } else if (!normalizedPhone.startsWith('255')) {
+      return NextResponse.json({ error: 'Invalid phone number format. Use 07XX XXX XXX or 255 7XX XXX XXX' }, { status: 400 });
+    }
+
+    console.log(`[Deposit] User ${userId}, Amount: ${amountTzs}, Phone: ${normalizedPhone}`);
 
     // Create deposit via nTZS (triggers mobile money prompt)
     const deposit = await ntzs.deposits.create({
@@ -74,10 +89,15 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof NtzsApiError) {
       console.error('nTZS deposit error:', error.status, error.body);
-      return NextResponse.json({ error: error.body.message || 'Deposit failed' }, { status: error.status });
+      return NextResponse.json({
+        error: error.body.message || error.body.error || 'Deposit failed',
+        details: error.body,
+        ntzsStatus: error.status,
+      }, { status: error.status });
     }
-    console.error('Deposit error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Deposit error:', errMsg, error);
+    return NextResponse.json({ error: errMsg || 'Internal server error' }, { status: 500 });
   } finally {
     client.release();
   }
