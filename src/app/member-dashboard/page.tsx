@@ -416,8 +416,16 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
   );
 }
 
+const inputCls = (editing: boolean) =>
+  `w-full px-3 py-2.5 rounded-lg text-sm border transition-colors focus:outline-none ${
+    editing
+      ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-orange-500/50'
+      : 'bg-white/[0.03] border-white/5 text-white/50 cursor-default'
+  }`;
+
 function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile: any; user: any; loadMemberData: () => void }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullName: memberProfile?.full_name || '',
     phone: memberProfile?.phone || '',
@@ -426,7 +434,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
     businessName: memberProfile?.business_name || '',
     businessDescription: memberProfile?.business_description || '',
     monthlyRevenue: memberProfile?.monthly_revenue || '',
-    employeeCount: memberProfile?.employee_count || ''
+    employeeCount: memberProfile?.employee_count || '',
   });
 
   useEffect(() => {
@@ -439,135 +447,118 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
         businessName: memberProfile.business_name || '',
         businessDescription: memberProfile.business_description || '',
         monthlyRevenue: memberProfile.monthly_revenue || '',
-        employeeCount: memberProfile.employee_count || ''
+        employeeCount: memberProfile.employee_count || '',
       });
     }
   }, [memberProfile]);
 
   const handleSave = async () => {
+    setSaving(true);
     try {
-      const response = await fetch(`/api/members/profile?userId=${user?.id}`, {
+      const res = await fetch(`/api/members/profile?userId=${user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
-      
-      if (response.ok) {
-        setIsEditing(false);
-        loadMemberData();
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    }
+      if (res.ok) { setIsEditing(false); loadMemberData(); }
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
   };
 
+  const initials = (formData.fullName || user?.email || 'U')
+    .split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  const Field = ({ label, type = 'text', value, field, disabled = false }: { label: string; type?: string; value: string; field?: keyof typeof formData; disabled?: boolean }) => (
+    <div>
+      <label className="block text-xs text-white/30 mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={field ? (e) => setFormData({ ...formData, [field]: e.target.value }) : undefined}
+        disabled={!isEditing || disabled}
+        className={inputCls(isEditing && !disabled)}
+      />
+    </div>
+  );
+
   return (
-    <div className="bg-card rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-foreground">My Profile</h2>
+    <div className="space-y-4">
+      {/* Profile header card */}
+      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0">
+          <span className="text-lg font-bold text-white">{initials}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-semibold text-white truncate">{formData.fullName || 'Mwanachama'}</p>
+          <p className="text-xs text-white/40 mt-0.5 truncate">{memberProfile?.email || user?.email}</p>
+          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${
+            memberProfile?.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-yellow-500/15 text-yellow-400'
+          }`}>
+            {memberProfile?.status === 'active' ? 'Mwanachama Hai' : 'Inasubiri'}
+          </span>
+        </div>
         <button
           onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+          disabled={saving}
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+            isEditing
+              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+              : 'bg-white/5 hover:bg-white/10 text-white/70'
+          }`}
         >
-          {isEditing ? 'Save' : 'Edit'}
+          {saving ? 'Inahifadhi...' : isEditing ? 'Hifadhi' : 'Hariri'}
         </button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Full Name</label>
-          <input
-            type="text"
-            value={formData.fullName}
-            onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
+
+      {/* Personal info */}
+      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Field label="Jina Kamili" value={formData.fullName} field="fullName" />
+          <Field label="Barua Pepe" value={memberProfile?.email || user?.email || ''} disabled />
+          <Field label="Nambari ya Simu" type="tel" value={formData.phone} field="phone" />
+          <Field label="Mahali Unapoishi" value={formData.location} field="location" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Email</label>
-          <input
-            type="email"
-            value={memberProfile?.email || user?.email || ''}
-            disabled
-            className="w-full px-3 py-2 border border-border rounded-md bg-gray-100"
-          />
+      </div>
+
+      {/* Business info */}
+      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa za Biashara</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Field label="Jina la Biashara" value={formData.businessName} field="businessName" />
+          <Field label="Aina ya Biashara" value={formData.businessType} field="businessType" />
+          <Field label="Mapato ya Kila Mwezi (TSh)" type="number" value={formData.monthlyRevenue} field="monthlyRevenue" />
+          <Field label="Idadi ya Wafanyakazi" type="number" value={formData.employeeCount} field="employeeCount" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Phone</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+        <div className="mt-3">
+          <label className="block text-xs text-white/30 mb-1">Maelezo ya Biashara</label>
+          <textarea
+            value={formData.businessDescription}
+            onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
             disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Location</label>
-          <input
-            type="text"
-            value={formData.location}
-            onChange={(e) => setFormData({...formData, location: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Business Type</label>
-          <input
-            type="text"
-            value={formData.businessType}
-            onChange={(e) => setFormData({...formData, businessType: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Business Name</label>
-          <input
-            type="text"
-            value={formData.businessName}
-            onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
+            rows={3}
+            className={`${inputCls(isEditing)} resize-none`}
           />
         </div>
       </div>
-      
-      <div className="mt-4">
-        <label className="block text-sm font-medium text-muted-foreground mb-1">Business Description</label>
-        <textarea
-          value={formData.businessDescription}
-          onChange={(e) => setFormData({...formData, businessDescription: e.target.value})}
-          disabled={!isEditing}
-          rows={3}
-          className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Monthly Revenue (TSH)</label>
-          <input
-            type="number"
-            value={formData.monthlyRevenue}
-            onChange={(e) => setFormData({...formData, monthlyRevenue: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
+
+      {isEditing && (
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => setIsEditing(false)}
+            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+          >
+            Ghairi
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+          >
+            {saving ? 'Inahifadhi...' : 'Hifadhi Mabadiliko'}
+          </button>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Employee Count</label>
-          <input
-            type="number"
-            value={formData.employeeCount}
-            onChange={(e) => setFormData({...formData, employeeCount: e.target.value})}
-            disabled={!isEditing}
-            className="w-full px-3 py-2 border border-border rounded-md disabled:bg-muted"
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -582,566 +573,237 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [joinMessage, setJoinMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [paymentModal, setPaymentModal] = useState<{ group: any; type: 'contribution' | 'topup' } | null>(null);
-  const [payAmount, setPayAmount] = useState('');
-  const [payPhone, setPayPhone] = useState('');
-  const [payLoading, setPayLoading] = useState(false);
-  const [payError, setPayError] = useState('');
-  const [payStatus, setPayStatus] = useState<'input' | 'waiting' | 'success' | 'failed'>('input');
-  const [payReference, setPayReference] = useState('');
-  const [paymentsByGroup, setPaymentsByGroup] = useState<Record<number, any[]>>({});
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-
+      setUser(JSON.parse(userData));
       loadMyGroups();
       loadAvailableGroups();
       loadJoinRequests();
-      loadAllPayments();
     }
   }, [memberProfile]);
 
-  const loadAllPayments = async () => {
-    try {
-      const res = await fetch('/api/member/contributions');
-      if (res.ok) {
-        const data = await res.json();
-        const grouped: Record<number, any[]> = {};
-        for (const p of (data.payments || [])) {
-          const gid = p.group_id;
-          if (!grouped[gid]) grouped[gid] = [];
-          grouped[gid].push(p);
-        }
-        setPaymentsByGroup(grouped);
-      }
-    } catch { /* ignore */ }
-  };
-
   const loadMyGroups = async () => {
     try {
-      const response = await fetch('/api/member/groups');
-      if (response.ok) {
-        const data = await response.json();
-        setMyGroups(data.groups || []);
-      } else if (response.status === 401) {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Error loading my groups:', error);
-    }
+      const res = await fetch('/api/member/groups');
+      if (res.ok) { const d = await res.json(); setMyGroups(d.groups || []); }
+      else if (res.status === 401) router.push('/login');
+    } catch (e) { console.error(e); }
   };
 
   const loadAvailableGroups = async () => {
     try {
-      const response = await fetch('/api/member/available-groups');
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableGroups(data.groups || []);
-      } else if (response.status === 401) {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Error loading available groups:', error);
-    }
+      const res = await fetch('/api/member/available-groups');
+      if (res.ok) { const d = await res.json(); setAvailableGroups(d.groups || []); }
+      else if (res.status === 401) router.push('/login');
+    } catch (e) { console.error(e); }
   };
 
   const loadJoinRequests = async () => {
     try {
-      const response = await fetch('/api/member/join-requests');
-      if (response.ok) {
-        const data = await response.json();
-        setJoinRequests(data.requests || []);
-      } else if (response.status === 401) {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Error loading join requests:', error);
-    }
+      const res = await fetch('/api/member/join-requests');
+      if (res.ok) { const d = await res.json(); setJoinRequests(d.requests || []); }
+      else if (res.status === 401) router.push('/login');
+    } catch (e) { console.error(e); }
   };
 
   const handleJoinRequest = async (groupId: number) => {
     if (!user?.id) return;
-    
     setLoading(true);
     try {
-      const response = await fetch('/api/member/join-requests', {
+      const res = await fetch('/api/member/join-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          groupId,
-          message: joinMessage
-        })
+        body: JSON.stringify({ groupId, message: joinMessage }),
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(data.message);
+      const data = await res.json();
+      if (res.ok) {
         setSelectedGroup(null);
         setJoinMessage('');
         await Promise.all([loadJoinRequests(), loadAvailableGroups()]);
       } else {
         alert(data.error || 'An error occurred');
       }
-    } catch (error) {
-      console.error('Error sending join request:', error);
-      alert('An error occurred while sending request');
-    } finally {
-      setLoading(false);
-    }
+    } catch { alert('An error occurred while sending request'); }
+    finally { setLoading(false); }
   };
 
-  const handleOpenPayment = (group: any, type: 'contribution' | 'topup') => {
-    setPayAmount(type === 'contribution' ? String(parseInt(group.monthly_contribution || '0')) : '');
-    setPayPhone(memberProfile?.phone || '');
-    setPayError('');
-    setPayStatus('input');
-    setPayReference('');
-    setPaymentModal({ group, type });
-  };
-
-  const handleClosePayment = () => {
-    setPaymentModal(null);
-    setPayError('');
-    setPayStatus('input');
-    setPayReference('');
-  };
-
-  const handlePay = async () => {
-    if (!paymentModal) return;
-    const amount = parseInt(payAmount);
-    if (!amount || amount <= 0) {
-      setPayError('Ingiza kiasi sahihi (TZS)');
-      return;
-    }
-    if (!payPhone || payPhone.length < 9) {
-      setPayError('Ingiza nambari sahihi ya simu');
-      return;
-    }
-    setPayLoading(true);
-    setPayError('');
-    try {
-      const endpoint = paymentModal.type === 'contribution'
-        ? '/api/member/contributions'
-        : `/api/member/groups/${paymentModal.group.id}/topup`;
-      const body = paymentModal.type === 'contribution'
-        ? { groupId: paymentModal.group.id, amount, phone_number: payPhone }
-        : { amount, phone_number: payPhone };
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const rawText = await res.text();
-      let data: Record<string, unknown> = {};
-      try { data = JSON.parse(rawText); } catch { /* non-JSON body */ }
-      if (!res.ok) {
-        setPayError((data.error as string) || `Hitilafu ${res.status}: ${rawText.slice(0, 120)}`);
-        return;
-      }
-      // USSD push sent successfully — show waiting screen and start polling
-      setPayReference(data.reference as string);
-      setPayStatus('waiting');
-      pollPaymentStatus(data.reference as string);
-    } catch {
-      setPayError('Hitilafu imetokea. Jaribu tena.');
-    } finally {
-      setPayLoading(false);
-    }
-  };
-
-  const pollPaymentStatus = (reference: string) => {
-    let attempts = 0;
-    const maxAttempts = 60; // poll for up to 5 minutes (every 5s)
-    const interval = setInterval(async () => {
-      attempts++;
-      if (attempts > maxAttempts) {
-        clearInterval(interval);
-        setPayStatus('failed');
-        setPayError('Muda wa malipo umekwisha. Jaribu tena.');
-        return;
-      }
-      try {
-        const res = await fetch(`/api/member/payments/status?reference=${encodeURIComponent(reference)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.status === 'completed') {
-          clearInterval(interval);
-          setPayStatus('success');
-          loadAllPayments();
-        } else if (data.status === 'failed') {
-          clearInterval(interval);
-          setPayStatus('failed');
-          setPayError(data.failure_reason || 'Malipo yameshindwa.');
-        }
-      } catch { /* ignore polling errors */ }
-    }, 5000);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800'
-    };
-    const labels = {
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected'
-    };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${badges[status as keyof typeof badges] || 'bg-gray-100 text-accent-foreground'}`}>
-        {labels[status as keyof typeof labels] || status}
-      </span>
-    );
+  const statusConfig: Record<string, { label: string; cls: string }> = {
+    pending:  { label: 'Inasubiri', cls: 'bg-yellow-500/15 text-yellow-400' },
+    approved: { label: 'Imeidhinishwa', cls: 'bg-emerald-500/15 text-emerald-400' },
+    rejected: { label: 'Imekataliwa', cls: 'bg-red-500/15 text-red-400' },
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-foreground mb-6">My Groups</h2>
-      
+    <div className="space-y-6">
       {myGroups.length > 0 ? (
-        <div className="space-y-4">
-          <div className="grid gap-4">
+        <>
+          <div className="grid gap-3">
             {myGroups.map((g) => (
-              <div key={g.id} onClick={() => router.push(`/member-dashboard/groups/${g.id}`)} className="border border-border rounded-lg p-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">{g.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Role: {g.member_role || 'member'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Status: {g.membership_status || g.status || 'active'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-primary">
-                      TSH {parseInt(g.monthly_contribution || 0).toLocaleString()}/month
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">Bonyeza kuona →</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenPayment(g, 'contribution'); }}
-                    className="flex-1 px-3 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
-                  >
-                    💳 Lipa Mchango
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenPayment(g, 'topup'); }}
-                    className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    ➕ Weka Mfuko
-                  </button>
-                </div>
-                {/* Recent payments for this group */}
-                {(paymentsByGroup[g.id] || []).length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Malipo ya Hivi Karibuni</p>
-                    <div className="space-y-1">
-                      {(paymentsByGroup[g.id] || []).slice(0, 3).map((p: any) => (
-                        <div key={p.reference} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${
-                              p.status === 'completed' ? 'bg-green-500' :
-                              p.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
-                            }`}></span>
-                            <span className="text-muted-foreground">
-                              TSH {parseInt(p.amount_tzs || 0).toLocaleString()}
-                            </span>
-                            <span className="text-gray-400">
-                              {p.payment_type === 'contribution' ? 'Mchango' : 'Mfuko'}
-                            </span>
-                          </div>
-                          <span className="text-gray-400">
-                            {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' }) : ''}
-                          </span>
-                        </div>
-                      ))}
+              <div
+                key={g.id}
+                onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
+                className="rounded-xl bg-[#1a1a1a] border border-white/5 hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-semibold text-white truncate">{g.name}</h3>
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400">
+                        {g.member_role || 'mwanachama'}
+                      </span>
                     </div>
+                    <p className="text-xs text-white/40">
+                      Hali: {g.membership_status || g.status || 'active'}
+                    </p>
                   </div>
-                )}
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-orange-400">
+                      TSh {parseInt(g.monthly_contribution || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-white/30 mt-0.5">kwa mwezi</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                  <p className="text-xs text-white/30">Gusa kuangalia kundi →</p>
+                  <div className="flex items-center gap-1.5">
+                    <UserGroupIcon className="h-3.5 w-3.5 text-white/30" />
+                    <span className="text-xs text-white/30 group-hover:text-orange-400 transition-colors">Angalia →</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="pt-2">
-            <button
-              onClick={() => setShowAvailableGroups(!showAvailableGroups)}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-            >
-              {showAvailableGroups ? 'Hide Groups' : 'Join Another Group'}
-            </button>
+          <button
+            onClick={() => setShowAvailableGroups(!showAvailableGroups)}
+            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+          >
+            {showAvailableGroups ? 'Ficha Makundi' : '+ Jiunge na Kundi Jingine'}
+          </button>
+        </>
+      ) : (
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-10 text-center">
+          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+            <UserGroupIcon className="h-6 w-6 text-white/30" />
+          </div>
+          <p className="text-white/50 mb-4 text-sm">Bado hujajiunga na kundi lolote.</p>
+          <button
+            onClick={() => setShowAvailableGroups(!showAvailableGroups)}
+            className="px-5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+          >
+            {showAvailableGroups ? 'Ficha Makundi' : 'Jiunge na Kundi'}
+          </button>
+        </div>
+      )}
+
+      {/* Pending join requests */}
+      {joinRequests.length > 0 && (
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+          <h3 className="text-sm font-semibold text-white mb-3">Maombi Yangu</h3>
+          <div className="space-y-2">
+            {joinRequests.map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                <div>
+                  <p className="text-sm text-white">{r.group_name}</p>
+                  <p className="text-xs text-white/30 mt-0.5">
+                    TSh {parseInt(r.monthly_contribution).toLocaleString()}/mwezi · {new Date(r.created_at).toLocaleDateString('sw-TZ')}
+                  </p>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${(statusConfig[r.status] || { cls: 'bg-white/5 text-white/40' }).cls}`}>
+                  {(statusConfig[r.status] || { label: r.status }).label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* No Group Message */}
-          <div className="text-center py-8">
-            <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">You haven&apos;t joined any group yet.</p>
-            <button 
-              onClick={() => setShowAvailableGroups(!showAvailableGroups)}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-            >
-              {showAvailableGroups ? 'Hide Groups' : 'Join a Group'}
-            </button>
-          </div>
+      )}
 
-          {/* Join Requests Status */}
-          {joinRequests.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">My Requests</h3>
-              <div className="space-y-3">
-                {joinRequests.map((request) => (
-                  <div key={request.id} className="border border-border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-foreground">{request.group_name}</h4>
-                        <p className="text-sm text-muted-foreground">Contribution: TSH {parseInt(request.monthly_contribution).toLocaleString()}/month</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Sent: {new Date(request.created_at).toLocaleDateString('en-US')}
-                        </p>
-                      </div>
-                      <div>
-                        {getStatusBadge(request.status)}
-                      </div>
+      {/* Available groups */}
+      {showAvailableGroups && (
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">Makundi Yanayopatikana</h3>
+          {availableGroups.length === 0 ? (
+            <p className="text-sm text-white/40 text-center py-4">Hakuna makundi kwa sasa.</p>
+          ) : (
+            <div className="space-y-3">
+              {availableGroups.map((g) => (
+                <div key={g.id} className="rounded-lg border border-white/5 hover:border-white/10 p-4 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">{g.name}</h4>
+                      <p className="text-xs text-white/40 mt-0.5">Kiongozi: {g.leader_name || 'Hajapewa'}</p>
+                      <p className="text-xs text-white/40">Wanachama: {g.member_count}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-orange-400">
+                        TSh {parseInt(g.monthly_contribution).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-white/30">kwa mwezi</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Available Groups */}
-          {showAvailableGroups && (
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Available Groups</h3>
-              {availableGroups.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No groups available at the moment.</p>
-              ) : (
-                <div className="grid gap-4">
-                  {availableGroups.map((group) => (
-                    <div key={group.id} className="border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold text-foreground">{group.name}</h4>
-                          <p className="text-sm text-muted-foreground">Leader: {group.leader_name || 'Not assigned'}</p>
-                          <p className="text-sm text-muted-foreground">Members: {group.member_count}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-primary">
-                            TSH {parseInt(group.monthly_contribution).toLocaleString()}/month
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Founded: {new Date(group.founded_date).toLocaleDateString('en-US')}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Check if already requested */}
-                      {joinRequests.some(req => req.group_id === group.id && req.status === 'pending') ? (
-                        <button disabled className="w-full px-4 py-2 bg-gray-300 text-muted-foreground rounded-lg cursor-not-allowed">
-                          Request Sent
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => setSelectedGroup(group)}
-                          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-                        >
-                          Request to Join
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {joinRequests.some(r => r.group_id === g.id && r.status === 'pending') ? (
+                    <button disabled className="w-full py-2 rounded-lg text-xs text-white/30 bg-white/5 cursor-not-allowed">
+                      Ombi Limetumwa
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedGroup(g)}
+                      className="w-full py-2 rounded-lg text-xs font-medium bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors border border-orange-500/20"
+                    >
+                      Omba Kujiunga
+                    </button>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Snippe USSD Push Payment Modal */}
-      {paymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-sm mx-4">
-
-            {/* INPUT SCREEN */}
-            {payStatus === 'input' && (
-              <>
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  {paymentModal.type === 'contribution' ? '💳 Lipa Mchango' : '➕ Weka Fedha Mfukoni'}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">{paymentModal.group.name}</p>
-
-                {paymentModal.type === 'contribution' && (
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Mchango wa kawaida: TSH {parseInt(paymentModal.group.monthly_contribution || '0').toLocaleString()}/mwezi
-                  </p>
-                )}
-
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={payAmount}
-                  onChange={(e) => { setPayAmount(e.target.value); setPayError(''); }}
-                  placeholder="e.g. 50000"
-                  className="w-full px-3 py-2 border border-border rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Nambari ya Simu</label>
-                <input
-                  type="tel"
-                  value={payPhone}
-                  onChange={(e) => { setPayPhone(e.target.value); setPayError(''); }}
-                  placeholder="255712345678"
-                  className="w-full px-3 py-2 border border-border rounded-md mb-1 focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
-
-                <p className="text-xs text-gray-400 mb-4">
-                  Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN yako kuthibitisha malipo.
-                </p>
-
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleClosePayment}
-                    disabled={payLoading}
-                    className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted disabled:opacity-50"
-                  >
-                    Ghairi
-                  </button>
-                  <button
-                    onClick={handlePay}
-                    disabled={payLoading}
-                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* WAITING SCREEN */}
-            {payStatus === 'waiting' && (
-              <div className="text-center py-4">
-                <div className="inline-block w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Inasubiri Uthibitisho...</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Arifa ya USSD imetumwa kwa <strong>{payPhone}</strong>
-                </p>
-                <p className="text-xs text-gray-400 mb-4">
-                  Tafadhali ingiza PIN yako kwenye simu yako kuthibitisha malipo ya TSH {parseInt(payAmount).toLocaleString()}
-                </p>
-                <div className="bg-accent border border-primary/20 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-primary">Usifunge ukurasa huu hadi uthibitishe malipo kwenye simu yako.</p>
-                </div>
-                <button
-                  onClick={handleClosePayment}
-                  className="text-sm text-muted-foreground hover:text-muted-foreground underline"
-                >
-                  Ghairi
-                </button>
-              </div>
-            )}
-
-            {/* SUCCESS SCREEN */}
-            {payStatus === 'success' && (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-green-800 mb-2">Malipo Yamefanikiwa!</h3>
-                <p className="text-sm text-muted-foreground mb-1">
-                  TSH {parseInt(payAmount).toLocaleString()} - {paymentModal.group.name}
-                </p>
-                <p className="text-xs text-gray-400 mb-4">Ref: {payReference}</p>
-                <button
-                  onClick={handleClosePayment}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Funga
-                </button>
-              </div>
-            )}
-
-            {/* FAILED SCREEN */}
-            {payStatus === 'failed' && (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Malipo Yameshindwa</h3>
-                {payError && <p className="text-sm text-red-600 mb-4">{payError}</p>}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleClosePayment}
-                    className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted"
-                  >
-                    Funga
-                  </button>
-                  <button
-                    onClick={() => { setPayStatus('input'); setPayError(''); }}
-                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-                  >
-                    Jaribu Tena
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* Join Request Modal */}
+      {/* Join request modal */}
       {selectedGroup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Request to Join {selectedGroup.name}
-            </h3>
-            
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground mb-2">Monthly Contribution: TSH {parseInt(selectedGroup.monthly_contribution).toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground mb-4">Leader: {selectedGroup.leader_name || 'Not assigned'}</p>
-              
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
-                Message (optional)
-              </label>
-              <textarea
-                value={joinMessage}
-                onChange={(e) => setJoinMessage(e.target.value)}
-                placeholder="Explain why you would like to join this group..."
-                className="w-full px-3 py-2 border border-border rounded-md resize-none"
-                rows={3}
-              />
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-base font-semibold text-white mb-1">Omba Kujiunga</h3>
+            <p className="text-sm text-white/40 mb-4">{selectedGroup.name}</p>
+
+            <div className="flex gap-4 mb-4 p-3 rounded-lg bg-white/5">
+              <div>
+                <p className="text-xs text-white/30">Mchango wa Kila Mwezi</p>
+                <p className="text-sm font-semibold text-orange-400">
+                  TSh {parseInt(selectedGroup.monthly_contribution).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-white/30">Kiongozi</p>
+                <p className="text-sm text-white">{selectedGroup.leader_name || 'Hajapewa'}</p>
+              </div>
             </div>
-            
-            <div className="flex space-x-3">
+
+            <label className="block text-xs text-white/40 mb-1">Ujumbe (si lazima)</label>
+            <textarea
+              value={joinMessage}
+              onChange={(e) => setJoinMessage(e.target.value)}
+              placeholder="Eleza kwa nini ungependa kujiunga..."
+              className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 resize-none mb-4"
+              rows={3}
+            />
+
+            <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setSelectedGroup(null);
-                  setJoinMessage('');
-                }}
-                className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted"
+                onClick={() => { setSelectedGroup(null); setJoinMessage(''); }}
+                className="flex-1 py-2.5 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
               >
-                Cancel
+                Ghairi
               </button>
               <button
                 onClick={() => handleJoinRequest(selectedGroup.id)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Sending...' : 'Send Request'}
+                {loading ? 'Inatuma...' : 'Tuma Ombi'}
               </button>
             </div>
           </div>
@@ -1154,70 +816,66 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] }) {
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const totalReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.actual_return || 0), 0);
-  
+  const returnRate = totalInvestment > 0 ? ((totalReturns / totalInvestment) * 100).toFixed(1) : '0';
+
+  const summaryCards = [
+    { label: 'Jumla ya Uwekezaji', value: `TSh ${totalInvestment.toLocaleString()}`, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Faida Halisi', value: `TSh ${totalReturns.toLocaleString()}`, accent: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Kiwango cha Faida', value: `${returnRate}%`, accent: 'text-orange-400', bg: 'bg-orange-500/10' },
+  ];
+
   return (
-    <div className="bg-card rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-foreground mb-6">My Investments</h2>
-      
-      {/* Investment Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900">Total Investment</h3>
-          <p className="text-xl font-bold text-blue-600">TSH {totalInvestment.toLocaleString()}</p>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-green-900">Actual Returns</h3>
-          <p className="text-xl font-bold text-green-600">TSH {totalReturns.toLocaleString()}</p>
-        </div>
-        <div className="bg-accent p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-accent-foreground">Return Rate</h3>
-          <p className="text-xl font-bold text-primary">
-            {totalInvestment > 0 ? ((totalReturns / totalInvestment) * 100).toFixed(1) : 0}%
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
+        {summaryCards.map((c, i) => (
+          <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+            <p className="text-xs text-white/40 mb-1">{c.label}</p>
+            <p className={`text-lg font-semibold ${c.accent}`}>{c.value}</p>
+          </div>
+        ))}
       </div>
-      
-      {/* Investments List */}
+
+      {/* List */}
       {memberInvestments.length > 0 ? (
-        <div className="space-y-4">
-          {memberInvestments.map((investment, index) => (
-            <div key={index} className="border border-border rounded-lg p-4">
-              <div className="flex justify-between items-start">
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
+          {memberInvestments.map((inv, i) => (
+            <div key={i} className="p-5 border-b border-white/5 last:border-0">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-foreground">{investment.group_name}</h3>
-                  <p className="text-sm text-muted-foreground">Date: {new Date(investment.investment_date).toLocaleDateString('en-US')}</p>
+                  <h3 className="text-sm font-semibold text-white">{inv.group_name}</h3>
+                  <p className="text-xs text-white/30 mt-0.5">
+                    {new Date(inv.investment_date).toLocaleDateString('sw-TZ')}
+                  </p>
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  investment.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  inv.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-yellow-500/15 text-yellow-400'
                 }`}>
-                  {investment.status === 'active' ? 'Active' : 'Pending'}
+                  {inv.status === 'active' ? 'Inaendelea' : 'Inasubiri'}
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Amount</p>
-                  <p className="font-medium">TSH {parseFloat(investment.amount).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Equity</p>
-                  <p className="font-medium">{investment.equity_percentage}%</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Expected Returns</p>
-                  <p className="font-medium">TSH {parseFloat(investment.expected_return || 0).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Actual Returns</p>
-                  <p className="font-medium">TSH {parseFloat(investment.actual_return || 0).toLocaleString()}</p>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Kiasi', value: `TSh ${parseFloat(inv.amount).toLocaleString()}` },
+                  { label: 'Hisa', value: `${inv.equity_percentage}%` },
+                  { label: 'Faida Inayotarajiwa', value: `TSh ${parseFloat(inv.expected_return || 0).toLocaleString()}` },
+                  { label: 'Faida Halisi', value: `TSh ${parseFloat(inv.actual_return || 0).toLocaleString()}` },
+                ].map((item, j) => (
+                  <div key={j} className="rounded-lg bg-white/[0.03] p-2.5">
+                    <p className="text-xs text-white/30 mb-0.5">{item.label}</p>
+                    <p className="text-sm font-medium text-white">{item.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <CurrencyDollarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">You don&apos;t have any investments yet.</p>
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-12 text-center">
+          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+            <CurrencyDollarIcon className="h-6 w-6 text-white/30" />
+          </div>
+          <p className="text-sm text-white/40">Bado huna uwekezaji wowote.</p>
         </div>
       )}
     </div>
@@ -1233,59 +891,29 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
   const handleViewTraining = async (training: any) => {
     setLoading(true);
     try {
-      // Use educational content lessons API
-      const response = await fetch(`/api/admin/educational-content/${training.id}/lessons`);
-      if (response.ok) {
-        const lessons = await response.json();
+      const res = await fetch(`/api/admin/educational-content/${training.id}/lessons`);
+      if (res.ok) {
+        const lessons = await res.json();
         setSelectedTraining(training);
-        setTrainingDetails({
-          module: training,
-          lessons: lessons,
-          totalLessons: lessons.length,
-          completedLessons: 0 // TODO: Add progress tracking
-        });
-        // Start with first lesson if available
-        if (lessons && lessons.length > 0) {
-          setCurrentLesson(lessons[0]);
-        }
-      } else {
-        alert('An error occurred while loading training');
+        setTrainingDetails({ module: training, lessons, totalLessons: lessons.length, completedLessons: 0 });
+        if (lessons.length > 0) setCurrentLesson(lessons[0]);
       }
-    } catch (error) {
-      console.error('Error loading training:', error);
-      alert('An error occurred while loading training');
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const handleLessonComplete = async (lessonId: number, completed: boolean) => {
     try {
-      const response = await fetch('/api/training/lesson-progress', {
+      const res = await fetch('/api/training/lesson-progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, lessonId, completed })
+        body: JSON.stringify({ userId: user?.id, lessonId, completed }),
       });
-      
-      if (response.ok) {
-        // Update lesson status locally
-        if (trainingDetails) {
-          const updatedLessons = trainingDetails.lessons.map((lesson: any) => 
-            lesson.id === lessonId ? { ...lesson, completed } : lesson
-          );
-          setTrainingDetails({ ...trainingDetails, lessons: updatedLessons });
-        }
-        
-        if (completed) {
-          alert('Congratulations! You have completed this lesson.');
-        }
-      } else {
-        alert('An error occurred while recording progress');
+      if (res.ok && trainingDetails) {
+        const updated = trainingDetails.lessons.map((l: any) => l.id === lessonId ? { ...l, completed } : l);
+        setTrainingDetails({ ...trainingDetails, lessons: updated });
       }
-    } catch (error) {
-      console.error('Error updating lesson progress:', error);
-      alert('An error occurred while recording progress');
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleStartTraining = async (trainingId: number) => {
@@ -1293,151 +921,134 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
       await fetch('/api/members/training', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, trainingId, action: 'start' })
+        body: JSON.stringify({ userId: user?.id, trainingId, action: 'start' }),
       });
-      // Refresh the page or update state
       window.location.reload();
-    } catch (error) {
-      console.error('Error starting training:', error);
-    }
+    } catch (e) { console.error(e); }
   };
-  
+
   const handleCompleteTraining = async (trainingId: number) => {
     try {
       await fetch('/api/members/training', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, trainingId, action: 'complete' })
+        body: JSON.stringify({ userId: user?.id, trainingId, action: 'complete' }),
       });
-      // Refresh the page or update state
       window.location.reload();
-    } catch (error) {
-      console.error('Error completing training:', error);
-    }
+    } catch (e) { console.error(e); }
   };
-  
-  // Show lesson viewer if training is selected
+
+  const statusBadge = (status: string) => {
+    if (status === 'completed') return 'bg-emerald-500/15 text-emerald-400';
+    if (status === 'in_progress') return 'bg-blue-500/15 text-blue-400';
+    return 'bg-white/5 text-white/30';
+  };
+  const statusLabel = (status: string) => {
+    if (status === 'completed') return 'Imekamilika';
+    if (status === 'in_progress') return 'Inaendelea';
+    return 'Haijanza';
+  };
+
+  // Lesson viewer
   if (selectedTraining && trainingDetails) {
+    const currentIndex = trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson?.id);
     return (
-      <div className="bg-card rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="space-y-4">
+        <button
+          onClick={() => { setSelectedTraining(null); setTrainingDetails(null); setCurrentLesson(null); }}
+          className="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors"
+        >
+          ← Rudi Mafunzo
+        </button>
+
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex items-center justify-between gap-4">
           <div>
-            <button
-              onClick={() => {
-                setSelectedTraining(null);
-                setTrainingDetails(null);
-                setCurrentLesson(null);
-              }}
-              className="text-blue-600 hover:text-blue-800 mb-2 flex items-center"
-            >
-              ← Back to Training
-            </button>
-            <h2 className="text-2xl font-bold text-foreground">{selectedTraining.title}</h2>
-            <p className="text-muted-foreground">{selectedTraining.description}</p>
+            <h2 className="text-base font-semibold text-white">{selectedTraining.title}</h2>
+            <p className="text-xs text-white/40 mt-0.5">{selectedTraining.description}</p>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">
-              Progress: {trainingDetails.completedLessons}/{trainingDetails.totalLessons} lessons
-            </div>
-            <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
-                style={{ width: `${(trainingDetails.completedLessons / trainingDetails.totalLessons) * 100}%` }}
-              ></div>
+          <div className="shrink-0 text-right">
+            <p className="text-xs text-white/30 mb-1">
+              {trainingDetails.completedLessons}/{trainingDetails.totalLessons} masomo
+            </p>
+            <div className="w-32 h-1.5 rounded-full bg-white/5">
+              <div
+                className="h-1.5 rounded-full bg-orange-500 transition-all"
+                style={{ width: `${(trainingDetails.completedLessons / Math.max(trainingDetails.totalLessons, 1)) * 100}%` }}
+              />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Lessons Sidebar */}
-          <div className="lg:col-span-1">
-            <h3 className="font-semibold text-foreground mb-4">Lessons</h3>
-            <div className="space-y-2">
-              {trainingDetails.lessons.map((lesson: any, index: number) => (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Lesson list */}
+          <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4 lg:col-span-1">
+            <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Masomo</h3>
+            <div className="space-y-1">
+              {trainingDetails.lessons.map((lesson: any) => (
                 <button
                   key={lesson.id}
                   onClick={() => setCurrentLesson(lesson)}
-                  className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
                     currentLesson?.id === lesson.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-border hover:border-border'
+                      ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
+                      : 'text-white/50 hover:text-white hover:bg-white/5 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm">{lesson.title}</div>
-                      <div className="text-xs text-muted-foreground">{lesson.duration_minutes} minutes</div>
-                    </div>
-                    {lesson.completed && (
-                      <span className="text-green-600 text-sm">✓</span>
-                    )}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{lesson.title}</span>
+                    {lesson.completed && <span className="shrink-0 text-emerald-400 text-xs">✓</span>}
                   </div>
+                  <p className="text-xs text-white/20 mt-0.5">{lesson.duration_minutes} dak</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Lesson Content */}
-          <div className="lg:col-span-3">
+          {/* Lesson content */}
+          <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 lg:col-span-3">
             {currentLesson ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-foreground">{currentLesson.title}</h3>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">{currentLesson.duration_minutes} minutes</span>
-                    <button
-                      onClick={() => handleLessonComplete(currentLesson.id, !currentLesson.completed)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentLesson.completed
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {currentLesson.completed ? 'Completed ✓' : 'Complete Lesson'}
-                    </button>
+              <>
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{currentLesson.title}</h3>
+                    <p className="text-xs text-white/30 mt-0.5">{currentLesson.duration_minutes} dakika</p>
                   </div>
-                </div>
-                
-                <div className="prose max-w-none">
-                  <div 
-                    className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: currentLesson.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
-                  />
-                </div>
-
-                {/* Navigation */}
-                <div className="flex justify-between mt-8 pt-6 border-t">
                   <button
-                    onClick={() => {
-                      const currentIndex = trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson.id);
-                      if (currentIndex > 0) {
-                        setCurrentLesson(trainingDetails.lessons[currentIndex - 1]);
-                      }
-                    }}
-                    disabled={trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson.id) === 0}
-                    className="px-4 py-2 bg-gray-100 text-muted-foreground rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleLessonComplete(currentLesson.id, !currentLesson.completed)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      currentLesson.completed
+                        ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                        : 'bg-orange-500 text-white hover:bg-orange-600'
+                    }`}
                   >
-                    ← Previous Lesson
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      const currentIndex = trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson.id);
-                      if (currentIndex < trainingDetails.lessons.length - 1) {
-                        setCurrentLesson(trainingDetails.lessons[currentIndex + 1]);
-                      }
-                    }}
-                    disabled={trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson.id) === trainingDetails.lessons.length - 1}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next Lesson →
+                    {currentLesson.completed ? '✓ Imekamilika' : 'Kamilisha Somo'}
                   </button>
                 </div>
-              </div>
+                <div
+                  className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: currentLesson.content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>') }}
+                />
+                <div className="flex justify-between mt-8 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => currentIndex > 0 && setCurrentLesson(trainingDetails.lessons[currentIndex - 1])}
+                    disabled={currentIndex === 0}
+                    className="px-4 py-2 rounded-lg text-sm border border-white/10 text-white/50 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    ← Somo Lililotangulia
+                  </button>
+                  <button
+                    onClick={() => currentIndex < trainingDetails.lessons.length - 1 && setCurrentLesson(trainingDetails.lessons[currentIndex + 1])}
+                    disabled={currentIndex === trainingDetails.lessons.length - 1}
+                    className="px-4 py-2 rounded-lg text-sm bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    Somo Lijalo →
+                  </button>
+                </div>
+              </>
             ) : (
-              <div className="text-center py-12">
-                <BookOpenIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">Select a lesson from the left sidebar to start reading.</p>
+              <div className="flex flex-col items-center justify-center h-40 text-center">
+                <BookOpenIcon className="h-8 w-8 text-white/20 mb-3" />
+                <p className="text-sm text-white/30">Chagua somo kutoka kushoto kuanza kusoma.</p>
               </div>
             )}
           </div>
@@ -1446,62 +1057,50 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
     );
   }
 
-  // Show training modules list
+  // Module list
   return (
-    <div className="bg-card rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-foreground mb-6">Training</h2>
-      
+    <div className="space-y-3">
       {memberTraining.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {memberTraining.map((training, index) => (
-            <div key={index} className="border border-border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-foreground">{training.title}</h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  training.progress_status === 'completed' ? 'bg-green-100 text-green-800' :
-                  training.progress_status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-accent-foreground'
-                }`}>
-                  {training.progress_status === 'completed' ? 'Completed' :
-                   training.progress_status === 'in_progress' ? 'In Progress' :
-                   'Not Started'}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {memberTraining.map((t, i) => (
+            <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex flex-col">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-white leading-snug">{t.title}</h3>
+                <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(t.progress_status)}`}>
+                  {statusLabel(t.progress_status)}
                 </span>
               </div>
-              
-              <p className="text-sm text-muted-foreground mb-3">{training.description}</p>
-              
-              <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
-                <span>Category: {training.category}</span>
-                <span>Level: {training.level}</span>
-                <span>Duration: {training.duration_hours}h</span>
+              <p className="text-xs text-white/40 mb-3 flex-1 leading-relaxed">{t.description}</p>
+              <div className="flex gap-3 text-xs text-white/25 mb-4">
+                <span>{t.category}</span>
+                <span>·</span>
+                <span>{t.level}</span>
+                <span>·</span>
+                <span>{t.duration_hours}h</span>
               </div>
-              
-              <div className="flex space-x-2">
+              <div className="flex gap-2 mt-auto">
                 <button
-                  onClick={() => handleViewTraining(training)}
+                  onClick={() => handleViewTraining(t)}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white/70 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? 'Loading...' : 'View Lessons'}
+                  {loading ? 'Inapakia...' : 'Angalia Masomo'}
                 </button>
-                
-                {training.progress_status === 'completed' ? (
-                  <div className="flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-lg">
-                    <span className="text-sm font-medium">✓ Completed</span>
-                  </div>
-                ) : training.progress_status === 'in_progress' ? (
+                {t.progress_status === 'completed' ? (
+                  <div className="px-3 py-2 rounded-lg text-xs bg-emerald-500/15 text-emerald-400">✓ Imekamilika</div>
+                ) : t.progress_status === 'in_progress' ? (
                   <button
-                    onClick={() => handleCompleteTraining(training.id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    onClick={() => handleCompleteTraining(t.id)}
+                    className="px-3 py-2 rounded-lg text-xs bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
                   >
-                    Complete
+                    Kamilisha
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleStartTraining(training.id)}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                    onClick={() => handleStartTraining(t.id)}
+                    className="px-3 py-2 rounded-lg text-xs bg-orange-500 hover:bg-orange-600 text-white transition-colors"
                   >
-                    Start
+                    Anza
                   </button>
                 )}
               </div>
@@ -1509,9 +1108,11 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <BookOpenIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">No training available.</p>
+        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-12 text-center">
+          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+            <BookOpenIcon className="h-6 w-6 text-white/30" />
+          </div>
+          <p className="text-sm text-white/40">Hakuna mafunzo yanayopatikana.</p>
         </div>
       )}
     </div>
@@ -1520,9 +1121,12 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
 
 function MemberSettingsSection() {
   return (
-    <div className="bg-card rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-foreground mb-6">Settings</h2>
-      <p className="text-muted-foreground">Your account settings.</p>
+    <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-8 text-center">
+      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+        <CogIcon className="h-6 w-6 text-white/30" />
+      </div>
+      <p className="text-sm font-medium text-white mb-1">Mipangilio ya Akaunti</p>
+      <p className="text-xs text-white/30">Huduma hii itapatikana hivi karibuni.</p>
     </div>
   );
 }
