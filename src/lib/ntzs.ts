@@ -23,8 +23,8 @@ export interface NtzsDeposit {
   id: string;
   userId: string;
   amountTzs: number;
-  phone: string;
-  status: 'pending' | 'processing' | 'minted' | 'failed';
+  phoneNumber: string;
+  status: 'pending' | 'submitted' | 'processing' | 'minted' | 'failed';
   createdAt: string;
 }
 
@@ -44,8 +44,8 @@ export interface NtzsWithdrawal {
   id: string;
   userId: string;
   amountTzs: number;
-  phone: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  phoneNumber: string;
+  status: 'pending' | 'submitted' | 'processing' | 'completed' | 'failed';
   createdAt: string;
 }
 
