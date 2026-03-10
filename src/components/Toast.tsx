@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
 
 interface ToastProps {
   message: string;
@@ -11,66 +10,81 @@ interface ToastProps {
   fixed?: boolean;
 }
 
-export default function Toast({ message, type = 'info', onClose, duration = 3000, fixed = true }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
+const config = {
+  success: {
+    bar: 'bg-emerald-500',
+    icon: (
+      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+    ),
+    iconBg: 'bg-emerald-500/10',
+    label: 'text-emerald-400',
+  },
+  error: {
+    bar: 'bg-red-500',
+    icon: (
+      <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    ),
+    iconBg: 'bg-red-500/10',
+    label: 'text-red-400',
+  },
+  info: {
+    bar: 'bg-blue-500',
+    icon: (
+      <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    iconBg: 'bg-blue-500/10',
+    label: 'text-blue-400',
+  },
+};
 
-    return () => clearTimeout(timer);
+export default function Toast({ message, type = 'info', onClose, duration = 4000, fixed = true }: ToastProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const enterFrame = requestAnimationFrame(() => setVisible(true));
+    const timer = setTimeout(() => {
+      setVisible(false);
+      setTimeout(onClose, 300);
+    }, duration);
+    return () => {
+      cancelAnimationFrame(enterFrame);
+      clearTimeout(timer);
+    };
   }, [duration, onClose]);
 
-  const icons = {
-    success: CheckCircleIcon,
-    error: XCircleIcon,
-    info: InformationCircleIcon,
-  };
-
-  const colors = {
-    success: 'border-green-200 bg-green-50/90 text-green-900',
-    error: 'border-red-200 bg-red-50/90 text-red-900',
-    info: 'border-blue-200 bg-blue-50/90 text-blue-900',
-  };
-
-  const iconColors = {
-    success: 'text-green-600',
-    error: 'text-red-600',
-    info: 'text-blue-600',
-  };
-
-  const Icon = icons[type];
+  const c = config[type];
 
   return (
-    <div className={`${fixed ? 'fixed top-4 right-4 z-50' : ''} animate-slide-in`}>
-      <div
-        className={`${colors[type]} relative overflow-hidden rounded-xl border shadow-lg backdrop-blur px-4 py-3 pr-10 max-w-sm`}
-      >
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border bg-white/70 ${
-              type === 'success'
-                ? 'border-green-200'
-                : type === 'error'
-                  ? 'border-red-200'
-                  : 'border-blue-200'
-            }`}
-          >
-            <Icon className={`h-5 w-5 ${iconColors[type]} flex-shrink-0`} />
+    <div
+      className={`
+        ${fixed ? 'fixed top-4 right-4 z-50' : ''}
+        transition-all duration-300 ease-out
+        ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
+      `}
+    >
+      <div className="relative overflow-hidden rounded-xl bg-[#1e1e1e] border border-white/10 shadow-2xl shadow-black/40 min-w-[280px] max-w-sm">
+        <div className="flex items-start gap-3 px-4 py-3 pr-9">
+          <div className={`mt-0.5 w-7 h-7 rounded-lg ${c.iconBg} flex items-center justify-center shrink-0`}>
+            {c.icon}
           </div>
-          <p className="text-sm font-medium leading-5">{message}</p>
+          <p className="text-sm text-white/80 leading-5 pt-0.5">{message}</p>
         </div>
         <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
+          onClick={() => { setVisible(false); setTimeout(onClose, 300); }}
+          className="absolute top-3 right-3 text-white/20 hover:text-white/60 transition-colors"
           aria-label="Close"
         >
-          <XMarkIcon className="h-5 w-5" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
-        <div
-          className={`absolute bottom-0 left-0 h-1 w-full ${
-            type === 'success' ? 'bg-green-500/60' : type === 'error' ? 'bg-red-500/60' : 'bg-blue-500/60'
-          }`}
-        />
+        <div className={`absolute bottom-0 left-0 h-0.5 w-full ${c.bar} opacity-60`} />
       </div>
     </div>
   );

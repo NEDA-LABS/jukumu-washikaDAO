@@ -4,6 +4,13 @@ import { getAuthTokenPayload } from '@/lib/auth';
 import { createMobilePayment } from '@/lib/snippe';
 import { insertPendingPayment } from '@/lib/snippe-db';
 
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('255')) return digits;
+  if (digits.startsWith('0')) return '255' + digits.slice(1);
+  return '255' + digits;
+}
+
 export async function POST(request: NextRequest) {
   if (!process.env.SNIPPE_API_KEY) {
     return NextResponse.json({ error: 'Payment service not configured (SNIPPE_API_KEY missing)' }, { status: 503 });
@@ -80,10 +87,12 @@ export async function POST(request: NextRequest) {
     const webhookUrl = `${appUrl}/api/webhooks/snippe`;
 
     // Use phone from request body, fallback to member profile phone
-    const phoneNumber = body.phone_number || member.phone;
-    if (!phoneNumber) {
+    const rawPhone = body.phone_number || member.phone;
+    if (!rawPhone) {
       return NextResponse.json({ error: 'Nambari ya simu inahitajika' }, { status: 400 });
     }
+    // Normalize to 255xxxxxxxxx (Tanzania international format)
+    const phoneNumber = normalizePhone(rawPhone);
 
     // Split full name into first/last for Snippe API
     const nameParts = member.full_name.trim().split(/\s+/);
@@ -92,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     const payment = await createMobilePayment({
       amount: amountTzs,
-      phone_number: phoneNumber.replace(/^\+/, ''),
+      phone_number: phoneNumber,
       customer: { firstname, lastname },
       webhook_url: webhookUrl,
       metadata: {
@@ -107,7 +116,7 @@ export async function POST(request: NextRequest) {
     await insertPendingPayment(client, {
       reference: payment.data.reference,
       amount: amountTzs,
-      phone: phoneNumber.replace(/^\+/, ''),
+      phone: phoneNumber,
       customerName: member.full_name,
       paymentType: 'contribution',
       memberId: member.id,

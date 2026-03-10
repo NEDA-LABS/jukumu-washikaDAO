@@ -4,6 +4,13 @@ import { getAuthTokenPayload } from '@/lib/auth';
 import { createMobilePayment } from '@/lib/snippe';
 import { insertPendingPayment } from '@/lib/snippe-db';
 
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('255')) return digits;
+  if (digits.startsWith('0')) return '255' + digits.slice(1);
+  return '255' + digits;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,10 +78,11 @@ export async function POST(
     const webhookUrl = `${appUrl}/api/webhooks/snippe`;
 
     // Use phone from request body, fallback to member profile phone
-    const phoneNumber = body.phone_number || member.phone;
-    if (!phoneNumber) {
+    const rawPhone = body.phone_number || member.phone;
+    if (!rawPhone) {
       return NextResponse.json({ error: 'Nambari ya simu inahitajika' }, { status: 400 });
     }
+    const phoneNumber = normalizePhone(rawPhone);
 
     const nameParts = member.full_name.trim().split(/\s+/);
     const firstname = nameParts[0] || 'Member';
@@ -82,7 +90,7 @@ export async function POST(
 
     const payment = await createMobilePayment({
       amount,
-      phone_number: phoneNumber.replace(/^\+/, ''),
+      phone_number: phoneNumber,
       customer: { firstname, lastname },
       webhook_url: webhookUrl,
       metadata: {
@@ -96,7 +104,7 @@ export async function POST(
     await insertPendingPayment(client, {
       reference: payment.data.reference,
       amount,
-      phone: phoneNumber.replace(/^\+/, ''),
+      phone: phoneNumber,
       customerName: member.full_name,
       paymentType: 'group_topup',
       memberId: member.id,

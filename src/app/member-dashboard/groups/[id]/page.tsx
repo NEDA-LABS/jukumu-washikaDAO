@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useToast } from '@/components/ToastProvider';
 
 type Membership = {
   member_id: number;
@@ -122,6 +123,7 @@ export default function MemberGroupDetailsPage() {
   const router = useRouter();
   const routeParams = useParams<{ id?: string | string[] }>();
   const groupId = Array.isArray(routeParams?.id) ? routeParams?.id[0] : routeParams?.id;
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<Group | null>(null);
@@ -364,11 +366,13 @@ export default function MemberGroupDetailsPage() {
         if (data.status === 'completed') {
           clearInterval(interval);
           setPayStatus('success');
+          showToast('Malipo yamefanikiwa!', 'success');
           loadGroupPayments();
         } else if (data.status === 'failed') {
           clearInterval(interval);
           setPayStatus('failed');
           setPayError(data.failure_reason || 'Malipo yameshindwa.');
+          showToast(data.failure_reason || 'Malipo yameshindwa.', 'error');
         }
       } catch { /* ignore */ }
     }, 5000);
@@ -400,9 +404,11 @@ export default function MemberGroupDetailsPage() {
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setDisburseError(data?.error || 'Imeshindikana kutuma fedha.');
+        showToast(data?.error || 'Imeshindikana kutuma fedha.', 'error');
         return;
       }
       setDisburseSuccess(`Malipo ya TSH ${amount.toLocaleString()} kwa ${disburseName} yametumwa! Ref: ${data?.reference}`);
+      showToast(`TSH ${amount.toLocaleString()} imetumwa kwa ${disburseName}`, 'success');
       setDisbursePhone('');
       setDisburseName('');
       setDisburseAmount('');
@@ -410,6 +416,7 @@ export default function MemberGroupDetailsPage() {
       loadGroupPayments();
     } catch {
       setDisburseError('Hitilafu imetokea.');
+      showToast('Hitilafu imetokea. Jaribu tena.', 'error');
     } finally {
       setDisburseLoading(false);
     }
@@ -545,14 +552,14 @@ export default function MemberGroupDetailsPage() {
                           try {
                             const res = await fetch(`/api/member/groups/${groupId}/wallet`, { method: 'POST' });
                             const json = await res.json().catch(() => null);
-                            if (!res.ok) { setWalletError(json?.error || 'Imeshindikana kuunda wallet.'); return; }
+                            if (!res.ok) { setWalletError(json?.error || 'Imeshindikana kuunda wallet.'); showToast(json?.error || 'Imeshindikana kuunda wallet.', 'error'); return; }
                             const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
                             const rj = await refresh.json().catch(() => null);
-                            if (refresh.ok) setWalletSummary((rj as WalletSummary) || null);
+                            if (refresh.ok) { setWalletSummary((rj as WalletSummary) || null); showToast('Wallet imeundwa!', 'success'); }
                             const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
                             const trj = await tr.json().catch(() => null);
                             if (tr.ok) setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
-                          } catch (err) { setWalletError(err instanceof Error ? err.message : 'Imeshindikana kuunda wallet.'); }
+                          } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana kuunda wallet.'; setWalletError(msg); showToast(msg, 'error'); }
                           finally { setWalletLoading(false); }
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
@@ -676,12 +683,13 @@ export default function MemberGroupDetailsPage() {
                               body: JSON.stringify({ toAddress: to, amount: amt }),
                             });
                             const json = await res.json().catch(() => null);
-                            if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana kuanzisha transfer.'); return; }
+                            if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana kuanzisha transfer.'); showToast(json?.error || 'Imeshindikana kuanzisha transfer.', 'error'); return; }
+                            showToast('Pendekezo la transfer limetumwa!', 'success');
                             setTransferToAddress(''); setTransferAmount('');
                             const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
                             const rj = await refresh.json().catch(() => null);
                             if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                          } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                          } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
                           finally { setTransferSubmitting(false); }
                         }}
                       >
@@ -732,11 +740,12 @@ export default function MemberGroupDetailsPage() {
                                       try {
                                         const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/approve`, { method: 'POST' });
                                         const json = await res.json().catch(() => null);
-                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); return; }
+                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); showToast(json?.error || 'Imeshindikana ku-idhinisha.', 'error'); return; }
+                                        showToast('Transfer imeidhinishwa!', 'success');
                                         const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
                                         const rj = await refresh.json().catch(() => null);
                                         if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                                      } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                                      } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
                                       finally { setWalletTransfersLoading(false); }
                                     }}
                                     className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 disabled:opacity-50 transition-colors"
@@ -749,14 +758,15 @@ export default function MemberGroupDetailsPage() {
                                       try {
                                         const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/execute`, { method: 'POST' });
                                         const json = await res.json().catch(() => null);
-                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); return; }
+                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); showToast(json?.error || 'Imeshindikana kutekeleza.', 'error'); return; }
+                                        showToast('Transfer imetekelezwa!', 'success');
                                         const rw = await fetch(`/api/member/groups/${groupId}/wallet`);
                                         const rwj = await rw.json().catch(() => null);
                                         if (rw.ok) setWalletSummary((rwj as WalletSummary) || null);
                                         const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
                                         const rj = await refresh.json().catch(() => null);
                                         if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                                      } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                                      } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
                                       finally { setWalletTransfersLoading(false); }
                                     }}
                                     className="px-2.5 py-1 rounded-lg text-xs bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
@@ -1045,11 +1055,12 @@ export default function MemberGroupDetailsPage() {
                       });
                       if (res.status === 401) { router.push('/login'); return; }
                       const json = await res.json().catch(() => null);
-                      if (!res.ok) { setError(json?.error || 'Imeshindikana kuunda pendekezo.'); return; }
+                      if (!res.ok) { setError(json?.error || 'Imeshindikana kuunda pendekezo.'); showToast(json?.error || 'Imeshindikana kuunda pendekezo.', 'error'); return; }
                       const created = json?.proposal as ProposalRow | undefined;
                       if (created) setProposals(prev => [created, ...prev]);
+                      showToast('Pendekezo limeundwa!', 'success');
                       setProposalTitle(''); setProposalDescription(''); setShowCreateProposal(false);
-                    } catch (err) { setError(err instanceof Error ? err.message : 'Imeshindikana.'); }
+                    } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setError(msg); showToast(msg, 'error'); }
                     finally { setProposalSubmitting(false); }
                   }}>
                     <div>
