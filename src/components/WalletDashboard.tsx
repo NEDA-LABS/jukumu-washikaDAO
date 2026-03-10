@@ -120,6 +120,8 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
         };
       }
 
+      console.log('[WalletDashboard] Submitting:', { endpoint, body });
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
