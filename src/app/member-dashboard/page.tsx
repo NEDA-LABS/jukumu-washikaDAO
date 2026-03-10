@@ -330,53 +330,58 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 
   return (
     <div className="space-y-4">
-      {/* Greeting */}
-      <div>
-        <h2 className="text-2xl font-semibold text-white">
-          Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
-        </h2>
-        <p className="text-sm text-white/40 mt-0.5">Hapa kuna muhtasari wa akaunti yako</p>
-      </div>
-
-      {/* ── Wallet hero card ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-orange-500/20 via-[#1a1a1a] to-[#1a1a1a] border border-orange-500/20 p-6">
-        <div className="flex items-start justify-between mb-6">
+      {/* Greeting + inline balance */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">
+            Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
+          </h2>
+          <p className="text-sm text-white/40 mt-0.5">Hapa kuna muhtasari wa akaunti yako</p>
+        </div>
+        {/* Balance pill — top right of greeting */}
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#1a1a1a] border border-white/[0.07]">
+          <div className="w-7 h-7 rounded-lg bg-orange-500/15 flex items-center justify-center shrink-0">
+            <WalletIcon className="h-3.5 w-3.5 text-orange-400" />
+          </div>
           <div>
-            <p className="text-xs text-white/40 mb-1 uppercase tracking-wider">Salio la Wallet</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-wider leading-none mb-0.5">Salio</p>
             {balanceLoading ? (
-              <div className="h-9 w-40 rounded-lg bg-white/5 animate-pulse" />
+              <div className="h-4 w-20 rounded bg-white/5 animate-pulse" />
             ) : (
-              <p className="text-3xl font-bold text-white">
+              <p className="text-sm font-bold text-white leading-none">
                 TSh <span className="text-orange-400">{(balanceTzs ?? 0).toLocaleString()}</span>
               </p>
             )}
-            <p className="text-xs text-white/30 mt-1">nTZS · salio la sasa</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
-            <WalletIcon className="h-5 w-5 text-orange-400" />
           </div>
         </div>
+      </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => onNavigate('wallet')}
-            className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors"
-          >
-            + Weka Pesa
-          </button>
-          <button
-            onClick={() => onNavigate('wallet')}
-            className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-sm font-medium border border-white/10 transition-colors"
-          >
-            Toa Pesa
-          </button>
-          <button
-            onClick={() => onNavigate('wallet')}
-            className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-sm font-medium border border-white/10 transition-colors"
-          >
-            Hamisha
-          </button>
+      {/* ── Compact web3-style action strip ── */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onNavigate('wallet')}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          Weka Pesa
+        </button>
+        <button
+          onClick={() => onNavigate('wallet')}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 text-xs font-medium border border-white/[0.08] transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" /></svg>
+          Toa Pesa
+        </button>
+        <button
+          onClick={() => onNavigate('wallet')}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 text-xs font-medium border border-white/[0.08] transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+          Hamisha
+        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] text-white/25">nTZS live</span>
         </div>
       </div>
 
@@ -910,23 +915,43 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
 }
 
 function LearningSection({ memberTraining, user }: { memberTraining: any[]; user: any }) {
+  const [activeTab, setActiveTab] = useState<'courses' | 'certificates'>('courses');
   const [selectedTraining, setSelectedTraining] = useState<any>(null);
   const [trainingDetails, setTrainingDetails] = useState<any>(null);
   const [currentLesson, setCurrentLesson] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [certsLoading, setCertsLoading] = useState(false);
+  const [earnedCert, setEarnedCert] = useState<any>(null);
+  const [completingCourse, setCompletingCourse] = useState(false);
+
+  // Load certificates when tab switches
+  React.useEffect(() => {
+    if (activeTab === 'certificates' && user?.id) {
+      setCertsLoading(true);
+      fetch(`/api/training/certificates?userId=${user.id}`)
+        .then(r => r.json())
+        .then(d => setCertificates(d.certificates ?? []))
+        .catch(() => {})
+        .finally(() => setCertsLoading(false));
+    }
+  }, [activeTab, user?.id]);
+
+  const closeModal = () => { setSelectedTraining(null); setTrainingDetails(null); setCurrentLesson(null); };
 
   const handleViewTraining = async (training: any) => {
-    setLoading(true);
+    setLoadingId(training.id);
     try {
       const res = await fetch(`/api/admin/educational-content/${training.id}/lessons`);
       if (res.ok) {
         const lessons = await res.json();
+        const completedCount = lessons.filter((l: any) => l.completed).length;
         setSelectedTraining(training);
-        setTrainingDetails({ module: training, lessons, totalLessons: lessons.length, completedLessons: 0 });
-        if (lessons.length > 0) setCurrentLesson(lessons[0]);
+        setTrainingDetails({ module: training, lessons, totalLessons: lessons.length, completedLessons: completedCount });
+        setCurrentLesson(lessons[0] ?? null);
       }
     } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    finally { setLoadingId(null); }
   };
 
   const handleLessonComplete = async (lessonId: number, completed: boolean) => {
@@ -938,9 +963,34 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
       });
       if (res.ok && trainingDetails) {
         const updated = trainingDetails.lessons.map((l: any) => l.id === lessonId ? { ...l, completed } : l);
-        setTrainingDetails({ ...trainingDetails, lessons: updated });
+        const completedCount = updated.filter((l: any) => l.completed).length;
+        const newDetails = { ...trainingDetails, lessons: updated, completedLessons: completedCount };
+        setTrainingDetails(newDetails);
+        if (currentLesson?.id === lessonId) setCurrentLesson({ ...currentLesson, completed });
+
+        // Auto-trigger course completion check when all lessons done
+        if (completed && completedCount === newDetails.totalLessons && newDetails.totalLessons > 0) {
+          handleCompleteCourse(selectedTraining.id);
+        }
       }
     } catch (e) { console.error(e); }
+  };
+
+  const handleCompleteCourse = async (courseId: number) => {
+    if (!user?.id || completingCourse) return;
+    setCompletingCourse(true);
+    try {
+      const res = await fetch('/api/training/complete-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, courseId }),
+      });
+      const json = await res.json();
+      if (res.ok && json.certificate) {
+        setEarnedCert(json.certificate);
+      }
+    } catch (e) { console.error(e); }
+    finally { setCompletingCourse(false); }
   };
 
   const handleStartTraining = async (trainingId: number) => {
@@ -950,18 +1000,6 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, trainingId, action: 'start' }),
       });
-      window.location.reload();
-    } catch (e) { console.error(e); }
-  };
-
-  const handleCompleteTraining = async (trainingId: number) => {
-    try {
-      await fetch('/api/members/training', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, trainingId, action: 'complete' }),
-      });
-      window.location.reload();
     } catch (e) { console.error(e); }
   };
 
@@ -976,173 +1014,334 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
     return 'Haijanza';
   };
 
-  // Lesson viewer
-  if (selectedTraining && trainingDetails) {
-    const currentIndex = trainingDetails.lessons.findIndex((l: any) => l.id === currentLesson?.id);
-    return (
-      <div className="space-y-4">
-        <button
-          onClick={() => { setSelectedTraining(null); setTrainingDetails(null); setCurrentLesson(null); }}
-          className="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors"
-        >
-          ← Rudi Mafunzo
-        </button>
+  const currentIndex = trainingDetails?.lessons.findIndex((l: any) => l.id === currentLesson?.id) ?? -1;
+  const completionPct = trainingDetails
+    ? Math.round((trainingDetails.completedLessons / Math.max(trainingDetails.totalLessons, 1)) * 100)
+    : 0;
 
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold text-white">{selectedTraining.title}</h2>
-            <p className="text-xs text-white/40 mt-0.5">{selectedTraining.description}</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-xs text-white/30 mb-1">
-              {trainingDetails.completedLessons}/{trainingDetails.totalLessons} masomo
-            </p>
-            <div className="w-32 h-1.5 rounded-full bg-white/5">
-              <div
-                className="h-1.5 rounded-full bg-orange-500 transition-all"
-                style={{ width: `${(trainingDetails.completedLessons / Math.max(trainingDetails.totalLessons, 1)) * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
+  return (
+    <>
+      {/* ── Tab bar ── */}
+      <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] w-fit mb-4">
+        {([
+          { id: 'courses' as const, label: 'Kozi' },
+          { id: 'certificates' as const, label: 'Vyeti Vyangu' },
+        ]).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === tab.id
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Lesson list */}
-          <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4 lg:col-span-1">
-            <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Masomo</h3>
-            <div className="space-y-1">
-              {trainingDetails.lessons.map((lesson: any) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => setCurrentLesson(lesson)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
-                    currentLesson?.id === lesson.id
-                      ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
-                      : 'text-white/50 hover:text-white hover:bg-white/5 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">{lesson.title}</span>
-                    {lesson.completed && <span className="shrink-0 text-emerald-400 text-xs">✓</span>}
+      {/* ── Courses tab ── */}
+      {activeTab === 'courses' && (
+        <div className="space-y-3">
+          {memberTraining.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {memberTraining.map((t, i) => (
+                <div key={i} className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5 flex flex-col hover:border-white/10 transition-all">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <BookOpenIcon className="h-4 w-4 text-orange-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-white leading-snug">{t.title}</h3>
+                        {t.certificates_enabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-yellow-400 mt-0.5">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            Inatoa Cheti
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(t.progress_status)}`}>
+                      {statusLabel(t.progress_status)}
+                    </span>
                   </div>
-                  <p className="text-xs text-white/20 mt-0.5">{lesson.duration_minutes} dak</p>
-                </button>
+
+                  {t.description && (
+                    <p className="text-xs text-white/35 mb-3 leading-relaxed line-clamp-2 pl-12">{t.description}</p>
+                  )}
+
+                  <div className="flex gap-3 text-[10px] text-white/20 mb-4 pl-12">
+                    {t.category && <span>{t.category}</span>}
+                    {t.level && <><span>·</span><span>{t.level}</span></>}
+                    {t.duration_hours && <><span>·</span><span>{t.duration_hours}h</span></>}
+                  </div>
+
+                  <div className="flex gap-2 mt-auto">
+                    <button
+                      onClick={() => { handleViewTraining(t); if (t.progress_status === 'not_started') handleStartTraining(t.id); }}
+                      disabled={loadingId === t.id}
+                      className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 disabled:opacity-40 transition-colors"
+                    >
+                      {loadingId === t.id ? 'Inapakia...' : t.progress_status === 'not_started' ? 'Anza Kujifunza' : 'Endelea Kusoma'}
+                    </button>
+                    {t.progress_status === 'completed' && (
+                      <div className="px-3 py-2 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓</div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-
-          {/* Lesson content */}
-          <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 lg:col-span-3">
-            {currentLesson ? (
-              <>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{currentLesson.title}</h3>
-                    <p className="text-xs text-white/30 mt-0.5">{currentLesson.duration_minutes} dakika</p>
-                  </div>
-                  <button
-                    onClick={() => handleLessonComplete(currentLesson.id, !currentLesson.completed)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      currentLesson.completed
-                        ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
-                        : 'bg-orange-500 text-white hover:bg-orange-600'
-                    }`}
-                  >
-                    {currentLesson.completed ? '✓ Imekamilika' : 'Kamilisha Somo'}
-                  </button>
-                </div>
-                <div
-                  className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: currentLesson.content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>') }}
-                />
-                <div className="flex justify-between mt-8 pt-4 border-t border-white/5">
-                  <button
-                    onClick={() => currentIndex > 0 && setCurrentLesson(trainingDetails.lessons[currentIndex - 1])}
-                    disabled={currentIndex === 0}
-                    className="px-4 py-2 rounded-lg text-sm border border-white/10 text-white/50 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    ← Somo Lililotangulia
-                  </button>
-                  <button
-                    onClick={() => currentIndex < trainingDetails.lessons.length - 1 && setCurrentLesson(trainingDetails.lessons[currentIndex + 1])}
-                    disabled={currentIndex === trainingDetails.lessons.length - 1}
-                    className="px-4 py-2 rounded-lg text-sm bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    Somo Lijalo →
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
-                <BookOpenIcon className="h-8 w-8 text-white/20 mb-3" />
-                <p className="text-sm text-white/30">Chagua somo kutoka kushoto kuanza kusoma.</p>
+          ) : (
+            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-16 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+                <BookOpenIcon className="h-6 w-6 text-white/15" />
               </div>
-            )}
-          </div>
+              <p className="text-sm font-medium text-white/25">Hakuna mafunzo yanayopatikana</p>
+              <p className="text-xs text-white/15 mt-1">Mafunzo mapya yataongezwa hivi karibuni</p>
+            </div>
+          )}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  // Module list
-  return (
-    <div className="space-y-3">
-      {memberTraining.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {memberTraining.map((t, i) => (
-            <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex flex-col">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-white leading-snug">{t.title}</h3>
-                <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(t.progress_status)}`}>
-                  {statusLabel(t.progress_status)}
-                </span>
+      {/* ── Certificates tab ── */}
+      {activeTab === 'certificates' && (
+        <div className="space-y-3">
+          {certsLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent" />
+            </div>
+          ) : certificates.length === 0 ? (
+            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-500/30" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
               </div>
-              <p className="text-xs text-white/40 mb-3 flex-1 leading-relaxed">{t.description}</p>
-              <div className="flex gap-3 text-xs text-white/25 mb-4">
-                <span>{t.category}</span>
-                <span>·</span>
-                <span>{t.level}</span>
-                <span>·</span>
-                <span>{t.duration_hours}h</span>
+              <p className="text-sm font-medium text-white/25">Bado huna vyeti</p>
+              <p className="text-xs text-white/15 mt-1">Kamilisha kozi zinazotoa vyeti ili kupata cheti lako la kwanza</p>
+              <button
+                onClick={() => setActiveTab('courses')}
+                className="mt-4 px-4 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/20 transition-colors"
+              >
+                Angalia Kozi →
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {certificates.map((cert: any) => (
+                <div key={cert.id} className="rounded-2xl bg-gradient-to-br from-[#1a1600] to-[#141414] border border-yellow-500/20 p-5 relative overflow-hidden">
+                  {/* Decorative star */}
+                  <div className="absolute top-3 right-3 opacity-10">
+                    <svg className="w-16 h-16 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p className="text-[10px] font-semibold text-yellow-500/70 uppercase tracking-wider">Cheti cha Kukamilisha</p>
+                  </div>
+                  <h3 className="text-sm font-bold text-white mb-1">{cert.course_title}</h3>
+                  <p className="text-xs text-white/40 mb-3">{cert.member_name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {cert.category && <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 text-white/30">{cert.category}</span>}
+                    {cert.difficulty_level && <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 text-white/30">{cert.difficulty_level}</span>}
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-yellow-500/10">
+                    <p className="text-[10px] text-white/25">
+                      {new Date(cert.issued_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                    <button
+                      onClick={() => setEarnedCert(cert)}
+                      className="text-[10px] text-yellow-400 hover:text-yellow-300 font-semibold transition-colors"
+                    >
+                      Angalia Cheti →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Training course modal ── */}
+      {selectedTraining && trainingDetails && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6">
+          <div className="w-full max-w-4xl rounded-2xl bg-[#111] border border-white/10 flex flex-col max-h-[92vh] overflow-hidden">
+
+            {/* Modal header */}
+            <div className="flex items-center gap-4 px-5 py-4 border-b border-white/[0.06] shrink-0">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-white truncate">{selectedTraining.title}</h2>
+                <div className="flex items-center gap-3 mt-1">
+                  <div className="flex-1 max-w-40 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-orange-500 transition-all duration-500" style={{ width: `${completionPct}%` }} />
+                  </div>
+                  <span className="text-[10px] text-white/30 shrink-0">
+                    {trainingDetails.completedLessons}/{trainingDetails.totalLessons} · {completionPct}%
+                  </span>
+                  {selectedTraining.certificates_enabled && (
+                    <span className="hidden sm:flex items-center gap-1 text-[10px] text-yellow-400">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                      Inatoa Cheti
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-2 mt-auto">
-                <button
-                  onClick={() => handleViewTraining(t)}
-                  disabled={loading}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white/70 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? 'Inapakia...' : 'Angalia Masomo'}
-                </button>
-                {t.progress_status === 'completed' ? (
-                  <div className="px-3 py-2 rounded-lg text-xs bg-emerald-500/15 text-emerald-400">✓ Imekamilika</div>
-                ) : t.progress_status === 'in_progress' ? (
-                  <button
-                    onClick={() => handleCompleteTraining(t.id)}
-                    className="px-3 py-2 rounded-lg text-xs bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
-                  >
-                    Kamilisha
-                  </button>
+              <button onClick={closeModal} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+              {/* Left: lesson list */}
+              <div className="w-56 shrink-0 border-r border-white/[0.06] overflow-y-auto p-3 hidden sm:block">
+                <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wider px-2 mb-2">Masomo</p>
+                <div className="space-y-0.5">
+                  {trainingDetails.lessons.map((lesson: any, idx: number) => (
+                    <button key={lesson.id} onClick={() => setCurrentLesson(lesson)}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl transition-all ${currentLesson?.id === lesson.id ? 'bg-orange-500/15 border border-orange-500/20' : 'hover:bg-white/[0.04] border border-transparent'}`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${lesson.completed ? 'bg-emerald-500/15 text-emerald-400' : currentLesson?.id === lesson.id ? 'bg-orange-500/20 text-orange-400' : 'bg-white/5 text-white/30'}`}>
+                          {lesson.completed ? '✓' : idx + 1}
+                        </span>
+                        <span className={`text-xs truncate ${currentLesson?.id === lesson.id ? 'text-orange-300 font-medium' : 'text-white/50'}`}>{lesson.title}</span>
+                      </div>
+                      <p className="text-[10px] text-white/20 mt-0.5 pl-7">{lesson.duration_minutes} dak</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: lesson content */}
+              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                {currentLesson ? (
+                  <>
+                    <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-white/[0.06] shrink-0">
+                      <div>
+                        <h3 className="text-sm font-semibold text-white">{currentLesson.title}</h3>
+                        <p className="text-[10px] text-white/25 mt-0.5">{currentLesson.duration_minutes} dakika</p>
+                      </div>
+                      <button
+                        onClick={() => handleLessonComplete(currentLesson.id, !currentLesson.completed)}
+                        className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${currentLesson.completed ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/20' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
+                      >
+                        {currentLesson.completed ? '✓ Imekamilika' : 'Kamilisha Somo'}
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-6 py-5">
+                      <div
+                        className="text-sm text-white/65 leading-7 whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{
+                          __html: currentLesson.content
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
+                            .replace(/^# (.+)$/gm, '<h1 class="text-base font-bold text-white mt-5 mb-2">$1</h1>')
+                            .replace(/^## (.+)$/gm, '<h2 class="text-sm font-semibold text-white/80 mt-4 mb-1.5">$1</h2>')
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.06] shrink-0">
+                      <button
+                        onClick={() => currentIndex > 0 && setCurrentLesson(trainingDetails.lessons[currentIndex - 1])}
+                        disabled={currentIndex <= 0}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                      >
+                        ← Iliyotangulia
+                      </button>
+                      <p className="sm:hidden text-[10px] text-white/25">{currentIndex + 1} / {trainingDetails.lessons.length}</p>
+                      <button
+                        onClick={() => {
+                          if (currentIndex < trainingDetails.lessons.length - 1) {
+                            setCurrentLesson(trainingDetails.lessons[currentIndex + 1]);
+                          } else {
+                            handleCompleteCourse(selectedTraining.id);
+                            closeModal();
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs transition-colors ${
+                          currentIndex === trainingDetails.lessons.length - 1
+                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white font-semibold'
+                            : 'bg-orange-500 hover:bg-orange-600 text-white'
+                        }`}
+                      >
+                        {currentIndex < trainingDetails.lessons.length - 1 ? 'Lijalo →' : completingCourse ? 'Inakamilisha...' : 'Maliza Kozi ✓'}
+                      </button>
+                    </div>
+                  </>
                 ) : (
-                  <button
-                    onClick={() => handleStartTraining(t.id)}
-                    className="px-3 py-2 rounded-lg text-xs bg-orange-500 hover:bg-orange-600 text-white transition-colors"
-                  >
-                    Anza
-                  </button>
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
+                    <BookOpenIcon className="h-10 w-10 text-white/10" />
+                    <p className="text-sm text-white/25">Chagua somo kutoka orodha kushoto</p>
+                  </div>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <BookOpenIcon className="h-6 w-6 text-white/30" />
           </div>
-          <p className="text-sm text-white/40">Hakuna mafunzo yanayopatikana.</p>
         </div>
       )}
-    </div>
+
+      {/* ── Certificate earned modal ── */}
+      {earnedCert && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+          <div className="w-full max-w-md">
+            {/* Confetti dots decoration */}
+            <div className="flex justify-center mb-6 gap-2">
+              {['bg-yellow-400','bg-orange-400','bg-emerald-400','bg-blue-400','bg-purple-400'].map((c,i) => (
+                <div key={i} className={`w-2 h-2 rounded-full ${c} opacity-70 animate-bounce`} style={{ animationDelay: `${i*0.1}s` }} />
+              ))}
+            </div>
+
+            {/* Certificate card */}
+            <div className="rounded-2xl bg-gradient-to-br from-[#1c1800] via-[#1a1a1a] to-[#141414] border border-yellow-500/30 p-8 text-center relative overflow-hidden shadow-2xl shadow-yellow-500/10">
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage:'radial-gradient(circle at 25% 25%, #f59e0b 0%, transparent 50%), radial-gradient(circle at 75% 75%, #f59e0b 0%, transparent 50%)'}} />
+
+              <div className="relative">
+                {/* Badge */}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-yellow-500/30">
+                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                </div>
+
+                <p className="text-xs font-bold text-yellow-400/70 uppercase tracking-[0.2em] mb-2">Cheti cha Kukamilisha</p>
+                <p className="text-white/50 text-xs mb-1">Hii inathibitisha kwamba</p>
+                <h2 className="text-xl font-bold text-white mb-1">{earnedCert.member_name}</h2>
+                <p className="text-white/40 text-xs mb-4">amekamilisha kozi ya</p>
+                <h3 className="text-base font-semibold text-yellow-300 mb-5">{earnedCert.course_title}</h3>
+
+                <div className="flex items-center justify-center gap-1.5 mb-5">
+                  <div className="h-px flex-1 bg-yellow-500/20" />
+                  <p className="text-[10px] text-white/25 px-2">
+                    {new Date(earnedCert.issued_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                  <div className="h-px flex-1 bg-yellow-500/20" />
+                </div>
+
+                <p className="text-[10px] text-white/20 mb-6 font-mono">ID: {earnedCert.credential_id}</p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setEarnedCert(null); setActiveTab('certificates'); }}
+                    className="flex-1 py-2.5 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-sm font-semibold border border-yellow-500/20 transition-colors"
+                  >
+                    Vyeti Vyangu
+                  </button>
+                  <button
+                    onClick={() => setEarnedCert(null)}
+                    className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-sm transition-colors"
+                  >
+                    Funga
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

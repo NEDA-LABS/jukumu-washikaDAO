@@ -1124,90 +1124,58 @@ export default function MemberGroupDetailsPage() {
           {/* ── Decisions tab ── */}
           {activeTab === 'decisions' && (
             <div className="space-y-3">
-              {showCreateProposal && (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-sm font-semibold text-white">Unda Pendekezo</p>
-                      <p className="text-xs text-white/30 mt-0.5">Nafasi ya uongozi pekee.</p>
-                    </div>
-                    <button onClick={() => setShowCreateProposal(false)} className="text-white/30 hover:text-white/60 text-sm transition-colors">✕</button>
-                  </div>
-
-                  {!canCreateProposal && (
-                    <div className="mb-4 px-3 py-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
-                      Huna ruhusa ya kuunda mapendekezo.
-                    </div>
-                  )}
-
-                  <form className="space-y-3" onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!groupId || !canCreateProposal) return;
-                    const t = proposalTitle.trim();
-                    const d = proposalDescription.trim();
-                    if (!t) { setError('Kichwa cha pendekezo kinahitajika.'); return; }
-                    setProposalSubmitting(true); setError('');
-                    try {
-                      const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title: t, description: d }),
-                      });
-                      if (res.status === 401) { router.push('/login'); return; }
-                      const json = await res.json().catch(() => null);
-                      if (!res.ok) { setError(json?.error || 'Imeshindikana kuunda pendekezo.'); showToast(json?.error || 'Imeshindikana kuunda pendekezo.', 'error'); return; }
-                      const created = json?.proposal as ProposalRow | undefined;
-                      if (created) setProposals(prev => [created, ...prev]);
-                      showToast('Pendekezo limeundwa!', 'success');
-                      setProposalTitle(''); setProposalDescription(''); setShowCreateProposal(false);
-                    } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setError(msg); showToast(msg, 'error'); }
-                    finally { setProposalSubmitting(false); }
-                  }}>
-                    <div>
-                      <label className="block text-xs text-white/40 mb-1">Kichwa</label>
-                      <input value={proposalTitle} onChange={e => setProposalTitle(e.target.value)}
-                        className={dkInput} placeholder="e.g. Ongeza mchango wa kila mwezi" />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-white/40 mb-1">Maelezo</label>
-                      <textarea value={proposalDescription} onChange={e => setProposalDescription(e.target.value)}
-                        className={dkInput + ' resize-none'} placeholder="Eleza pendekezo lako..." rows={4} />
-                    </div>
-                    <div className="flex gap-2">
-                      <button type="submit" disabled={proposalSubmitting || !canCreateProposal}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors">
-                        {proposalSubmitting ? 'Inaunda...' : 'Unda'}
-                      </button>
-                      <button type="button" onClick={() => setShowCreateProposal(false)}
-                        className="px-4 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 transition-colors">
-                        Ghairi
-                      </button>
-                    </div>
-                  </form>
+              {/* Header row with create button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">Mapendekezo</p>
+                  <p className="text-xs text-white/30 mt-0.5">{proposals.length} pendekezo{proposals.length !== 1 ? '' : ''}</p>
                 </div>
-              )}
+                {canCreateProposal && (
+                  <button
+                    onClick={() => setShowCreateProposal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    Pendekezo Jipya
+                  </button>
+                )}
+              </div>
 
               {proposals.length === 0 ? (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 flex flex-col items-center justify-center py-14 px-6">
-                  <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
-                    <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                <div className="rounded-2xl bg-[#141414] border border-white/[0.06] flex flex-col items-center justify-center py-16 px-6">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
+                    <svg className="w-7 h-7 text-white/15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
-                  <p className="text-sm font-medium text-white/30">Hakuna mapendekezo bado</p>
-                  <p className="text-xs text-white/15 mt-1">Bonyeza &quot;+ Pendekezo&quot; kuunda la kwanza</p>
+                  <p className="text-sm font-medium text-white/25">Hakuna mapendekezo bado</p>
+                  <p className="text-xs text-white/15 mt-1">{canCreateProposal ? 'Bonyeza "Pendekezo Jipya" kuanza' : 'Viongozi wanaweza kuunda mapendekezo'}</p>
                 </div>
               ) : proposals.map((p) => (
                 <button key={p.id}
                   onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                  className="w-full text-left rounded-xl bg-[#1a1a1a] border border-white/5 hover:border-orange-500/20 hover:bg-orange-500/5 p-4 transition-all"
+                  className="w-full text-left rounded-2xl bg-[#141414] border border-white/[0.06] hover:border-orange-500/25 hover:bg-orange-500/[0.03] p-5 transition-all group"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white">{p.title}</p>
-                      {p.description && <p className="text-xs text-white/40 mt-1 line-clamp-2">{p.description}</p>}
-                      <p className="text-xs text-white/20 mt-2">na {p.created_by_name || '—'}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                          <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <p className="text-sm font-semibold text-white group-hover:text-orange-50 transition-colors">{p.title}</p>
+                      </div>
+                      {p.description && (
+                        <p className="text-xs text-white/35 line-clamp-2 pl-8">{p.description}</p>
+                      )}
+                      <p className="text-[10px] text-white/20 mt-2 pl-8">
+                        na {p.created_by_name || '—'}
+                        {p.created_at && <> · {new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' })}</>}
+                      </p>
                     </div>
-                    <span className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'
-                    }`}>{p.status}</span>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                        p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/25 border border-white/10'
+                      }`}>{p.status === 'open' ? 'Wazi' : 'Imefungwa'}</span>
+                      <span className="text-white/20 group-hover:text-orange-400 transition-colors text-xs">→</span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -1235,6 +1203,101 @@ export default function MemberGroupDetailsPage() {
       </div>
       {/* spacer so content isn't hidden behind mobile nav */}
       <div className="md:hidden h-16" />
+
+      {/* ── Create Proposal Modal ── */}
+      {showCreateProposal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+              <div>
+                <h3 className="text-base font-bold text-white">Pendekezo Jipya</h3>
+                <p className="text-xs text-white/30 mt-0.5">{group?.name}</p>
+              </div>
+              <button
+                onClick={() => { setShowCreateProposal(false); setProposalTitle(''); setProposalDescription(''); }}
+                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form
+              className="p-6 space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!groupId || !canCreateProposal) return;
+                const t = proposalTitle.trim();
+                const d = proposalDescription.trim();
+                if (!t) { showToast('Kichwa cha pendekezo kinahitajika.', 'error'); return; }
+                setProposalSubmitting(true);
+                try {
+                  const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: t, description: d }),
+                  });
+                  if (res.status === 401) { router.push('/login'); return; }
+                  const json = await res.json().catch(() => null);
+                  if (!res.ok) { showToast(json?.error || 'Imeshindikana kuunda pendekezo.', 'error'); return; }
+                  const created = json?.proposal as ProposalRow | undefined;
+                  if (created) setProposals(prev => [created, ...prev]);
+                  showToast('Pendekezo limeundwa!', 'success');
+                  setProposalTitle(''); setProposalDescription('');
+                  setShowCreateProposal(false);
+                  setActiveTab('decisions');
+                } catch (err) {
+                  showToast(err instanceof Error ? err.message : 'Imeshindikana.', 'error');
+                } finally {
+                  setProposalSubmitting(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-xs font-medium text-white/40 mb-1.5">Kichwa cha Pendekezo *</label>
+                <input
+                  type="text"
+                  value={proposalTitle}
+                  onChange={e => setProposalTitle(e.target.value)}
+                  className={dkInput}
+                  placeholder="e.g. Ongeza mchango wa kila mwezi"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/40 mb-1.5">Maelezo (si lazima)</label>
+                <textarea
+                  value={proposalDescription}
+                  onChange={e => setProposalDescription(e.target.value)}
+                  className={`${dkInput} resize-none`}
+                  placeholder="Eleza pendekezo lako kwa undani zaidi..."
+                  rows={4}
+                />
+              </div>
+              <div className="rounded-xl bg-orange-500/5 border border-orange-500/10 px-4 py-3">
+                <p className="text-xs text-orange-400/70">Wanachama wote wa kundi wataweza kupiga kura baada ya pendekezo kuundwa.</p>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateProposal(false); setProposalTitle(''); setProposalDescription(''); }}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors"
+                >
+                  Ghairi
+                </button>
+                <button
+                  type="submit"
+                  disabled={proposalSubmitting || !proposalTitle.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg shadow-orange-500/20"
+                >
+                  {proposalSubmitting ? 'Inaunda...' : 'Unda Pendekezo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Payment modal ── */}
       {payModal && (

@@ -34,41 +34,22 @@ export default function MemberGroupProposalDetailsPage() {
   const [voteSummary, setVoteSummary] = useState<VoteSummary>({ yes: 0, no: 0, abstain: 0, total: 0 });
   const [myVote, setMyVote] = useState<'yes' | 'no' | 'abstain' | null>(null);
   const [voteSubmitting, setVoteSubmitting] = useState(false);
+  const [voteError, setVoteError] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-
-    if (!groupId || !proposalId) {
-      router.push('/member-dashboard?section=group');
-      return;
-    }
+    if (!groupId || !proposalId) { router.push('/member-dashboard?section=group'); return; }
 
     async function load() {
-      setLoading(true);
-      setError('');
+      setLoading(true); setError('');
       try {
         const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}`);
-
         if (cancelled) return;
-
-        if (res.status === 401) {
-          router.push('/login');
-          return;
-        }
-
+        if (res.status === 401) { router.push('/login'); return; }
         const json = await res.json().catch(() => null);
-
-        if (res.status === 403) {
-          setError('Huruhusiwi kuona pendekezo hili.');
-          return;
-        }
-
-        if (!res.ok) {
-          setError(json?.error || 'Imeshindikana kupakua pendekezo.');
-          return;
-        }
-
+        if (res.status === 403) { setError('Huruhusiwi kuona pendekezo hili.'); return; }
+        if (!res.ok) { setError(json?.error || 'Imeshindikana kupakua pendekezo.'); return; }
         setProposal((json?.proposal as ProposalRow) || null);
         setVoteSummary((json?.voteSummary as VoteSummary) || { yes: 0, no: 0, abstain: 0, total: 0 });
         const v = json?.myVote;
@@ -82,202 +63,158 @@ export default function MemberGroupProposalDetailsPage() {
     }
 
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [groupId, proposalId, router]);
+
+  const handleVote = async (vote: 'yes' | 'no' | 'abstain') => {
+    if (!groupId || !proposalId || proposal?.status !== 'open') return;
+    setVoteSubmitting(true); setVoteError('');
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote }),
+      });
+      if (res.status === 401) { router.push('/login'); return; }
+      const json = await res.json().catch(() => null);
+      if (!res.ok) { setVoteError(json?.error || 'Imeshindikana kupiga kura.'); return; }
+      setMyVote(vote);
+      setVoteSummary((json?.voteSummary as VoteSummary) || voteSummary);
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : 'Imeshindikana kupiga kura.');
+    } finally {
+      setVoteSubmitting(false);
+    }
+  };
+
+  const pct = (n: number) => voteSummary.total > 0 ? Math.round((n / voteSummary.total) * 100) : 0;
+  const isOpen = proposal?.status === 'open';
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#0d0d0d]">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+
+        {/* Back */}
         <button
           onClick={() => router.push(`/member-dashboard/groups/${groupId}`)}
-          className="text-sm text-orange-700 hover:text-orange-800"
+          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-6"
         >
-          ← Back to Group
+          ← Rudi Kwa Kundi
         </button>
 
         {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+          <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
         )}
 
-        {!error && (
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{proposal?.title || 'Proposal'}</h1>
-                <p className="text-sm text-gray-600 mt-1">Created by: {proposal?.created_by_name || '—'}</p>
+        {!error && proposal && (
+          <div className="space-y-4">
+
+            {/* Header card */}
+            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="min-w-0">
+                  <h1 className="text-lg font-bold text-white leading-snug">{proposal.title}</h1>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-xs text-white/30">na {proposal.created_by_name || '—'}</span>
+                    {proposal.created_at && (
+                      <span className="text-xs text-white/20">
+                        {new Date(proposal.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  isOpen ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/30 border border-white/10'
+                }`}>
+                  {isOpen ? 'Wazi' : 'Imefungwa'}
+                </span>
               </div>
-              <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-800 border border-gray-200">
-                {proposal?.status || '—'}
-              </span>
+
+              {proposal.description && (
+                <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
+              )}
             </div>
 
-            {proposal?.description && <p className="text-sm text-gray-800 mt-4 whitespace-pre-wrap">{proposal.description}</p>}
+            {/* Vote results */}
+            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Matokeo ya Kura</p>
 
-            <div className="mt-6 border-t border-gray-200 pt-4">
-              <p className="text-sm font-medium text-gray-900">Voting</p>
-              <p className="text-sm text-gray-600 mt-1">All group members can vote. One vote per member (you can change it).</p>
-
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  onClick={async () => {
-                    if (!groupId || !proposalId) return;
-                    if (proposal?.status !== 'open') return;
-                    setVoteSubmitting(true);
-                    setError('');
-                    try {
-                      const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ vote: 'yes' })
-                      });
-
-                      if (res.status === 401) {
-                        router.push('/login');
-                        return;
-                      }
-
-                      const json = await res.json().catch(() => null);
-                      if (!res.ok) {
-                        setError(json?.error || 'Imeshindikana kupiga kura.');
-                        return;
-                      }
-
-                      setMyVote('yes');
-                      setVoteSummary((json?.voteSummary as VoteSummary) || voteSummary);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Imeshindikana kupiga kura.');
-                    } finally {
-                      setVoteSubmitting(false);
-                    }
-                  }}
-                  disabled={voteSubmitting || proposal?.status !== 'open'}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    myVote === 'yes'
-                      ? 'bg-green-600 text-white border-green-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  } ${voteSubmitting || proposal?.status !== 'open' ? 'opacity-60 cursor-not-allowed' : ''}`}
-                >
-                  Yes
-                </button>
-
-                <button
-                  onClick={async () => {
-                    if (!groupId || !proposalId) return;
-                    if (proposal?.status !== 'open') return;
-                    setVoteSubmitting(true);
-                    setError('');
-                    try {
-                      const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ vote: 'no' })
-                      });
-
-                      if (res.status === 401) {
-                        router.push('/login');
-                        return;
-                      }
-
-                      const json = await res.json().catch(() => null);
-                      if (!res.ok) {
-                        setError(json?.error || 'Imeshindikana kupiga kura.');
-                        return;
-                      }
-
-                      setMyVote('no');
-                      setVoteSummary((json?.voteSummary as VoteSummary) || voteSummary);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Imeshindikana kupiga kura.');
-                    } finally {
-                      setVoteSubmitting(false);
-                    }
-                  }}
-                  disabled={voteSubmitting || proposal?.status !== 'open'}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    myVote === 'no'
-                      ? 'bg-red-600 text-white border-red-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  } ${voteSubmitting || proposal?.status !== 'open' ? 'opacity-60 cursor-not-allowed' : ''}`}
-                >
-                  No
-                </button>
-
-                <button
-                  onClick={async () => {
-                    if (!groupId || !proposalId) return;
-                    if (proposal?.status !== 'open') return;
-                    setVoteSubmitting(true);
-                    setError('');
-                    try {
-                      const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ vote: 'abstain' })
-                      });
-
-                      if (res.status === 401) {
-                        router.push('/login');
-                        return;
-                      }
-
-                      const json = await res.json().catch(() => null);
-                      if (!res.ok) {
-                        setError(json?.error || 'Imeshindikana kupiga kura.');
-                        return;
-                      }
-
-                      setMyVote('abstain');
-                      setVoteSummary((json?.voteSummary as VoteSummary) || voteSummary);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Imeshindikana kupiga kura.');
-                    } finally {
-                      setVoteSubmitting(false);
-                    }
-                  }}
-                  disabled={voteSubmitting || proposal?.status !== 'open'}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    myVote === 'abstain'
-                      ? 'bg-gray-800 text-white border-gray-800'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  } ${voteSubmitting || proposal?.status !== 'open' ? 'opacity-60 cursor-not-allowed' : ''}`}
-                >
-                  Abstain
-                </button>
+              <div className="space-y-3 mb-4">
+                {([
+                  { key: 'yes' as const,     label: 'Ndio',    count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
+                  { key: 'no' as const,      label: 'Hapana',  count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
+                  { key: 'abstain' as const, label: 'Jiepushe', count: voteSummary.abstain, bar: 'bg-white/20',   text: 'text-white/40'    },
+                ]).map(row => (
+                  <div key={row.key}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-medium ${row.text}`}>{row.label}</span>
+                      <span className={`text-xs tabular-nums ${row.text}`}>{row.count} ({pct(row.count)}%)</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                      <div
+                        className={`h-2 rounded-full ${row.bar} transition-all duration-500`}
+                        style={{ width: `${pct(row.count)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Yes</p>
-                  <p className="text-lg font-semibold text-gray-900">{voteSummary.yes}</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">No</p>
-                  <p className="text-lg font-semibold text-gray-900">{voteSummary.no}</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Abstain</p>
-                  <p className="text-lg font-semibold text-gray-900">{voteSummary.abstain}</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Total</p>
-                  <p className="text-lg font-semibold text-gray-900">{voteSummary.total}</p>
-                </div>
+              <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+                <p className="text-xs text-white/25">Jumla: {voteSummary.total} kura</p>
+                {myVote && (
+                  <p className="text-xs text-orange-400">
+                    Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? 'Ndio' : myVote === 'no' ? 'Hapana' : 'Jiepushe'}</span>
+                  </p>
+                )}
               </div>
-
-              <p className="text-xs text-gray-500 mt-3">
-                Your vote: <span className="font-medium">{myVote || 'not voted'}</span>
-              </p>
             </div>
+
+            {/* Vote action */}
+            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Piga Kura</p>
+                {!isOpen && <p className="text-xs text-white/25">Upigaji kura umefungwa</p>}
+              </div>
+
+              {voteError && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{voteError}</div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: 'yes' as const,     label: 'Ndio',     active: 'bg-emerald-500 hover:bg-emerald-600 text-white border-transparent', inactive: 'bg-white/[0.03] hover:bg-emerald-500/10 text-white/40 hover:text-emerald-400 border-white/[0.06]' },
+                  { key: 'no' as const,      label: 'Hapana',   active: 'bg-red-500 hover:bg-red-600 text-white border-transparent',         inactive: 'bg-white/[0.03] hover:bg-red-500/10 text-white/40 hover:text-red-400 border-white/[0.06]'       },
+                  { key: 'abstain' as const, label: 'Jiepushe', active: 'bg-white/20 hover:bg-white/30 text-white border-transparent',       inactive: 'bg-white/[0.03] hover:bg-white/10 text-white/40 border-white/[0.06]'                             },
+                ]).map(btn => (
+                  <button
+                    key={btn.key}
+                    onClick={() => handleVote(btn.key)}
+                    disabled={voteSubmitting || !isOpen}
+                    className={`py-2.5 rounded-xl text-sm font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                      myVote === btn.key ? btn.active : btn.inactive
+                    }`}
+                  >
+                    {voteSubmitting && myVote === btn.key ? '...' : btn.label}
+                  </button>
+                ))}
+              </div>
+
+              {isOpen && (
+                <p className="text-xs text-white/20 mt-3 text-center">
+                  {myVote ? 'Unaweza kubadilisha kura yako wakati wowote.' : 'Wanachama wote wa kundi wanaweza kupiga kura.'}
+                </p>
+              )}
+            </div>
+
           </div>
         )}
       </div>

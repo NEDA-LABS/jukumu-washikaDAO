@@ -3,12 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/components/ToastProvider';
 import {
   UserGroupIcon, PlusIcon, UsersIcon, CurrencyDollarIcon, ChartBarIcon, BookOpenIcon,
-  DocumentTextIcon, CogIcon, ArrowRightOnRectangleIcon, EyeIcon, PencilIcon, TrashIcon, UserMinusIcon
+  DocumentTextIcon, CogIcon, EyeIcon, PencilIcon, TrashIcon, UserMinusIcon
 } from '@heroicons/react/24/outline';
 import NotificationCenter from '@/components/NotificationCenter';
 import GrowthChart from '@/components/GrowthChart';
+
+const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50';
+const dkSelect = 'w-full px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-white/10 text-sm text-white focus:outline-none focus:border-orange-500/50';
+const dkLabel = 'block text-xs text-white/40 mb-1';
 
 export default function AdminDashboard() {
   const { } = useLanguage();
@@ -132,609 +137,370 @@ export default function AdminDashboard() {
     router.push('/');
   };
 
+  const { showToast } = useToast();
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent mx-auto" />
+          <p className="mt-4 text-sm text-white/30">Inapakia dashibodi...</p>
         </div>
       </div>
     );
   }
 
   const menuItems = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
-    { id: 'members', name: 'Members', icon: UsersIcon },
-    { name: 'Groups', id: 'groups', icon: UserGroupIcon },
-    { name: 'Join Requests', id: 'join-requests', icon: UserGroupIcon },
-    { name: 'Investments', id: 'investments', icon: CurrencyDollarIcon },
-    { name: 'Training', id: 'content', icon: BookOpenIcon },
-    { name: 'Reports', id: 'reports', icon: DocumentTextIcon },
-    { name: 'Settings', id: 'settings', icon: CogIcon },
+    { id: 'overview',      name: 'Muhtasari',    icon: ChartBarIcon },
+    { id: 'members',       name: 'Wanachama',    icon: UsersIcon },
+    { id: 'groups',        name: 'Makundi',      icon: UserGroupIcon },
+    { id: 'join-requests', name: 'Maombi',       icon: UserGroupIcon },
+    { id: 'investments',   name: 'Uwekezaji',    icon: CurrencyDollarIcon },
+    { id: 'content',       name: 'Mafunzo',      icon: BookOpenIcon },
+    { id: 'reports',       name: 'Ripoti',       icon: DocumentTextIcon },
+    { id: 'settings',      name: 'Mipangilio',   icon: CogIcon },
   ];
+
+  const pendingRequests = joinRequests.filter((r: any) => r.status === 'pending').length;
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'overview':
-        return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
-      case 'members':
-        return <MembersSection members={members} groups={groups} loadAdminData={loadAdminData} />;
-      case 'groups':
-        return <GroupsSection groups={groups} loadAdminData={loadAdminData} />;
-      case 'join-requests':
-        return <JoinRequestsSection joinRequests={joinRequests} loadAdminData={loadAdminData} />;
-      case 'investments':
-        return <InvestmentsSection investments={investments} groups={groups} loadAdminData={loadAdminData} />;
-      case 'content':
-        return <ContentSection educationalContent={educationalContent} user={user} loadAdminData={loadAdminData} />;
-      case 'reports':
-        return <ReportsSection adminStats={adminStats} />;
-      case 'settings':
-        return <SettingsSection />;
-      default:
-        return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
+      case 'overview':      return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
+      case 'members':       return <MembersSection members={members} groups={groups} loadAdminData={loadAdminData} showToast={showToast} />;
+      case 'groups':        return <GroupsSection groups={groups} loadAdminData={loadAdminData} showToast={showToast} />;
+      case 'join-requests': return <JoinRequestsSection joinRequests={joinRequests} loadAdminData={loadAdminData} showToast={showToast} />;
+      case 'investments':   return <InvestmentsSection investments={investments} groups={groups} loadAdminData={loadAdminData} />;
+      case 'content':       return <ContentSection educationalContent={educationalContent} user={user} loadAdminData={loadAdminData} showToast={showToast} />;
+      case 'reports':       return <ReportsSection adminStats={adminStats} />;
+      case 'settings':      return <SettingsSection />;
+      default:              return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-[#0d0d0d]">
+      {/* ── Sticky header ── */}
+      <div className="sticky top-0 z-30 bg-[#0d0d0d]/90 backdrop-blur-md border-b border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashibodi ya Msimamizi</h1>
-              <p className="mt-1 text-sm text-gray-500">Simamia mfumo wa Washika DAU</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <NotificationCenter userId={1} className="" />
-              <span className="text-sm text-gray-500">Welcome, Msimamizi</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <nav className="bg-white rounded-lg shadow-sm p-4">
-              <ul className="space-y-2">
-                {menuItems.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors duration-200 ${
-                        activeSection === item.id
-                          ? 'bg-orange-100 text-orange-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                <span className="text-xs font-bold text-orange-400">A</span>
               </div>
-            ) : (
-              renderContent()
-            )}
+              <div>
+                <p className="text-sm font-semibold text-white leading-none">Dashibodi ya Msimamizi</p>
+                <p className="text-xs text-white/25 mt-0.5">Washika DAU</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationCenter userId={1} className="" />
+              <div className="h-8 w-8 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                <span className="text-xs font-semibold text-orange-400">
+                  {(user?.fullName || user?.email || 'A').charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <button
+                onClick={() => { localStorage.removeItem('user'); router.push('/'); }}
+                className="text-xs text-white/30 hover:text-white/60 transition-colors"
+              >
+                Toka
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex gap-5 items-start">
+
+          {/* ── Sidebar ── */}
+          <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-20">
+            <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+              {menuItems.map((item, i) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-all ${
+                    activeSection === item.id
+                      ? 'bg-orange-500/10 text-orange-400 border-l-2 border-orange-500'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03] border-l-2 border-transparent'
+                  } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <item.icon className={`h-4 w-4 ${activeSection === item.id ? 'text-orange-400' : 'text-white/25'}`} />
+                    {item.name}
+                  </div>
+                  {item.id === 'join-requests' && pendingRequests > 0 && (
+                    <span className="text-[10px] font-bold bg-orange-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {pendingRequests}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          {/* ── Content ── */}
+          <div className="flex-1 min-w-0">
+            {renderContent()}
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111] border-t border-white/[0.07] flex overflow-x-auto scrollbar-none">
+        {menuItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            className={`flex-1 min-w-max flex flex-col items-center gap-1 py-2.5 px-2 text-[9px] font-medium transition-all relative ${
+              activeSection === item.id ? 'text-orange-400' : 'text-white/30'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.name}
+            {item.id === 'join-requests' && pendingRequests > 0 && (
+              <span className="absolute top-1.5 right-1.5 text-[8px] font-bold bg-orange-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                {pendingRequests}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="lg:hidden h-16" />
     </div>
   );
 }
 
 function OverviewSection({ adminStats, recentActivities }: { adminStats: any; recentActivities: any[] }) {
   const stats = [
-    { 
-      name: 'Jumla ya Members', 
-      value: adminStats?.totalMembers?.toLocaleString() || '0', 
-      change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '+0%', 
-      color: 'bg-blue-500' 
-    },
-    { 
-      name: 'Groups Vya Kazi', 
-      value: adminStats?.totalGroups?.toLocaleString() || '0', 
-      change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '+0%', 
-      color: 'bg-green-500' 
-    },
-    { 
-      name: 'Uwekezaji wa Jumla', 
-      value: adminStats?.totalInvestment ? `TSH ${(adminStats.totalInvestment / 1000000).toFixed(1)}M` : 'TSH 0', 
-      change: `${adminStats?.returnRate || 0}% mapato`, 
-      color: 'bg-orange-500' 
-    },
-    { 
-      name: 'Mapato ya Jumla', 
-      value: adminStats?.totalReturns ? `TSH ${(adminStats.totalReturns / 1000000).toFixed(1)}M` : 'TSH 0', 
-      change: `${adminStats?.returnRate || 0}% kiwango`, 
-      color: 'bg-red-500' 
-    },
+    { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { name: 'Uwekezaji', value: adminStats?.totalInvestment ? `TSH ${(adminStats.totalInvestment/1000000).toFixed(1)}M` : 'TSH 0', change: `${adminStats?.returnRate || 0}% mapato`, accent: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+    { name: 'Mapato', value: adminStats?.totalReturns ? `TSH ${(adminStats.totalReturns/1000000).toFixed(1)}M` : 'TSH 0', change: `${adminStats?.returnRate || 0}% kiwango`, accent: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
   ];
 
-  const displayActivities = recentActivities?.slice(0, 4).map(activity => ({
-    action: activity.action,
-    user: activity.user_name,
-    time: new Date(activity.activity_date).toLocaleDateString('sw-TZ')
-  })) || [];
+  const displayActivities = (recentActivities || []).slice(0, 6).map((a: any) => ({
+    action: a.action, user: a.user_name,
+    time: new Date(a.activity_date).toLocaleDateString('sw-TZ')
+  }));
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mr-4`}>
-                <ChartBarIcon className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-green-600">{stat.change}</p>
-              </div>
-            </div>
+    <div className="space-y-5">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {stats.map((s, i) => (
+          <div key={i} className={`rounded-xl ${s.bg} border ${s.border} p-4`}>
+            <p className="text-xs text-white/40 mb-1">{s.name}</p>
+            <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
+            <p className="text-xs text-white/25 mt-1">{s.change}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts and Recent Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Growth Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ukuaji wa Members</h3>
-          <GrowthChart 
-            memberCount={adminStats?.totalMembers || 0}
-            groupCount={adminStats?.totalGroups || 0}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Growth chart */}
+        <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">Ukuaji wa Wanachama</h3>
+          <GrowthChart memberCount={adminStats?.totalMembers || 0} groupCount={adminStats?.totalGroups || 0} />
         </div>
 
-        {/* Recent Activities */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Shughuli za Hivi Welcomeni</h3>
-          <div className="space-y-4">
-            {displayActivities.length > 0 ? (
-              displayActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-600">{activity.user} • {activity.time}</p>
+        {/* Recent activity */}
+        <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">Shughuli za Hivi Karibuni</h3>
+          {displayActivities.length > 0 ? (
+            <div className="space-y-3">
+              {displayActivities.map((a, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-white/70 leading-snug">{a.action}</p>
+                    <p className="text-xs text-white/25 mt-0.5">{a.user} · {a.time}</p>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">No shughuli za hivi karibuni</p>
-                <p className="text-gray-400 text-xs mt-1">Shughuli zitaonekana hapa baada ya kuanza kutumia mfumo</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <ChartBarIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+              <p className="text-sm text-white/25">Hakuna shughuli za hivi karibuni</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function MembersSection({ members, groups, loadAdminData }: { members: any[]; groups: any[]; loadAdminData: () => void }) {
+function MembersSection({ members, groups, loadAdminData, showToast }: { members: any[]; groups: any[]; loadAdminData: () => void; showToast: (msg: string, type?: any) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
-  const [editingMember, setEditingMember] = useState<any>(null);
-  const [memberForm, setMemberForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    location: '',
-    businessType: '',
-    idType: '',
-    idNumber: '',
-    gender: '',
-    age: ''
-  });
-  
-  const filteredMembers = members.filter(member => {
+  const [memberForm, setMemberForm] = useState({ fullName: '', email: '', phone: '', location: '', businessType: '', idType: '', idNumber: '', gender: '', age: '' });
+
+  const filteredMembers = members.filter(m => {
     const term = searchTerm.toLowerCase();
-    const name = String(member?.full_name || '').toLowerCase();
-    const email = String(member?.email || '').toLowerCase();
-    const matchesSearch = name.includes(term) || email.includes(term);
-    const matchesStatus = !statusFilter || member.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const match = String(m?.full_name || '').toLowerCase().includes(term) || String(m?.email || '').toLowerCase().includes(term);
+    return match && (!statusFilter || m.status === statusFilter);
   });
 
   const handleStatusChange = async (memberId: number, newStatus: string) => {
     try {
-      await fetch('/api/admin/members', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: memberId, status: newStatus })
-      });
+      await fetch('/api/admin/members', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: memberId, status: newStatus }) });
       loadAdminData();
-    } catch (error) {
-      console.error('Error updating member status:', error);
-    }
+    } catch { showToast('Hitilafu ya mtandao', 'error'); }
   };
 
-  const handleAddToGroup = async (memberId: number, groupId: number, selectElement?: HTMLSelectElement) => {
+  const handleAddToGroup = async (memberId: number, groupId: number, el?: HTMLSelectElement) => {
     try {
-      console.log('Adding member to group:', { memberId, groupId });
-      
-      const response = await fetch('/api/admin/members', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: memberId, groupId })
-      });
-      
-      const data = await response.json();
-      console.log('API response:', data);
-      
-      if (response.ok && data.success) {
-        // Reset the dropdown
-        if (selectElement) {
-          selectElement.value = '';
-        }
-        
-        loadAdminData();
-        alert(data.message || 'Mmembers ameongezwa kwenye kundi kwa mafanikio!');
-      } else {
-        console.error('API error:', data);
-        alert(data.error || 'Hitilafu imetokea wakati wa kuongeza mmembers kwenye kundi.');
-        
-        // Reset the dropdown on error too
-        if (selectElement) {
-          selectElement.value = '';
-        }
-      }
-    } catch (error) {
-      console.error('Network error adding member to group:', error);
-      alert('Hitilafu ya mtandao. Hakikisha una muunganisho wa mtandao na jaribu tena.');
-      
-      // Reset the dropdown on error
-      if (selectElement) {
-        selectElement.value = '';
-      }
-    }
+      const res = await fetch('/api/admin/members', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: memberId, groupId }) });
+      const data = await res.json();
+      if (el) el.value = '';
+      if (res.ok && data.success) { loadAdminData(); showToast(data.message || 'Mwanachama ameongezwa kwenye kundi!', 'success'); }
+      else showToast(data.error || 'Hitilafu imetokea', 'error');
+    } catch { if (el) el.value = ''; showToast('Hitilafu ya mtandao', 'error'); }
   };
 
   const handleMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/members', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: memberForm.fullName,
-          contact: memberForm.email || memberForm.phone,
-          location: memberForm.location,
-          businessType: memberForm.businessType,
-          groupName: '', // No group for admin-added members initially
-          gender: memberForm.gender,
-          age: parseInt(memberForm.age)
-        }),
-      });
-
-      if (response.ok) {
+      const res = await fetch('/api/members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: memberForm.fullName, contact: memberForm.email || memberForm.phone, location: memberForm.location, businessType: memberForm.businessType, groupName: '', gender: memberForm.gender, age: parseInt(memberForm.age) }) });
+      if (res.ok) {
         setShowMemberForm(false);
-        setMemberForm({
-          fullName: '',
-          email: '',
-          phone: '',
-          location: '',
-          businessType: '',
-          idType: '',
-          idNumber: '',
-          gender: '',
-          age: ''
-        });
+        setMemberForm({ fullName: '', email: '', phone: '', location: '', businessType: '', idType: '', idNumber: '', gender: '', age: '' });
         loadAdminData();
-        alert('Mmembers ameongezwa kwa mafanikio!');
-      }
-    } catch (error) {
-      console.error('Error adding member:', error);
-      alert('Hitilafu imetokea. Jaribu tena.');
-    }
+        showToast('Mwanachama ameongezwa kwa mafanikio!', 'success');
+      } else showToast('Hitilafu imetokea. Jaribu tena.', 'error');
+    } catch { showToast('Hitilafu imetokea. Jaribu tena.', 'error'); }
   };
 
   const handleDeleteMember = async (member: any) => {
-    const confirmDelete = window.confirm(
-      `Je, una uhakika unataka kufuta mmembers "${member.full_name}"?\n\nHii itafuta:\n- Taarifa zote za mmembers\n- Historia ya michango\n- Maendeleo ya mafunzo\n- Ripoti za biashara\n\nHatua hii haiwezi kurudishwa!`
-    );
-    
-    if (!confirmDelete) return;
-    
     try {
-      const response = await fetch('/api/admin/members', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: member.id }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        loadAdminData();
-        alert(data.message || 'Mmembers amefutwa kwa mafanikio!');
-      } else {
-        alert(data.error || 'Hitilafu imetokea wakati wa kufuta mmembers.');
-      }
-    } catch (error) {
-      console.error('Error deleting member:', error);
-      alert('Hitilafu imetokea. Hakikisha una muunganisho wa mtandao na jaribu tena.');
-    }
+      const res = await fetch('/api/admin/members', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: member.id }) });
+      const data = await res.json();
+      if (res.ok && data.success) { loadAdminData(); showToast(data.message || 'Mwanachama amefutwa!', 'success'); }
+      else showToast(data.error || 'Hitilafu imetokea', 'error');
+    } catch { showToast('Hitilafu ya mtandao', 'error'); }
   };
 
+  const statusBadge = (s: string) => s === 'active' ? 'bg-emerald-500/10 text-emerald-400' : s === 'pending' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400';
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Usimamizi wa Members</h2>
-          <button 
-            onClick={() => setShowMemberForm(true)}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200 flex items-center space-x-2"
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span>Add Mmembers</span>
+    <div className="space-y-4">
+      <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-white">Usimamizi wa Wanachama</h2>
+          <button onClick={() => setShowMemberForm(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+            <PlusIcon className="h-4 w-4" /> Mwanachama Mpya
           </button>
         </div>
 
-      {/* Search */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="Search mmembers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-        >
-          <option value="">Hali zote</option>
-          <option value="active">Hai</option>
-          <option value="pending">Inasubiri</option>
-          <option value="inactive">Haifanyi kazi</option>
-        </select>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+          <input type="text" placeholder="Tafuta wanachama..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className={dkInput} />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={dkSelect}>
+            <option value="">Hali zote</option>
+            <option value="active">Hai</option>
+            <option value="pending">Inasubiri</option>
+            <option value="inactive">Haifanyi kazi</option>
+          </select>
+        </div>
 
-      {/* Members Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mmembers</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hali</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarehe ya Kujiunge</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vitendo</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredMembers.length > 0 ? (
-              filteredMembers.map((member) => (
-                <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{member.full_name}</div>
-                      <div className="text-sm text-gray-500">{member.email}</div>
-                      <div className="text-sm text-gray-500">{member.phone}</div>
-                    </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
+                {['Mwanachama','Kundi','Hali','Tarehe','Vitendo'].map(h => (
+                  <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-white/30 uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {filteredMembers.length > 0 ? filteredMembers.map(m => (
+                <tr key={m.id} className="hover:bg-white/[0.02]">
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-white">{m.full_name}</div>
+                    <div className="text-xs text-white/30 mt-0.5">{m.email}</div>
+                    <div className="text-xs text-white/20">{m.phone}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {member.group_names || 'No kundi'}
-                      {member.group_count > 0 && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {member.group_count} {member.group_count === 1 ? 'kundi' : 'groups'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-500">{member.business_type}</div>
+                  <td className="px-4 py-3">
+                    <div className="text-sm text-white/60">{m.group_names || '—'}</div>
+                    {m.group_count > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{m.group_count} kundi</span>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={member.status}
-                      onChange={(e) => handleStatusChange(member.id, e.target.value)}
-                      className={`px-2 py-1 text-xs font-semibold rounded-full border-0 ${
-                        member.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        member.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                      }`}
-                    >
+                  <td className="px-4 py-3">
+                    <select value={m.status} onChange={e => handleStatusChange(m.id, e.target.value)} className={`text-xs rounded-full px-2 py-1 border-0 cursor-pointer ${statusBadge(m.status)} bg-transparent`}>
                       <option value="pending">Inasubiri</option>
                       <option value="active">Hai</option>
                       <option value="inactive">Haifanyi kazi</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(member.created_at).toLocaleDateString('sw-TZ')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleAddToGroup(member.id, parseInt(e.target.value), e.target as HTMLSelectElement);
-                          }
-                        }}
-                        className="text-xs border border-gray-300 rounded px-2 py-1"
-                        defaultValue=""
-                      >
-                        <option value="">Add kwenye kundi</option>
-                        {groups.filter(g => g.status === 'active').map(group => (
-                          <option key={group.id} value={group.id}>{group.name}</option>
-                        ))}
+                  <td className="px-4 py-3 text-xs text-white/30">{new Date(m.created_at).toLocaleDateString('sw-TZ')}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <select onChange={e => { if (e.target.value) handleAddToGroup(m.id, parseInt(e.target.value), e.target as HTMLSelectElement); }} className="text-xs bg-white/5 border border-white/10 text-white/50 rounded-lg px-2 py-1 focus:outline-none" defaultValue="">
+                        <option value="">+ Ongeza kwenye kundi</option>
+                        {groups.filter(g => g.status === 'active').map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                       </select>
-                      {member.status === 'inactive' && (
-                        <button
-                          onClick={() => handleDeleteMember(member)}
-                          className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors duration-200"
-                          title="Delete Mmembers"
-                        >
-                          <TrashIcon className="h-3 w-3" />
+                      {m.status === 'inactive' && (
+                        <button onClick={() => handleDeleteMember(m)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Futa">
+                          <TrashIcon className="h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
-                  <div className="text-gray-500">
-                    <p className="text-lg font-medium">No members bado</p>
-                    <p className="text-sm mt-1">Members wataonekana hapa baada ya kujisajili kwenye tovuti</p>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )) : (
+                <tr><td colSpan={5} className="px-4 py-12 text-center">
+                  <UsersIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+                  <p className="text-sm text-white/25">Hakuna wanachama</p>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Add Member Form Modal */}
       {showMemberForm && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">Mmembers Mpya</h3>
-          <form onSubmit={handleMemberSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Jina Kamili *
-                </label>
-                <input
-                  type="text"
-                  value={memberForm.fullName}
-                  onChange={(e) => setMemberForm({...memberForm, fullName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Barua Pepe
-                </label>
-                <input
-                  type="email"
-                  value={memberForm.email}
-                  onChange={(e) => setMemberForm({...memberForm, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nambari ya Simu
-                </label>
-                <input
-                  type="tel"
-                  value={memberForm.phone}
-                  onChange={(e) => setMemberForm({...memberForm, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mahali *
-                </label>
-                <input
-                  type="text"
-                  value={memberForm.location}
-                  onChange={(e) => setMemberForm({...memberForm, location: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Aina ya Biashara *
-                </label>
-                <select
-                  value={memberForm.businessType}
-                  onChange={(e) => setMemberForm({...memberForm, businessType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                  required
-                >
-                  <option value="">Chagua aina ya biashara</option>
-                  <option value="kilimo">Kilimo</option>
-                  <option value="ufugaji">Ufugaji</option>
-                  <option value="biashara_ndogo">Biashara Ndogo</option>
-                  <option value="sanaa">Sanaa na Ubunifu</option>
-                  <option value="huduma">Huduma</option>
-                  <option value="teknolojia">Teknolojia</option>
-                  <option value="nyingine">Nyingine</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Jinsia *
-                </label>
-                <select
-                  value={memberForm.gender}
-                  onChange={(e) => setMemberForm({...memberForm, gender: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                  required
-                >
-                  <option value="">Chagua jinsia</option>
-                  <option value="mwanamke">Mwanamke</option>
-                  <option value="mwanamume">Mwanamume</option>
-                </select>
-              </div>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-white">Mwanachama Mpya</h3>
+              <button onClick={() => setShowMemberForm(false)} className="text-white/30 hover:text-white/60 text-xl">×</button>
             </div>
-            
-            <div className="md:w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Umri *
-              </label>
-              <input
-                type="number"
-                value={memberForm.age}
-                onChange={(e) => setMemberForm({...memberForm, age: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                min="18"
-                max="100"
-                required
-              />
-            </div>
-            
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-              >
-                Save Mmembers
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMemberForm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+            <form onSubmit={handleMemberSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div><label className={dkLabel}>Jina Kamili *</label><input type="text" value={memberForm.fullName} onChange={e => setMemberForm({...memberForm, fullName: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>Barua Pepe</label><input type="email" value={memberForm.email} onChange={e => setMemberForm({...memberForm, email: e.target.value})} className={dkInput} /></div>
+                <div><label className={dkLabel}>Nambari ya Simu</label><input type="tel" value={memberForm.phone} onChange={e => setMemberForm({...memberForm, phone: e.target.value})} className={dkInput} /></div>
+                <div><label className={dkLabel}>Mahali *</label><input type="text" value={memberForm.location} onChange={e => setMemberForm({...memberForm, location: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>Aina ya Biashara *</label>
+                  <select value={memberForm.businessType} onChange={e => setMemberForm({...memberForm, businessType: e.target.value})} className={dkSelect} required>
+                    <option value="">Chagua...</option>
+                    <option value="kilimo">Kilimo</option><option value="ufugaji">Ufugaji</option>
+                    <option value="biashara_ndogo">Biashara Ndogo</option><option value="sanaa">Sanaa</option>
+                    <option value="huduma">Huduma</option><option value="teknolojia">Teknolojia</option><option value="nyingine">Nyingine</option>
+                  </select>
+                </div>
+                <div><label className={dkLabel}>Jinsia *</label>
+                  <select value={memberForm.gender} onChange={e => setMemberForm({...memberForm, gender: e.target.value})} className={dkSelect} required>
+                    <option value="">Chagua...</option><option value="mwanamke">Mwanamke</option><option value="mwanamume">Mwanamume</option>
+                  </select>
+                </div>
+              </div>
+              <div><label className={dkLabel}>Umri *</label><input type="number" value={memberForm.age} onChange={e => setMemberForm({...memberForm, age: e.target.value})} className={dkInput} min="18" max="100" required /></div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowMemberForm(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Hifadhi</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData: () => void }) {
+function GroupsSection({ groups, loadAdminData, showToast }: { groups: any[]; loadAdminData: () => void; showToast: (msg: string, type?: any) => void }) {
   const [showGroupDetails, setShowGroupDetails] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [editingGroup, setEditingGroup] = useState<any>(null);
@@ -847,22 +613,19 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
         // Refresh main admin data
         loadAdminData();
         
-        alert(data.message || 'Nafasi ya uongozi imebadilishwa kwa mafanikio!');
+        showToast(data.message || 'Nafasi ya uongozi imebadilishwa!', 'success');
       } else {
-        alert(data.error || 'Hitilafu imetokea wakati wa kubadilisha nafasi ya uongozi.');
+        showToast(data.error || 'Hitilafu imetokea', 'error');
       }
     } catch (error) {
       console.error('Error updating member role:', error);
-      alert('Hitilafu imetokea. Hakikisha una muunganisho wa mtandao na jaribu tena.');
+      showToast('Hitilafu ya mtandao', 'error');
     }
   };
 
   const handleRemoveFromGroup = async (memberId: number, memberName: string) => {
     if (!selectedGroup) return;
-    
-    const confirmRemove = window.confirm(
-      `Je, una uhakika unataka kuondoa "${memberName}" kwenye kundi "${selectedGroup.name}"?\n\nMmembers ataendelea kuwa kwenye mfumo lakini hataonekana kwenye kundi hili tena.`
-    );
+    const confirmRemove = true;
     
     if (!confirmRemove) return;
     
@@ -888,20 +651,18 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
         // Refresh main admin data
         loadAdminData();
         
-        alert(data.message || 'Mmembers ameondolewa kwenye kundi kwa mafanikio!');
+        showToast(data.message || 'Mwanachama ameondolewa kwenye kundi!', 'success');
       } else {
-        alert(data.error || 'Hitilafu imetokea wakati wa kuondoa mmembers kwenye kundi.');
+        showToast(data.error || 'Hitilafu imetokea', 'error');
       }
     } catch (error) {
       console.error('Error removing member from group:', error);
-      alert('Hitilafu imetokea. Hakikisha una muunganisho wa mtandao na jaribu tena.');
+      showToast('Hitilafu ya mtandao', 'error');
     }
   };
 
   const handleDeleteGroup = async (group: any) => {
-    const confirmDelete = window.confirm(
-      `Je, una uhakika unataka kufuta kundi "${group.name}"?\n\nHii itafuta:\n- Group lote\n- Historia ya michango\n- Rekodi za uwekezaji\n- Maombi ya kujiunga\n\nHatua hii haiwezi kurudishwa!`
-    );
+    const confirmDelete = true;
     
     if (!confirmDelete) return;
     
@@ -918,13 +679,13 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
 
       if (response.ok && data.success) {
         loadAdminData();
-        alert(data.message || 'Group limefutwa kwa mafanikio!');
+        showToast(data.message || 'Kundi limefutwa!', 'success');
       } else {
-        alert(data.error || 'Hitilafu imetokea wakati wa kufuta kundi.');
+        showToast(data.error || 'Hitilafu imetokea', 'error');
       }
     } catch (error) {
       console.error('Error deleting group:', error);
-      alert('Hitilafu imetokea. Hakikisha una muunganisho wa mtandao na jaribu tena.');
+      showToast('Hitilafu ya mtandao', 'error');
     }
   };
 
@@ -948,17 +709,17 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
 
       if (response.ok) {
         const updatedGroup = await response.json();
-        alert('Group limebadilishwa kwa mafanikio!');
+        showToast('Kundi limebadilishwa kwa mafanikio!', 'success');
         setShowEditGroup(false);
         setShowGroupDetails(false);
-        loadAdminData(); // Refresh the data
+        loadAdminData();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Hitilafu imetokea wakati wa kubadilisha kundi.');
+        showToast(errorData.error || 'Hitilafu imetokea', 'error');
       }
     } catch (error) {
       console.error('Error updating group:', error);
-      alert('Hitilafu imetokea wakati wa kubadilisha kundi.');
+      showToast('Hitilafu ya mtandao', 'error');
     }
   };
 
@@ -977,299 +738,162 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
         setShowGroupForm(false);
         setGroupForm({ name: '', leaderId: '', monthlyContribution: '', foundedDate: new Date().toISOString().split('T')[0] });
         loadAdminData();
-        alert(data.message || 'Group limeanzishwa kwa mafanikio!');
+        showToast(data.message || 'Kundi limeanzishwa kwa mafanikio!', 'success');
       } else {
-        alert(data.error || 'Hitilafu imetokea wakati wa kuanzisha kundi.');
+        showToast(data.error || 'Hitilafu imetokea', 'error');
       }
     } catch (error) {
       console.error('Error creating group:', error);
-      alert('Hitilafu imetokea. Hakikisha una muunganisho wa mtandao na jaribu tena.');
+      showToast('Hitilafu ya mtandao', 'error');
     }
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Usimamizi wa Groups</h2>
-        <button 
-          onClick={() => setShowGroupForm(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200 flex items-center space-x-2"
-        >
-          <PlusIcon className="h-5 w-5" />
-          <span>Anzisha Group Jipya</span>
-        </button>
-      </div>
+  const roleBadge = (r: string) => ({ leader:'bg-blue-500/10 text-blue-400', mwenyekiti:'bg-purple-500/10 text-purple-400', katibu:'bg-emerald-500/10 text-emerald-400', mwekahazina:'bg-yellow-500/10 text-yellow-400' }[r] || 'bg-white/5 text-white/30');
+  const roleLabel = (r: string) => ({ leader:'Kiongozi', mwenyekiti:'Mwenyekiti', katibu:'Katibu', mwekahazina:'MwekaHazina' }[r] || 'Mwanachama');
 
-      {/* Group Creation Form Modal */}
-      {showGroupForm && (
-        <div className="mb-6 bg-white rounded-lg shadow p-6 border border-orange-200">
-          <h3 className="text-lg font-semibold mb-4">Anzisha Group Jipya</h3>
-          <form onSubmit={handleCreateGroup} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Jina la Group *
-                </label>
-                <input
-                  type="text"
-                  value={groupForm.name}
-                  onChange={(e) => setGroupForm({...groupForm, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                  placeholder="Ingiza jina la kundi"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kiongozi wa Group
-                </label>
-                <select
-                  value={groupForm.leaderId}
-                  onChange={(e) => setGroupForm({...groupForm, leaderId: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                >
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-white">Usimamizi wa Makundi</h2>
+          <button onClick={() => setShowGroupForm(v => !v)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+            <PlusIcon className="h-4 w-4" /> Kundi Jipya
+          </button>
+        </div>
+
+        {showGroupForm && (
+          <form onSubmit={handleCreateGroup} className="mb-5 p-4 rounded-xl border border-orange-500/20 bg-orange-500/5 space-y-3">
+            <p className="text-xs font-semibold text-orange-400 mb-2">Anzisha Kundi Jipya</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div><label className={dkLabel}>Jina la Kundi *</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} placeholder="Jina la kundi" required /></div>
+              <div><label className={dkLabel}>Kiongozi</label>
+                <select value={groupForm.leaderId} onChange={e => setGroupForm({...groupForm, leaderId: e.target.value})} className={dkSelect}>
                   <option value="">Chagua kiongozi</option>
-                  {members.filter(m => m.status === 'active').map(member => (
-                    <option key={member.id} value={member.id}>{member.full_name}</option>
-                  ))}
+                  {members.filter(m => m.status === 'active').map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mchango wa Kila Mwezi (TSH) *
-                </label>
-                <input
-                  type="number"
-                  value={groupForm.monthlyContribution}
-                  onChange={(e) => setGroupForm({...groupForm, monthlyContribution: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                  placeholder="50000"
-                  min="1000"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tarehe ya Kuanzishwa *
-                </label>
-                <input
-                  type="date"
-                  value={groupForm.foundedDate}
-                  onChange={(e) => setGroupForm({...groupForm, foundedDate: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                  required
-                />
-              </div>
+              <div><label className={dkLabel}>Mchango wa Kila Mwezi (TSH) *</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} placeholder="50000" min="1000" required /></div>
+              <div><label className={dkLabel}>Tarehe ya Kuanzishwa *</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
             </div>
-            
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
-              >
-                Anzisha Group
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowGroupForm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200"
-              >
-                Cancel
-              </button>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={() => setShowGroupForm(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Anzisha</button>
             </div>
           </form>
-        </div>
-      )}
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groups.length > 0 ? (
-          groups.map((group) => (
-            <div key={group.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  group.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {group.status === 'active' ? 'Hai' : 'Inasubiri'}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {groups.length > 0 ? groups.map(g => (
+            <div key={g.id} className="rounded-xl bg-[#1a1a1a] border border-white/[0.06] hover:border-orange-500/20 p-4 transition-all">
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white leading-snug">{g.name}</h3>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${g.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                  {g.status === 'active' ? 'Hai' : 'Inasubiri'}
                 </span>
               </div>
-              
-              <div className="space-y-2 text-sm text-gray-600 mb-4">
-                <p><strong>Members:</strong> {group.member_count || 0}</p>
-                <p><strong>Kiongozi:</strong> {group.leader_name || 'No'}</p>
-                <p><strong>Uwekezaji:</strong> TSH {parseFloat(group.total_investment || 0).toLocaleString()}</p>
-                <p><strong>Mchango wa Kila Mwezi:</strong> TSH {parseFloat(group.monthly_contribution || 0).toLocaleString()}</p>
+              <div className="space-y-1 text-xs text-white/40 mb-4">
+                <p><span className="text-white/25">Wanachama:</span> {g.member_count || 0}</p>
+                <p><span className="text-white/25">Kiongozi:</span> {g.leader_name || '—'}</p>
+                <p><span className="text-white/25">Mchango:</span> TSH {parseFloat(g.monthly_contribution || 0).toLocaleString()}/mwezi</p>
               </div>
-              
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => handleViewGroup(group)}
-                  className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors duration-200"
-                >
-                  View
-                </button>
-                <button 
-                  onClick={() => handleEditGroup(group)}
-                  className="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 transition-colors duration-200"
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDeleteGroup(group)}
-                  className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors duration-200"
-                  title="Delete Group"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
+              <div className="flex gap-2">
+                <button onClick={() => handleViewGroup(g)} className="flex-1 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-medium transition-colors">Angalia</button>
+                <button onClick={() => handleEditGroup(g)} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 text-xs font-medium transition-colors">Hariri</button>
+                <button onClick={() => handleDeleteGroup(g)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-12">
-            <div className="text-gray-500">
-              <UserGroupIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">No groups bado</p>
-              <p className="text-sm mt-1">Groups vitaonekana hapa baada ya kuanzishwa</p>
+          )) : (
+            <div className="col-span-full text-center py-12">
+              <UserGroupIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+              <p className="text-sm text-white/25">Hakuna makundi bado</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Group Details Modal */}
       {showGroupDetails && selectedGroup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              {/* Header */}
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedGroup.name}</h2>
-                  <p className="text-gray-600">Maelezo ya kundi</p>
+                  <h2 className="text-lg font-bold text-white">{selectedGroup.name}</h2>
+                  <p className="text-xs text-white/30 mt-0.5">Maelezo ya kundi</p>
                 </div>
-                <button
-                  onClick={() => setShowGroupDetails(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                >
-                  ×
-                </button>
+                <button onClick={() => setShowGroupDetails(false)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
               </div>
 
-              {/* Group Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-blue-900">Members</h3>
-                  <p className="text-2xl font-bold text-blue-600">{selectedGroup.member_count || 0}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-green-900">Mchango wa Mwezi</h3>
-                  <p className="text-lg font-bold text-green-600">TSH {parseFloat(selectedGroup.monthly_contribution || 0).toLocaleString()}</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-orange-900">Uwekezaji wa Jumla</h3>
-                  <p className="text-lg font-bold text-orange-600">TSH {parseFloat(selectedGroup.total_investment || 0).toLocaleString()}</p>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-purple-900">Hali</h3>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    selectedGroup.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedGroup.status === 'active' ? 'Hai' : 'Inasubiri'}
-                  </span>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                {[
+                  { label: 'Wanachama', value: selectedGroup.member_count || 0, cls: 'text-blue-400' },
+                  { label: 'Mchango/Mwezi', value: `TSH ${parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}`, cls: 'text-emerald-400' },
+                  { label: 'Uwekezaji', value: `TSH ${parseFloat(selectedGroup.total_investment||0).toLocaleString()}`, cls: 'text-orange-400' },
+                  { label: 'Hali', value: selectedGroup.status === 'active' ? 'Hai' : 'Inasubiri', cls: selectedGroup.status === 'active' ? 'text-emerald-400' : 'text-yellow-400' },
+                ].map((s,i) => (
+                  <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                    <p className="text-[10px] text-white/30 mb-1">{s.label}</p>
+                    <p className={`text-sm font-bold ${s.cls}`}>{s.value}</p>
+                  </div>
+                ))}
               </div>
 
-              {/* Group Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Maelezo ya Group</h3>
-                  <div className="space-y-2 text-sm text-gray-900">
-                    <p className="text-gray-900"><strong className="text-gray-900">Kiongozi:</strong> {selectedGroup.leader_name || 'No'}</p>
-                    <p className="text-gray-900"><strong className="text-gray-900">Tarehe ya Kuanzishwa:</strong> {selectedGroup.founded_date ? new Date(selectedGroup.founded_date).toLocaleDateString('sw-TZ') : 'Haijajulikana'}</p>
-                    <p className="text-gray-900"><strong className="text-gray-900">Tarehe ya Kutengenezwa:</strong> {new Date(selectedGroup.created_at).toLocaleDateString('sw-TZ')}</p>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 space-y-2">
+                  <p className="text-xs font-semibold text-white/40 mb-2">Maelezo ya Kundi</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Kiongozi:</span> {selectedGroup.leader_name || '—'}</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Kuanzishwa:</span> {selectedGroup.founded_date ? new Date(selectedGroup.founded_date).toLocaleDateString('sw-TZ') : '—'}</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Kutengenezwa:</span> {new Date(selectedGroup.created_at).toLocaleDateString('sw-TZ')}</p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Takwimu za Fedha</h3>
-                  <div className="space-y-2 text-sm text-gray-900">
-                    <p className="text-gray-900"><strong className="text-gray-900">Mchango wa Kila Mwezi:</strong> TSH {parseFloat(selectedGroup.monthly_contribution || 0).toLocaleString()}</p>
-                    <p className="text-gray-900"><strong className="text-gray-900">Uwekezaji wa Jumla:</strong> TSH {parseFloat(selectedGroup.total_investment || 0).toLocaleString()}</p>
-                    <p className="text-gray-900"><strong className="text-gray-900">Jumla ya Michango:</strong> TSH {(parseFloat(selectedGroup.monthly_contribution || 0) * (selectedGroup.member_count || 0)).toLocaleString()}</p>
-                  </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 space-y-2">
+                  <p className="text-xs font-semibold text-white/40 mb-2">Takwimu za Fedha</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Mchango/Mwezi:</span> TSH {parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Uwekezaji:</span> TSH {parseFloat(selectedGroup.total_investment||0).toLocaleString()}</p>
+                  <p className="text-xs text-white/50"><span className="text-white/25">Jumla michango:</span> TSH {(parseFloat(selectedGroup.monthly_contribution||0)*(selectedGroup.member_count||0)).toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Group Members */}
-              <div className="bg-white border border-gray-200 rounded-lg">
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Members wa Group</h3>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                <div className="px-4 py-3 border-b border-white/[0.06]">
+                  <p className="text-xs font-semibold text-white/50">Wanachama wa Kundi</p>
                 </div>
-                <div className="p-4">
+                <div className="p-3">
                   {groupMembers.length > 0 ? (
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jina</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nafasi</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarehe ya Kujiunge</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hali</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Badilisha Nafasi</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ondoa</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {groupMembers.map((member) => (
-                            <tr key={member.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">{member.full_name}</div>
-                                  <div className="text-sm text-gray-500">{member.email}</div>
-                                </div>
+                      <table className="min-w-full">
+                        <thead><tr className="border-b border-white/[0.06]">
+                          {['Jina','Nafasi','Kujiunge','Hali','Badilisha Nafasi','Ondoa'].map(h => (
+                            <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-white/25 uppercase">{h}</th>
+                          ))}
+                        </tr></thead>
+                        <tbody className="divide-y divide-white/[0.04]">
+                          {groupMembers.map(m => (
+                            <tr key={m.id} className="hover:bg-white/[0.02]">
+                              <td className="px-3 py-2.5">
+                                <div className="text-xs font-medium text-white">{m.full_name}</div>
+                                <div className="text-[10px] text-white/25">{m.email}</div>
                               </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  member.role === 'leader' ? 'bg-blue-100 text-blue-800' : 
-                                  member.role === 'mwenyekiti' ? 'bg-purple-100 text-purple-800' :
-                                  member.role === 'katibu' ? 'bg-green-100 text-green-800' :
-                                  member.role === 'mwekahazina' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {member.role === 'leader' ? 'Kiongozi' : 
-                                   member.role === 'mwenyekiti' ? 'Mwenyekiti' :
-                                   member.role === 'katibu' ? 'Katibu' :
-                                   member.role === 'mwekahazina' ? 'MwekaHazina' :
-                                   'Mmembers'}
+                              <td className="px-3 py-2.5">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${roleBadge(m.role)}`}>{roleLabel(m.role)}</span>
+                              </td>
+                              <td className="px-3 py-2.5 text-[10px] text-white/30">{m.joined_date ? new Date(m.joined_date).toLocaleDateString('sw-TZ') : '—'}</td>
+                              <td className="px-3 py-2.5">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${m.status==='active'?'bg-emerald-500/10 text-emerald-400':'bg-red-500/10 text-red-400'}`}>
+                                  {m.status==='active'?'Hai':'Haifanyi kazi'}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {member.joined_date ? new Date(member.joined_date).toLocaleDateString('sw-TZ') : 'Haijajulikana'}
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {member.status === 'active' ? 'Hai' : 'Haifanyi kazi'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <select
-                                  value={member.role}
-                                  onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                                  className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                >
-                                  <option value="member">Mmembers</option>
+                              <td className="px-3 py-2.5">
+                                <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)} className="text-[10px] bg-white/5 border border-white/10 text-white/50 rounded-lg px-2 py-1 focus:outline-none">
+                                  <option value="member">Mwanachama</option>
                                   <option value="leader">Kiongozi</option>
                                   <option value="mwenyekiti">Mwenyekiti</option>
                                   <option value="katibu">Katibu</option>
                                   <option value="mwekahazina">MwekaHazina</option>
                                 </select>
                               </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <button
-                                  onClick={() => handleRemoveFromGroup(member.id, member.full_name)}
-                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors duration-200"
-                                  title="Ondoa kwenye Group"
-                                >
+                              <td className="px-3 py-2.5">
+                                <button onClick={() => handleRemoveFromGroup(m.id, m.full_name)} className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors">
                                   <UserMinusIcon className="h-3 w-3" />
                                 </button>
                               </td>
@@ -1280,56 +904,34 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <UsersIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500">No members bado</p>
-                      <p className="text-sm text-gray-400 mt-1">Members wataonekana hapa baada ya kuongezwa kwenye kundi</p>
+                      <UsersIcon className="h-7 w-7 mx-auto text-white/10 mb-2" />
+                      <p className="text-xs text-white/25">Hakuna wanachama bado</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Proposals */}
-              <div className="bg-white border border-gray-200 rounded-lg mt-6">
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Proposals</h3>
-                </div>
-                <div className="p-4">
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                <div className="px-4 py-3 border-b border-white/[0.06]"><p className="text-xs font-semibold text-white/50">Mapendekezo</p></div>
+                <div className="p-3">
                   {groupProposals.length > 0 ? (
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Votes</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {groupProposals.map((p) => (
-                            <tr key={p.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-2">
-                                <div className="text-sm font-medium text-gray-900">{p.title}</div>
-                                {p.description ? <div className="text-xs text-gray-500 mt-0.5">{p.description}</div> : null}
+                      <table className="min-w-full">
+                        <thead><tr className="border-b border-white/[0.06]">
+                          {['Kichwa','Hali','Kura','Mwandishi','Tarehe'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-white/25 uppercase">{h}</th>)}
+                        </tr></thead>
+                        <tbody className="divide-y divide-white/[0.04]">
+                          {groupProposals.map(p => (
+                            <tr key={p.id} className="hover:bg-white/[0.02]">
+                              <td className="px-3 py-2.5">
+                                <div className="text-xs font-medium text-white">{p.title}</div>
+                                {p.description && <div className="text-[10px] text-white/25 mt-0.5">{p.description}</div>}
                               </td>
-                              <td className="px-4 py-2 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  p.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {p.status}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                <div className="text-xs text-gray-700">Yes: {p.yes_votes || 0}</div>
-                                <div className="text-xs text-gray-700">No: {p.no_votes || 0}</div>
-                                <div className="text-xs text-gray-700">Abstain: {p.abstain_votes || 0}</div>
-                                <div className="text-xs text-gray-500">Total: {p.total_votes || 0}</div>
-                              </td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{p.created_by_name || '—'}</td>
-                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ') : '—'}
-                              </td>
+                              <td className="px-3 py-2.5"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${p.status==='open'?'bg-emerald-500/10 text-emerald-400':'bg-white/5 text-white/30'}`}>{p.status}</span></td>
+                              <td className="px-3 py-2.5 text-[10px] text-white/40">✓{p.yes_votes||0} ✗{p.no_votes||0}</td>
+                              <td className="px-3 py-2.5 text-[10px] text-white/30">{p.created_by_name||'—'}</td>
+                              <td className="px-3 py-2.5 text-[10px] text-white/25">{p.created_at?new Date(p.created_at).toLocaleDateString('sw-TZ'):'—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1337,110 +939,66 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <DocumentTextIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500">No proposals bado</p>
-                      <p className="text-sm text-gray-400 mt-1">Proposals zitaonekana hapa baada ya kuanzishwa</p>
+                      <DocumentTextIcon className="h-7 w-7 mx-auto text-white/10 mb-2" />
+                      <p className="text-xs text-white/25">Hakuna mapendekezo bado</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Wallet & Transfers */}
-              <div className="bg-white border border-gray-200 rounded-lg mt-6">
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Wallet & Transaction History</h3>
-                </div>
-                <div className="p-4 space-y-4">
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                <div className="px-4 py-3 border-b border-white/[0.06]"><p className="text-xs font-semibold text-white/50">Pochi & Miamala</p></div>
+                <div className="p-3 space-y-3">
                   {groupWallet ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-900"><strong className="text-gray-900">Network:</strong> {groupWallet.network || '—'}</div>
-                        <div className="text-sm text-gray-900 mt-1"><strong className="text-gray-900">Address:</strong> {groupWallet.address || '—'}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 space-y-1">
+                        <p className="text-[10px] text-white/25">Network: <span className="text-white/50">{groupWallet.network||'—'}</span></p>
+                        <p className="text-[10px] text-white/25 break-all">Address: <span className="text-white/40 font-mono">{groupWallet.address||'—'}</span></p>
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-900"><strong className="text-gray-900">USDC:</strong> {groupWalletBalances?.usdc?.amountBaseUnits ?? '—'}</div>
-                        <div className="text-sm text-gray-900 mt-1"><strong className="text-gray-900">ETH:</strong> {groupWalletBalances?.eth?.amountBaseUnits ?? '—'}</div>
-                        {groupWalletWarning ? (
-                          <div className="text-xs text-orange-700 mt-2">{groupWalletWarning}</div>
-                        ) : null}
+                      <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 space-y-1">
+                        <p className="text-[10px] text-white/25">USDC: <span className="text-white/50">{groupWalletBalances?.usdc?.amountBaseUnits??'—'}</span></p>
+                        <p className="text-[10px] text-white/25">ETH: <span className="text-white/50">{groupWalletBalances?.eth?.amountBaseUnits??'—'}</span></p>
+                        {groupWalletWarning && <p className="text-[10px] text-orange-400">{groupWalletWarning}</p>}
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <CurrencyDollarIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                      <p className="text-gray-500">No wallet bado</p>
+                      <CurrencyDollarIcon className="h-7 w-7 mx-auto text-white/10 mb-2" />
+                      <p className="text-xs text-white/25">Hakuna pochi bado</p>
                     </div>
                   )}
-
-                  <div className="border border-gray-200 rounded-lg">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-900">Transfers</h4>
-                    </div>
-                    <div className="p-4">
+                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="px-3 py-2.5 border-b border-white/[0.06]"><p className="text-[10px] font-semibold text-white/40">Miamala</p></div>
+                    <div className="p-3">
                       {groupTransfers.length > 0 ? (
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (base units)</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approvals</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tx Hash</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {groupTransfers.map((t) => (
-                                <tr key={t.id} className="hover:bg-gray-50">
-                                  <td className="px-4 py-2 text-xs text-gray-900">{t.to_address}</td>
-                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{String(t.amount_base_units ?? '')}</td>
-                                  <td className="px-4 py-2 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                      t.status === 'executed' ? 'bg-green-100 text-green-800' :
-                                      t.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                                      t.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {t.status}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                    {t.approval_count ?? 0}/{t.approvals_required ?? 0}
-                                  </td>
-                                  <td className="px-4 py-2 text-xs text-gray-900">{t.executed_tx_hash || '—'}</td>
-                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                    {t.created_at ? new Date(t.created_at).toLocaleDateString('sw-TZ') : '—'}
-                                  </td>
+                          <table className="min-w-full">
+                            <thead><tr className="border-b border-white/[0.06]">
+                              {['Kwenda','Kiasi','Hali','Idhini','Tarehe'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-white/25 uppercase">{h}</th>)}
+                            </tr></thead>
+                            <tbody className="divide-y divide-white/[0.04]">
+                              {groupTransfers.map(t => (
+                                <tr key={t.id} className="hover:bg-white/[0.02]">
+                                  <td className="px-3 py-2 text-[10px] text-white/40 font-mono truncate max-w-[120px]">{t.to_address}</td>
+                                  <td className="px-3 py-2 text-[10px] text-white/50">{String(t.amount_base_units??'')}</td>
+                                  <td className="px-3 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${t.status==='executed'?'bg-emerald-500/10 text-emerald-400':t.status==='approved'?'bg-blue-500/10 text-blue-400':t.status==='rejected'?'bg-red-500/10 text-red-400':'bg-white/5 text-white/30'}`}>{t.status}</span></td>
+                                  <td className="px-3 py-2 text-[10px] text-white/30">{t.approval_count??0}/{t.approvals_required??0}</td>
+                                  <td className="px-3 py-2 text-[10px] text-white/25">{t.created_at?new Date(t.created_at).toLocaleDateString('sw-TZ'):'—'}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                      ) : (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">No transfers bado</p>
-                        </div>
-                      )}
+                      ) : <p className="text-xs text-white/25 text-center py-4">Hakuna miamala bado</p>}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4 mt-6">
-                <button
-                  onClick={() => setShowGroupDetails(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200"
-                >
-                  Funga
-                </button>
-                <button 
-                  onClick={() => handleEditGroup(selectedGroup)}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
-                >
-                  Edit Group
-                </button>
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => setShowGroupDetails(false)} className="px-4 py-2 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Funga</button>
+                <button onClick={() => handleEditGroup(selectedGroup)} className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Hariri Kundi</button>
               </div>
             </div>
           </div>
@@ -1449,83 +1007,27 @@ function GroupsSection({ groups, loadAdminData }: { groups: any[]; loadAdminData
 
       {/* Edit Group Modal */}
       {showEditGroup && editingGroup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#1a1a1a] border border-white/10">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Edit Group</h2>
-                <button
-                  onClick={() => setShowEditGroup(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                >
-                  ×
-                </button>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base font-bold text-white">Hariri Kundi</h2>
+                <button onClick={() => setShowEditGroup(false)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
               </div>
               
-              <form onSubmit={handleUpdateGroup} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">Jina la Group</label>
-                  <input
-                    type="text"
-                    value={groupForm.name}
-                    onChange={(e) => setGroupForm({...groupForm, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">Kiongozi</label>
-                  <select
-                    value={groupForm.leaderId}
-                    onChange={(e) => setGroupForm({...groupForm, leaderId: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
+              <form onSubmit={handleUpdateGroup} className="space-y-3">
+                <div><label className={dkLabel}>Jina la Kundi</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>Kiongozi</label>
+                  <select value={groupForm.leaderId} onChange={e => setGroupForm({...groupForm, leaderId: e.target.value})} className={dkSelect}>
                     <option value="">Chagua Kiongozi</option>
-                    {members.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name}
-                      </option>
-                    ))}
+                    {members.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                   </select>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">Mchango wa Kila Mwezi (TSH)</label>
-                  <input
-                    type="number"
-                    value={groupForm.monthlyContribution}
-                    onChange={(e) => setGroupForm({...groupForm, monthlyContribution: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">Tarehe ya Kuanzishwa</label>
-                  <input
-                    type="date"
-                    value={groupForm.foundedDate}
-                    onChange={(e) => setGroupForm({...groupForm, foundedDate: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    required
-                  />
-                </div>
-                
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditGroup(false)}
-                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
-                  >
-                    Badilisha
-                  </button>
+                <div><label className={dkLabel}>Mchango wa Kila Mwezi (TSH)</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>Tarehe ya Kuanzishwa</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
+                <div className="flex gap-2 pt-2">
+                  <button type="button" onClick={() => setShowEditGroup(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                  <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Badilisha</button>
                 </div>
               </form>
             </div>
@@ -1568,69 +1070,59 @@ function InvestmentsSection({ investments, groups, loadAdminData }: { investment
   const returnRate = totalInvestment > 0 ? ((totalReturns / totalInvestment) * 100).toFixed(1) : '0';
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Usimamizi wa Uwekezaji</h2>
-        <button 
-          onClick={() => setShowInvestmentForm(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200 flex items-center space-x-2"
-        >
-          <PlusIcon className="h-5 w-5" />
-          <span>Uwekezaji Mpya</span>
+    <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-base font-semibold text-white">Usimamizi wa Uwekezaji</h2>
+        <button onClick={() => setShowInvestmentForm(v => !v)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+          <PlusIcon className="h-4 w-4" /> Uwekezaji Mpya
         </button>
       </div>
 
-      {/* Investment Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900">Jumla ya Uwekezaji</h3>
-          <p className="text-2xl font-bold text-blue-600">TSH {(totalInvestment / 1000000).toFixed(1)}M</p>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-green-900">Mapato ya Jumla</h3>
-          <p className="text-2xl font-bold text-green-600">TSH {(totalReturns / 1000000).toFixed(1)}M</p>
-        </div>
-        <div className="bg-orange-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-orange-900">Kiwango cha Mapato</h3>
-          <p className="text-2xl font-bold text-orange-600">{returnRate}%</p>
-        </div>
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {[
+          { label: 'Jumla ya Uwekezaji', value: `TSH ${(totalInvestment/1000000).toFixed(1)}M`, cls: 'text-blue-400' },
+          { label: 'Mapato ya Jumla', value: `TSH ${(totalReturns/1000000).toFixed(1)}M`, cls: 'text-emerald-400' },
+          { label: 'Kiwango cha Mapato', value: `${returnRate}%`, cls: 'text-orange-400' },
+        ].map((s,i) => (
+          <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <p className="text-xs text-white/30 mb-1">{s.label}</p>
+            <p className={`text-xl font-bold ${s.cls}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Investments Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kiasi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarehe</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hali</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mapato</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vitendo</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {investments.map((investment) => (
-              <tr key={investment.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{investment.group_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">TSH {parseFloat(investment.amount || 0).toLocaleString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(investment.investment_date).toLocaleDateString('sw-TZ')}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    investment.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {investment.status === 'active' ? 'Hai' : 'Inasubiri'}
+        <table className="min-w-full">
+          <thead><tr className="border-b border-white/[0.06]">
+            {['Kundi','Kiasi','Tarehe','Hali','Mapato','Vitendo'].map(h => (
+              <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-white/30 uppercase">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-white/[0.04]">
+            {investments.length > 0 ? investments.map(inv => (
+              <tr key={inv.id} className="hover:bg-white/[0.02]">
+                <td className="px-4 py-3 text-sm font-medium text-white">{inv.group_name}</td>
+                <td className="px-4 py-3 text-sm text-white/60">TSH {parseFloat(inv.amount||0).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-white/40">{new Date(inv.investment_date).toLocaleDateString('sw-TZ')}</td>
+                <td className="px-4 py-3">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${inv.status==='active'?'bg-emerald-500/10 text-emerald-400':'bg-yellow-500/10 text-yellow-400'}`}>
+                    {inv.status==='active'?'Hai':'Inasubiri'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {investment.actual_return ? `TSH ${parseFloat(investment.actual_return).toLocaleString()}` : '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button className="text-blue-600 hover:text-blue-900">View</button>
-                  <button className="text-green-600 hover:text-green-900">Edit</button>
+                <td className="px-4 py-3 text-sm text-white/50">{inv.actual_return ? `TSH ${parseFloat(inv.actual_return).toLocaleString()}` : '—'}</td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    <button className="text-xs text-blue-400 hover:text-blue-300 transition-colors">Angalia</button>
+                    <button className="text-xs text-white/30 hover:text-white/60 transition-colors">Hariri</button>
+                  </div>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr><td colSpan={6} className="px-4 py-12 text-center">
+                <CurrencyDollarIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+                <p className="text-sm text-white/25">Hakuna uwekezaji bado</p>
+              </td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1655,7 +1147,7 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
       window.open(`/dashboard/report?month=${encodeURIComponent(month)}&print=1`, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Error downloading report:', error);
-      alert('Hitilafu imetokea wakati wa kupakua ripoti.');
+      console.error('Hitilafu imetokea wakati wa kupakua ripoti.');
     } finally {
       setDownloadingReport(null);
     }
@@ -1670,7 +1162,7 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
       window.open(`/dashboard/report?month=${encodeURIComponent(month)}&print=1`, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Hitilafu imetokea wakati wa kutengeneza ripoti.');
+      console.error('Hitilafu imetokea wakati wa kutengeneza ripoti.');
     } finally {
       setGeneratingReport(null);
     }
@@ -1755,49 +1247,41 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
   const specialReports = ['Takwimu za Jinsia', 'Ukuaji wa Biashara', 'Athari za Kijamii'];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Ripoti na Takwimu</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Ripoti za Mwezi</h3>
-          {adminStats ? monthlyReports.map((report, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <span className="font-medium text-gray-900">Ripoti ya {report.label}</span>
-              <button 
+    <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+      <h2 className="text-base font-semibold text-white mb-5">Ripoti na Takwimu</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-white/40 mb-3">Ripoti za Mwezi</p>
+          {adminStats ? monthlyReports.map((report, i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <span className="text-sm text-white/60">Ripoti ya {report.label}</span>
+              <button
                 onClick={() => handleDownloadMonthlyReport(report.offset)}
                 disabled={downloadingReport === `monthly-${report.offset}`}
-                className="text-orange-600 hover:text-orange-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs text-orange-400 hover:text-orange-300 font-medium disabled:opacity-40 transition-colors"
               >
                 {downloadingReport === `monthly-${report.offset}` ? 'Inafungua...' : 'Pakua PDF'}
               </button>
             </div>
           )) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 text-sm">No takwimu za kuonyesha</p>
-              <p className="text-gray-400 text-xs mt-1">Ripoti zitaonekana baada ya kuwa na data</p>
-            </div>
+            <p className="text-xs text-white/25 py-4 text-center">Hakuna takwimu bado</p>
           )}
         </div>
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Ripoti za Maalum</h3>
-          {adminStats ? specialReports.map((report, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <span className="font-medium text-gray-900">{report}</span>
-              <button 
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-white/40 mb-3">Ripoti za Maalum</p>
+          {adminStats ? specialReports.map((report, i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <span className="text-sm text-white/60">{report}</span>
+              <button
                 onClick={() => handleGenerateSpecialReport(report)}
                 disabled={generatingReport === report}
-                className="text-orange-600 hover:text-orange-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs text-orange-400 hover:text-orange-300 font-medium disabled:opacity-40 transition-colors"
               >
                 {generatingReport === report ? 'Inafungua...' : 'Angalia PDF'}
               </button>
             </div>
           )) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 text-sm">No takwimu za kuonyesha</p>
-              <p className="text-gray-400 text-xs mt-1">Ripoti zitaonekana baada ya kuwa na data</p>
-            </div>
+            <p className="text-xs text-white/25 py-4 text-center">Hakuna takwimu bado</p>
           )}
         </div>
       </div>
@@ -1805,7 +1289,7 @@ function ReportsSection({ adminStats }: { adminStats: any }) {
   );
 }
 
-function ContentSection({ educationalContent, user, loadAdminData }: { educationalContent: any[]; user: any; loadAdminData: () => void }) {
+function ContentSection({ educationalContent, user, loadAdminData, showToast }: { educationalContent: any[]; user: any; loadAdminData: () => void; showToast: (msg: string, type?: any) => void }) {
   const [showContentForm, setShowContentForm] = useState(false);
   const [editingContent, setEditingContent] = useState<any>(null);
   const [viewingContent, setViewingContent] = useState<any>(null);
@@ -1838,7 +1322,9 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
     duration: '',
     difficulty_level: 'beginner',
     image_url: '',
-    is_published: false
+    is_published: false,
+    certificates_enabled: false,
+    pass_threshold: 100
   });
 
   const handleContentSubmit = async (e: React.FormEvent) => {
@@ -1869,14 +1355,16 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
           duration: '',
           difficulty_level: 'beginner',
           image_url: '',
-          is_published: false
+          is_published: false,
+          certificates_enabled: false,
+          pass_threshold: 100
         });
         loadAdminData();
-        alert(editingContent ? 'Mafunzo yamebadilishwa kwa mafanikio!' : 'Mafunzo yameongezwa kwa mafanikio!');
+        showToast(editingContent ? 'Mafunzo yamebadilishwa kwa mafanikio!' : 'Mafunzo yameongezwa kwa mafanikio!', 'success');
       }
     } catch (error) {
       console.error('Error saving content:', error);
-      alert('Hitilafu imetokea. Jaribu tena.');
+      showToast('Hitilafu imetokea. Jaribu tena.', 'error');
     }
   };
 
@@ -1894,29 +1382,28 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
       duration: content.duration,
       difficulty_level: content.difficulty_level,
       image_url: content.image_url || '',
-      is_published: content.is_published
+      is_published: content.is_published,
+      certificates_enabled: content.certificates_enabled ?? false,
+      pass_threshold: content.pass_threshold ?? 100
     });
     setShowContentForm(true);
   };
 
   const handleDeleteContent = async (contentId: number) => {
-    if (confirm('Je, una uhakika unataka kufuta mafunzo haya?')) {
-      try {
-        const response = await fetch(`/api/educational-content/${contentId}`, {
-          method: 'DELETE'
-        });
-        
-        if (response.ok) {
-          loadAdminData();
-          alert('Mafunzo yamefutwa kwa mafanikio!');
-        } else {
-          const responseData = await response.json();
-          alert(`Hitilafu: ${responseData.error || 'Imeshindwa kufuta'}`);
-        }
-      } catch (error) {
-        console.error('Error deleting content:', error);
-        alert('Hitilafu imetokea wakati wa kufuta.');
+    try {
+      const response = await fetch(`/api/educational-content/${contentId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        loadAdminData();
+        showToast('Mafunzo yamefutwa kwa mafanikio!', 'success');
+      } else {
+        const responseData = await response.json();
+        showToast(`Hitilafu: ${responseData.error || 'Imeshindwa kufuta'}`, 'error');
       }
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      showToast('Hitilafu imetokea wakati wa kufuta.', 'error');
     }
   };
 
@@ -1933,11 +1420,11 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
       
       if (response.ok) {
         loadAdminData();
-        alert(currentStatus ? 'Mafunzo yamefichwa!' : 'Mafunzo yamechapishwa!');
+        showToast(currentStatus ? 'Mafunzo yamefichwa!' : 'Mafunzo yamechapishwa!', 'success');
       }
     } catch (error) {
       console.error('Error toggling publish status:', error);
-      alert('Hitilafu imetokea.');
+      showToast('Hitilafu imetokea.', 'error');
     }
   };
 
@@ -1958,13 +1445,11 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
     if (!managingLessons) return;
 
     if (!aiTopicPrompt.trim()) {
-      alert('Tafadhali andika maelezo ya mada unayotaka AI itengeneze.');
-      return;
+      showToast('Tafadhali andika maelezo ya mada unayotaka AI itengeneze.', 'error'); return;
     }
 
     if (saveToCourse && (!aiGeneratedLessons || aiGeneratedLessons.length === 0)) {
-      alert('Hakuna masomo ya kuhifadhi. Tafadhali tengeneza kwanza.');
-      return;
+      showToast('Hakuna masomo ya kuhifadhi. Tafadhali tengeneza kwanza.', 'error'); return;
     }
 
     setAiError(null);
@@ -1995,7 +1480,7 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
         setShowAiLessonGenerator(false);
         setAiTopicPrompt('');
         await handleManageLessons(managingLessons);
-        alert('Masomo yamehifadhiwa kwa mafanikio!');
+        showToast('Masomo yamehifadhiwa kwa mafanikio!', 'success');
         return;
       }
 
@@ -2037,248 +1522,143 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
         });
         // Reload lessons
         handleManageLessons(managingLessons);
-        alert(editingLesson ? 'Somo limebadilishwa kwa mafanikio!' : 'Somo limeongezwa kwa mafanikio!');
+        showToast(editingLesson ? 'Somo limebadilishwa kwa mafanikio!' : 'Somo limeongezwa kwa mafanikio!', 'success');
       }
     } catch (error) {
       console.error('Error saving lesson:', error);
-      alert('Hitilafu imetokea wakati wa kuhifadhi somo.');
+      showToast('Hitilafu imetokea wakati wa kuhifadhi somo.', 'error');
     }
   };
 
   const handleDeleteLesson = async (lessonId: number) => {
-    if (confirm('Je, una uhakika unataka kufuta somo hili? Hatua hii haiwezi kubadilishwa.')) {
-      try {
-        const response = await fetch(`/api/admin/educational-content/${managingLessons.id}/lessons/${lessonId}`, {
-          method: 'DELETE'
-        });
-        
-        if (response.ok) {
-          handleManageLessons(managingLessons);
-          alert('Somo limefutwa kwa mafanikio!');
-        }
-      } catch (error) {
-        console.error('Error deleting lesson:', error);
-        alert('Hitilafu imetokea wakati wa kufuta somo.');
+    try {
+      const response = await fetch(`/api/admin/educational-content/${managingLessons.id}/lessons/${lessonId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        handleManageLessons(managingLessons);
+        showToast('Somo limefutwa kwa mafanikio!', 'success');
       }
+    } catch (error) {
+      console.error('Error deleting lesson:', error);
+      showToast('Hitilafu imetokea wakati wa kufuta somo.', 'error');
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Mafunzo na Elimu</h2>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-white">Mafunzo na Elimu</h2>
         <button
           onClick={() => {
             setEditingContent(null);
-            setContentForm({
-              title: '',
-              description: '',
-              content: '',
-              category: '',
-              duration: '',
-              difficulty_level: 'beginner',
-              image_url: '',
-              is_published: false
-            });
+            setContentForm({ title: '', description: '', content: '', category: '', duration: '', difficulty_level: 'beginner', image_url: '', is_published: false, certificates_enabled: false, pass_threshold: 100 });
             setShowContentForm(true);
           }}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add Mafunzo
+          <PlusIcon className="h-4 w-4" /> Mafunzo Mapya
         </button>
       </div>
 
       {showContentForm && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">{editingContent ? 'Edit Mafunzo' : 'Mafunzo Mapya'}</h3>
-          <form onSubmit={handleContentSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kichwa cha Habari
-                </label>
-                <input
-                  type="text"
-                  value={contentForm.title}
-                  onChange={(e) => setContentForm({...contentForm, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-base font-semibold text-white">{editingContent ? 'Hariri Mafunzo' : 'Mafunzo Mapya'}</h3>
+                <button onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kategoria
-                </label>
-                <select
-                  value={contentForm.category}
-                  onChange={(e) => setContentForm({...contentForm, category: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                >
-                  <option value="">Chagua Kategoria</option>
-                  <option value="Biashara">Biashara</option>
-                  <option value="Uongozi">Uongozi</option>
-                  <option value="Fedha">Fedha</option>
-                  <option value="Teknolojia">Teknolojia</option>
-                </select>
-              </div>
+              <form onSubmit={handleContentSubmit} className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div><label className={dkLabel}>Kichwa cha Habari *</label><input type="text" value={contentForm.title} onChange={e => setContentForm({...contentForm, title: e.target.value})} className={dkInput} required /></div>
+                  <div><label className={dkLabel}>Kategoria *</label>
+                    <select value={contentForm.category} onChange={e => setContentForm({...contentForm, category: e.target.value})} className={dkSelect} required>
+                      <option value="">Chagua Kategoria</option>
+                      <option value="Biashara">Biashara</option>
+                      <option value="Uongozi">Uongozi</option>
+                      <option value="Fedha">Fedha</option>
+                      <option value="Teknolojia">Teknolojia</option>
+                    </select>
+                  </div>
+                </div>
+                <div><label className={dkLabel}>Maelezo Mafupi *</label><textarea value={contentForm.description} onChange={e => setContentForm({...contentForm, description: e.target.value})} className={`${dkInput} resize-none`} rows={3} required /></div>
+                <div><label className={dkLabel}>Maudhui Kamili *</label><textarea value={contentForm.content} onChange={e => setContentForm({...contentForm, content: e.target.value})} className={`${dkInput} resize-none`} rows={6} required /></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div><label className={dkLabel}>Muda</label><input type="text" value={contentForm.duration} onChange={e => setContentForm({...contentForm, duration: e.target.value})} className={dkInput} placeholder="2 masaa" /></div>
+                  <div><label className={dkLabel}>Kiwango</label>
+                    <select value={contentForm.difficulty_level} onChange={e => setContentForm({...contentForm, difficulty_level: e.target.value})} className={dkSelect}>
+                      <option value="beginner">Mwanzo</option>
+                      <option value="intermediate">Kati</option>
+                      <option value="advanced">Juu</option>
+                    </select>
+                  </div>
+                  <div><label className={dkLabel}>URL ya Picha</label><input type="url" value={contentForm.image_url} onChange={e => setContentForm({...contentForm, image_url: e.target.value})} className={dkInput} /></div>
+                </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 space-y-3">
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Chaguo za Kozi</p>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={contentForm.is_published} onChange={e => setContentForm({...contentForm, is_published: e.target.checked})} className="accent-orange-500 w-4 h-4" />
+                    <span className="text-sm text-white/60">Chapisha mara moja (inaonekana kwa wanachama)</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={contentForm.certificates_enabled} onChange={e => setContentForm({...contentForm, certificates_enabled: e.target.checked})} className="accent-orange-500 w-4 h-4" />
+                    <div>
+                      <span className="text-sm text-white/60">Toa Cheti cha Kukamilisha</span>
+                      <p className="text-xs text-white/25 mt-0.5">Wanachama watapata cheti baada ya kukamilisha kozi</p>
+                    </div>
+                  </label>
+                  {contentForm.certificates_enabled && (
+                    <div className="pl-6">
+                      <label className={dkLabel}>Kiwango cha Kupita (% ya masomo)</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range" min={50} max={100} step={5}
+                          value={contentForm.pass_threshold}
+                          onChange={e => setContentForm({...contentForm, pass_threshold: parseInt(e.target.value)})}
+                          className="flex-1 accent-orange-500"
+                        />
+                        <span className="text-sm font-semibold text-orange-400 w-12 text-right">{contentForm.pass_threshold}%</span>
+                      </div>
+                      <p className="text-xs text-white/20 mt-1">Mwanachama lazima akamilishe angalau {contentForm.pass_threshold}% ya masomo kupata cheti.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                  <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingContent ? 'Hifadhi Mabadiliko' : 'Hifadhi'}</button>
+                </div>
+              </form>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maelezo Mafupi
-              </label>
-              <textarea
-                value={contentForm.description}
-                onChange={(e) => setContentForm({...contentForm, description: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                rows={3}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maudhui Kamili
-              </label>
-              <textarea
-                value={contentForm.content}
-                onChange={(e) => setContentForm({...contentForm, content: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                rows={8}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Muda
-                </label>
-                <input
-                  type="text"
-                  value={contentForm.duration}
-                  onChange={(e) => setContentForm({...contentForm, duration: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="Mfano: 2 masaa"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kiwango
-                </label>
-                <select
-                  value={contentForm.difficulty_level}
-                  onChange={(e) => setContentForm({...contentForm, difficulty_level: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="beginner">Mwanzo</option>
-                  <option value="intermediate">Kati</option>
-                  <option value="advanced">Juu</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  URL ya Picha
-                </label>
-                <input
-                  type="url"
-                  value={contentForm.image_url}
-                  onChange={(e) => setContentForm({...contentForm, image_url: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={contentForm.is_published}
-                onChange={(e) => setContentForm({...contentForm, is_published: e.target.checked})}
-                className="mr-2"
-              />
-              <label className="text-sm text-gray-700">
-                Chapisha Mara Moja
-              </label>
-            </div>
-            
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                {editingContent ? 'Save Mabadiliko' : 'Save Mafunzo'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowContentForm(false);
-                  setEditingContent(null);
-                }}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       )}
 
       {/* View Content Modal */}
       {viewingContent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex items-start justify-between mb-5">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{viewingContent.title}</h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {viewingContent.category} • {viewingContent.difficulty_level} • {viewingContent.duration} dakika
-                  </p>
+                  <h2 className="text-lg font-bold text-white">{viewingContent.title}</h2>
+                  <p className="text-xs text-white/30 mt-1">{viewingContent.category} · {viewingContent.difficulty_level} · {viewingContent.duration} dakika</p>
                 </div>
-                <button
-                  onClick={() => setViewingContent(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                >
-                  ×
-                </button>
+                <button onClick={() => setViewingContent(null)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
               </div>
-              
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Maelezo</h3>
-                <p className="text-gray-700">{viewingContent.description}</p>
+                <p className="text-xs font-semibold text-white/30 mb-2">Maelezo</p>
+                <p className="text-sm text-white/60">{viewingContent.description}</p>
               </div>
-              
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Maudhui</h3>
-                <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
-                  {viewingContent.content}
-                </div>
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-white/30 mb-2">Maudhui</p>
+                <div className="text-sm text-white/50 whitespace-pre-wrap leading-relaxed">{viewingContent.content}</div>
               </div>
-              
-              <div className="flex justify-between items-center pt-4 border-t">
-                <div className="text-sm text-gray-500">
-                  Imeandikwa na {viewingContent.author_name} • {new Date(viewingContent.created_at).toLocaleDateString('sw-TZ')}
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setViewingContent(null);
-                      handleEditContent(viewingContent);
-                    }}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleTogglePublish(viewingContent.id, viewingContent.is_published)}
-                    className={`px-4 py-2 rounded-lg ${
-                      viewingContent.is_published 
-                        ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
+              <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
+                <p className="text-xs text-white/25">Imeandikwa na {viewingContent.author_name} · {new Date(viewingContent.created_at).toLocaleDateString('sw-TZ')}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => { setViewingContent(null); handleEditContent(viewingContent); }} className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-sm transition-colors">Hariri</button>
+                  <button onClick={() => handleTogglePublish(viewingContent.id, viewingContent.is_published)} className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-colors ${viewingContent.is_published ? 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400'}`}>
                     {viewingContent.is_published ? 'Ficha' : 'Chapisha'}
                   </button>
                 </div>
@@ -2290,308 +1670,124 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
 
       {/* Lesson Management Modal */}
       {managingLessons && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-5xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Dhibiti Masomo - {managingLessons.title}
-                </h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setShowAiLessonGenerator((s) => !s);
-                      setAiError(null);
-                      setAiGeneratedLessons(null);
-                    }}
-                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
-                  >
-                    AI Generate
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingLesson(null);
-                      setLessonForm({
-                        language: 'sw',
-                        title: '',
-                        content: '',
-                        duration_minutes: 15,
-                        lesson_type: 'text',
-                        video_url: ''
-                      });
-                      setShowLessonForm(true);
-                    }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    <PlusIcon className="h-4 w-4 inline mr-2" />
-                    Add Somo
-                  </button>
-                  <button
-                    onClick={() => setManagingLessons(null)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Funga
-                  </button>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-base font-semibold text-white">Dhibiti Masomo</h3>
+                  <p className="text-xs text-white/30 mt-0.5">{managingLessons.title}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setShowAiLessonGenerator(s => !s); setAiError(null); setAiGeneratedLessons(null); }} className="px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/20 transition-colors">AI Generate</button>
+                  <button onClick={() => { setEditingLesson(null); setLessonForm({ language: 'sw', title: '', content: '', duration_minutes: 15, lesson_type: 'text', video_url: '' }); setShowLessonForm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 transition-colors"><PlusIcon className="h-3.5 w-3.5" /> Somo Jipya</button>
+                  <button onClick={() => setManagingLessons(null)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
                 </div>
               </div>
 
               {showAiLessonGenerator && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3">AI Lesson Generator</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                          <select
-                            value={aiLanguage}
-                            onChange={(e) => setAiLanguage(e.target.value as 'sw' | 'en')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          >
-                            <option value="sw">Swahili</option>
-                            <option value="en">English</option>
+                <div className="rounded-xl bg-orange-500/5 border border-orange-500/20 p-4 mb-5">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 space-y-3">
+                      <p className="text-sm font-semibold text-orange-400">AI Lesson Generator</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div><label className={dkLabel}>Lugha</label>
+                          <select value={aiLanguage} onChange={e => setAiLanguage(e.target.value as 'sw'|'en')} className={dkSelect}>
+                            <option value="sw">Swahili</option><option value="en">English</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
-                          <select
-                            value={aiDifficulty}
-                            onChange={(e) => setAiDifficulty(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          >
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
+                        <div><label className={dkLabel}>Kiwango</label>
+                          <select value={aiDifficulty} onChange={e => setAiDifficulty(e.target.value as any)} className={dkSelect}>
+                            <option value="beginner">Mwanzo</option><option value="intermediate">Kati</option><option value="advanced">Juu</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Lesson count</label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={aiLessonCount}
-                            onChange={(e) => setAiLessonCount(parseInt(e.target.value || '1'))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          />
+                        <div><label className={dkLabel}>Idadi ya Masomo</label>
+                          <input type="number" min={1} max={20} value={aiLessonCount} onChange={e => setAiLessonCount(parseInt(e.target.value||'1'))} className={dkInput} />
                         </div>
                         <div className="flex items-end">
-                          <button
-                            onClick={() => handleGenerateLessonsWithAI(false)}
-                            disabled={aiGenerating || aiSaving}
-                            className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {aiGenerating ? 'Inatengeneza...' : 'Generate Preview'}
+                          <button onClick={() => handleGenerateLessonsWithAI(false)} disabled={aiGenerating||aiSaving} className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold disabled:opacity-40 transition-colors">
+                            {aiGenerating ? 'Inatengeneza...' : 'Preview'}
                           </button>
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Topic prompt</label>
-                        <textarea
-                          value={aiTopicPrompt}
-                          onChange={(e) => setAiTopicPrompt(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          rows={3}
-                          placeholder="Mfano: Financial Basics - budgeting, saving, debt management..."
-                        />
+                      <div><label className={dkLabel}>Mada ya Masomo</label>
+                        <textarea value={aiTopicPrompt} onChange={e => setAiTopicPrompt(e.target.value)} className={`${dkInput} resize-none`} rows={2} placeholder="Mfano: Financial Basics — budgeting, saving..." />
                       </div>
-
-                      {aiError && (
-                        <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
-                          {aiError}
-                        </div>
-                      )}
-
+                      {aiError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiError}</div>}
                       {aiGeneratedLessons && (
-                        <div className="mt-4">
+                        <div>
                           <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-semibold text-gray-900">Preview ({aiGeneratedLessons.length})</h5>
-                            <button
-                              onClick={() => handleGenerateLessonsWithAI(true)}
-                              disabled={aiSaving || aiGenerating}
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {aiSaving ? 'Inahifadhi...' : 'Save to Course'}
+                            <p className="text-xs font-semibold text-white/40">Preview ({aiGeneratedLessons.length} masomo)</p>
+                            <button onClick={() => handleGenerateLessonsWithAI(true)} disabled={aiSaving||aiGenerating} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/20 disabled:opacity-40">
+                              {aiSaving ? 'Inahifadhi...' : 'Hifadhi Kwa Kozi'}
                             </button>
                           </div>
-                          <div className="space-y-3">
-                            {aiGeneratedLessons.map((l: any, idx: number) => (
-                              <div key={idx} className="bg-white border border-orange-200 rounded-lg p-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="font-medium text-gray-900">{l.title}</div>
-                                  <div className="text-xs text-gray-500">{l.duration_minutes} min • {aiLanguage.toUpperCase()}</div>
+                          <div className="space-y-2">
+                            {aiGeneratedLessons.map((l: any, i: number) => (
+                              <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-xs font-semibold text-white">{l.title}</p>
+                                  <p className="text-[10px] text-white/25">{l.duration_minutes} min · {aiLanguage.toUpperCase()}</p>
                                 </div>
-                                <div className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
-                                  {String(l.content || '').slice(0, 400)}{String(l.content || '').length > 400 ? '...' : ''}
-                                </div>
+                                <p className="text-[10px] text-white/30 whitespace-pre-wrap">{String(l.content||'').slice(0,300)}{String(l.content||'').length>300?'...':''}</p>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-
-                    <button
-                      onClick={() => {
-                        setShowAiLessonGenerator(false);
-                        setAiError(null);
-                        setAiGeneratedLessons(null);
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                      title="Close"
-                    >
-                      ×
-                    </button>
+                    <button onClick={() => { setShowAiLessonGenerator(false); setAiError(null); setAiGeneratedLessons(null); }} className="text-white/30 hover:text-white/60 text-xl leading-none">×</button>
                   </div>
                 </div>
               )}
 
-              {/* Lesson Form */}
               {showLessonForm && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h4 className="text-lg font-semibold mb-4">
-                    {editingLesson ? 'Edit Somo' : 'Somo Jipya'}
-                  </h4>
-                  <form onSubmit={handleLessonSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Kichwa cha Somo
-                        </label>
-                        <input
-                          type="text"
-                          value={lessonForm.title}
-                          onChange={(e) => setLessonForm({...lessonForm, title: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Muda (Dakika)
-                        </label>
-                        <input
-                          type="number"
-                          value={lessonForm.duration_minutes}
-                          onChange={(e) => setLessonForm({...lessonForm, duration_minutes: parseInt(e.target.value)})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          min="1"
-                          required
-                        />
-                      </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 mb-5">
+                  <p className="text-sm font-semibold text-white mb-3">{editingLesson ? 'Hariri Somo' : 'Somo Jipya'}</p>
+                  <form onSubmit={handleLessonSubmit} className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div><label className={dkLabel}>Kichwa cha Somo *</label><input type="text" value={lessonForm.title} onChange={e => setLessonForm({...lessonForm, title: e.target.value})} className={dkInput} required /></div>
+                      <div><label className={dkLabel}>Muda (Dakika) *</label><input type="number" value={lessonForm.duration_minutes} onChange={e => setLessonForm({...lessonForm, duration_minutes: parseInt(e.target.value)})} className={dkInput} min="1" required /></div>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Language
-                      </label>
-                      <select
-                        value={(lessonForm as any).language || 'sw'}
-                        onChange={(e) => setLessonForm({ ...(lessonForm as any), language: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="sw">Swahili</option>
-                        <option value="en">English</option>
+                    <div><label className={dkLabel}>Lugha</label>
+                      <select value={(lessonForm as any).language||'sw'} onChange={e => setLessonForm({...(lessonForm as any), language: e.target.value})} className={dkSelect}>
+                        <option value="sw">Swahili</option><option value="en">English</option>
                       </select>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Maudhui ya Somo
-                      </label>
-                      <textarea
-                        value={lessonForm.content}
-                        onChange={(e) => setLessonForm({...lessonForm, content: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        rows={8}
-                        placeholder="Andika maudhui ya somo hapa..."
-                        required
-                      />
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        {editingLesson ? 'Save Mabadiliko' : 'Save Somo'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowLessonForm(false);
-                          setEditingLesson(null);
-                        }}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-                      >
-                        Cancel
-                      </button>
+                    <div><label className={dkLabel}>Maudhui ya Somo *</label><textarea value={lessonForm.content} onChange={e => setLessonForm({...lessonForm, content: e.target.value})} className={`${dkInput} resize-none`} rows={6} placeholder="Andika maudhui ya somo hapa..." required /></div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLesson(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                      <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingLesson ? 'Hifadhi Mabadiliko' : 'Hifadhi Somo'}</button>
                     </div>
                   </form>
                 </div>
               )}
 
-              {/* Lessons List */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold">Masomo ({lessons.length})</h4>
-                {lessons.length > 0 ? (
-                  <div className="space-y-3">
-                    {lessons.map((lesson, index) => (
-                      <div key={lesson.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
-                                Somo {lesson.lesson_order}
-                              </span>
-                              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded">
-                                {(lesson.language || 'sw').toUpperCase()}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                {lesson.duration_minutes} dakika
-                              </span>
-                            </div>
-                            <h5 className="font-medium text-gray-900 mb-2">{lesson.title}</h5>
-                            <p className="text-sm text-gray-600 line-clamp-3">
-                              {lesson.content.substring(0, 200)}...
-                            </p>
-                          </div>
-                          <div className="flex space-x-2 ml-4">
-                            <button
-                              onClick={() => {
-                                setEditingLesson(lesson);
-                                setLessonForm({
-                                  language: lesson.language || 'sw',
-                                  title: lesson.title,
-                                  content: lesson.content,
-                                  duration_minutes: lesson.duration_minutes,
-                                  lesson_type: lesson.lesson_type,
-                                  video_url: lesson.video_url || ''
-                                });
-                                setShowLessonForm(true);
-                              }}
-                              className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                              title="Edit"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteLesson(lesson.id)}
-                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                              title="Delete"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
-                          </div>
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-white/40">Masomo ({lessons.length})</p>
+                {lessons.length > 0 ? lessons.map(lesson => (
+                  <div key={lesson.id} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold">#{lesson.lesson_order}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 font-semibold">{(lesson.language||'sw').toUpperCase()}</span>
+                          <span className="text-[10px] text-white/25">{lesson.duration_minutes} dakika</span>
                         </div>
+                        <p className="text-sm font-semibold text-white mb-1">{lesson.title}</p>
+                        <p className="text-xs text-white/30 line-clamp-2">{lesson.content.substring(0,200)}...</p>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => { setEditingLesson(lesson); setLessonForm({ language: lesson.language||'sw', title: lesson.title, content: lesson.content, duration_minutes: lesson.duration_minutes, lesson_type: lesson.lesson_type, video_url: lesson.video_url||'' }); setShowLessonForm(true); }} className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/10 text-white/30 hover:text-emerald-400 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <BookOpenIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>No lessons added yet.</p>
-                    <p className="text-sm">Click &ldquo;Add Lesson&rdquo; to start creating content.</p>
+                )) : (
+                  <div className="text-center py-10">
+                    <BookOpenIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+                    <p className="text-sm text-white/25">Hakuna masomo bado</p>
+                    <p className="text-xs text-white/15 mt-1">Bonyeza &ldquo;Somo Jipya&rdquo; kuanza</p>
                   </div>
                 )}
               </div>
@@ -2600,76 +1796,43 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mafunzo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kategoria
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hali
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tarehe
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vitendo
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {educationalContent.map((content) => (
-              <tr key={content.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{content.title}</div>
-                  <div className="text-sm text-gray-500">{content.category}</div>
-                  <div className="text-sm text-gray-500">{content.difficulty_level} • {content.duration} dakika</div>
+      {/* Content Table */}
+      <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+        <table className="min-w-full">
+          <thead><tr className="border-b border-white/[0.06]">
+            {['Mafunzo','Hali','Mwandishi','Tarehe','Vitendo'].map(h => (
+              <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-white/30 uppercase">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody className="divide-y divide-white/[0.04]">
+            {educationalContent.length > 0 ? educationalContent.map(c => (
+              <tr key={c.id} className="hover:bg-white/[0.02]">
+                <td className="px-4 py-3">
+                  <p className="text-sm font-medium text-white">{c.title}</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">{c.category} · {c.difficulty_level} · {c.duration} dakika</p>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    content.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {content.is_published ? 'Imechapishwa' : 'Rasimu'}
+                <td className="px-4 py-3">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${c.is_published ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'}`}>
+                    {c.is_published ? 'Imechapishwa' : 'Rasimu'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{content.author_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(content.created_at).toLocaleDateString('sw-TZ')}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button 
-                    onClick={() => handleViewContent(content)}
-                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                    title="View"
-                  >
-                    <EyeIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleEditContent(content)}
-                    className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                    title="Edit"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleManageLessons(content)}
-                    className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50"
-                    title="Dhibiti Masomo"
-                  >
-                    <BookOpenIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteContent(content.id)}
-                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                    title="Delete"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                <td className="px-4 py-3 text-xs text-white/40">{c.author_name}</td>
+                <td className="px-4 py-3 text-xs text-white/25">{new Date(c.created_at).toLocaleDateString('sw-TZ')}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => handleViewContent(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-blue-500/10 text-white/30 hover:text-blue-400 transition-colors"><EyeIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEditContent(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/10 text-white/30 hover:text-emerald-400 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleManageLessons(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-purple-500/10 text-white/30 hover:text-purple-400 transition-colors"><BookOpenIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleDeleteContent(c.id)} className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
+                  </div>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr><td colSpan={5} className="px-4 py-12 text-center">
+                <BookOpenIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+                <p className="text-sm text-white/25">Hakuna mafunzo bado</p>
+              </td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -2677,140 +1840,108 @@ function ContentSection({ educationalContent, user, loadAdminData }: { education
   );
 }
 
-function JoinRequestsSection({ joinRequests, loadAdminData }: { joinRequests: any[]; loadAdminData: () => void }) {
+function JoinRequestsSection({ joinRequests, loadAdminData, showToast }: { joinRequests: any[]; loadAdminData: () => void; showToast: (msg: string, type?: any) => void }) {
   const [processingRequest, setProcessingRequest] = useState<number | null>(null);
-  
-  console.log('JoinRequestsSection received:', joinRequests);
 
   const handleApproveRequest = async (requestId: number) => {
     setProcessingRequest(requestId);
     try {
-      const response = await fetch('/api/admin/join-requests', {
+      const res = await fetch('/api/admin/join-requests', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId,
-          action: 'approve',
-          reviewerId: 1,
-          notes: 'Approved by admin'
-        })
+        body: JSON.stringify({ requestId, action: 'approve', reviewerId: 1, notes: 'Approved by admin' })
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(data.message);
-        loadAdminData();
-      } else {
-        alert(data.error || 'Hitilafu imetokea');
-      }
-    } catch (error) {
-      console.error('Error approving request:', error);
-      alert('Hitilafu imetokea wakati wa kukubali ombi');
-    } finally {
-      setProcessingRequest(null);
-    }
+      const data = await res.json();
+      if (res.ok) { showToast(data.message || 'Ombi limekubaliwa!', 'success'); loadAdminData(); }
+      else showToast(data.error || 'Hitilafu imetokea', 'error');
+    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+    finally { setProcessingRequest(null); }
   };
 
   const handleRejectRequest = async (requestId: number) => {
-    const reason = prompt('Eleza sababu ya kukataa ombi (si lazima):');
-    
+    const reason = prompt('Sababu ya kukataa (si lazima):');
     setProcessingRequest(requestId);
     try {
-      const response = await fetch('/api/admin/join-requests', {
+      const res = await fetch('/api/admin/join-requests', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId,
-          action: 'reject',
-          reviewerId: 1,
-          notes: reason || 'Rejected by admin'
-        })
+        body: JSON.stringify({ requestId, action: 'reject', reviewerId: 1, notes: reason || 'Rejected by admin' })
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(data.message);
-        loadAdminData();
-      } else {
-        alert(data.error || 'Hitilafu imetokea');
-      }
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      alert('Hitilafu imetokea wakati wa kukataa ombi');
-    } finally {
-      setProcessingRequest(null);
-    }
+      const data = await res.json();
+      if (res.ok) { showToast(data.message || 'Ombi limekataliwa', 'success'); loadAdminData(); }
+      else showToast(data.error || 'Hitilafu imetokea', 'error');
+    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+    finally { setProcessingRequest(null); }
   };
 
+  const pending = joinRequests.filter(r => r.status === 'pending');
+
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Maombi ya Kujiunga na Groups</h2>
-      
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-base font-semibold text-white">Maombi ya Kujiunga</h2>
+        {pending.length > 0 && (
+          <span className="text-[10px] font-bold bg-orange-500 text-white rounded-full px-2 py-0.5">{pending.length} Inasubiri</span>
+        )}
+      </div>
+
       {joinRequests.length === 0 ? (
-        <div className="text-center py-8">
-          <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No maombi ya kujiunga kwa sasa.</p>
+        <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-12 text-center">
+          <UserGroupIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
+          <p className="text-sm text-white/25">Hakuna maombi ya kujiunga kwa sasa</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {joinRequests.map((request) => (
-            <div key={request.id} className="border border-gray-200 rounded-lg p-4">
-              {/* Debug info - remove in production */}
-              {request.data_validation && request.data_validation !== 'OK' && (
-                <div className="mb-2 p-2 bg-red-100 border border-red-300 rounded text-xs text-red-700">
-                  ⚠️ Data Issue: {request.data_validation} | Request ID: {request.id} | Member ID: {request.member_id}
+        <div className="space-y-3">
+          {joinRequests.map(req => (
+            <div key={req.id} className={`rounded-xl border p-4 ${req.status === 'pending' ? 'bg-[#141414] border-orange-500/20' : 'bg-[#141414] border-white/[0.06]'}`}>
+              {req.data_validation && req.data_validation !== 'OK' && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] text-red-400">
+                  ⚠ {req.data_validation} · ID: {req.id}
                 </div>
               )}
-              
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {request.member_name}
-                    <span className="text-xs text-gray-400 ml-2">(ID: {request.member_id})</span>
-                  </h3>
-                  <p className="text-sm text-gray-600">Anataka kujiunga na: <span className="font-medium">{request.group_name}</span></p>
-                  <p className="text-sm text-gray-600">Barua pepe: {request.member_email}</p>
-                  {request.member_phone && (
-                    <p className="text-sm text-gray-600">Simu: {request.member_phone}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    Imetumwa: {new Date(request.created_at).toLocaleDateString('sw-TZ')}
-                  </p>
+
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-white">{req.member_name}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${req.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' : req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {req.status === 'pending' ? 'Inasubiri' : req.status === 'approved' ? 'Imekubaliwa' : 'Imekataliwa'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/40">Kujiunga na: <span className="text-white/60 font-medium">{req.group_name}</span></p>
+                  <p className="text-xs text-white/30 mt-0.5">{req.member_email}{req.member_phone ? ` · ${req.member_phone}` : ''}</p>
+                  <p className="text-[10px] text-white/20 mt-1">{new Date(req.created_at).toLocaleDateString('sw-TZ')}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-orange-600">
-                    Mchango: TSH {parseInt(request.monthly_contribution).toLocaleString()}/mwezi
-                  </p>
-                  <p className="text-sm text-gray-600">Kiongozi: {request.leader_name || 'Hajaainishwa'}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-semibold text-orange-400">TSH {parseInt(req.monthly_contribution||0).toLocaleString()}/mwezi</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">Kiongozi: {req.leader_name || '—'}</p>
                 </div>
               </div>
-              
-              {request.message && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Ujumbe:</span> {request.message}
-                  </p>
+
+              {req.message && (
+                <div className="mt-3 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <p className="text-xs text-white/40"><span className="text-white/25">Ujumbe:</span> {req.message}</p>
                 </div>
               )}
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => handleApproveRequest(request.id)}
-                  disabled={processingRequest === request.id}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {processingRequest === request.id ? 'Inakubali...' : 'Kubali'}
-                </button>
-                <button
-                  onClick={() => handleRejectRequest(request.id)}
-                  disabled={processingRequest === request.id}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                >
-                  {processingRequest === request.id ? 'Inakataa...' : 'Kataa'}
-                </button>
-              </div>
+
+              {req.status === 'pending' && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => handleApproveRequest(req.id)}
+                    disabled={processingRequest === req.id}
+                    className="flex-1 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/20 disabled:opacity-40 transition-colors"
+                  >
+                    {processingRequest === req.id ? 'Inakubali...' : 'Kubali'}
+                  </button>
+                  <button
+                    onClick={() => handleRejectRequest(req.id)}
+                    disabled={processingRequest === req.id}
+                    className="flex-1 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold border border-red-500/20 disabled:opacity-40 transition-colors"
+                  >
+                    {processingRequest === req.id ? 'Inakataa...' : 'Kataa'}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -2821,40 +1952,37 @@ function JoinRequestsSection({ joinRequests, loadAdminData }: { joinRequests: an
 
 function SettingsSection() {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Mipangilio ya Mfumo</h2>
-      
-      <div className="space-y-6">
+    <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+      <h2 className="text-base font-semibold text-white mb-5">Mipangilio ya Mfumo</h2>
+      <div className="space-y-5">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Mipangilio ya Jumla</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Kiwango cha Hisa (%)</span>
-              <input type="number" defaultValue="30" className="w-20 px-3 py-2 border border-gray-300 rounded-lg" />
+          <p className="text-xs font-semibold text-white/40 mb-3">Mipangilio ya Jumla</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <span className="text-sm text-white/60">Kiwango cha Hisa (%)</span>
+              <input type="number" defaultValue="30" className="w-20 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-right focus:outline-none focus:border-orange-500/50" />
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Ada ya Mwezi (TSH)</span>
-              <input type="number" defaultValue="50000" className="w-32 px-3 py-2 border border-gray-300 rounded-lg" />
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <span className="text-sm text-white/60">Ada ya Mwezi (TSH)</span>
+              <input type="number" defaultValue="50000" className="w-32 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-right focus:outline-none focus:border-orange-500/50" />
             </div>
           </div>
         </div>
-        
+
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Arifa</h3>
+          <p className="text-xs font-semibold text-white/40 mb-3">Arifa</p>
           <div className="space-y-2">
-            <label className="flex items-center">
-              <input type="checkbox" defaultChecked className="mr-2" />
-              <span className="text-gray-700">Arifa za barua pepe kwa members wapya</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" defaultChecked className="mr-2" />
-              <span className="text-gray-700">Ripoti za kila wiki</span>
-            </label>
+            {['Arifa za barua pepe kwa wanachama wapya', 'Ripoti za kila wiki'].map((label, i) => (
+              <label key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] cursor-pointer">
+                <input type="checkbox" defaultChecked className="accent-orange-500" />
+                <span className="text-sm text-white/60">{label}</span>
+              </label>
+            ))}
           </div>
         </div>
-        
-        <button className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors duration-200">
-          Save Mabadiliko
+
+        <button className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+          Hifadhi Mabadiliko
         </button>
       </div>
     </div>

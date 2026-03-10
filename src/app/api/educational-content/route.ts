@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, content, category, duration, difficulty_level, image_url, author_id, is_published } = body;
+    const { title, description, content, category, duration, difficulty_level, image_url, author_id, is_published, certificates_enabled, pass_threshold } = body;
     
     const client = await pool.connect();
     const result = await client.query(`
-      INSERT INTO educational_content (title, description, content, category, duration, difficulty_level, image_url, author_id, is_published)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO educational_content (title, description, content, category, duration, difficulty_level, image_url, author_id, is_published, certificates_enabled, pass_threshold)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
-    `, [title, description, content, category, duration, difficulty_level, image_url, author_id, is_published]);
+    `, [title, description, content, category, duration, difficulty_level, image_url, author_id, is_published, certificates_enabled ?? false, pass_threshold ?? 100]);
     client.release();
     
     return NextResponse.json(result.rows[0], { status: 201 });
@@ -46,16 +46,17 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, description, content, category, duration, difficulty_level, image_url, is_published } = body;
+    const { id, title, description, content, category, duration, difficulty_level, image_url, is_published, certificates_enabled, pass_threshold } = body;
     
     const client = await pool.connect();
     const result = await client.query(`
       UPDATE educational_content 
       SET title = $1, description = $2, content = $3, category = $4, duration = $5, 
-          difficulty_level = $6, image_url = $7, is_published = $8, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $9
+          difficulty_level = $6, image_url = $7, is_published = $8, updated_at = CURRENT_TIMESTAMP,
+          certificates_enabled = $9, pass_threshold = $10
+      WHERE id = $11
       RETURNING *
-    `, [title, description, content, category, duration, difficulty_level, image_url, is_published, id]);
+    `, [title, description, content, category, duration, difficulty_level, image_url, is_published, certificates_enabled ?? false, pass_threshold ?? 100, id]);
     client.release();
     
     return NextResponse.json(result.rows[0]);
