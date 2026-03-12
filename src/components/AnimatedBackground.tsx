@@ -111,7 +111,7 @@ export default function AnimatedBackground({ className = '' }: { className?: str
   return (
     <canvas
       ref={canvasRef}
-      className={`absolute inset-0 w-full h-full ${className}`}
+      className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}
       style={{ display: 'block' }}
     />
   );
