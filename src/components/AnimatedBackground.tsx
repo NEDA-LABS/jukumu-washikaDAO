@@ -53,6 +53,12 @@ export default function AnimatedBackground({ className = '' }: { className?: str
     ];
 
     const draw = () => {
+      // Skip frame if canvas has no dimensions (e.g. parent is display:none on mobile)
+      if (w === 0 || h === 0) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+
       ctx.clearRect(0, 0, w, h);
 
       ctx.fillStyle = '#0d0d0d';
