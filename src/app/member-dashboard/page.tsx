@@ -191,7 +191,7 @@ export default function MemberDashboard() {
   const activeName = menuItems.find(m => m.id === activeSection)?.name || 'Overview';
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex">
+    <div className="min-h-[100dvh] bg-[#0d0d0d] flex">
 
       {/* ── Mobile overlay ── */}
       {sidebarOpen && (
@@ -203,7 +203,7 @@ export default function MemberDashboard() {
 
       {/* ── Sidebar ── */}
       <aside className={`
-        fixed top-0 left-0 h-full w-60 bg-[#111111] border-r border-white/5
+        fixed top-0 left-0 h-[100dvh] w-60 bg-[#111111] border-r border-white/5
         flex flex-col z-30 transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:flex
@@ -259,7 +259,7 @@ export default function MemberDashboard() {
       </aside>
 
       {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
 
         {/* Top bar (mobile only — shows hamburger + page title) */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-[#111111] border-b border-white/5 sticky top-0 z-10">

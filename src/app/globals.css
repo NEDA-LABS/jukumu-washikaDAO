@@ -109,10 +109,16 @@
   }
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--ds-background);
   color: var(--ds-foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
 }
 
 input,

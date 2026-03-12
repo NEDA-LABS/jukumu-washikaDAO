@@ -35,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sw" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden`}>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider>
           <LanguageProvider>
             <ToastProvider>{children}</ToastProvider>
