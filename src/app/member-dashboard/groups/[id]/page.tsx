@@ -71,21 +71,24 @@ type ProposalRow = {
   created_by_member_id?: number;
 };
 
-type WalletSummary = {
-  wallet: { id: number; network: string; address: string } | null;
-  balances?: {
-    usdc?: { amountBaseUnits: string; decimals: number };
-    eth?: { amountBaseUnits: string; decimals: number };
-  };
-  recentTransfers?: {
-    id: number;
-    to_address: string;
-    amount_base_units: string | number;
-    status: string;
-    approvals_required: number;
-    executed_tx_hash?: string | null;
-    created_at?: string;
-  }[];
+type TreasurySummary = {
+  treasury: { ntzsUserId: string; walletAddress: string } | null;
+  balanceTzs: number;
+  membership?: { member_id: number; role: string; status: string };
+};
+
+type TreasuryActivity = {
+  id: number;
+  type: 'deposit' | 'transfer' | 'withdrawal';
+  status: string;
+  from_member_id?: number;
+  to_member_id?: number;
+  amount_tzs: number;
+  purpose: string;
+  note?: string;
+  created_at: string;
+  from_member_name?: string;
+  to_member_name?: string;
 };
 
 type WalletTransferRow = {
@@ -152,9 +155,10 @@ export default function MemberGroupDetailsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'leadership' | 'decisions' | 'fedha'>('overview');
   const [error, setError] = useState<string>('');
 
-  const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
-  const [walletLoading, setWalletLoading] = useState(false);
-  const [walletError, setWalletError] = useState<string>('');
+  const [treasurySummary, setTreasurySummary] = useState<TreasurySummary | null>(null);
+  const [treasuryLoading, setTreasuryLoading] = useState(false);
+  const [treasuryError, setTreasuryError] = useState<string>('');
+  const [treasuryActivities, setTreasuryActivities] = useState<TreasuryActivity[]>([]);
 
   const [walletTransfers, setWalletTransfers] = useState<WalletTransferRow[]>([]);
   const [walletTransfersLoading, setWalletTransfersLoading] = useState(false);
@@ -222,24 +226,23 @@ export default function MemberGroupDetailsPage() {
     async function load() {
       setLoading(true);
       setError('');
-      setWalletError('');
+      setTreasuryError('');
       setWalletTransfersError('');
 
       try {
-        const [groupRes, membersRes, leadershipRes, proposalsRes, walletRes, transfersRes, paymentsRes] = await Promise.all([
+        const [groupRes, membersRes, leadershipRes, proposalsRes, treasuryRes, paymentsRes] = await Promise.all([
           fetch(`/api/member/groups/${groupId}`),
           fetch(`/api/member/groups/${groupId}/members`),
           fetch(`/api/member/groups/${groupId}/leadership`),
           fetch(`/api/member/groups/${groupId}/proposals`),
-          fetch(`/api/member/groups/${groupId}/wallet`),
-          fetch(`/api/member/groups/${groupId}/wallet/transfers`),
+          fetch(`/api/member/groups/${groupId}/treasury`),
           fetch(`/api/member/groups/${groupId}/payments`)
         ]);
 
         if (cancelled) return;
 
         if (
-          [groupRes.status, membersRes.status, leadershipRes.status, proposalsRes.status, walletRes.status, transfersRes.status, paymentsRes.status].includes(
+          [groupRes.status, membersRes.status, leadershipRes.status, proposalsRes.status, treasuryRes.status, paymentsRes.status].includes(
             401
           )
         ) {
@@ -256,8 +259,7 @@ export default function MemberGroupDetailsPage() {
         const membersJson = await membersRes.json().catch(() => null);
         const leadershipJson = await leadershipRes.json().catch(() => null);
         const proposalsJson = await proposalsRes.json().catch(() => null);
-        const walletJson = await walletRes.json().catch(() => null);
-        const transfersJson = await transfersRes.json().catch(() => null);
+        const treasuryJson = await treasuryRes.json().catch(() => null);
 
         if (!groupRes.ok) {
           setError(groupJson?.error || 'Imeshindikana kupakua taarifa za kundi.');
@@ -271,18 +273,15 @@ export default function MemberGroupDetailsPage() {
         setLeadership(Array.isArray(leadershipJson?.leadership) ? leadershipJson.leadership : []);
         setProposals(Array.isArray(proposalsJson?.proposals) ? proposalsJson.proposals : []);
 
-        if (walletRes.ok) {
-          setWalletSummary((walletJson as WalletSummary) || null);
+        if (treasuryRes.ok && treasuryJson) {
+          setTreasurySummary({
+            treasury: treasuryJson.treasury || null,
+            balanceTzs: treasuryJson.balanceTzs || 0,
+            membership: treasuryJson.membership,
+          });
         } else {
-          setWalletSummary(null);
-          setWalletError(walletJson?.error || 'Imeshindikana kupakua taarifa za wallet.');
-        }
-
-        if (transfersRes.ok) {
-          setWalletTransfers(Array.isArray(transfersJson?.transfers) ? (transfersJson.transfers as WalletTransferRow[]) : []);
-        } else {
-          setWalletTransfers([]);
-          setWalletTransfersError(transfersJson?.error || 'Imeshindikana kupakua transfers za wallet.');
+          setTreasurySummary(null);
+          setTreasuryError(treasuryJson?.error || 'Imeshindikana kupakua taarifa za hazina.');
         }
 
         const paymentsJson = await paymentsRes.json().catch(() => null);
@@ -618,53 +617,60 @@ export default function MemberGroupDetailsPage() {
                 ))}
               </div>
 
-              {/* Group wallet card */}
+              {/* Group Treasury (nTZS) */}
               <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-semibold text-white">Wallet ya Kundi (USDC)</p>
-                    <p className="text-xs text-white/30 mt-0.5">Inaonekana kwa wanachama wote.</p>
+                    <p className="text-sm font-semibold text-white">Hazina ya Kundi</p>
+                    <p className="text-xs text-white/30 mt-0.5">Fedha za kundi zinazodhibitiwa na mapendekezo.</p>
                   </div>
                   <div className="flex gap-2">
-                    {walletSummary?.wallet === null && canCreateProposal && (
+                    {treasurySummary?.treasury === null && canCreateProposal && (
                       <button
-                        disabled={walletLoading}
+                        disabled={treasuryLoading}
                         onClick={async () => {
                           if (!groupId) return;
-                          setWalletLoading(true); setWalletError('');
+                          setTreasuryLoading(true); setTreasuryError('');
                           try {
-                            const res = await fetch(`/api/member/groups/${groupId}/wallet`, { method: 'POST' });
+                            const res = await fetch(`/api/member/groups/${groupId}/treasury`, { method: 'POST' });
                             const json = await res.json().catch(() => null);
-                            if (!res.ok) { setWalletError(json?.error || 'Imeshindikana kuunda wallet.'); showToast(json?.error || 'Imeshindikana kuunda wallet.', 'error'); return; }
-                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
+                            if (!res.ok) { setTreasuryError(json?.error || 'Imeshindikana kuunda hazina.'); showToast(json?.error || 'Imeshindikana kuunda hazina.', 'error'); return; }
+                            const refresh = await fetch(`/api/member/groups/${groupId}/treasury`);
                             const rj = await refresh.json().catch(() => null);
-                            if (refresh.ok) { setWalletSummary((rj as WalletSummary) || null); showToast('Wallet imeundwa!', 'success'); }
-                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                            const trj = await tr.json().catch(() => null);
-                            if (tr.ok) setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
-                          } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana kuunda wallet.'; setWalletError(msg); showToast(msg, 'error'); }
-                          finally { setWalletLoading(false); }
+                            if (refresh.ok) {
+                              setTreasurySummary({
+                                treasury: rj.treasury || null,
+                                balanceTzs: rj.balanceTzs || 0,
+                                membership: rj.membership,
+                              });
+                              showToast('Hazina imeundwa!', 'success');
+                            }
+                          } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana kuunda hazina.'; setTreasuryError(msg); showToast(msg, 'error'); }
+                          finally { setTreasuryLoading(false); }
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
                       >
-                        {walletLoading ? 'Inaunda...' : 'Unda Wallet'}
+                        {treasuryLoading ? 'Inaunda...' : 'Unda Hazina'}
                       </button>
                     )}
-                    {walletSummary?.wallet && (
+                    {treasurySummary?.treasury && (
                       <button
-                        disabled={walletLoading}
+                        disabled={treasuryLoading}
                         onClick={async () => {
                           if (!groupId) return;
-                          setWalletLoading(true); setWalletError('');
+                          setTreasuryLoading(true); setTreasuryError('');
                           try {
-                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet`);
+                            const refresh = await fetch(`/api/member/groups/${groupId}/treasury`);
                             const rj = await refresh.json().catch(() => null);
-                            if (refresh.ok) setWalletSummary((rj as WalletSummary) || null);
-                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                            const trj = await tr.json().catch(() => null);
-                            if (tr.ok) setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
-                          } catch (err) { setWalletError(err instanceof Error ? err.message : 'Imeshindikana kupakua.'); }
-                          finally { setWalletLoading(false); }
+                            if (refresh.ok) {
+                              setTreasurySummary({
+                                treasury: rj.treasury || null,
+                                balanceTzs: rj.balanceTzs || 0,
+                                membership: rj.membership,
+                              });
+                            }
+                          } catch (err) { setTreasuryError(err instanceof Error ? err.message : 'Imeshindikana kupakua.'); }
+                          finally { setTreasuryLoading(false); }
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 disabled:opacity-50 transition-colors"
                       >
@@ -674,198 +680,52 @@ export default function MemberGroupDetailsPage() {
                   </div>
                 </div>
 
-                {walletError && (
-                  <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{walletError}</div>
+                {treasuryError && (
+                  <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{treasuryError}</div>
                 )}
 
-                {walletSummary?.wallet && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
-                      <p className="text-xs text-white/30 mb-1">Anwani</p>
-                      <p className="text-sm font-mono text-white">{shortAddress(walletSummary.wallet.address)}</p>
-                      <p className="text-xs text-white/20 mt-0.5">{walletSummary.wallet.network}</p>
-                    </div>
-                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
-                      <p className="text-xs text-white/30 mb-1">Salio la USDC</p>
-                      <p className="text-sm font-semibold text-blue-400">
-                        {formatBaseUnits(walletSummary.balances?.usdc?.amountBaseUnits, walletSummary.balances?.usdc?.decimals ?? 6)} USDC
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
-                      <p className="text-xs text-white/30 mb-1">ETH (Gas)</p>
-                      <p className="text-sm font-semibold text-white/60">
-                        {formatBaseUnits(walletSummary.balances?.eth?.amountBaseUnits, walletSummary.balances?.eth?.decimals ?? 18)} ETH
-                      </p>
-                    </div>
+                {treasurySummary?.treasury && (
+                  <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 p-5 mb-4">
+                    <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Salio la Hazina</p>
+                    <p className="text-3xl font-bold text-white">
+                      TSh <span className="text-orange-400">{(treasurySummary.balanceTzs || 0).toLocaleString()}</span>
+                    </p>
+                    <p className="text-xs text-white/30 mt-2">Fedha zinazotumika kupitia mapendekezo yaliyoidhinishwa</p>
                   </div>
                 )}
 
-                {walletSummary?.wallet && (
+                {treasurySummary?.treasury && (
                   <div>
-                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Miamala ya Hivi Karibuni</p>
+                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Shughuli za Hivi Karibuni</p>
                     <div className="space-y-2">
-                      {(walletSummary.recentTransfers || []).length === 0 ? (
-                        <p className="text-xs text-white/20 py-3 text-center">— Hakuna miamala bado —</p>
-                      ) : (walletSummary.recentTransfers || []).map((t) => (
-                        <div key={t.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
+                      {treasuryActivities.length === 0 ? (
+                        <p className="text-xs text-white/20 py-3 text-center">— Hakuna shughuli bado —</p>
+                      ) : treasuryActivities.map((activity) => (
+                        <div key={activity.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
                           <div>
-                            <p className="text-xs text-white/70">→ {shortAddress(t.to_address)}</p>
-                            <p className="text-xs text-white/30 mt-0.5">{formatBaseUnits(t.amount_base_units, 6)} USDC</p>
+                            <p className="text-xs font-medium text-white">
+                              {activity.type === 'deposit' && '↓ Mchango'}
+                              {activity.type === 'transfer' && activity.from_member_id ? '→ Malipo' : '→ Uhamishaji'}
+                              {activity.type === 'withdrawal' && '↑ Utoa'}
+                            </p>
+                            <p className="text-xs text-white/40 mt-0.5">
+                              {activity.from_member_name && `Kutoka: ${activity.from_member_name}`}
+                              {activity.to_member_name && ` → ${activity.to_member_name}`}
+                            </p>
+                            <p className="text-xs text-white/30">TSh {activity.amount_tzs.toLocaleString()}</p>
+                            {activity.note && <p className="text-xs text-white/20 mt-0.5">{activity.note}</p>}
                           </div>
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40">{t.status}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${
+                            activity.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/40'
+                          }`}>{activity.status}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {walletSummary?.wallet && (
-                  <div className="mt-5 pt-4 border-t border-white/5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">Simamia Miamala</p>
-                        <p className="text-xs text-white/30 mt-0.5">USDC pekee. Inahitaji idhini 2-kati-ya-3.</p>
-                      </div>
-                      <button
-                        disabled={walletTransfersLoading}
-                        onClick={async () => {
-                          if (!groupId) return;
-                          setWalletTransfersLoading(true); setWalletTransfersError('');
-                          try {
-                            const tr = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                            const trj = await tr.json().catch(() => null);
-                            if (!tr.ok) { setWalletTransfersError(trj?.error || 'Imeshindikana kupakua.'); return; }
-                            setWalletTransfers(Array.isArray(trj?.transfers) ? trj.transfers : []);
-                          } catch (err) { setWalletTransfersError(err instanceof Error ? err.message : 'Imeshindikana kupakua.'); }
-                          finally { setWalletTransfersLoading(false); }
-                        }}
-                        className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/40 border border-white/10 disabled:opacity-50 transition-colors"
-                      >
-                        Refresh
-                      </button>
-                    </div>
-
-                    {walletTransfersError && (
-                      <div className="mb-3 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{walletTransfersError}</div>
-                    )}
-
-                    {canProposeTransfer && (
-                      <form
-                        className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3"
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!groupId || !walletSummary?.wallet) return;
-                          const to = transferToAddress.trim();
-                          const amt = transferAmount.trim();
-                          if (!to || !amt) { setWalletTransfersError('Anwani na kiasi vinahitajika.'); return; }
-                          setTransferSubmitting(true); setWalletTransfersError('');
-                          try {
-                            const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers`, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ toAddress: to, amount: amt }),
-                            });
-                            const json = await res.json().catch(() => null);
-                            if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana kuanzisha transfer.'); showToast(json?.error || 'Imeshindikana kuanzisha transfer.', 'error'); return; }
-                            showToast('Pendekezo la transfer limetumwa!', 'success');
-                            setTransferToAddress(''); setTransferAmount('');
-                            const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                            const rj = await refresh.json().catch(() => null);
-                            if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                          } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
-                          finally { setTransferSubmitting(false); }
-                        }}
-                      >
-                        <div className="md:col-span-2">
-                          <label className="block text-xs text-white/40 mb-1">Anwani ya Mpokeaji</label>
-                          <input value={transferToAddress} onChange={e => setTransferToAddress(e.target.value)} className={dkInput} placeholder="0x..." />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-white/40 mb-1">Kiasi (USDC)</label>
-                          <input value={transferAmount} onChange={e => setTransferAmount(e.target.value)} className={dkInput} placeholder="e.g. 10.5" />
-                        </div>
-                        <div className="md:col-span-3">
-                          <button type="submit" disabled={transferSubmitting}
-                            className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors">
-                            {transferSubmitting ? 'Inatuma...' : 'Pendekeza Transfer'}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    <div className="mt-4 space-y-2">
-                      {walletTransfers.length === 0 ? (
-                        <p className="text-xs text-white/20 py-3 text-center">— Hakuna mapendekezo ya transfer bado —</p>
-                      ) : walletTransfers.map((t) => (
-                        <div key={t.id} className="rounded-lg bg-white/[0.03] border border-white/5 p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-xs font-medium text-white">Transfer #{t.id}</p>
-                              <p className="text-xs text-white/30 mt-0.5">→ {shortAddress(t.to_address)}</p>
-                              <p className="text-xs text-white/30">{formatBaseUnits(t.amount_base_units, 6)} USDC</p>
-                              <p className="text-xs text-white/20">Idhini: {t.approval_count ?? 0}/{t.approvals_required}</p>
-                              {t.executed_tx_hash && (
-                                <a href={`https://basescan.org/tx/${t.executed_tx_hash}`} target="_blank" rel="noreferrer"
-                                  className="text-xs text-orange-400 hover:text-orange-300 mt-0.5 inline-block">
-                                  Angalia BaseScan →
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                              <span className="px-2 py-0.5 rounded-full text-xs bg-white/5 text-white/40">{t.status}</span>
-                              {canApproveOrExecuteTransfer && t.status !== 'executed' && (
-                                <div className="flex gap-1.5">
-                                  <button
-                                    disabled={walletTransfersLoading}
-                                    onClick={async () => {
-                                      if (!groupId) return;
-                                      setWalletTransfersLoading(true); setWalletTransfersError('');
-                                      try {
-                                        const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/approve`, { method: 'POST' });
-                                        const json = await res.json().catch(() => null);
-                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); showToast(json?.error || 'Imeshindikana ku-idhinisha.', 'error'); return; }
-                                        showToast('Transfer imeidhinishwa!', 'success');
-                                        const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                                        const rj = await refresh.json().catch(() => null);
-                                        if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                                      } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
-                                      finally { setWalletTransfersLoading(false); }
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 disabled:opacity-50 transition-colors"
-                                  >Idhinisha</button>
-                                  <button
-                                    disabled={walletTransfersLoading}
-                                    onClick={async () => {
-                                      if (!groupId) return;
-                                      setWalletTransfersLoading(true); setWalletTransfersError('');
-                                      try {
-                                        const res = await fetch(`/api/member/groups/${groupId}/wallet/transfers/${t.id}/execute`, { method: 'POST' });
-                                        const json = await res.json().catch(() => null);
-                                        if (!res.ok) { setWalletTransfersError(json?.error || 'Imeshindikana.'); showToast(json?.error || 'Imeshindikana kutekeleza.', 'error'); return; }
-                                        showToast('Transfer imetekelezwa!', 'success');
-                                        const rw = await fetch(`/api/member/groups/${groupId}/wallet`);
-                                        const rwj = await rw.json().catch(() => null);
-                                        if (rw.ok) setWalletSummary((rwj as WalletSummary) || null);
-                                        const refresh = await fetch(`/api/member/groups/${groupId}/wallet/transfers`);
-                                        const rj = await refresh.json().catch(() => null);
-                                        if (refresh.ok) setWalletTransfers(Array.isArray(rj?.transfers) ? rj.transfers : []);
-                                      } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana.'; setWalletTransfersError(msg); showToast(msg, 'error'); }
-                                      finally { setWalletTransfersLoading(false); }
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg text-xs bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
-                                  >Tekeleza</button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {walletSummary?.wallet === null && !walletLoading && !walletError && (
-                  <p className="text-xs text-white/20 mt-3 text-center">— Hakuna wallet iliyoundwa bado —</p>
+                {treasurySummary?.treasury === null && !treasuryLoading && !treasuryError && (
+                  <p className="text-xs text-white/20 mt-3 text-center">— Hazina haijafunguliwa bado —</p>
                 )}
               </div>
 
