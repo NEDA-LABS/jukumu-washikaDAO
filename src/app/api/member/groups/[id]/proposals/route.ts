@@ -73,12 +73,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           p.title,
           p.description,
           p.status,
+          p.payment_amount_tzs,
+          p.recipient_member_id,
+          p.recipient_phone,
+          p.payment_status,
+          p.payment_tx_id,
+          p.executed_at,
           p.created_at,
           p.updated_at,
           m.full_name AS created_by_name,
-          m.id AS created_by_member_id
+          m.id AS created_by_member_id,
+          rm.full_name AS recipient_name
         FROM group_proposals p
         JOIN members m ON m.id = p.created_by_member_id
+        LEFT JOIN members rm ON rm.id = p.recipient_member_id
         WHERE p.group_id = $1
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT 100
@@ -110,9 +118,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === 'string' ? body.title.trim() : '';
   const description = typeof body?.description === 'string' ? body.description.trim() : '';
+  const paymentAmountTzs = body?.paymentAmountTzs ? Number(body.paymentAmountTzs) : null;
+  const recipientMemberId = body?.recipientMemberId ? Number(body.recipientMemberId) : null;
+  const recipientPhone = typeof body?.recipientPhone === 'string' ? body.recipientPhone.trim() : null;
 
   if (!title) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+  }
+
+  // Validate payment proposal fields
+  if (paymentAmountTzs !== null) {
+    if (!Number.isFinite(paymentAmountTzs) || paymentAmountTzs <= 0) {
+      return NextResponse.json({ error: 'Invalid payment amount' }, { status: 400 });
+    }
+    if (!recipientMemberId && !recipientPhone) {
+      return NextResponse.json({ error: 'Payment proposal requires a recipient' }, { status: 400 });
+    }
   }
 
   const client = await pool.connect();
@@ -130,11 +151,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const insertRes = await client.query(
       `
-        INSERT INTO group_proposals (group_id, created_by_member_id, title, description)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO group_proposals (
+          group_id, created_by_member_id, title, description,
+          payment_amount_tzs, recipient_member_id, recipient_phone, payment_status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
       `,
-      [groupId, membership.member_id, title, description || null]
+      [
+        groupId,
+        membership.member_id,
+        title,
+        description || null,
+        paymentAmountTzs,
+        recipientMemberId,
+        recipientPhone,
+        paymentAmountTzs ? 'pending' : null
+      ]
     );
 
     const proposalId = (insertRes.rows[0] as { id: number }).id;
@@ -147,12 +180,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           p.title,
           p.description,
           p.status,
+          p.payment_amount_tzs,
+          p.recipient_member_id,
+          p.recipient_phone,
+          p.payment_status,
+          p.payment_tx_id,
+          p.executed_at,
           p.created_at,
           p.updated_at,
           m.full_name AS created_by_name,
-          m.id AS created_by_member_id
+          m.id AS created_by_member_id,
+          rm.full_name AS recipient_name
         FROM group_proposals p
         JOIN members m ON m.id = p.created_by_member_id
+        LEFT JOIN members rm ON rm.id = p.recipient_member_id
         WHERE p.id = $1
         LIMIT 1
       `,
