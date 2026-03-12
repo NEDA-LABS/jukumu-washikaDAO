@@ -160,7 +160,6 @@ export default function MemberDashboard() {
   const menuItems = [
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
     { id: 'wallet', name: 'Wallet', icon: WalletIcon },
-    { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'group', name: 'My Group', icon: UserGroupIcon },
     { id: 'investments', name: 'My Investments', icon: CurrencyDollarIcon },
     { id: 'learning', name: 'Training', icon: AcademicCapIcon },
@@ -182,7 +181,7 @@ export default function MemberDashboard() {
       case 'learning':
         return <LearningSection memberTraining={memberTraining} user={user} />;
       case 'settings':
-        return <MemberSettingsSection />;
+        return <MemberSettingsSection onNavigate={setActiveSection} user={user} memberProfile={memberProfile} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       default:
         return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
     }
@@ -261,15 +260,12 @@ export default function MemberDashboard() {
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
 
-        {/* Top bar (mobile only — shows hamburger + page title) */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-[#111111] border-b border-white/5 sticky top-0 z-10">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5"
-          >
-            <Bars3Icon className="h-5 w-5" />
-          </button>
-          <span className="text-sm font-medium text-white">{activeName}</span>
+        {/* Top bar (mobile only — page title + avatar) */}
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#111111] border-b border-white/5 sticky top-0 z-10">
+          <span className="text-sm font-semibold text-white">{activeName}</span>
+          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+            <span className="text-xs font-bold text-white">{(user.fullName || user.email || 'U')[0].toUpperCase()}</span>
+          </div>
         </header>
 
         {/* Page title bar (desktop) */}
@@ -286,7 +282,7 @@ export default function MemberDashboard() {
         </div>
 
         {/* Content */}
-        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 overflow-y-auto">
+        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
@@ -296,6 +292,66 @@ export default function MemberDashboard() {
           )}
         </main>
       </div>
+      {/* ── Mobile Bottom Nav ── */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111]/95 backdrop-blur-xl border-t border-white/[0.06]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex items-end justify-around px-1 h-16">
+          {/* Home */}
+          <button
+            onClick={() => setActiveSection('overview')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'overview' ? 'text-orange-400' : 'text-white/30'}`}
+          >
+            <ChartBarIcon className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Nyumbani</span>
+          </button>
+
+          {/* Wallet */}
+          <button
+            onClick={() => setActiveSection('wallet')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'wallet' ? 'text-orange-400' : 'text-white/30'}`}
+          >
+            <WalletIcon className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Pochi</span>
+          </button>
+
+          {/* Groups — elevated centre tab */}
+          <button
+            onClick={() => setActiveSection('group')}
+            className="flex flex-col items-center gap-1 -mt-5"
+          >
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
+              activeSection === 'group'
+                ? 'bg-orange-500 shadow-orange-500/40 scale-105'
+                : 'bg-[#1e1e1e] border border-white/10'
+            }`}>
+              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-white/50'}`} />
+            </div>
+            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-orange-400' : 'text-white/30'}`}>Kundi</span>
+          </button>
+
+          {/* Training */}
+          <button
+            onClick={() => setActiveSection('learning')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'learning' ? 'text-orange-400' : 'text-white/30'}`}
+          >
+            <AcademicCapIcon className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Mafunzo</span>
+          </button>
+
+          {/* Settings (includes Profile) */}
+          <button
+            onClick={() => setActiveSection('settings')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${
+              activeSection === 'settings' || activeSection === 'profile' ? 'text-orange-400' : 'text-white/30'
+            }`}
+          >
+            <CogIcon className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Zaidi</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
@@ -1345,14 +1401,53 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
   );
 }
 
-function MemberSettingsSection() {
+function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData }: {
+  onNavigate: (section: string) => void;
+  user: any;
+  memberProfile: any;
+  loadMemberData: () => void;
+}) {
   return (
-    <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-8 text-center">
-      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-        <CogIcon className="h-6 w-6 text-white/30" />
+    <div className="space-y-4">
+      {/* Profile card */}
+      <button
+        onClick={() => onNavigate('profile')}
+        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#1a1a1a] border border-white/[0.06] hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
+      >
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
+          <span className="text-lg font-bold text-white">
+            {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>
+          <p className="text-xs text-white/40 truncate">{memberProfile?.email || user?.email}</p>
+        </div>
+        <svg className="w-4 h-4 text-white/20 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* Settings menu items */}
+      <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] divide-y divide-white/[0.04]">
+        {[
+          { label: 'Taarifa za Akaunti', desc: 'Jina, nambari ya simu, barua pepe', icon: UserIcon },
+          { label: 'Usalama', desc: 'Nywila na uthibitishaji', icon: CogIcon },
+          { label: 'Arifa', desc: 'Mipangilio ya arifa', icon: DocumentTextIcon },
+          { label: 'Lugha', desc: 'Kiswahili / English', icon: BookOpenIcon },
+        ].map((item) => (
+          <div key={item.label} className="flex items-center gap-3 px-4 py-3.5 opacity-50">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center shrink-0">
+              <item.icon className="h-4 w-4 text-white/50" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white/70">{item.label}</p>
+              <p className="text-xs text-white/30">{item.desc}</p>
+            </div>
+            <span className="text-[10px] text-white/20 bg-white/5 px-2 py-0.5 rounded-full">Hivi karibuni</span>
+          </div>
+        ))}
       </div>
-      <p className="text-sm font-medium text-white mb-1">Mipangilio ya Akaunti</p>
-      <p className="text-xs text-white/30">Huduma hii itapatikana hivi karibuni.</p>
     </div>
   );
 }
