@@ -321,10 +321,10 @@ export default function MemberDashboard() {
             onClick={() => setActiveSection('group')}
             className="flex flex-col items-center gap-1 -mt-5"
           >
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
               activeSection === 'group'
-                ? 'bg-orange-500 shadow-orange-500/40 scale-105'
-                : 'bg-[#1e1e1e] border border-white/10'
+                ? 'bg-orange-500 shadow-xl shadow-orange-500/40 scale-105'
+                : 'bg-[#1e1e1e] border border-orange-500/20 shadow-lg shadow-orange-500/10'
             }`}>
               <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-white/50'}`} />
             </div>
