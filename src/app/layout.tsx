@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
@@ -8,6 +8,13 @@ import { appConfig } from '@/app.config'
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#0d0d0d',
+}
 
 export const metadata: Metadata = {
   title: `${appConfig.site.name} - Empowering Communities Through Collective Investment`,
@@ -28,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sw" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden`}>
         <ThemeProvider>
           <LanguageProvider>
             <ToastProvider>{children}</ToastProvider>
