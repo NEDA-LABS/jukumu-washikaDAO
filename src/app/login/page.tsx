@@ -172,6 +172,11 @@ export default function LoginPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all"
                 placeholder="07xx xxx xxx au email@example.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="username"
+                inputMode="email"
               />
             </div>
 
@@ -194,6 +199,10 @@ export default function LoginPage() {
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all pr-11"
                   placeholder="Weka nywila yako"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

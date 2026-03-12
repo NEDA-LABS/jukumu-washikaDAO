@@ -6,6 +6,7 @@ import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkMemberWallet } from '@/lib/ntzs-db';
 
 let cachedPasswordColumn: 'password_hash' | 'password' | null = null;
+let ntzsSchemaReady = false;
 
 async function getPasswordColumn(client: PoolClient) {
   if (cachedPasswordColumn) return cachedPasswordColumn;
@@ -142,7 +143,11 @@ export async function POST(request: NextRequest) {
     // Provision nTZS wallet (non-blocking — signup succeeds even if nTZS is down)
     let walletAddress: string | null = null;
     try {
-      await ensureNtzsSchema(client);
+      // Run schema setup only once per process lifetime
+      if (!ntzsSchemaReady) {
+        await ensureNtzsSchema(client);
+        ntzsSchemaReady = true;
+      }
 
       // Find the linked member record
       const memberRes = await client.query(
@@ -154,11 +159,16 @@ export async function POST(request: NextRequest) {
         const member = memberRes.rows[0] as { id: number; phone: string | null; email: string | null };
         // For phone-only users, members.email is NULL — fall back to the synthetic
         // "{phone}@phone.jukumu" address stored in users.email so nTZS always gets an email.
-        const ntzsUser = await ntzs.users.create({
-          externalId: `member_${member.id}`,
-          email: member.email || user.email || undefined,
-          phone: member.phone ? normalizePhone(member.phone) : undefined,
-        });
+        const ntzsUser = await Promise.race([
+          ntzs.users.create({
+            externalId: `member_${member.id}`,
+            email: member.email || user.email || undefined,
+            phone: member.phone ? normalizePhone(member.phone) : undefined,
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('nTZS timeout')), 5000)
+          ),
+        ]);
 
         await linkMemberWallet(client, member.id, ntzsUser.id, ntzsUser.walletAddress);
         walletAddress = ntzsUser.walletAddress;

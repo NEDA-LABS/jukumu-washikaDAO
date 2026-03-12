@@ -28,6 +28,11 @@ if (databaseUrl) {
   }
 }
 
-const pool = new Pool(config);
+const pool = new Pool({
+  ...config,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 
 export default pool;

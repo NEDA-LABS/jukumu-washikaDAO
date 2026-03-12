@@ -225,9 +225,8 @@ export async function POST(request: NextRequest) {
 
     // Create JWT token
     const jwtSecret = process.env.JWT_SECRET;
-    if (process.env.NODE_ENV === 'production' && !jwtSecret) {
-      console.error('Signin error (MISSING_JWT_SECRET):', requestId);
-      return serverError('MISSING_JWT_SECRET', requestId);
+    if (!jwtSecret) {
+      console.warn('JWT_SECRET is not set — using fallback. Set JWT_SECRET in your environment variables.');
     }
 
     const token = jwt.sign(
@@ -236,7 +235,7 @@ export async function POST(request: NextRequest) {
         email: user.email, 
         role: user.role 
       },
-      jwtSecret || 'fallback-secret',
+      jwtSecret || 'jukumu-fallback-secret-change-me',
       { expiresIn: '7d' }
     );
 

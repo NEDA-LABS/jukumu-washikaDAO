@@ -298,11 +298,11 @@ export default function RegistrationSection({ title }: { title?: string }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="password" className={lbl}>Nywila *</label>
-                    <input type="password" id="password" name="password" required value={formData.password} onChange={handleChange} className={fi} placeholder="Nywila yenye nguvu" />
+                    <input type="password" id="password" name="password" required value={formData.password} onChange={handleChange} className={fi} placeholder="Nywila yenye nguvu" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="new-password" />
                   </div>
                   <div>
                     <label htmlFor="confirmPassword" className={lbl}>Thibitisha Nywila *</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className={fi} placeholder="Rudia nywila" />
+                    <input type="password" id="confirmPassword" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className={fi} placeholder="Rudia nywila" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="new-password" />
                   </div>
                 </div>
               </div>
