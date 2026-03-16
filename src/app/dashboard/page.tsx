@@ -1456,15 +1456,16 @@ function ContentSection({ educationalContent, user, loadAdminData, showToast }: 
     saveToCourse ? setAiSaving(true) : setAiGenerating(true);
 
     try {
-      const response = await fetch('/api/admin/ai/generate-lessons', {
+      const response = await fetch('/api/admin/ai/generate-lessons-anthropic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          educationalContentId: managingLessons.id,
+          courseId: managingLessons.id,
           language: aiLanguage,
           lessonCount: aiLessonCount,
           difficulty: aiDifficulty,
           topicPrompt: aiTopicPrompt,
+          lessonType: 'course_lesson',
           saveToCourse
         })
       });
