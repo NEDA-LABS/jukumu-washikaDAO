@@ -3,6 +3,8 @@ import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { PoolClient, QueryResult } from 'pg';
+import { ntzs, NtzsApiError } from '@/lib/ntzs';
+import { ensureNtzsSchema, linkMemberWallet } from '@/lib/ntzs-db';
 
 let cachedPasswordColumn: 'password_hash' | 'password' | null = null;
 let cachedMembersHasEmail: boolean | null = null;
@@ -254,6 +256,57 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 // 7 days
+    });
+
+    // Non-blocking: provision nTZS wallet for existing users who don't have one yet
+    setImmediate(async () => {
+      try {
+        const walletClient = await pool.connect();
+        try {
+          await ensureNtzsSchema(walletClient);
+
+          let memberRes = await walletClient.query(
+            `SELECT id, phone, email, ntzs_user_id FROM members WHERE user_id = $1 LIMIT 1`,
+            [user.id]
+          );
+
+          // Auto-create member record if missing
+          if (memberRes.rows.length === 0) {
+            const nm = await walletClient.query(
+              `INSERT INTO members (user_id, full_name, email, phone, status)
+               VALUES ($1, $2, $3, $4, 'active')
+               ON CONFLICT DO NOTHING
+               RETURNING id, phone, email, ntzs_user_id`,
+              [user.id, user.full_name, user.email || null, null]
+            );
+            memberRes = nm;
+          }
+
+          if (memberRes.rows.length > 0) {
+            const member = memberRes.rows[0] as { id: number; phone: string | null; email: string | null; ntzs_user_id: string | null };
+            if (!member.ntzs_user_id) {
+              const ntzsUser = await Promise.race([
+                ntzs.users.create({
+                  externalId: `member_${member.id}`,
+                  email: member.email || user.email || undefined,
+                  phone: member.phone ? member.phone.replace(/\D/g, '') : undefined,
+                }),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('nTZS timeout')), 5000)),
+              ]);
+              await linkMemberWallet(walletClient, member.id, ntzsUser.id, ntzsUser.walletAddress);
+              console.log(`[signin] nTZS wallet provisioned for member ${member.id}`);
+            }
+          }
+        } finally {
+          walletClient.release();
+        }
+      } catch (err) {
+        if (err instanceof NtzsApiError) {
+          console.error(`[signin] wallet provisioning failed (${err.status}):`, err.body);
+        } else {
+          console.error('[signin] wallet provisioning failed:', err);
+        }
+      }
     });
 
     return response;
