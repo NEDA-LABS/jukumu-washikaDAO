@@ -44,6 +44,9 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
   const [formData, setFormData] = useState({ amount: '', phone: '', groupId: '', toMemberId: '', purpose: 'contribution' });
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string }>>([]);
+  const [availableMembers, setAvailableMembers] = useState<Array<{ id: number; full_name: string; email: string }>>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     try {
@@ -98,6 +101,34 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
     };
     load();
   }, [fetchBalance, fetchTransactions, syncTransactions]);
+
+  const fetchTransferOptions = async () => {
+    setLoadingOptions(true);
+    try {
+      const [groupsRes, membersRes] = await Promise.all([
+        fetch('/api/member/groups'),
+        fetch('/api/member/available-members'),
+      ]);
+      if (groupsRes.ok) {
+        const groupsData = await groupsRes.json();
+        setMyGroups(groupsData.groups || []);
+      }
+      if (membersRes.ok) {
+        const membersData = await membersRes.json();
+        setAvailableMembers(membersData.members || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch transfer options:', e);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (modal === 'transfer') {
+      fetchTransferOptions();
+    }
+  }, [modal]);
 
   const provisionWallet = async () => {
     setProvisioning(true);
@@ -385,29 +416,47 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
 
                   {formData.purpose === 'contribution' && (
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Group ID</label>
-                      <input
-                        type="number"
-                        required
-                        value={formData.groupId}
-                        onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="ID ya kundi"
-                      />
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">Chagua Kundi</label>
+                      {loadingOptions ? (
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Inapakia...</div>
+                      ) : myGroups.length === 0 ? (
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Hujajiunga na kundi lolote</div>
+                      ) : (
+                        <select
+                          required
+                          value={formData.groupId}
+                          onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+                          className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
+                        >
+                          <option value="">-- Chagua kundi --</option>
+                          {myGroups.map(g => (
+                            <option key={g.id} value={g.id}>{g.name}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   )}
 
                   {formData.purpose === 'p2p' && (
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Member ID ya Mpokezi</label>
-                      <input
-                        type="number"
-                        required
-                        value={formData.toMemberId}
-                        onChange={(e) => setFormData({ ...formData, toMemberId: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="ID ya mwanachama"
-                      />
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">Chagua Mpokezi</label>
+                      {loadingOptions ? (
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Inapakia...</div>
+                      ) : availableMembers.length === 0 ? (
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Hakuna wanachama wengine</div>
+                      ) : (
+                        <select
+                          required
+                          value={formData.toMemberId}
+                          onChange={(e) => setFormData({ ...formData, toMemberId: e.target.value })}
+                          className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
+                        >
+                          <option value="">-- Chagua mwanachama --</option>
+                          {availableMembers.map(m => (
+                            <option key={m.id} value={m.id}>{m.full_name} ({m.email})</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   )}
                 </>
