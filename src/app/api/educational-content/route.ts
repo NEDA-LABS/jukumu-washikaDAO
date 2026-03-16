@@ -5,13 +5,20 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeUnpublished = searchParams.get('includeUnpublished') === 'true';
+    const published = searchParams.get('published') === 'true';
     
     const client = await pool.connect();
     const result = await client.query(`
-      SELECT ec.*, u.full_name as author_name
+      SELECT 
+        ec.*, 
+        u.full_name as author_name,
+        COUNT(l.id) as lesson_count,
+        COALESCE(SUM(l.duration_minutes), 0) as total_duration
       FROM educational_content ec
       LEFT JOIN users u ON ec.author_id = u.id
-      ${includeUnpublished ? '' : 'WHERE ec.is_published = true'}
+      LEFT JOIN lessons l ON l.educational_content_id = ec.id
+      ${!includeUnpublished || published ? 'WHERE ec.is_published = true' : ''}
+      GROUP BY ec.id, u.full_name
       ORDER BY ec.created_at DESC
     `);
     client.release();
