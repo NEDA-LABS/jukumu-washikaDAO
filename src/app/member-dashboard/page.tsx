@@ -661,6 +661,10 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [joinMessage, setJoinMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5' });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -717,6 +721,34 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
     finally { setLoading(false); }
   };
 
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setCreateError('');
+    try {
+      const res = await fetch('/api/member/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: createForm.name.trim(),
+          monthlyContribution: Number(createForm.monthlyContribution),
+          votingNumerator: Number(createForm.votingNumerator),
+          votingDenominator: Number(createForm.votingDenominator),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowCreateModal(false);
+        setCreateForm({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5' });
+        await loadMyGroups();
+        if (data.group?.id) router.push(`/member-dashboard/groups/${data.group.id}`);
+      } else {
+        setCreateError(data.error || 'Imeshindikana kuunda kundi.');
+      }
+    } catch { setCreateError('Hitilafu imetokea. Jaribu tena.'); }
+    finally { setCreateLoading(false); }
+  };
+
   const statusConfig: Record<string, { label: string; cls: string }> = {
     pending:  { label: 'Inasubiri', cls: 'bg-yellow-500/15 text-yellow-400' },
     approved: { label: 'Imeidhinishwa', cls: 'bg-emerald-500/15 text-emerald-400' },
@@ -725,6 +757,21 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
   return (
     <div className="space-y-6">
+
+      {/* Header with Create Group button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-base font-semibold text-white">Makundi Yangu</p>
+          <p className="text-xs text-white/30 mt-0.5">Makundi unayoshiriki nayo</p>
+        </div>
+        <button
+          onClick={() => { setShowCreateModal(true); setCreateError(''); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium transition-colors"
+        >
+          <span className="text-base leading-none">+</span> Unda Kundi
+        </button>
+      </div>
+
       {myGroups.length > 0 ? (
         <>
           <div className="grid gap-3">
@@ -847,6 +894,88 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Create Group modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-base font-semibold text-white mb-1">Unda Kundi Jipya</h3>
+            <p className="text-xs text-white/40 mb-5">Utakuwa kiongozi wa kundi hili moja kwa moja.</p>
+
+            <form onSubmit={handleCreateGroup} className="space-y-4">
+              <div>
+                <label className="block text-xs text-white/40 mb-1">Jina la Kundi *</label>
+                <input
+                  value={createForm.name}
+                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Mfano: Vikundi vya Maendeleo"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-white/40 mb-1">Mchango wa Kila Mwezi (TSh) *</label>
+                <input
+                  type="number"
+                  value={createForm.monthlyContribution}
+                  onChange={e => setCreateForm(f => ({ ...f, monthlyContribution: e.target.value }))}
+                  placeholder="Mfano: 50000"
+                  min="1"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-white/40 mb-1">Kiwango cha Kupiga Kura</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={createForm.votingNumerator}
+                    onChange={e => setCreateForm(f => ({ ...f, votingNumerator: e.target.value }))}
+                    min="1"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-orange-500/50"
+                  />
+                  <span className="text-white/30 text-sm">kati ya</span>
+                  <input
+                    type="number"
+                    value={createForm.votingDenominator}
+                    onChange={e => setCreateForm(f => ({ ...f, votingDenominator: e.target.value }))}
+                    min="1"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-orange-500/50"
+                  />
+                  <span className="text-xs text-white/30">kura kupita</span>
+                </div>
+                <p className="text-xs text-white/20 mt-1">
+                  Sasa hivi: {createForm.votingNumerator}/{createForm.votingDenominator} kura zinahitajika kupitisha pendekezo
+                </p>
+              </div>
+
+              {createError && (
+                <div className="px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{createError}</div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateModal(false); setCreateError(''); }}
+                  className="flex-1 py-2.5 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+                >
+                  Ghairi
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="flex-1 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                >
+                  {createLoading ? 'Inaunda...' : 'Unda Kundi'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
+import { getAuthTokenPayload } from '@/lib/auth';
+
+function requireAdmin(request: NextRequest) {
+  const auth = getAuthTokenPayload(request);
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (auth.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  return null;
+}
 
 export async function GET() {
   try {
@@ -35,6 +43,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authErr = requireAdmin(request);
+  if (authErr) return authErr;
+
   try {
     const body = await request.json();
     const { name, leaderId, monthlyContribution, foundedDate } = body;
@@ -117,6 +128,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const authErr = requireAdmin(request);
+  if (authErr) return authErr;
+
   try {
     const body = await request.json();
     const { id, name, leaderId, monthlyContribution, status } = body;
@@ -140,6 +154,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authErr = requireAdmin(request);
+  if (authErr) return authErr;
+
   try {
     const body = await request.json();
     const { id } = body;
