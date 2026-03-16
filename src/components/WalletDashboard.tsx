@@ -15,6 +15,7 @@ import {
 
 interface WalletDashboardProps {
   userId: number;
+  username?: string;
 }
 
 interface Transaction {
@@ -85,7 +86,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
   );
 }
 
-export default function WalletDashboard({ userId }: WalletDashboardProps) {
+export default function WalletDashboard({ userId, username }: WalletDashboardProps) {
   const [balance, setBalance] = useState<number>(0);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [provisioned, setProvisioned] = useState(false);
@@ -337,8 +338,13 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
           <div>
             <p className="text-sm text-muted-foreground mb-1">Salio la Wallet</p>
             <p className="text-3xl font-bold text-foreground">{formatTzs(balance)}</p>
+            {username && (
+              <p className="text-sm text-emerald-400 mt-2 font-medium">
+                @{username}
+              </p>
+            )}
             {walletAddress && (
-              <p className="text-xs text-muted-foreground mt-2 font-mono">
+              <p className="text-xs text-muted-foreground mt-1 font-mono">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </p>
             )}

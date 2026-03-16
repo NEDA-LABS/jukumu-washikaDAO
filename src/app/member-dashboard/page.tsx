@@ -171,7 +171,7 @@ export default function MemberDashboard() {
       case 'overview':
         return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
       case 'wallet':
-        return <WalletDashboard userId={user?.id || 0} />;
+        return <WalletDashboard userId={user?.id || 0} username={memberProfile?.username} />;
       case 'profile':
         return <ProfileSection memberProfile={memberProfile} user={user} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       case 'group':
@@ -1631,39 +1631,63 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       {/* Username section */}
       <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] p-5">
         <h3 className="text-sm font-semibold text-white mb-1">Username ya Uhamisho Pesa</h3>
-        <p className="text-xs text-white/40 mb-4">Weka username yako ili wenzako waweze kukutumia pesa kwa urahisi</p>
+        <p className="text-xs text-white/40 mb-4">
+          {memberProfile?.username 
+            ? 'Wenzako wanaweza kukutumia pesa kwa kutumia username yako'
+            : 'Weka username yako ili wenzako waweze kukutumia pesa kwa urahisi'
+          }
+        </p>
         
-        <div className="space-y-3">
-          <div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">@</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder="juma_ally"
-                className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
-                pattern="[a-z0-9_]{3,30}"
-                minLength={3}
-                maxLength={30}
-              />
-              {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">Inakagua...</span>}
-              {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">✓ Inapatikana</span>}
-              {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">✗ Imechukuliwa</span>}
+        {memberProfile?.username ? (
+          <div className="flex items-center justify-between p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <span className="text-emerald-400 text-lg">@</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-emerald-400">@{memberProfile.username}</p>
+                <p className="text-xs text-white/40">Username yako</p>
+              </div>
             </div>
-            <p className="text-xs text-white/30 mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
-            {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
-            {saveSuccess && <p className="text-xs text-emerald-400 mt-1">✓ Imehifadhiwa!</p>}
+            <div className="text-emerald-400">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">@</span>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  placeholder="juma_ally"
+                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  pattern="[a-z0-9_]{3,30}"
+                  minLength={3}
+                  maxLength={30}
+                />
+                {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">Inakagua...</span>}
+                {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">✓ Inapatikana</span>}
+                {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">✗ Imechukuliwa</span>}
+              </div>
+              <p className="text-xs text-white/30 mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
+              {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
+              {saveSuccess && <p className="text-xs text-emerald-400 mt-1">✓ Imehifadhiwa!</p>}
+            </div>
 
-          <button
-            onClick={saveUsername}
-            disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
-            className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
-          </button>
-        </div>
+            <button
+              onClick={saveUsername}
+              disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
+              className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Settings menu items */}
