@@ -10,6 +10,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ClockIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 interface WalletDashboardProps {
@@ -32,6 +33,57 @@ interface Transaction {
 }
 
 type ModalType = 'deposit' | 'withdraw' | 'transfer' | null;
+
+interface CustomDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+}
+
+function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50"
+      >
+        <span>{selectedOption?.label || placeholder || 'Chagua...'}</span>
+        <ChevronDownIcon className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute z-20 mt-1 w-full rounded-lg border border-white/10 bg-[#1a1a1a] shadow-xl overflow-hidden">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                  value === option.value
+                    ? 'bg-orange-500/10 text-orange-400'
+                    : 'text-white hover:bg-white/5'
+                }`}
+              >
+                {value === option.value && <span className="mr-2">✓</span>}
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function WalletDashboard({ userId }: WalletDashboardProps) {
   const [balance, setBalance] = useState<number>(0);
@@ -404,14 +456,14 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">Aina</label>
-                    <select
+                    <CustomDropdown
                       value={formData.purpose}
-                      onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                      className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
-                    >
-                      <option value="contribution">Mchango kwa Kundi</option>
-                      <option value="p2p">Tuma kwa Mwanachama</option>
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, purpose: val })}
+                      options={[
+                        { value: 'contribution', label: 'Mchango kwa Kundi' },
+                        { value: 'p2p', label: 'Tuma kwa Mwanachama' },
+                      ]}
+                    />
                   </div>
 
                   {formData.purpose === 'contribution' && (
@@ -422,17 +474,12 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
                       ) : myGroups.length === 0 ? (
                         <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Hujajiunga na kundi lolote</div>
                       ) : (
-                        <select
-                          required
+                        <CustomDropdown
                           value={formData.groupId}
-                          onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
-                          className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
-                        >
-                          <option value="">-- Chagua kundi --</option>
-                          {myGroups.map(g => (
-                            <option key={g.id} value={g.id}>{g.name}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setFormData({ ...formData, groupId: val })}
+                          options={myGroups.map(g => ({ value: String(g.id), label: g.name }))}
+                          placeholder="-- Chagua kundi --"
+                        />
                       )}
                     </div>
                   )}
