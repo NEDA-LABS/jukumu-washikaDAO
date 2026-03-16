@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const client = await pool.connect();
 
   try {
-    const { userId, purpose, amountTzs, toMemberId, groupId } = await request.json();
+    const { userId, purpose, amountTzs, toMemberId, toUsername, groupId } = await request.json();
 
     if (!userId || !amountTzs || !purpose) {
       return NextResponse.json({ error: 'userId, amountTzs, and purpose are required' }, { status: 400 });
@@ -119,25 +119,47 @@ export async function POST(request: NextRequest) {
 
     } else {
       // P2P: Member → Member
-      if (!toMemberId) {
-        return NextResponse.json({ error: 'toMemberId is required for p2p transfers' }, { status: 400 });
-      }
       if (!sender.ntzs_user_id) {
         return NextResponse.json({ error: 'Your wallet is not provisioned' }, { status: 400 });
       }
 
-      const recipientRes = await client.query(
-        `SELECT ntzs_user_id FROM members WHERE id = $1`,
-        [toMemberId]
-      );
-      if (!(recipientRes.rows[0] as { ntzs_user_id: string | null })?.ntzs_user_id) {
-        return NextResponse.json({ error: 'Recipient wallet not provisioned' }, { status: 400 });
+      let recipientMemberId: number;
+
+      // Support both username and member ID lookup
+      if (toUsername) {
+        const usernameRes = await client.query(
+          `SELECT id, ntzs_user_id, full_name FROM members WHERE lower(username) = lower($1) LIMIT 1`,
+          [toUsername]
+        );
+        if (usernameRes.rows.length === 0) {
+          return NextResponse.json({ error: `Username "${toUsername}" not found` }, { status: 404 });
+        }
+        const recipient = usernameRes.rows[0] as { id: number; ntzs_user_id: string | null; full_name: string };
+        if (!recipient.ntzs_user_id) {
+          return NextResponse.json({ error: `${recipient.full_name}'s wallet is not provisioned` }, { status: 400 });
+        }
+        recipientMemberId = recipient.id;
+        toNtzsUserId = recipient.ntzs_user_id;
+      } else if (toMemberId) {
+        const recipientRes = await client.query(
+          `SELECT ntzs_user_id FROM members WHERE id = $1`,
+          [toMemberId]
+        );
+        if (recipientRes.rows.length === 0) {
+          return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
+        }
+        if (!(recipientRes.rows[0] as { ntzs_user_id: string | null })?.ntzs_user_id) {
+          return NextResponse.json({ error: 'Recipient wallet not provisioned' }, { status: 400 });
+        }
+        recipientMemberId = toMemberId;
+        toNtzsUserId = (recipientRes.rows[0] as { ntzs_user_id: string }).ntzs_user_id;
+      } else {
+        return NextResponse.json({ error: 'toUsername or toMemberId is required for p2p transfers' }, { status: 400 });
       }
 
       fromNtzsUserId = sender.ntzs_user_id;
-      toNtzsUserId = (recipientRes.rows[0] as { ntzs_user_id: string }).ntzs_user_id;
       fromMemberId = sender.id;
-      toMemberIdFinal = toMemberId;
+      toMemberIdFinal = recipientMemberId;
     }
 
     // Execute transfer via nTZS

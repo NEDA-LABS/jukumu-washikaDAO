@@ -41,7 +41,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
-  const [formData, setFormData] = useState({ amount: '', phone: '', groupId: '', toMemberId: '', purpose: 'contribution' });
+  const [formData, setFormData] = useState({ amount: '', phone: '', groupId: '', toMemberId: '', toUsername: '', purpose: 'contribution' });
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string }>>([]);
@@ -182,7 +182,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
           amountTzs: parseInt(formData.amount),
           purpose: formData.purpose,
           groupId: formData.groupId ? parseInt(formData.groupId) : undefined,
-          toMemberId: formData.toMemberId ? parseInt(formData.toMemberId) : undefined,
+          toUsername: formData.toUsername || undefined,
         };
       }
 
@@ -198,7 +198,7 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
 
       if (res.ok) {
         setFeedback({ type: 'success', message: data.message || 'Imefanikiwa!' });
-        setFormData({ amount: '', phone: '', groupId: '', toMemberId: '', purpose: 'contribution' });
+        setFormData({ amount: '', phone: '', groupId: '', toMemberId: '', toUsername: '', purpose: 'contribution' });
         // Refresh immediately then poll for status updates
         setTimeout(() => { fetchBalance(); fetchTransactions(); }, 2000);
         setTimeout(() => syncTransactions(), 8000);
@@ -439,24 +439,19 @@ export default function WalletDashboard({ userId }: WalletDashboardProps) {
 
                   {formData.purpose === 'p2p' && (
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Chagua Mpokezi</label>
-                      {loadingOptions ? (
-                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Inapakia...</div>
-                      ) : availableMembers.length === 0 ? (
-                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Hakuna wanachama wengine</div>
-                      ) : (
-                        <select
-                          required
-                          value={formData.toMemberId}
-                          onChange={(e) => setFormData({ ...formData, toMemberId: e.target.value })}
-                          className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white"
-                        >
-                          <option value="">-- Chagua mwanachama --</option>
-                          {availableMembers.map(m => (
-                            <option key={m.id} value={m.id}>{m.full_name} ({m.email})</option>
-                          ))}
-                        </select>
-                      )}
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">Username ya Mpokezi</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.toUsername}
+                        onChange={(e) => setFormData({ ...formData, toUsername: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="mfano: juma_ally"
+                        pattern="[a-z0-9_]{3,30}"
+                        minLength={3}
+                        maxLength={30}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Ingiza username ya mwanachama (herufi ndogo, nambari, na _ tu)</p>
                     </div>
                   )}
                 </>

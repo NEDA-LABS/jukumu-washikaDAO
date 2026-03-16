@@ -1536,6 +1536,77 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
   memberProfile: any;
   loadMemberData: () => void;
 }) {
+  const [username, setUsername] = useState(memberProfile?.username || '');
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [usernameError, setUsernameError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (memberProfile?.username) setUsername(memberProfile.username);
+  }, [memberProfile]);
+
+  const checkUsername = async (val: string) => {
+    if (!val || val.length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
+    setUsernameStatus('checking');
+    try {
+      const res = await fetch(`/api/member/username?check=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (res.ok && data.available) {
+        setUsernameStatus('available');
+        setUsernameError('');
+      } else {
+        setUsernameStatus('taken');
+        setUsernameError(data.error || 'Username taken');
+      }
+    } catch {
+      setUsernameStatus('invalid');
+      setUsernameError('Error checking username');
+    }
+  };
+
+  const handleUsernameChange = (val: string) => {
+    const cleaned = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    setUsername(cleaned);
+    setSaveSuccess(false);
+    if (cleaned !== memberProfile?.username) {
+      checkUsername(cleaned);
+    } else {
+      setUsernameStatus('idle');
+    }
+  };
+
+  const saveUsername = async () => {
+    if (!username || username === memberProfile?.username) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch('/api/member/username', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSaveSuccess(true);
+        setUsernameStatus('idle');
+        loadMemberData();
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        setUsernameError(data.error || 'Failed to save');
+        setUsernameStatus('invalid');
+      }
+    } catch {
+      setUsernameError('Network error');
+      setUsernameStatus('invalid');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Profile card */}
@@ -1550,12 +1621,50 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>
-          <p className="text-xs text-white/40 truncate">{memberProfile?.email || user?.email}</p>
+          <p className="text-xs text-white/40 truncate">{memberProfile?.username ? `@${memberProfile.username}` : memberProfile?.email || user?.email}</p>
         </div>
         <svg className="w-4 h-4 text-white/20 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
+
+      {/* Username section */}
+      <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] p-5">
+        <h3 className="text-sm font-semibold text-white mb-1">Username ya Uhamisho Pesa</h3>
+        <p className="text-xs text-white/40 mb-4">Weka username yako ili wenzako waweze kukutumia pesa kwa urahisi</p>
+        
+        <div className="space-y-3">
+          <div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">@</span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => handleUsernameChange(e.target.value)}
+                placeholder="juma_ally"
+                className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                pattern="[a-z0-9_]{3,30}"
+                minLength={3}
+                maxLength={30}
+              />
+              {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">Inakagua...</span>}
+              {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">✓ Inapatikana</span>}
+              {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">✗ Imechukuliwa</span>}
+            </div>
+            <p className="text-xs text-white/30 mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
+            {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
+            {saveSuccess && <p className="text-xs text-emerald-400 mt-1">✓ Imehifadhiwa!</p>}
+          </div>
+
+          <button
+            onClick={saveUsername}
+            disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
+            className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
+          </button>
+        </div>
+      </div>
 
       {/* Settings menu items */}
       <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] divide-y divide-white/[0.04]">
