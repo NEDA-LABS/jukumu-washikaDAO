@@ -20,7 +20,7 @@ interface Course {
   title: string;
   description: string;
   language: string;
-  difficulty: string;
+  difficulty_level: string;
   category: string;
   lesson_count: number;
   total_duration: number;
@@ -36,6 +36,7 @@ interface UserProgress {
 
 export default function JifunzePage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -48,6 +49,7 @@ export default function JifunzePage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
 
   useEffect(() => {
+    setMounted(true);
     loadData();
   }, []);
 
@@ -75,7 +77,7 @@ export default function JifunzePage() {
 
   const filteredCourses = courses.filter(course => {
     const langMatch = selectedLanguage === 'all' || course.language === selectedLanguage;
-    const diffMatch = selectedDifficulty === 'all' || course.difficulty === selectedDifficulty;
+    const diffMatch = selectedDifficulty === 'all' || course.difficulty_level === selectedDifficulty;
     return langMatch && diffMatch;
   });
 
@@ -109,7 +111,7 @@ export default function JifunzePage() {
     advanced: 'Juu',
   };
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
@@ -314,10 +316,10 @@ export default function JifunzePage() {
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                        difficultyColors[course.difficulty as keyof typeof difficultyColors] || difficultyColors.beginner
+                        difficultyColors[course.difficulty_level as keyof typeof difficultyColors] || difficultyColors.beginner
                       }`}
                     >
-                      {difficultyLabels[course.difficulty as keyof typeof difficultyLabels] || course.difficulty}
+                      {difficultyLabels[course.difficulty_level as keyof typeof difficultyLabels] || course.difficulty_level}
                     </span>
                     <button className="flex items-center gap-1 text-sm font-medium text-orange-400 group-hover:gap-2 transition-all">
                       Start

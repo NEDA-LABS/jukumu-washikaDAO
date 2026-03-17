@@ -8,17 +8,23 @@ export async function GET(request: NextRequest) {
     const published = searchParams.get('published') === 'true';
     
     const client = await pool.connect();
+    const whereClause = !includeUnpublished || published ? 'WHERE ec.is_published = true' : '';
     const result = await client.query(`
       SELECT 
-        ec.*, 
+        ec.*,
         u.full_name as author_name,
-        COUNT(l.id) as lesson_count,
-        COALESCE(SUM(l.duration_minutes), 0) as total_duration
+        COALESCE(lc.lesson_count, 0) as lesson_count,
+        COALESCE(lc.total_duration, 0) as total_duration
       FROM educational_content ec
       LEFT JOIN users u ON ec.author_id = u.id
-      LEFT JOIN training_lessons l ON l.educational_content_id = ec.id
-      ${!includeUnpublished || published ? 'WHERE ec.is_published = true' : ''}
-      GROUP BY ec.id, u.full_name
+      LEFT JOIN (
+        SELECT educational_content_id,
+               COUNT(id) as lesson_count,
+               SUM(COALESCE(duration_minutes, 0)) as total_duration
+        FROM training_lessons
+        GROUP BY educational_content_id
+      ) lc ON lc.educational_content_id = ec.id
+      ${whereClause}
       ORDER BY ec.created_at DESC
     `);
     client.release();

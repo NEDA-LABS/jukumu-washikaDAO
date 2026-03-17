@@ -26,7 +26,7 @@ interface Course {
   title: string;
   description: string;
   language: string;
-  difficulty: string;
+  difficulty_level: string;
   category: string;
 }
 
@@ -35,6 +35,7 @@ export default function CoursePage() {
   const params = useParams();
   const courseId = params.id;
 
+  const [mounted, setMounted] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -42,6 +43,7 @@ export default function CoursePage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    setMounted(true);
     loadCourseData();
   }, [courseId]);
 
@@ -102,7 +104,7 @@ export default function CoursePage() {
   const completedCount = lessons.filter(l => l.completed).length;
   const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
