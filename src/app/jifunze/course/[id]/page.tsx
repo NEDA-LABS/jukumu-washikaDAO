@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { marked } from 'marked';
 import { useRouter, useParams } from 'next/navigation';
 import {
   ArrowLeftIcon,
@@ -233,12 +234,19 @@ export default function CoursePage() {
                   </div>
                 </div>
 
-                <div className="prose prose-invert max-w-none">
-                  <div
-                    className="text-white/80 leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: currentLesson.content.replace(/\n/g, '<br/>') }}
-                  />
-                </div>
+                <div
+                  className="prose prose-invert max-w-none text-white/80 leading-relaxed
+                    [&_h1]:text-white [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-3
+                    [&_h2]:text-white [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-2
+                    [&_h3]:text-white/90 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
+                    [&_p]:mb-3 [&_p]:text-white/80
+                    [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_li]:mb-1 [&_li]:text-white/80
+                    [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3
+                    [&_strong]:text-white [&_strong]:font-semibold
+                    [&_blockquote]:border-l-2 [&_blockquote]:border-orange-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-white/60
+                    [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:text-orange-300 [&_code]:text-sm"
+                  dangerouslySetInnerHTML={{ __html: marked.parse(currentLesson.content) as string }}
+                />
 
                 {user && !currentLesson.completed && (
                   <div className="mt-8 pt-6 border-t border-white/10">

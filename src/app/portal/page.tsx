@@ -17,10 +17,12 @@ import {
 export default function MemberPortal() {
   const { } = useLanguage();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<{fullName?: string; email: string} | null>(null);
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
+    setMounted(true);
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
@@ -34,8 +36,12 @@ export default function MemberPortal() {
     router.push('/');
   };
 
-  if (!user) {
-    return <div>Loading...</div>;
+  if (!mounted || !user) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
+      </div>
+    );
   }
 
   const menuItems = [
