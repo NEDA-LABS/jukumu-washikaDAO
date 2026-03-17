@@ -178,9 +178,10 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('AI generate course error:', error);
-    if (error instanceof Error && error.message === 'MISSING_ANTHROPIC_API_KEY') {
-      return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (msg === 'MISSING_ANTHROPIC_API_KEY') {
+      return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured on this server' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
