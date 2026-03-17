@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
         // Get current max lesson order
         const maxOrderResult = await pool.query(
-          'SELECT COALESCE(MAX(lesson_order), 0) as max_order FROM lessons WHERE educational_content_id = $1',
+          'SELECT COALESCE(MAX(lesson_order), 0) as max_order FROM training_lessons WHERE educational_content_id = $1',
           [courseId]
         );
         let currentOrder = maxOrderResult.rows[0].max_order;
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
         for (const lesson of lessons) {
           currentOrder++;
           await pool.query(
-            `INSERT INTO lessons (educational_content_id, title, content, duration_minutes, lesson_order, language, lesson_type, created_at)
+            `INSERT INTO training_lessons (educational_content_id, title, content, duration_minutes, lesson_order, language, lesson_type, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, 'text', NOW())`,
             [
               courseId,

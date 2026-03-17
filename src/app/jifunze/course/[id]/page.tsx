@@ -47,16 +47,10 @@ export default function CoursePage() {
 
   const loadCourseData = async () => {
     try {
-      // Check if user is logged in
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userRes = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUser(userData);
-        }
+      // Check if user is logged in using the app's auth pattern
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        setUser(JSON.parse(userData));
       }
 
       // Load course details
@@ -66,12 +60,12 @@ export default function CoursePage() {
         setCourse(courseData);
       }
 
-      // Load lessons
+      // Load lessons via public endpoint
       const lessonsRes = await fetch(`/api/admin/educational-content/${courseId}/lessons`);
       if (lessonsRes.ok) {
         const lessonsData = await lessonsRes.json();
-        setLessons(lessonsData);
-        if (lessonsData.length > 0) {
+        setLessons(Array.isArray(lessonsData) ? lessonsData : []);
+        if (Array.isArray(lessonsData) && lessonsData.length > 0) {
           setCurrentLesson(lessonsData[0]);
         }
       }

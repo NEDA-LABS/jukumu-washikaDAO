@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         COALESCE(SUM(l.duration_minutes), 0) as total_duration
       FROM educational_content ec
       LEFT JOIN users u ON ec.author_id = u.id
-      LEFT JOIN lessons l ON l.educational_content_id = ec.id
+      LEFT JOIN training_lessons l ON l.educational_content_id = ec.id
       ${!includeUnpublished || published ? 'WHERE ec.is_published = true' : ''}
       GROUP BY ec.id, u.full_name
       ORDER BY ec.created_at DESC

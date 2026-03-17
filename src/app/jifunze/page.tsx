@@ -53,32 +53,18 @@ export default function JifunzePage() {
 
   const loadData = async () => {
     try {
-      // Check if user is logged in
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userRes = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUser(userData);
-          
-          // Load user progress if member
-          if (userData.role === 'member') {
-            const progressRes = await fetch(`/api/training/progress?userId=${userData.id}`);
-            if (progressRes.ok) {
-              const progressData = await progressRes.json();
-              setUserProgress(progressData);
-            }
-          }
-        }
+      // Check if user is logged in using the app's auth pattern
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
       }
 
       // Load published courses
       const coursesRes = await fetch('/api/educational-content?published=true');
       if (coursesRes.ok) {
         const coursesData = await coursesRes.json();
-        setCourses(coursesData);
+        setCourses(Array.isArray(coursesData) ? coursesData : []);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
