@@ -1325,6 +1325,7 @@ function ContentSection({ educationalContent, user, loadAdminData, showToast }: 
   const [aiCourseSaving, setAiCourseSaving] = useState(false);
   const [aiCourseError, setAiCourseError] = useState<string | null>(null);
   const [aiCoursePreview, setAiCoursePreview] = useState<any | null>(null);
+  const [contentFormTab, setContentFormTab] = useState<'ai' | 'manual'>('ai');
   const [contentForm, setContentForm] = useState({
     title: '',
     description: '',
@@ -1603,200 +1604,199 @@ function ContentSection({ educationalContent, user, loadAdminData, showToast }: 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-white">Mafunzo na Elimu</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { setShowAiCourseModal(true); setAiCoursePreview(null); setAiCourseError(null); setAiCoursePrompt(''); }}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 text-sm font-medium transition-colors"
-          >
-            ✦ AI Tengeneza Kozi
-          </button>
-          <button
-            onClick={() => {
-              setEditingContent(null);
-              setContentForm({ title: '', description: '', content: '', category: '', duration: '', difficulty_level: 'beginner', image_url: '', is_published: false, certificates_enabled: false, pass_threshold: 100 });
-              setShowContentForm(true);
-            }}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
-          >
-            <PlusIcon className="h-4 w-4" /> Mafunzo Mapya
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setEditingContent(null);
+            setContentFormTab('ai');
+            setAiCoursePreview(null);
+            setAiCourseError(null);
+            setAiCoursePrompt('');
+            setContentForm({ title: '', description: '', content: '', category: '', duration: '', difficulty_level: 'beginner', image_url: '', is_published: false, certificates_enabled: false, pass_threshold: 100 });
+            setShowContentForm(true);
+          }}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+        >
+          <PlusIcon className="h-4 w-4" /> Mafunzo Mapya
+        </button>
       </div>
 
-      {/* AI Course Generator Modal */}
-      {showAiCourseModal && (
+      {showContentForm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-[#1a1a1a] border border-purple-500/20 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
+              {/* Header */}
               <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-base font-semibold text-white">✦ AI Tengeneza Kozi Kamili</h3>
-                  <p className="text-xs text-white/30 mt-0.5">Claude ataunda kichwa, maelezo, na masomo yote</p>
-                </div>
-                <button onClick={() => { setShowAiCourseModal(false); setAiCoursePreview(null); setAiCourseError(null); }} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
+                <h3 className="text-base font-semibold text-white">{editingContent ? 'Hariri Mafunzo' : 'Mafunzo Mapya'}</h3>
+                <button onClick={() => { setShowContentForm(false); setEditingContent(null); setAiCoursePreview(null); }} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
               </div>
 
-              {!aiCoursePreview ? (
+              {/* Tabs — only show when creating new content */}
+              {!editingContent && (
+                <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
+                  <button
+                    onClick={() => { setContentFormTab('ai'); setAiCoursePreview(null); setAiCourseError(null); }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'ai' ? 'bg-orange-500 text-white shadow' : 'text-white/40 hover:text-white/60'}`}
+                  >
+                    ✦ AI Generate
+                  </button>
+                  <button
+                    onClick={() => setContentFormTab('manual')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'manual' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+                  >
+                    Manual
+                  </button>
+                </div>
+              )}
+
+              {/* AI Tab */}
+              {(contentFormTab === 'ai' && !editingContent) && (
                 <div className="space-y-4">
-                  <div>
-                    <label className={dkLabel}>Mada ya Kozi *</label>
-                    <textarea
-                      value={aiCoursePrompt}
-                      onChange={e => setAiCoursePrompt(e.target.value)}
-                      className={`${dkInput} resize-none`}
-                      rows={3}
-                      placeholder="Mfano: Jinsi ya kuanzisha na kukuza biashara ndogo Tanzania..."
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className={dkLabel}>Lugha</label>
-                      <select value={aiCourseLang} onChange={e => setAiCourseLang(e.target.value as 'sw'|'en')} className={dkSelect}>
-                        <option value="sw">Swahili</option>
-                        <option value="en">English</option>
+                  {!aiCoursePreview ? (
+                    <>
+                      <div>
+                        <label className={dkLabel}>Elezea kozi unayotaka AI itengeneze *</label>
+                        <textarea
+                          value={aiCoursePrompt}
+                          onChange={e => setAiCoursePrompt(e.target.value)}
+                          className={`${dkInput} resize-none`}
+                          rows={3}
+                          placeholder="Mfano: Jinsi ya kuanzisha na kukuza biashara ndogo Tanzania, ikijumuisha bajeti, akiba, na uuzaji..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={dkLabel}>Lugha</label>
+                          <select value={aiCourseLang} onChange={e => setAiCourseLang(e.target.value as 'sw'|'en')} className={dkSelect}>
+                            <option value="sw">Swahili</option>
+                            <option value="en">English</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={dkLabel}>Kiwango</label>
+                          <select value={aiCourseDiff} onChange={e => setAiCourseDiff(e.target.value as any)} className={dkSelect}>
+                            <option value="beginner">Mwanzo</option>
+                            <option value="intermediate">Kati</option>
+                            <option value="advanced">Juu</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={dkLabel}>Kategoria</label>
+                          <select value={aiCourseCategory} onChange={e => setAiCourseCategory(e.target.value)} className={dkSelect}>
+                            <option value="Biashara">Biashara</option>
+                            <option value="Fedha">Fedha</option>
+                            <option value="Uongozi">Uongozi</option>
+                            <option value="Akiba">Akiba</option>
+                            <option value="Teknolojia">Teknolojia</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={dkLabel}>Idadi ya Masomo</label>
+                          <input type="number" min={1} max={20} value={aiCourseLessonCount} onChange={e => setAiCourseLessonCount(parseInt(e.target.value||'1'))} className={dkInput} />
+                        </div>
+                      </div>
+                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
+                      <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                        <button onClick={() => handleAiGenerateCourse(false)} disabled={aiCourseGenerating || !aiCoursePrompt.trim()} className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">
+                          {aiCourseGenerating ? 'Inatengeneza...' : '✦ Tengeneza na AI'}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-xl bg-orange-500/5 border border-orange-500/20 p-4">
+                        <p className="text-xs text-orange-400 font-semibold mb-3">✦ Preview ya Kozi Iliyotengenezwa na AI</p>
+                        <h4 className="text-base font-bold text-white mb-1">{aiCoursePreview.title}</h4>
+                        <p className="text-xs text-white/50 mb-3">{aiCoursePreview.description}</p>
+                        <div className="flex items-center gap-3 text-xs text-white/30">
+                          <span>{aiCoursePreview.category}</span><span>·</span>
+                          <span>{aiCoursePreview.difficulty_level}</span><span>·</span>
+                          <span>{aiCoursePreview.duration}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white/40 mb-2">Masomo ({aiCoursePreview.lessons?.length})</p>
+                        <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                          {aiCoursePreview.lessons?.map((l: any, i: number) => (
+                            <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-semibold text-white">{i+1}. {l.title}</p>
+                                <p className="text-[10px] text-white/25">{l.duration_minutes} min</p>
+                              </div>
+                              <p className="text-[10px] text-white/30 mt-1 line-clamp-2">{String(l.content||'').slice(0, 140)}...</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={() => { setAiCoursePreview(null); setAiCourseError(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">← Rudi</button>
+                        <button onClick={() => handleAiGenerateCourse(true)} disabled={aiCourseSaving} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">
+                          {aiCourseSaving ? 'Inahifadhi...' : '✓ Hifadhi Kozi na Masomo Yote'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Manual Tab (or editing) */}
+              {(contentFormTab === 'manual' || editingContent) && (
+                <form onSubmit={handleContentSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div><label className={dkLabel}>Kichwa cha Habari *</label><input type="text" value={contentForm.title} onChange={e => setContentForm({...contentForm, title: e.target.value})} className={dkInput} required /></div>
+                    <div><label className={dkLabel}>Kategoria *</label>
+                      <select value={contentForm.category} onChange={e => setContentForm({...contentForm, category: e.target.value})} className={dkSelect} required>
+                        <option value="">Chagua Kategoria</option>
+                        <option value="Biashara">Biashara</option>
+                        <option value="Uongozi">Uongozi</option>
+                        <option value="Fedha">Fedha</option>
+                        <option value="Teknolojia">Teknolojia</option>
                       </select>
                     </div>
-                    <div>
-                      <label className={dkLabel}>Kiwango</label>
-                      <select value={aiCourseDiff} onChange={e => setAiCourseDiff(e.target.value as any)} className={dkSelect}>
+                  </div>
+                  <div><label className={dkLabel}>Maelezo Mafupi *</label><textarea value={contentForm.description} onChange={e => setContentForm({...contentForm, description: e.target.value})} className={`${dkInput} resize-none`} rows={3} required /></div>
+                  <div><label className={dkLabel}>Maudhui Kamili *</label><textarea value={contentForm.content} onChange={e => setContentForm({...contentForm, content: e.target.value})} className={`${dkInput} resize-none`} rows={6} required /></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div><label className={dkLabel}>Muda</label><input type="text" value={contentForm.duration} onChange={e => setContentForm({...contentForm, duration: e.target.value})} className={dkInput} placeholder="2 masaa" /></div>
+                    <div><label className={dkLabel}>Kiwango</label>
+                      <select value={contentForm.difficulty_level} onChange={e => setContentForm({...contentForm, difficulty_level: e.target.value})} className={dkSelect}>
                         <option value="beginner">Mwanzo</option>
                         <option value="intermediate">Kati</option>
                         <option value="advanced">Juu</option>
                       </select>
                     </div>
-                    <div>
-                      <label className={dkLabel}>Kategoria</label>
-                      <select value={aiCourseCategory} onChange={e => setAiCourseCategory(e.target.value)} className={dkSelect}>
-                        <option value="Biashara">Biashara</option>
-                        <option value="Fedha">Fedha</option>
-                        <option value="Uongozi">Uongozi</option>
-                        <option value="Akiba">Akiba</option>
-                        <option value="Teknolojia">Teknolojia</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={dkLabel}>Idadi ya Masomo</label>
-                      <input type="number" min={1} max={20} value={aiCourseLessonCount} onChange={e => setAiCourseLessonCount(parseInt(e.target.value||'1'))} className={dkInput} />
-                    </div>
+                    <div><label className={dkLabel}>URL ya Picha</label><input type="url" value={contentForm.image_url} onChange={e => setContentForm({...contentForm, image_url: e.target.value})} className={dkInput} /></div>
                   </div>
-                  {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
-                  <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => setShowAiCourseModal(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
-                    <button onClick={() => handleAiGenerateCourse(false)} disabled={aiCourseGenerating || !aiCoursePrompt.trim()} className="flex-1 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">
-                      {aiCourseGenerating ? 'Inatengeneza...' : '✦ Tengeneza Preview'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-xl bg-purple-500/5 border border-purple-500/20 p-4">
-                    <p className="text-xs text-purple-400 font-semibold mb-3">✦ Preview ya Kozi</p>
-                    <h4 className="text-base font-bold text-white mb-1">{aiCoursePreview.title}</h4>
-                    <p className="text-xs text-white/50 mb-2">{aiCoursePreview.description}</p>
-                    <div className="flex items-center gap-3 text-xs text-white/30">
-                      <span>{aiCoursePreview.category}</span>
-                      <span>·</span>
-                      <span>{aiCoursePreview.difficulty_level}</span>
-                      <span>·</span>
-                      <span>{aiCoursePreview.duration}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-white/40 mb-2">Masomo ({aiCoursePreview.lessons?.length})</p>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {aiCoursePreview.lessons?.map((l: any, i: number) => (
-                        <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold text-white">{i+1}. {l.title}</p>
-                            <p className="text-[10px] text-white/25">{l.duration_minutes} min</p>
-                          </div>
-                          <p className="text-[10px] text-white/30 mt-1 line-clamp-2">{String(l.content||'').slice(0, 120)}...</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => { setAiCoursePreview(null); setAiCourseError(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">← Rudi</button>
-                    <button onClick={() => handleAiGenerateCourse(true)} disabled={aiCourseSaving} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">
-                      {aiCourseSaving ? 'Inahifadhi...' : '✓ Hifadhi Kozi na Masomo'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showContentForm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-semibold text-white">{editingContent ? 'Hariri Mafunzo' : 'Mafunzo Mapya'}</h3>
-                <button onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
-              </div>
-              <form onSubmit={handleContentSubmit} className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div><label className={dkLabel}>Kichwa cha Habari *</label><input type="text" value={contentForm.title} onChange={e => setContentForm({...contentForm, title: e.target.value})} className={dkInput} required /></div>
-                  <div><label className={dkLabel}>Kategoria *</label>
-                    <select value={contentForm.category} onChange={e => setContentForm({...contentForm, category: e.target.value})} className={dkSelect} required>
-                      <option value="">Chagua Kategoria</option>
-                      <option value="Biashara">Biashara</option>
-                      <option value="Uongozi">Uongozi</option>
-                      <option value="Fedha">Fedha</option>
-                      <option value="Teknolojia">Teknolojia</option>
-                    </select>
-                  </div>
-                </div>
-                <div><label className={dkLabel}>Maelezo Mafupi *</label><textarea value={contentForm.description} onChange={e => setContentForm({...contentForm, description: e.target.value})} className={`${dkInput} resize-none`} rows={3} required /></div>
-                <div><label className={dkLabel}>Maudhui Kamili *</label><textarea value={contentForm.content} onChange={e => setContentForm({...contentForm, content: e.target.value})} className={`${dkInput} resize-none`} rows={6} required /></div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div><label className={dkLabel}>Muda</label><input type="text" value={contentForm.duration} onChange={e => setContentForm({...contentForm, duration: e.target.value})} className={dkInput} placeholder="2 masaa" /></div>
-                  <div><label className={dkLabel}>Kiwango</label>
-                    <select value={contentForm.difficulty_level} onChange={e => setContentForm({...contentForm, difficulty_level: e.target.value})} className={dkSelect}>
-                      <option value="beginner">Mwanzo</option>
-                      <option value="intermediate">Kati</option>
-                      <option value="advanced">Juu</option>
-                    </select>
-                  </div>
-                  <div><label className={dkLabel}>URL ya Picha</label><input type="url" value={contentForm.image_url} onChange={e => setContentForm({...contentForm, image_url: e.target.value})} className={dkInput} /></div>
-                </div>
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 space-y-3">
-                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Chaguo za Kozi</p>
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input type="checkbox" checked={contentForm.is_published} onChange={e => setContentForm({...contentForm, is_published: e.target.checked})} className="accent-orange-500 w-4 h-4" />
-                    <span className="text-sm text-white/60">Chapisha mara moja (inaonekana kwa wanachama)</span>
-                  </label>
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input type="checkbox" checked={contentForm.certificates_enabled} onChange={e => setContentForm({...contentForm, certificates_enabled: e.target.checked})} className="accent-orange-500 w-4 h-4" />
-                    <div>
-                      <span className="text-sm text-white/60">Toa Cheti cha Kukamilisha</span>
-                      <p className="text-xs text-white/25 mt-0.5">Wanachama watapata cheti baada ya kukamilisha kozi</p>
-                    </div>
-                  </label>
-                  {contentForm.certificates_enabled && (
-                    <div className="pl-6">
-                      <label className={dkLabel}>Kiwango cha Kupita (% ya masomo)</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="range" min={50} max={100} step={5}
-                          value={contentForm.pass_threshold}
-                          onChange={e => setContentForm({...contentForm, pass_threshold: parseInt(e.target.value)})}
-                          className="flex-1 accent-orange-500"
-                        />
-                        <span className="text-sm font-semibold text-orange-400 w-12 text-right">{contentForm.pass_threshold}%</span>
+                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 space-y-3">
+                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Chaguo za Kozi</p>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="checkbox" checked={contentForm.is_published} onChange={e => setContentForm({...contentForm, is_published: e.target.checked})} className="accent-orange-500 w-4 h-4" />
+                      <span className="text-sm text-white/60">Chapisha mara moja (inaonekana kwa wanachama)</span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="checkbox" checked={contentForm.certificates_enabled} onChange={e => setContentForm({...contentForm, certificates_enabled: e.target.checked})} className="accent-orange-500 w-4 h-4" />
+                      <div>
+                        <span className="text-sm text-white/60">Toa Cheti cha Kukamilisha</span>
+                        <p className="text-xs text-white/25 mt-0.5">Wanachama watapata cheti baada ya kukamilisha kozi</p>
                       </div>
-                      <p className="text-xs text-white/20 mt-1">Mwanachama lazima akamilishe angalau {contentForm.pass_threshold}% ya masomo kupata cheti.</p>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
-                  <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingContent ? 'Hifadhi Mabadiliko' : 'Hifadhi'}</button>
-                </div>
-              </form>
+                    </label>
+                    {contentForm.certificates_enabled && (
+                      <div className="pl-6">
+                        <label className={dkLabel}>Kiwango cha Kupita (% ya masomo)</label>
+                        <div className="flex items-center gap-3">
+                          <input type="range" min={50} max={100} step={5} value={contentForm.pass_threshold} onChange={e => setContentForm({...contentForm, pass_threshold: parseInt(e.target.value)})} className="flex-1 accent-orange-500" />
+                          <span className="text-sm font-semibold text-orange-400 w-12 text-right">{contentForm.pass_threshold}%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                    <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingContent ? 'Hifadhi Mabadiliko' : 'Hifadhi'}</button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
