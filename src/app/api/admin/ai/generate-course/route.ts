@@ -24,8 +24,8 @@ async function callAnthropic(system: string, user: string): Promise<unknown> {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
-      max_tokens: 8000,
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
+      max_tokens: 4096,
       system,
       messages: [{ role: 'user', content: user }],
     }),
@@ -40,13 +40,38 @@ async function callAnthropic(system: string, user: string): Promise<unknown> {
   const text = data.content?.[0]?.text;
   if (!text) throw new Error('No content in Anthropic response');
 
-  // Strip markdown code fences if present
-  const cleaned = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  // Extract JSON object — find first { and last }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`AI did not return JSON. Response: ${text.slice(0, 200)}`);
+  }
+  const extracted = text.slice(start, end + 1);
 
+  // Repair: escape literal newlines/tabs inside JSON string values
+  function repairJson(s: string): string {
+    let inString = false;
+    let escaped = false;
+    let out = '';
+    for (const ch of s) {
+      if (escaped) { escaped = false; out += ch; continue; }
+      if (ch === '\\') { escaped = true; out += ch; continue; }
+      if (ch === '"') { inString = !inString; out += ch; continue; }
+      if (inString) {
+        if (ch === '\n') { out += '\\n'; continue; }
+        if (ch === '\r') { out += '\\r'; continue; }
+        if (ch === '\t') { out += '\\t'; continue; }
+      }
+      out += ch;
+    }
+    return out;
+  }
+
+  const cleaned = repairJson(extracted);
   try {
     return JSON.parse(cleaned);
   } catch {
-    throw new Error('Failed to parse JSON from Anthropic response');
+    throw new Error(`Failed to parse JSON: ${cleaned.slice(0, 300)}`);
   }
 }
 
@@ -65,29 +90,11 @@ export async function POST(request: NextRequest) {
     const diffLabel = diffMap[difficulty];
 
     const system =
-      `You are an expert educational content creator for financial literacy, entrepreneurship, and cooperative savings training in Tanzania.\n` +
-      `Generate a complete course in ${langName} at ${diffLabel} level.\n\n` +
-      `Return ONLY valid JSON — no markdown fences, no extra text — with this exact structure:\n` +
-      `{\n` +
-      `  "title": "Course title",\n` +
-      `  "description": "2-3 sentence course description",\n` +
-      `  "category": "Biashara | Fedha | Uongozi | Teknolojia | Akiba",\n` +
-      `  "duration": "Xh Ym",\n` +
-      `  "lessons": [\n` +
-      `    {\n` +
-      `      "title": "Lesson title",\n` +
-      `      "content": "Full lesson content in markdown",\n` +
-      `      "duration_minutes": 15\n` +
-      `    }\n` +
-      `  ]\n` +
-      `}\n\n` +
-      `Content guidelines:\n` +
-      `- Make lessons practical and culturally relevant to Tanzania\n` +
-      `- Use real-world Tanzanian business examples (shillingi, M-Pesa, VICOBA, etc.)\n` +
-      `- Format each lesson content with ## headings, bullet points, numbered steps\n` +
-      `- End each lesson with a practical exercise or reflection question\n` +
-      `- Ensure logical progression across lessons\n` +
-      `- Keep language clear and accessible for the difficulty level`;
+      `You are an expert educational content creator for Tanzania. Generate a course in ${langName} at ${diffLabel} level.\n` +
+      `Return ONLY a raw JSON object — no markdown, no extra text, no code fences.\n` +
+      `Structure:\n` +
+      `{"title":"...","description":"2 sentences.","category":"Biashara|Fedha|Uongozi|Teknolojia|Akiba","duration":"Xh Ym","lessons":[{"title":"...","content":"150-250 word lesson with 2-3 key points and one practical exercise.","duration_minutes":15}]}\n` +
+      `Rules: JSON only. Lesson content max 250 words each. Use Tanzania examples (M-Pesa, VICOBA, shillingi). No markdown fences.`;
 
     const user =
       `Topic: ${topicPrompt}\n` +
