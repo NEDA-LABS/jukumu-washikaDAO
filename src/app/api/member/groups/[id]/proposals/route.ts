@@ -18,6 +18,19 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
     );
   `);
 
+  // Add payment columns if they don't exist yet (safe to run every time)
+  const alterStatements = [
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_amount_tzs NUMERIC(15,2)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS recipient_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS recipient_phone VARCHAR(20)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) CHECK (payment_status IN ('pending','processing','completed','failed'))`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_tx_id VARCHAR(255)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS executed_at TIMESTAMP`,
+  ];
+  for (const sql of alterStatements) {
+    await client.query(sql);
+  }
+
   await client.query(`
     CREATE INDEX IF NOT EXISTS idx_group_proposals_group_id ON group_proposals(group_id);
   `);
