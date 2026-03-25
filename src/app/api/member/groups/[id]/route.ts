@@ -51,6 +51,8 @@ export async function GET(
         g.monthly_contribution,
         g.status,
         g.created_at,
+        g.group_code,
+        g.join_policy,
         u.full_name AS leader_name,
         (SELECT COUNT(*)::int FROM group_members gm2 WHERE gm2.group_id = g.id AND gm2.status = 'active') AS member_count
       FROM groups g

@@ -38,6 +38,8 @@ type Group = {
   created_at?: string;
   leader_name?: string | null;
   member_count?: number;
+  group_code?: string | null;
+  join_policy?: string | null;
 };
 
 type MemberRow = {
@@ -149,6 +151,7 @@ export default function MemberGroupDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<Group | null>(null);
   const [membership, setMembership] = useState<Membership | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
@@ -513,6 +516,30 @@ export default function MemberGroupDetailsPage() {
                       </span>
                     )}
                   </div>
+                  {group?.group_code && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(group.group_code!).then(() => {
+                          setCodeCopied(true);
+                          showToast('Nambari ya kundi imenakiliwa!', 'success');
+                          setTimeout(() => setCodeCopied(false), 2000);
+                        });
+                      }}
+                      className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/30 transition-all group/code"
+                      title="Gusa kunakili nambari ya kundi"
+                    >
+                      <span className="text-xs font-mono font-semibold text-orange-400 tracking-wider">{group.group_code}</span>
+                      <svg className={`w-3.5 h-3.5 transition-colors ${codeCopied ? 'text-emerald-400' : 'text-white/30 group-hover/code:text-white/60'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {codeCopied
+                          ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        }
+                      </svg>
+                      <span className="text-xs text-white/25 group-hover/code:text-white/50 transition-colors">
+                        {codeCopied ? 'Imenakiliwa!' : 'Nakili'}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
               {canCreateProposal && (

@@ -653,24 +653,26 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
 function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const router = useRouter();
   const [myGroups, setMyGroups] = useState<any[]>([]);
-  const [availableGroups, setAvailableGroups] = useState<any[]>([]);
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
-  const [showAvailableGroups, setShowAvailableGroups] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<any>(null);
-  const [joinMessage, setJoinMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5' });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
 
+  // Join by code state
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinLookupResult, setJoinLookupResult] = useState<any>(null);
+  const [joinLookupError, setJoinLookupError] = useState('');
+  const [joinLookupLoading, setJoinLookupLoading] = useState(false);
+  const [joinMessage, setJoinMessage] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinFeedback, setJoinFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      setUser(JSON.parse(userData));
       loadMyGroups();
-      loadAvailableGroups();
       loadJoinRequests();
     }
   }, [memberProfile]);
@@ -683,14 +685,6 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
     } catch (e) { console.error(e); }
   };
 
-  const loadAvailableGroups = async () => {
-    try {
-      const res = await fetch('/api/member/available-groups');
-      if (res.ok) { const d = await res.json(); setAvailableGroups(d.groups || []); }
-      else if (res.status === 401) router.push('/login');
-    } catch (e) { console.error(e); }
-  };
-
   const loadJoinRequests = async () => {
     try {
       const res = await fetch('/api/member/join-requests');
@@ -699,25 +693,53 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
     } catch (e) { console.error(e); }
   };
 
-  const handleJoinRequest = async (groupId: number) => {
-    if (!user?.id) return;
-    setLoading(true);
+  const handleLookupCode = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code) return;
+    setJoinLookupLoading(true);
+    setJoinLookupError('');
+    setJoinLookupResult(null);
+    setJoinFeedback(null);
     try {
-      const res = await fetch('/api/member/join-requests', {
+      const res = await fetch(`/api/groups/lookup?code=${encodeURIComponent(code)}`);
+      const d = await res.json();
+      if (res.ok) { setJoinLookupResult(d.group); }
+      else { setJoinLookupError(d.error || 'Nambari hiyo haijapatikana.'); }
+    } catch { setJoinLookupError('Hitilafu imetokea. Jaribu tena.'); }
+    finally { setJoinLookupLoading(false); }
+  };
+
+  const handleJoinByCode = async () => {
+    if (!joinLookupResult) return;
+    setJoinLoading(true);
+    setJoinFeedback(null);
+    try {
+      const res = await fetch('/api/member/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupId, message: joinMessage }),
+        body: JSON.stringify({ groupCode: joinCode.trim().toUpperCase(), message: joinMessage }),
       });
-      const data = await res.json();
+      const d = await res.json();
       if (res.ok) {
-        setSelectedGroup(null);
-        setJoinMessage('');
-        await Promise.all([loadJoinRequests(), loadAvailableGroups()]);
+        setJoinFeedback({ ok: true, msg: d.message });
+        await Promise.all([loadMyGroups(), loadJoinRequests()]);
+        if (d.joined && d.groupId) {
+          setTimeout(() => { setShowJoinModal(false); router.push(`/member-dashboard/groups/${d.groupId}`); }, 1200);
+        }
       } else {
-        alert(data.error || 'An error occurred');
+        setJoinFeedback({ ok: false, msg: d.error || 'Imeshindikana kujiunga.' });
       }
-    } catch { alert('An error occurred while sending request'); }
-    finally { setLoading(false); }
+    } catch { setJoinFeedback({ ok: false, msg: 'Hitilafu imetokea. Jaribu tena.' }); }
+    finally { setJoinLoading(false); }
+  };
+
+  const resetJoinModal = () => {
+    setShowJoinModal(false);
+    setJoinCode('');
+    setJoinLookupResult(null);
+    setJoinLookupError('');
+    setJoinMessage('');
+    setJoinFeedback(null);
   };
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -811,10 +833,10 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           </div>
 
           <button
-            onClick={() => setShowAvailableGroups(!showAvailableGroups)}
-            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+            onClick={() => setShowJoinModal(true)}
+            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-orange-500/30 transition-all"
           >
-            {showAvailableGroups ? 'Ficha Makundi' : '+ Jiunge na Kundi Jingine'}
+            + Jiunge na Kundi Jingine
           </button>
         </>
       ) : (
@@ -822,12 +844,13 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
             <UserGroupIcon className="h-6 w-6 text-white/30" />
           </div>
-          <p className="text-white/50 mb-4 text-sm">Bado hujajiunga na kundi lolote.</p>
+          <p className="text-white/50 mb-1 text-sm">Bado hujajiunga na kundi lolote.</p>
+          <p className="text-xs text-white/25 mb-5">Pata nambari ya kundi (mfano: JKM-A3F9K2) kutoka kwa kiongozi.</p>
           <button
-            onClick={() => setShowAvailableGroups(!showAvailableGroups)}
+            onClick={() => setShowJoinModal(true)}
             className="px-5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
           >
-            {showAvailableGroups ? 'Ficha Makundi' : 'Jiunge na Kundi'}
+            Jiunge na Kundi
           </button>
         </div>
       )}
@@ -851,48 +874,6 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Available groups */}
-      {showAvailableGroups && (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Makundi Yanayopatikana</h3>
-          {availableGroups.length === 0 ? (
-            <p className="text-sm text-white/40 text-center py-4">Hakuna makundi kwa sasa.</p>
-          ) : (
-            <div className="space-y-3">
-              {availableGroups.map((g) => (
-                <div key={g.id} className="rounded-lg border border-white/5 hover:border-white/10 p-4 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="text-sm font-semibold text-white">{g.name}</h4>
-                      <p className="text-xs text-white/40 mt-0.5">Kiongozi: {g.leader_name || 'Hajapewa'}</p>
-                      <p className="text-xs text-white/40">Wanachama: {g.member_count}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-orange-400">
-                        TSh {parseInt(g.monthly_contribution).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-white/30">kwa mwezi</p>
-                    </div>
-                  </div>
-                  {joinRequests.some(r => r.group_id === g.id && r.status === 'pending') ? (
-                    <button disabled className="w-full py-2 rounded-lg text-xs text-white/30 bg-white/5 cursor-not-allowed">
-                      Ombi Limetumwa
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setSelectedGroup(g)}
-                      className="w-full py-2 rounded-lg text-xs font-medium bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors border border-orange-500/20"
-                    >
-                      Omba Kujiunga
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -978,50 +959,94 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         </div>
       )}
 
-      {/* Join request modal */}
-      {selectedGroup && (
+      {/* Join by Code modal */}
+      {showJoinModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-base font-semibold text-white mb-1">Omba Kujiunga</h3>
-            <p className="text-sm text-white/40 mb-4">{selectedGroup.name}</p>
-
-            <div className="flex gap-4 mb-4 p-3 rounded-lg bg-white/5">
-              <div>
-                <p className="text-xs text-white/30">Mchango wa Kila Mwezi</p>
-                <p className="text-sm font-semibold text-orange-400">
-                  TSh {parseInt(selectedGroup.monthly_contribution).toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-white/30">Kiongozi</p>
-                <p className="text-sm text-white">{selectedGroup.leader_name || 'Hajapewa'}</p>
-              </div>
-            </div>
-
-            <label className="block text-xs text-white/40 mb-1">Ujumbe (si lazima)</label>
-            <textarea
-              value={joinMessage}
-              onChange={(e) => setJoinMessage(e.target.value)}
-              placeholder="Eleza kwa nini ungependa kujiunga..."
-              className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 resize-none mb-4"
-              rows={3}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setSelectedGroup(null); setJoinMessage(''); }}
-                className="flex-1 py-2.5 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
-              >
-                Ghairi
-              </button>
-              <button
-                onClick={() => handleJoinRequest(selectedGroup.id)}
-                disabled={loading}
-                className="flex-1 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
-              >
-                {loading ? 'Inatuma...' : 'Tuma Ombi'}
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-semibold text-white">Jiunge na Kundi</h3>
+              <button onClick={resetJoinModal} className="text-white/30 hover:text-white/70 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
+            <p className="text-xs text-white/30 mb-5">Ingiza nambari ya kundi uliyopewa na kiongozi.</p>
+
+            {/* Code input + search */}
+            <div className="flex gap-2 mb-4">
+              <input
+                value={joinCode}
+                onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinLookupResult(null); setJoinLookupError(''); setJoinFeedback(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleLookupCode(); }}
+                placeholder="Mfano: JKM-A3F9K2"
+                maxLength={12}
+                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 uppercase tracking-wider"
+              />
+              <button
+                onClick={handleLookupCode}
+                disabled={joinLookupLoading || !joinCode.trim()}
+                className="px-4 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
+              >
+                {joinLookupLoading ? '...' : 'Tafuta'}
+              </button>
+            </div>
+
+            {/* Lookup error */}
+            {joinLookupError && (
+              <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{joinLookupError}</div>
+            )}
+
+            {/* Group preview */}
+            {joinLookupResult && !joinFeedback && (
+              <div className="mb-4 rounded-xl bg-white/[0.03] border border-white/10 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{joinLookupResult.name}</p>
+                    <p className="text-xs text-white/40 mt-0.5">Kiongozi: {joinLookupResult.leader_name || 'Hajapewa'}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-orange-400">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
+                    <p className="text-xs text-white/30">kwa mwezi</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-white/30 pt-1 border-t border-white/5">
+                  <span>{joinLookupResult.member_count} wanachama</span>
+                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className={joinLookupResult.join_policy === 'open' ? 'text-emerald-400' : 'text-yellow-400'}>
+                    {joinLookupResult.join_policy === 'open' ? 'Wazi — utajiunga moja kwa moja' : 'Inahitaji idhini ya kiongozi'}
+                  </span>
+                </div>
+
+                {joinLookupResult.join_policy !== 'open' && (
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1">Ujumbe kwa kiongozi (si lazima)</label>
+                    <textarea
+                      value={joinMessage}
+                      onChange={e => setJoinMessage(e.target.value)}
+                      placeholder="Eleza kwa nini ungependa kujiunga..."
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 resize-none"
+                      rows={2}
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleJoinByCode}
+                  disabled={joinLoading}
+                  className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                >
+                  {joinLoading ? 'Inajiunga...' : joinLookupResult.join_policy === 'open' ? 'Jiunga Sasa' : 'Tuma Ombi'}
+                </button>
+              </div>
+            )}
+
+            {/* Success / error feedback */}
+            {joinFeedback && (
+              <div className={`px-3 py-3 rounded-lg text-sm text-center ${joinFeedback.ok ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                {joinFeedback.msg}
+              </div>
+            )}
           </div>
         </div>
       )}

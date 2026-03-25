@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { generateUniqueGroupCode } from '@/lib/group-code';
 
 function requireAdmin(request: NextRequest) {
   const auth = getAuthTokenPayload(request);
@@ -73,12 +74,18 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
       
+      // Ensure group_code column exists (idempotent)
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
+
+      const groupCode = await generateUniqueGroupCode(client);
+
       // Create the group
       const result = await client.query(`
-        INSERT INTO groups (name, leader_id, founded_date, monthly_contribution, status)
-        VALUES ($1, $2, $3, $4, 'active')
+        INSERT INTO groups (name, leader_id, founded_date, monthly_contribution, status, group_code, join_policy)
+        VALUES ($1, $2, $3, $4, 'active', $5, 'invite_only')
         RETURNING *
-      `, [name, leaderId || null, foundedDate, monthlyContribution]);
+      `, [name, leaderId || null, foundedDate, monthlyContribution, groupCode]);
       
       // If leader is specified, add them to the group
       if (leaderId) {

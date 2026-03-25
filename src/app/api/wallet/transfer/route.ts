@@ -11,10 +11,23 @@ export async function POST(request: NextRequest) {
   const client = await pool.connect();
 
   try {
-    const { userId, purpose, amountTzs, toMemberId, toUsername, groupId } = await request.json();
+    const { userId, purpose, amountTzs, toMemberId, toUsername, groupId: rawGroupId, groupCode } = await request.json();
 
     if (!userId || !amountTzs || !purpose) {
       return NextResponse.json({ error: 'userId, amountTzs, and purpose are required' }, { status: 400 });
+    }
+
+    // Resolve groupCode → groupId if provided
+    let groupId = rawGroupId;
+    if (!groupId && groupCode) {
+      const codeRes = await client.query(
+        `SELECT id FROM groups WHERE group_code = $1 AND status = 'active' LIMIT 1`,
+        [String(groupCode).trim().toUpperCase()]
+      );
+      if (codeRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Hakuna kundi lenye nambari hiyo.' }, { status: 404 });
+      }
+      groupId = (codeRes.rows[0] as { id: number }).id;
     }
 
     if (!['contribution', 'disbursement', 'p2p'].includes(purpose)) {

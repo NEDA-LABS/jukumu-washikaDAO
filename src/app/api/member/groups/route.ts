@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
+import { generateUniqueGroupCode } from '@/lib/group-code';
 
 /**
  * POST /api/member/groups
@@ -48,13 +49,19 @@ export async function POST(request: NextRequest) {
 
     await client.query('BEGIN');
 
+    // Ensure group_code column exists (idempotent)
+    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
+    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
+
+    const groupCode = await generateUniqueGroupCode(client);
+
     // Create the group — leader_id references users table
     const groupRes = await client.query(
       `INSERT INTO groups (name, leader_id, founded_date, monthly_contribution, status,
-        voting_threshold_numerator, voting_threshold_denominator)
-       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5)
+        voting_threshold_numerator, voting_threshold_denominator, group_code, join_policy)
+       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5, $6, 'invite_only')
        RETURNING *`,
-      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator]
+      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator, groupCode]
     );
     const group = groupRes.rows[0] as { id: number; name: string };
 
