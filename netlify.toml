@@ -7,6 +7,7 @@
   NODE_ENV = "production"
   NEXT_TELEMETRY_DISABLED = "1"
   SECRETS_SCAN_ENABLED = "true"
+  SECRETS_SCAN_OMIT_PATHS = "AI_LESSON_GENERATION_GUIDE.md,LEARN_PORTAL_README.md,README.md"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
