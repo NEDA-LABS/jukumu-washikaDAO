@@ -29,7 +29,7 @@ export async function GET() {
         SELECT id, training_module_id, title FROM training_lessons
       `);
       
-      let migratedLessons = 0;
+      const migratedLessons = 0;
       
       // For now, let's just update the schema and clear the conflicting data
       // Delete the sample training modules and lessons to avoid conflicts

@@ -20,9 +20,9 @@ export default function Footer() {
 
           {/* Nav links */}
           <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="/#about" className="hover:text-foreground transition-colors">{t('nav.about')}</a>
-            <a href="/register" className="hover:text-foreground transition-colors">{t('nav.join')}</a>
-            <a href="/investor" className="hover:text-foreground transition-colors">{t('nav.investor')}</a>
+            <Link href="/#about" className="hover:text-foreground transition-colors">{t('nav.about')}</Link>
+            <Link href="/register" className="hover:text-foreground transition-colors">{t('nav.join')}</Link>
+            <Link href="/investor" className="hover:text-foreground transition-colors">{t('nav.investor')}</Link>
             <a href="mailto:info@jukumufund.co.tz" className="hover:text-foreground transition-colors">
               info@jukumufund.co.tz
             </a>

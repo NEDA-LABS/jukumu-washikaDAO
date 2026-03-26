@@ -30,7 +30,7 @@ export async function GET(
         return NextResponse.json({ error: 'Training module not found' }, { status: 404 });
       }
       
-      const module = moduleResult.rows[0];
+      const trainingModule = moduleResult.rows[0];
       
       // Get lesson previews (titles and basic info only, no full content)
       const lessonsResult = await client.query(`
@@ -49,7 +49,7 @@ export async function GET(
       client.release();
       
       return NextResponse.json({
-        module,
+        module: trainingModule,
         lessons: lessonsResult.rows,
         totalLessons: lessonsResult.rows.length,
         requiresLogin: true,

@@ -245,7 +245,12 @@ export default function CoursePage() {
                     [&_strong]:text-white [&_strong]:font-semibold
                     [&_blockquote]:border-l-2 [&_blockquote]:border-orange-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-white/60
                     [&_code]:bg-white/10 [&_code]:px-1 [&_code]:rounded [&_code]:text-orange-300 [&_code]:text-sm"
-                  dangerouslySetInnerHTML={{ __html: marked.parse(currentLesson.content) as string }}
+                  dangerouslySetInnerHTML={{
+                    __html: (marked.parse(currentLesson.content) as string)
+                      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                      .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+                      .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
+                  }}
                 />
 
                 {user && !currentLesson.completed && (

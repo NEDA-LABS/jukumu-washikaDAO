@@ -114,17 +114,9 @@ database/
 6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🔐 Demo Credentials
+## 🔐 Access
 
-### Admin Access
-- **Email**: admin@jukumu.co.tz
-- **Password**: admin123
-- **Access**: Full admin dashboard with member and group management
-
-### Member Access  
-- **Email**: member@jukumu.co.tz
-- **Password**: member123
-- **Access**: Member portal with profile, training, and group features
+Set up admin and member accounts via the registration flow or by running the setup script. Do not commit credentials to this repository.
 
 ## 📊 Key Metrics & Impact
 

@@ -61,30 +61,30 @@ export async function GET() {
       // Insert basic lessons for each module
       const lessonInserts = [];
       
-      for (const module of modules.rows) {
+      for (const mod of modules.rows) {
         // Add 2-3 basic lessons per module
         const lessons = [
           {
-            title: `Utangulizi wa ${module.title}`,
-            content: `Karibu katika mafunzo ya ${module.title}. 
+            title: `Utangulizi wa ${mod.title}`,
+            content: `Karibu katika mafunzo ya ${mod.title}. 
 
-Katika somo hili, tutajifunza misingi muhimu ya ${module.title.toLowerCase()}.
+Katika somo hili, tutajifunza misingi muhimu ya ${mod.title.toLowerCase()}.
 
 **Malengo ya Somo:**
-- Kuelewa misingi ya ${module.title.toLowerCase()}
+- Kuelewa misingi ya ${mod.title.toLowerCase()}
 - Kujifunza mbinu za vitendo
 - Kupata ujuzi wa kufanya kazi
 
 **Maudhui:**
-Somo hili litakuongoza kupitia mambo muhimu unayohitaji kujua kuhusu ${module.title.toLowerCase()}. Tutaanza na misingi hadi mambo ya kina zaidi.
+Somo hili litakuongoza kupitia mambo muhimu unayohitaji kujua kuhusu ${mod.title.toLowerCase()}. Tutaanza na misingi hadi mambo ya kina zaidi.
 
 **Zoezi:**
 Fikiria jinsi unavyoweza kutumia ujuzi huu katika maisha yako ya kila siku.`,
             order: 1
           },
           {
-            title: `Mbinu za ${module.title}`,
-            content: `Katika somo hili, tutajifunza mbinu mbalimbali za ${module.title.toLowerCase()}.
+            title: `Mbinu za ${mod.title}`,
+            content: `Katika somo hili, tutajifunza mbinu mbalimbali za ${mod.title.toLowerCase()}.
 
 **Mbinu Muhimu:**
 
@@ -102,8 +102,8 @@ Chagua mbinu moja na uijaribu kwa wiki moja. Andika matokeo yako.`,
             order: 2
           },
           {
-            title: `Mafanikio katika ${module.title}`,
-            content: `Somo la mwisho kuhusu jinsi ya kufanikiwa katika ${module.title.toLowerCase()}.
+            title: `Mafanikio katika ${mod.title}`,
+            content: `Somo la mwisho kuhusu jinsi ya kufanikiwa katika ${mod.title.toLowerCase()}.
 
 **Siri za Mafanikio:**
 
@@ -117,14 +117,14 @@ Chagua mbinu moja na uijaribu kwa wiki moja. Andika matokeo yako.`,
 - Shiriki ujuzi wako na wengine
 
 **Hongera!**
-Umekamilisha mafunzo ya ${module.title}. Sasa tumia ujuzi huu katika maisha yako!`,
+Umekamilisha mafunzo ya ${mod.title}. Sasa tumia ujuzi huu katika maisha yako!`,
             order: 3
           }
         ];
         
         for (const lesson of lessons) {
           lessonInserts.push([
-            module.id,
+            mod.id,
             lesson.title,
             lesson.content,
             lesson.order,

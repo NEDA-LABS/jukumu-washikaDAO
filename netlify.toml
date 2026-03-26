@@ -6,7 +6,7 @@
   NODE_VERSION = "20"
   NODE_ENV = "production"
   NEXT_TELEMETRY_DISABLED = "1"
-  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_ENABLED = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

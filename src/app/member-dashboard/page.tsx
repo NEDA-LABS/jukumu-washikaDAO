@@ -1446,6 +1446,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
                         className="text-sm text-white/65 leading-7 whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{
                           __html: currentLesson.content
+                            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                             .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
                             .replace(/^# (.+)$/gm, '<h1 class="text-base font-bold text-white mt-5 mb-2">$1</h1>')
                             .replace(/^## (.+)$/gm, '<h2 class="text-sm font-semibold text-white/80 mt-4 mb-1.5">$1</h2>')

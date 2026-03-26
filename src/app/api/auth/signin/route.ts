@@ -207,17 +207,6 @@ export async function POST(request: NextRequest) {
         } catch {
           isValidPassword = false;
         }
-      } else {
-        // Legacy plaintext fallback (migrate to bcrypt on success)
-        isValidPassword = stored === password;
-        if (isValidPassword) {
-          try {
-            const newHash = await bcrypt.hash(password, 12);
-            await client.query(`UPDATE users SET ${passwordColumn} = $1 WHERE id = $2`, [newHash, user.id]);
-          } catch {
-            // ignore migration failure
-          }
-        }
       }
     }
 
@@ -228,7 +217,8 @@ export async function POST(request: NextRequest) {
     // Create JWT token
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.warn('JWT_SECRET is not set — using fallback. Set JWT_SECRET in your environment variables.');
+      console.error('JWT_SECRET environment variable is not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const token = jwt.sign(
@@ -237,7 +227,7 @@ export async function POST(request: NextRequest) {
         email: user.email, 
         role: user.role 
       },
-      jwtSecret || 'jukumu-fallback-secret-change-me',
+      jwtSecret,
       { expiresIn: '7d' }
     );
 
