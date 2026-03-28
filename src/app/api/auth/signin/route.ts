@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAuthRateLimit } from '@/lib/rate-limiter';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -82,6 +83,9 @@ function serverError(code: string, requestId: string, details?: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await checkAuthRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   let client: PoolClient | null = null;
   const requestId = makeRequestId();
 

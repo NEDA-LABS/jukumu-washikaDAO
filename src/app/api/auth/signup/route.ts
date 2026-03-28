@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAuthRateLimit } from '@/lib/rate-limiter';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
@@ -39,6 +40,9 @@ function normalizePhone(input: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await checkAuthRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   let client: PoolClient | null = null;
 
   try {

@@ -10,13 +10,11 @@
     "export": "next export"
   },
   "dependencies": {
-    "@auth/pg-adapter": "^1.10.0",
     "@coinbase/cdp-sdk": "^1.43.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-slot": "^1.2.4",
     "@splinetool/react-spline": "^4.1.0",
-    "@stackframe/stack": "^2.8.35",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -32,8 +30,8 @@
     "lucide-react": "^0.542.0",
     "marked": "^17.0.4",
     "next": "^15.5.9",
-    "next-auth": "^4.24.11",
     "pg": "^8.16.3",
+    "rate-limiter-flexible": "^10.0.1",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
@@ -50,6 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9.35.0",
     "eslint-config-next": "^15.5.9",
+    "node-pg-migrate": "^8.0.4",
     "typescript": "^5"
   }
 }
