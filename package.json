@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next export"
+    "export": "next export",
+    "migrate:up": "node-pg-migrate up --migrations-dir database/migrations --migration-file-language js",
+    "migrate:down": "node-pg-migrate down --migrations-dir database/migrations --migration-file-language js",
+    "migrate:create": "node-pg-migrate create --migrations-dir database/migrations --migration-file-language js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.43.0",
@@ -43,12 +48,18 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9.35.0",
     "eslint-config-next": "^15.5.9",
+    "jsdom": "^29.0.1",
     "node-pg-migrate": "^8.0.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }
