@@ -3,7 +3,7 @@ import type {
   EduCategory, EduCourse, EduLesson, EduAssessment,
   EduAssessmentQuestion, EduLearnerProfile, EduCourseProgress,
   EduLessonProgress, EduAssessmentAttempt, EduCertificate,
-  EduLearningRecommendation, EduCoursePrerequisite,
+  EduLearningRecommendation, EduCoursePrerequisite, CourseStatus,
 } from './types';
 
 // --- Categories ---
@@ -18,6 +18,24 @@ export async function getCategoriesPublished(): Promise<(EduCategory & { course_
       FROM edu_categories c
       LEFT JOIN edu_courses co ON co.category_id = c.id AND co.is_published = true
       WHERE c.is_published = true
+      GROUP BY c.id
+      ORDER BY c.display_order, c.name
+    `);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getCategoriesAll(): Promise<(EduCategory & { course_count: number; total_duration: number })[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT c.*,
+        COUNT(DISTINCT co.id)::int AS course_count,
+        COALESCE(SUM(co.estimated_duration_minutes), 0)::int AS total_duration
+      FROM edu_categories c
+      LEFT JOIN edu_courses co ON co.category_id = c.id AND co.is_published = true
       GROUP BY c.id
       ORDER BY c.display_order, c.name
     `);
@@ -365,34 +383,31 @@ export async function markLessonComplete(memberId: number, lessonId: number): Pr
   }
 }
 
-export async function getCourseProgressForMember(memberId: number, courseId: number): Promise<{ completed: number; total: number; status: string }> {
+export async function getCourseProgressForMember(memberId: number, courseId: number): Promise<{ completed: number; total: number; status: CourseStatus }> {
   const client = await pool.connect();
   try {
-    const totalResult = await client.query(
-      'SELECT COUNT(*)::int AS total FROM edu_lessons WHERE course_id = $1',
-      [courseId]
-    );
-    const completedResult = await client.query(
-      `SELECT COUNT(*)::int AS completed FROM edu_lesson_progress lp
-       JOIN edu_lessons l ON l.id = lp.lesson_id
-       WHERE l.course_id = $1 AND lp.member_id = $2 AND lp.completed = true`,
-      [courseId, memberId]
-    );
-    const progressResult = await client.query(
-      'SELECT status FROM edu_course_progress WHERE member_id = $1 AND course_id = $2',
-      [memberId, courseId]
-    );
+    const result = await client.query(`
+      SELECT
+        COUNT(l.id)::int AS total,
+        COUNT(lp.id) FILTER (WHERE lp.completed = true)::int AS completed,
+        COALESCE(cp.status, 'not_started') AS status
+      FROM edu_lessons l
+      LEFT JOIN edu_lesson_progress lp ON lp.lesson_id = l.id AND lp.member_id = $2
+      LEFT JOIN edu_course_progress cp ON cp.course_id = $1 AND cp.member_id = $2
+      WHERE l.course_id = $1
+      GROUP BY cp.status
+    `, [courseId, memberId]);
     return {
-      completed: completedResult.rows[0]?.completed ?? 0,
-      total: totalResult.rows[0]?.total ?? 0,
-      status: progressResult.rows[0]?.status ?? 'not_started',
+      total: result.rows[0]?.total ?? 0,
+      completed: result.rows[0]?.completed ?? 0,
+      status: (result.rows[0]?.status ?? 'not_started') as CourseStatus,
     };
   } finally {
     client.release();
   }
 }
 
-export async function upsertCourseProgress(memberId: number, courseId: number, status: string): Promise<void> {
+export async function upsertCourseProgress(memberId: number, courseId: number, status: CourseStatus): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query(
