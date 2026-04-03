@@ -20,12 +20,14 @@ export async function extractText(buffer: Buffer, filename: string): Promise<{ t
     let text = '';
 
     if (ext === '.pdf') {
-      const pdfParse = (await import('pdf-parse')).default;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
       const data = await pdfParse(buffer);
       text = data.text;
     } else if (ext === '.pptx' || ext === '.docx') {
-      const { parseOfficeAsync } = await import('officeparser');
-      text = await parseOfficeAsync(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const officeparser = require('officeparser') as { parseOfficeAsync: (buf: Buffer) => Promise<string> };
+      text = await officeparser.parseOfficeAsync(buffer);
     }
 
     text = text.trim();

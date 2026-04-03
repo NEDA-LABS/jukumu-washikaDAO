@@ -264,6 +264,130 @@ export async function deleteLesson(id: number): Promise<boolean> {
 
 // --- Assessments ---
 
+export async function getAssessmentsAll(): Promise<EduAssessment[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM edu_assessments ORDER BY id');
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAssessment(id: number, data: Partial<EduAssessment>): Promise<EduAssessment | null> {
+  const client = await pool.connect();
+  try {
+    const allowed = ['category_id', 'lesson_id', 'type', 'title', 'passing_score'];
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+    for (const [key, val] of Object.entries(data)) {
+      if (allowed.includes(key)) {
+        fields.push(`${key} = $${idx++}`);
+        values.push(val);
+      }
+    }
+    if (fields.length === 0) {
+      const result = await client.query('SELECT * FROM edu_assessments WHERE id = $1', [id]);
+      return result.rows[0] || null;
+    }
+    values.push(id);
+    const result = await client.query(
+      `UPDATE edu_assessments SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteAssessment(id: number): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('DELETE FROM edu_assessments WHERE id = $1', [id]);
+    return (result.rowCount ?? 0) > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getAssessmentQuestionsByAssessment(assessmentId: number): Promise<EduAssessmentQuestion[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM edu_assessment_questions WHERE assessment_id = $1 ORDER BY question_order',
+      [assessmentId]
+    );
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getAssessmentQuestionById(id: number): Promise<EduAssessmentQuestion | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM edu_assessment_questions WHERE id = $1', [id]);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAssessmentQuestion(id: number, data: Partial<EduAssessmentQuestion>): Promise<EduAssessmentQuestion | null> {
+  const client = await pool.connect();
+  try {
+    const allowed = ['scenario_text', 'options', 'correct_option', 'explanation', 'skill_tag', 'question_order'];
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+    for (const [key, val] of Object.entries(data)) {
+      if (allowed.includes(key)) {
+        fields.push(`${key} = $${idx++}`);
+        values.push(key === 'options' ? JSON.stringify(val) : val);
+      }
+    }
+    if (fields.length === 0) return getAssessmentQuestionById(id);
+    values.push(id);
+    const result = await client.query(
+      `UPDATE edu_assessment_questions SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteAssessmentQuestion(id: number): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('DELETE FROM edu_assessment_questions WHERE id = $1', [id]);
+    return (result.rowCount ?? 0) > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getCoursesAll(): Promise<(EduCourse & { lesson_count: number; total_duration: number })[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT co.*,
+        COUNT(DISTINCT l.id)::int AS lesson_count,
+        COALESCE(SUM(l.duration_minutes), 0)::int AS total_duration
+      FROM edu_courses co
+      LEFT JOIN edu_lessons l ON l.course_id = co.id
+      GROUP BY co.id
+      ORDER BY co.display_order, co.title
+    `);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getAssessmentWithQuestions(assessmentId: number): Promise<(EduAssessment & { questions: EduAssessmentQuestion[] }) | null> {
   const client = await pool.connect();
   try {
