@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next export"
+    "export": "next export",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
     "@auth/pg-adapter": "^1.10.0",
     "@coinbase/cdp-sdk": "^1.43.0",
     "@heroicons/react": "^2.2.0",
@@ -28,11 +31,14 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
+    "isomorphic-dompurify": "^3.7.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.542.0",
     "marked": "^17.0.4",
     "next": "^15.5.9",
     "next-auth": "^4.24.11",
+    "officeparser": "^6.0.7",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.16.3",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
@@ -46,10 +52,13 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9.35.0",
     "eslint-config-next": "^15.5.9",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }
