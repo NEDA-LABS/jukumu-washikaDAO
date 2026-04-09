@@ -14,4 +14,4 @@
 
 [functions]
   node_bundler = "nft"
-  external_node_modules = ["pg-native"]
+  external_node_modules = ["pg-native", "officeparser", "pdf-parse"]
