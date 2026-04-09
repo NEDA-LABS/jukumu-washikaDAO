@@ -1124,434 +1124,65 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
 }
 
 function LearningSection({ memberTraining, user }: { memberTraining: any[]; user: any }) {
-  const [activeTab, setActiveTab] = useState<'courses' | 'certificates'>('courses');
-  const [selectedTraining, setSelectedTraining] = useState<any>(null);
-  const [trainingDetails, setTrainingDetails] = useState<any>(null);
-  const [currentLesson, setCurrentLesson] = useState<any>(null);
-  const [loadingId, setLoadingId] = useState<number | null>(null);
-  const [certificates, setCertificates] = useState<any[]>([]);
-  const [certsLoading, setCertsLoading] = useState(false);
-  const [earnedCert, setEarnedCert] = useState<any>(null);
-  const [completingCourse, setCompletingCourse] = useState(false);
+  const router = useRouter();
+  const [coursesInProgress, setCoursesInProgress] = useState(0);
+  const [certificatesCount, setCertificatesCount] = useState(0);
 
-  // Load certificates when tab switches
   React.useEffect(() => {
-    if (activeTab === 'certificates' && user?.id) {
-      setCertsLoading(true);
-      fetch(`/api/training/certificates?userId=${user.id}`)
-        .then(r => r.json())
-        .then(d => setCertificates(d.certificates ?? []))
-        .catch(() => {})
-        .finally(() => setCertsLoading(false));
+    // Count courses in progress
+    const inProgress = memberTraining.filter((t: any) => t.progress_status === 'in_progress').length;
+    setCoursesInProgress(inProgress);
+
+    // Fetch certificate count
+    if (user?.id) {
+      fetch('/api/education/certificates')
+        .then(r => r.ok ? r.json() : [])
+        .then(d => {
+          const certs = Array.isArray(d) ? d : d.certificates ?? [];
+          setCertificatesCount(certs.length);
+        })
+        .catch(() => {});
     }
-  }, [activeTab, user?.id]);
-
-  const closeModal = () => { setSelectedTraining(null); setTrainingDetails(null); setCurrentLesson(null); };
-
-  const handleViewTraining = async (training: any) => {
-    setLoadingId(training.id);
-    try {
-      const res = await fetch(`/api/admin/educational-content/${training.id}/lessons`);
-      if (res.ok) {
-        const lessons = await res.json();
-        const completedCount = lessons.filter((l: any) => l.completed).length;
-        setSelectedTraining(training);
-        setTrainingDetails({ module: training, lessons, totalLessons: lessons.length, completedLessons: completedCount });
-        setCurrentLesson(lessons[0] ?? null);
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoadingId(null); }
-  };
-
-  const handleLessonComplete = async (lessonId: number, completed: boolean) => {
-    try {
-      const res = await fetch('/api/training/lesson-progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, lessonId, completed }),
-      });
-      if (res.ok && trainingDetails) {
-        const updated = trainingDetails.lessons.map((l: any) => l.id === lessonId ? { ...l, completed } : l);
-        const completedCount = updated.filter((l: any) => l.completed).length;
-        const newDetails = { ...trainingDetails, lessons: updated, completedLessons: completedCount };
-        setTrainingDetails(newDetails);
-        if (currentLesson?.id === lessonId) setCurrentLesson({ ...currentLesson, completed });
-
-        // Auto-trigger course completion check when all lessons done
-        if (completed && completedCount === newDetails.totalLessons && newDetails.totalLessons > 0) {
-          handleCompleteCourse(selectedTraining.id);
-        }
-      }
-    } catch (e) { console.error(e); }
-  };
-
-  const handleCompleteCourse = async (courseId: number) => {
-    if (!user?.id || completingCourse) return;
-    setCompletingCourse(true);
-    try {
-      const res = await fetch('/api/training/complete-course', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, courseId }),
-      });
-      const json = await res.json();
-      if (res.ok && json.certificate) {
-        setEarnedCert(json.certificate);
-      }
-    } catch (e) { console.error(e); }
-    finally { setCompletingCourse(false); }
-  };
-
-  const handleStartTraining = async (trainingId: number) => {
-    try {
-      await fetch('/api/members/training', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, trainingId, action: 'start' }),
-      });
-    } catch (e) { console.error(e); }
-  };
-
-  const statusBadge = (status: string) => {
-    if (status === 'completed') return 'bg-emerald-500/15 text-emerald-400';
-    if (status === 'in_progress') return 'bg-blue-500/15 text-blue-400';
-    return 'bg-white/5 text-white/30';
-  };
-  const statusLabel = (status: string) => {
-    if (status === 'completed') return 'Imekamilika';
-    if (status === 'in_progress') return 'Inaendelea';
-    return 'Haijanza';
-  };
-
-  const currentIndex = trainingDetails?.lessons.findIndex((l: any) => l.id === currentLesson?.id) ?? -1;
-  const completionPct = trainingDetails
-    ? Math.round((trainingDetails.completedLessons / Math.max(trainingDetails.totalLessons, 1)) * 100)
-    : 0;
+  }, [memberTraining, user?.id]);
 
   return (
-    <>
-      {/* ── Tab bar ── */}
-      <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] w-fit mb-4">
-        {([
-          { id: 'courses' as const, label: 'Kozi' },
-          { id: 'certificates' as const, label: 'Vyeti Vyangu' },
-        ]).map(tab => (
+    <div className="space-y-4">
+      {/* Summary card */}
+      <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+            <BookOpenIcon className="h-5 w-5 text-orange-400" />
+          </div>
+          <h3 className="text-base font-bold text-white">Masomo</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Kozi Zinaendelea</p>
+            <p className="text-2xl font-bold text-orange-400">{coursesInProgress}</p>
+          </div>
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Vyeti Vilivyopatikana</p>
+            <p className="text-2xl font-bold text-emerald-400">{certificatesCount}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === tab.id
-                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                : 'text-white/40 hover:text-white/70'
-            }`}
+            onClick={() => router.push('/jifunze')}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white transition-colors"
           >
-            {tab.label}
+            Endelea Kujifunza
           </button>
-        ))}
+          <button
+            onClick={() => router.push('/jifunze/vyeti')}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition-colors"
+          >
+            Vyeti Vyangu
+          </button>
+        </div>
       </div>
-
-      {/* ── Courses tab ── */}
-      {activeTab === 'courses' && (
-        <div className="space-y-3">
-          {memberTraining.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {memberTraining.map((t, i) => (
-                <div key={i} className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5 flex flex-col hover:border-white/10 transition-all">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                        <BookOpenIcon className="h-4 w-4 text-orange-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-white leading-snug">{t.title}</h3>
-                        {t.certificates_enabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-yellow-400 mt-0.5">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                            Inatoa Cheti
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(t.progress_status)}`}>
-                      {statusLabel(t.progress_status)}
-                    </span>
-                  </div>
-
-                  {t.description && (
-                    <p className="text-xs text-white/35 mb-3 leading-relaxed line-clamp-2 pl-12">{t.description}</p>
-                  )}
-
-                  <div className="flex gap-3 text-[10px] text-white/20 mb-4 pl-12">
-                    {t.category && <span>{t.category}</span>}
-                    {t.level && <><span>·</span><span>{t.level}</span></>}
-                    {t.duration_hours && <><span>·</span><span>{t.duration_hours}h</span></>}
-                  </div>
-
-                  <div className="flex gap-2 mt-auto">
-                    <button
-                      onClick={() => { handleViewTraining(t); if (t.progress_status === 'not_started') handleStartTraining(t.id); }}
-                      disabled={loadingId === t.id}
-                      className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 disabled:opacity-40 transition-colors"
-                    >
-                      {loadingId === t.id ? 'Inapakia...' : t.progress_status === 'not_started' ? 'Anza Kujifunza' : 'Endelea Kusoma'}
-                    </button>
-                    {t.progress_status === 'completed' && (
-                      <div className="px-3 py-2 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
-                <BookOpenIcon className="h-6 w-6 text-white/15" />
-              </div>
-              <p className="text-sm font-medium text-white/25">Hakuna mafunzo yanayopatikana</p>
-              <p className="text-xs text-white/15 mt-1">Mafunzo mapya yataongezwa hivi karibuni</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Certificates tab ── */}
-      {activeTab === 'certificates' && (
-        <div className="space-y-3">
-          {certsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent" />
-            </div>
-          ) : certificates.length === 0 ? (
-            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-16 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-yellow-500/30" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-              </div>
-              <p className="text-sm font-medium text-white/25">Bado huna vyeti</p>
-              <p className="text-xs text-white/15 mt-1">Kamilisha kozi zinazotoa vyeti ili kupata cheti lako la kwanza</p>
-              <button
-                onClick={() => setActiveTab('courses')}
-                className="mt-4 px-4 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/20 transition-colors"
-              >
-                Angalia Kozi →
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {certificates.map((cert: any) => (
-                <div key={cert.id} className="rounded-2xl bg-gradient-to-br from-[#1a1600] to-[#141414] border border-yellow-500/20 p-5 relative overflow-hidden">
-                  {/* Decorative star */}
-                  <div className="absolute top-3 right-3 opacity-10">
-                    <svg className="w-16 h-16 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  </div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center shrink-0">
-                      <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                    </div>
-                    <p className="text-[10px] font-semibold text-yellow-500/70 uppercase tracking-wider">Cheti cha Kukamilisha</p>
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-1">{cert.course_title}</h3>
-                  <p className="text-xs text-white/40 mb-3">{cert.member_name}</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {cert.category && <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 text-white/30">{cert.category}</span>}
-                    {cert.difficulty_level && <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 text-white/30">{cert.difficulty_level}</span>}
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-yellow-500/10">
-                    <p className="text-[10px] text-white/25">
-                      {new Date(cert.issued_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'long', year: 'numeric' })}
-                    </p>
-                    <button
-                      onClick={() => setEarnedCert(cert)}
-                      className="text-[10px] text-yellow-400 hover:text-yellow-300 font-semibold transition-colors"
-                    >
-                      Angalia Cheti →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Training course modal ── */}
-      {selectedTraining && trainingDetails && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6">
-          <div className="w-full max-w-4xl rounded-2xl bg-[#111] border border-white/10 flex flex-col max-h-[92vh] overflow-hidden">
-
-            {/* Modal header */}
-            <div className="flex items-center gap-4 px-5 py-4 border-b border-white/[0.06] shrink-0">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-white truncate">{selectedTraining.title}</h2>
-                <div className="flex items-center gap-3 mt-1">
-                  <div className="flex-1 max-w-40 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className="h-1.5 rounded-full bg-orange-500 transition-all duration-500" style={{ width: `${completionPct}%` }} />
-                  </div>
-                  <span className="text-[10px] text-white/30 shrink-0">
-                    {trainingDetails.completedLessons}/{trainingDetails.totalLessons} · {completionPct}%
-                  </span>
-                  {selectedTraining.certificates_enabled && (
-                    <span className="hidden sm:flex items-center gap-1 text-[10px] text-yellow-400">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                      Inatoa Cheti
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button onClick={closeModal} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <div className="flex flex-1 min-h-0 overflow-hidden">
-              {/* Left: lesson list */}
-              <div className="w-56 shrink-0 border-r border-white/[0.06] overflow-y-auto p-3 hidden sm:block">
-                <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wider px-2 mb-2">Masomo</p>
-                <div className="space-y-0.5">
-                  {trainingDetails.lessons.map((lesson: any, idx: number) => (
-                    <button key={lesson.id} onClick={() => setCurrentLesson(lesson)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl transition-all ${currentLesson?.id === lesson.id ? 'bg-orange-500/15 border border-orange-500/20' : 'hover:bg-white/[0.04] border border-transparent'}`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${lesson.completed ? 'bg-emerald-500/15 text-emerald-400' : currentLesson?.id === lesson.id ? 'bg-orange-500/20 text-orange-400' : 'bg-white/5 text-white/30'}`}>
-                          {lesson.completed ? '✓' : idx + 1}
-                        </span>
-                        <span className={`text-xs truncate ${currentLesson?.id === lesson.id ? 'text-orange-300 font-medium' : 'text-white/50'}`}>{lesson.title}</span>
-                      </div>
-                      <p className="text-[10px] text-white/20 mt-0.5 pl-7">{lesson.duration_minutes} dak</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right: lesson content */}
-              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {currentLesson ? (
-                  <>
-                    <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-white/[0.06] shrink-0">
-                      <div>
-                        <h3 className="text-sm font-semibold text-white">{currentLesson.title}</h3>
-                        <p className="text-[10px] text-white/25 mt-0.5">{currentLesson.duration_minutes} dakika</p>
-                      </div>
-                      <button
-                        onClick={() => handleLessonComplete(currentLesson.id, !currentLesson.completed)}
-                        className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${currentLesson.completed ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/20' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
-                      >
-                        {currentLesson.completed ? '✓ Imekamilika' : 'Kamilisha Somo'}
-                      </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-6 py-5">
-                      <div
-                        className="text-sm text-white/65 leading-7 whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{
-                          __html: currentLesson.content
-                            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-                            .replace(/^# (.+)$/gm, '<h1 class="text-base font-bold text-white mt-5 mb-2">$1</h1>')
-                            .replace(/^## (.+)$/gm, '<h2 class="text-sm font-semibold text-white/80 mt-4 mb-1.5">$1</h2>')
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.06] shrink-0">
-                      <button
-                        onClick={() => currentIndex > 0 && setCurrentLesson(trainingDetails.lessons[currentIndex - 1])}
-                        disabled={currentIndex <= 0}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
-                      >
-                        ← Iliyotangulia
-                      </button>
-                      <p className="sm:hidden text-[10px] text-white/25">{currentIndex + 1} / {trainingDetails.lessons.length}</p>
-                      <button
-                        onClick={() => {
-                          if (currentIndex < trainingDetails.lessons.length - 1) {
-                            setCurrentLesson(trainingDetails.lessons[currentIndex + 1]);
-                          } else {
-                            handleCompleteCourse(selectedTraining.id);
-                            closeModal();
-                          }
-                        }}
-                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs transition-colors ${
-                          currentIndex === trainingDetails.lessons.length - 1
-                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white font-semibold'
-                            : 'bg-orange-500 hover:bg-orange-600 text-white'
-                        }`}
-                      >
-                        {currentIndex < trainingDetails.lessons.length - 1 ? 'Lijalo →' : completingCourse ? 'Inakamilisha...' : 'Maliza Kozi ✓'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
-                    <BookOpenIcon className="h-10 w-10 text-white/10" />
-                    <p className="text-sm text-white/25">Chagua somo kutoka orodha kushoto</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Certificate earned modal ── */}
-      {earnedCert && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-          <div className="w-full max-w-md">
-            {/* Confetti dots decoration */}
-            <div className="flex justify-center mb-6 gap-2">
-              {['bg-yellow-400','bg-orange-400','bg-emerald-400','bg-blue-400','bg-purple-400'].map((c,i) => (
-                <div key={i} className={`w-2 h-2 rounded-full ${c} opacity-70 animate-bounce`} style={{ animationDelay: `${i*0.1}s` }} />
-              ))}
-            </div>
-
-            {/* Certificate card */}
-            <div className="rounded-2xl bg-gradient-to-br from-[#1c1800] via-[#1a1a1a] to-[#141414] border border-yellow-500/30 p-8 text-center relative overflow-hidden shadow-2xl shadow-yellow-500/10">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage:'radial-gradient(circle at 25% 25%, #f59e0b 0%, transparent 50%), radial-gradient(circle at 75% 75%, #f59e0b 0%, transparent 50%)'}} />
-
-              <div className="relative">
-                {/* Badge */}
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-yellow-500/30">
-                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                </div>
-
-                <p className="text-xs font-bold text-yellow-400/70 uppercase tracking-[0.2em] mb-2">Cheti cha Kukamilisha</p>
-                <p className="text-white/50 text-xs mb-1">Hii inathibitisha kwamba</p>
-                <h2 className="text-xl font-bold text-white mb-1">{earnedCert.member_name}</h2>
-                <p className="text-white/40 text-xs mb-4">amekamilisha kozi ya</p>
-                <h3 className="text-base font-semibold text-yellow-300 mb-5">{earnedCert.course_title}</h3>
-
-                <div className="flex items-center justify-center gap-1.5 mb-5">
-                  <div className="h-px flex-1 bg-yellow-500/20" />
-                  <p className="text-[10px] text-white/25 px-2">
-                    {new Date(earnedCert.issued_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  </p>
-                  <div className="h-px flex-1 bg-yellow-500/20" />
-                </div>
-
-                <p className="text-[10px] text-white/20 mb-6 font-mono">ID: {earnedCert.credential_id}</p>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setEarnedCert(null); setActiveTab('certificates'); }}
-                    className="flex-1 py-2.5 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-sm font-semibold border border-yellow-500/20 transition-colors"
-                  >
-                    Vyeti Vyangu
-                  </button>
-                  <button
-                    onClick={() => setEarnedCert(null)}
-                    className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-sm transition-colors"
-                  >
-                    Funga
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
 
