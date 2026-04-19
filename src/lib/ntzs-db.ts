@@ -1,10 +1,18 @@
 import type { PoolClient } from 'pg';
 
+let _schemaReady: Promise<void> | null = null;
+
 /**
  * Ensure nTZS wallet columns and transaction table exist.
- * Safe to call multiple times (uses IF NOT EXISTS / IF NOT EXISTS).
+ * Cached per process — DDL only runs once.
  */
 export async function ensureNtzsSchema(client: PoolClient) {
+  if (_schemaReady) return _schemaReady;
+  _schemaReady = _runEnsureNtzsSchema(client);
+  return _schemaReady;
+}
+
+async function _runEnsureNtzsSchema(client: PoolClient) {
   // Add wallet columns to members
   await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS ntzs_user_id VARCHAR(100)`);
   await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS ntzs_wallet_address VARCHAR(42)`);

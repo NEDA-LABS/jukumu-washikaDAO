@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
-import { ntzs } from '@/lib/ntzs';
+import { ntzs, NtzsApiError } from '@/lib/ntzs';
 
 export const runtime = 'nodejs';
 
@@ -79,8 +79,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    // Fetch balance from nTZS
-    const balance = await ntzs.users.getBalance(group.ntzs_user_id);
+    // Fetch balance from nTZS — degrade gracefully if API is unavailable
+    let balanceTzs = 0;
+    let balanceError: string | null = null;
+    try {
+      const balance = await ntzs.users.getBalance(group.ntzs_user_id);
+      balanceTzs = balance.balanceTzs ?? 0;
+    } catch (balErr) {
+      balanceError = balErr instanceof Error ? balErr.message : String(balErr);
+      console.error('Treasury balance fetch failed:', balanceError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -88,7 +96,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ntzsUserId: group.ntzs_user_id,
         walletAddress: group.ntzs_wallet_address,
       },
-      balanceTzs: balance.balanceTzs,
+      balanceTzs,
+      balanceError,
       membership,
     });
   } catch (error) {
@@ -183,6 +192,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (error) {
     console.error('Treasury POST error:', error);
+    if (error instanceof Error && error.message.includes('NTZS_API_KEY')) {
+      return NextResponse.json({ error: 'Wallet service not configured. Contact support.' }, { status: 503 });
+    }
+    if (error instanceof NtzsApiError) {
+      return NextResponse.json({ error: error.body?.message || error.body?.error || 'Wallet service error. Try again later.' }, { status: 502 });
+    }
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: 'Internal server error', details: message }, { status: 500 });
   } finally {
