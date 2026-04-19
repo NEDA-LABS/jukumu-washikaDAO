@@ -174,8 +174,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Create nTZS user for group
     const ntzsUser = await ntzs.users.create({
       externalId: `group_${groupId}`,
-      email: undefined, // Groups don't have email
-      phone: undefined,
+      email: `group_${groupId}@groups.washikadau.com`,
     });
 
     // Link to group record

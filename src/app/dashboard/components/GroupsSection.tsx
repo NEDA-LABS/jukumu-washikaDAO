@@ -41,9 +41,9 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
       if (r.ok) {
         const d = await r.json();
         setGroupWallet(d.wallet || null);
-        setGroupWalletBalances(d.balances || null);
-        setGroupWalletWarning(typeof d.warning === 'string' ? d.warning : '');
-        setGroupTransfers(d.recentTransfers || []);
+        setGroupWalletBalances(d.balanceTzs != null ? { balanceTzs: d.balanceTzs } : null);
+        setGroupWalletWarning(d.balanceError || (typeof d.warning === 'string' ? d.warning : ''));
+        setGroupTransfers(d.recentTransactions || []);
       }
     } catch { setGroupWallet(null); }
   };
@@ -283,8 +283,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                         <p className="text-[10px] text-white/25 break-all">Address: <span className="text-white/40 font-mono">{groupWallet.address||'—'}</span></p>
                       </div>
                       <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 space-y-1">
-                        <p className="text-[10px] text-white/25">USDC: <span className="text-white/50">{groupWalletBalances?.usdc?.amountBaseUnits??'—'}</span></p>
-                        <p className="text-[10px] text-white/25">ETH: <span className="text-white/50">{groupWalletBalances?.eth?.amountBaseUnits??'—'}</span></p>
+                        <p className="text-[10px] text-white/25">Salio (TZS): <span className="text-white/50">{(groupWalletBalances?.balanceTzs ?? 0).toLocaleString()}</span></p>
                         {groupWalletWarning && <p className="text-[10px] text-orange-400">{groupWalletWarning}</p>}
                       </div>
                     </div>
@@ -299,10 +298,10 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                             <tbody className="divide-y divide-white/[0.04]">
                               {groupTransfers.map(t => (
                                 <tr key={t.id} className="hover:bg-white/[0.02]">
-                                  <td className="px-3 py-2 text-[10px] text-white/40 font-mono truncate max-w-[120px]">{t.to_address}</td>
-                                  <td className="px-3 py-2 text-[10px] text-white/50">{String(t.amount_base_units??'')}</td>
-                                  <td className="px-3 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${t.status==='executed'?'bg-emerald-500/10 text-emerald-400':t.status==='approved'?'bg-blue-500/10 text-blue-400':t.status==='rejected'?'bg-red-500/10 text-red-400':'bg-white/5 text-white/30'}`}>{t.status}</span></td>
-                                  <td className="px-3 py-2 text-[10px] text-white/30">{t.approval_count??0}/{t.approvals_required??0}</td>
+                                  <td className="px-3 py-2 text-[10px] text-white/40 truncate max-w-[120px]">{t.purpose || t.type}</td>
+                                  <td className="px-3 py-2 text-[10px] text-white/50">TSh {(t.amount_tzs ?? 0).toLocaleString()}</td>
+                                  <td className="px-3 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${t.status==='completed'||t.status==='minted'?'bg-emerald-500/10 text-emerald-400':t.status==='pending'||t.status==='processing'?'bg-blue-500/10 text-blue-400':t.status==='failed'?'bg-red-500/10 text-red-400':'bg-white/5 text-white/30'}`}>{t.status}</span></td>
+                                  <td className="px-3 py-2 text-[10px] text-white/30">{t.note || '—'}</td>
                                   <td className="px-3 py-2 text-[10px] text-white/25">{t.created_at?new Date(t.created_at).toLocaleDateString('sw-TZ'):'—'}</td>
                                 </tr>
                               ))}
