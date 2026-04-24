@@ -45,61 +45,26 @@ export default function RegistrationSection({ title }: { title?: string }) {
     }
 
     try {
-      // Save member data to database first
-      console.log('Saving member data to database...');
-      const memberResponse = await fetch('/api/members', {
+      const authResponse = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email.trim() ? formData.email.trim() : null,
+          email: formData.email.trim() || null,
           phone: formData.phone,
+          password: formData.password,
+          fullName: formData.fullName,
           location: formData.location,
           businessType: formData.businessType,
           idType: formData.idType,
           idNumber: formData.idNumber,
           gender: formData.gender,
           age: formData.age,
-          status: 'pending'
-        }),
-      });
-
-      if (!memberResponse.ok) {
-        const errorData = await memberResponse.json();
-        const details =
-          typeof errorData?.details === 'string' && errorData.details
-            ? ` (${errorData.details})`
-            : '';
-        throw new Error((errorData.error || 'Failed to save member data') + details);
-      }
-
-      const memberData = await memberResponse.json();
-
-      console.log('Member data saved successfully');
-
-      // Create user account with custom auth
-      console.log('Creating user account...');
-      const authResponse = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email.trim() ? formData.email.trim() : null,
-          phone: formData.phone,
-          memberId: memberData?.id,
-          password: formData.password,
-          fullName: formData.fullName,
         }),
       });
 
       if (authResponse.ok) {
         const authData = await authResponse.json();
         localStorage.setItem('user', JSON.stringify(authData.user));
-      
-        // Role-based redirect
         if (authData.user.role === 'admin') {
           window.location.href = '/dashboard';
         } else {
@@ -107,9 +72,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
         }
       } else {
         const authError = await authResponse.json();
-        console.error('Auth signup failed:', authError);
-        setError('Usajili umekamilika lakini kuna tatizo la kuingia. Jaribu kuingia kwa kutumia barua pepe na nywila uliyoweka.');
-        setIsSubmitted(true);
+        throw new Error(authError.error || 'Usajili umeshindwa. Jaribu tena.');
       }
     } catch (error: unknown) {
       console.error('Registration error:', error);

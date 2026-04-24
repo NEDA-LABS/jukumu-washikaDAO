@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   let client: PoolClient | null = null;
 
   try {
-    const { email, password, fullName, phone, memberId } = await request.json();
+    const { email, password, fullName, phone, memberId, location, businessType, idType, idNumber, gender, age } = await request.json();
 
     if (!password || !fullName) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -161,11 +161,25 @@ export async function POST(request: NextRequest) {
 
       // No member record linked yet — create one automatically
       if (memberRes.rows.length === 0) {
+        const numericAge = age !== undefined && age !== null && age !== ''
+          ? Number.parseInt(String(age), 10)
+          : null;
         const newMember = await client.query(
-          `INSERT INTO members (user_id, full_name, email, phone, status)
-           VALUES ($1, $2, $3, $4, 'active')
+          `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')
            RETURNING id, phone, email`,
-          [user.id, fullName, trimmedEmail || null, normalizedPhone || null]
+          [
+            user.id,
+            fullName,
+            trimmedEmail || null,
+            normalizedPhone || null,
+            location || null,
+            businessType || null,
+            idType || null,
+            idNumber || null,
+            gender || null,
+            Number.isFinite(numericAge) ? numericAge : null,
+          ]
         );
         memberRes = newMember;
         console.log(`Auto-created member record for user ${user.id}`);
