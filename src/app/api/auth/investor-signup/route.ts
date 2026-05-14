@@ -14,14 +14,14 @@ async function ensureInvestorSchema(client: { query: (sql: string, params?: unkn
     DECLARE
       c_name TEXT;
     BEGIN
-      SELECT conname INTO c_name
-      FROM pg_constraint
-      WHERE conrelid = 'users'::regclass
-        AND contype = 'c'
-        AND pg_get_constraintdef(oid) LIKE '%role%';
-      IF c_name IS NOT NULL THEN
+      FOR c_name IN
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'users'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%role%'
+      LOOP
         EXECUTE 'ALTER TABLE users DROP CONSTRAINT ' || quote_ident(c_name);
-      END IF;
+      END LOOP;
       ALTER TABLE users ADD CONSTRAINT users_role_check
         CHECK (role IN ('admin', 'member', 'investor'));
     EXCEPTION WHEN duplicate_object THEN NULL;
@@ -140,8 +140,9 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     try { await client?.query('ROLLBACK'); } catch {}
-    console.error('Investor signup error:', error);
-    return NextResponse.json({ error: 'Hitilafu ya seva' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Investor signup error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   } finally {
     client?.release();
   }
