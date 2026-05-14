@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 /* ── JUKUMU Design Tokens ── */
-/* Light theme (default) */
+/* Light theme (default) — clean finance look */
 :root {
-  --ds-background: #ffffff;
-  --ds-foreground: #0a0a0a;
+  --ds-background: #f5f7fa;
+  --ds-foreground: #111827;
   --ds-card: #ffffff;
-  --ds-card-foreground: #0a0a0a;
-  --ds-muted: #f4f4f5;
-  --ds-muted-foreground: #71717a;
-  --ds-border: #e4e4e7;
-  --ds-input: #e4e4e7;
+  --ds-card-foreground: #111827;
+  --ds-overlay: #ffffff;
+  --ds-muted: #eef2f7;
+  --ds-muted-foreground: #6b7280;
+  --ds-border: #e2e8f0;
+  --ds-input: #e2e8f0;
   --ds-primary: #ea580c;
   --ds-primary-foreground: #ffffff;
   --ds-secondary: #1c1917;
@@ -32,14 +33,15 @@
 
 /* Dark theme */
 :root.dark {
-  --ds-background: #0a0a0a;
+  --ds-background: #0d0d0d;
   --ds-foreground: #fafafa;
-  --ds-card: #18181b;
+  --ds-card: #141414;
   --ds-card-foreground: #fafafa;
-  --ds-muted: #27272a;
+  --ds-overlay: #1a1a1a;
+  --ds-muted: #1e1e1e;
   --ds-muted-foreground: #a1a1aa;
-  --ds-border: #3f3f46;
-  --ds-input: #3f3f46;
+  --ds-border: #2a2a2a;
+  --ds-input: #2a2a2a;
   --ds-primary: #f97316;
   --ds-primary-foreground: #ffffff;
   --ds-secondary: #fafaf9;
@@ -61,6 +63,7 @@
   --color-foreground: var(--ds-foreground);
   --color-card: var(--ds-card);
   --color-card-foreground: var(--ds-card-foreground);
+  --color-overlay: var(--ds-overlay);
   --color-muted: var(--ds-muted);
   --color-muted-foreground: var(--ds-muted-foreground);
   --color-border: var(--ds-border);

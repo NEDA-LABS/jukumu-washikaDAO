@@ -13,13 +13,35 @@ interface NetworkStats {
   activeRegions: number;
 }
 
+interface FundingRequest {
+  id: number;
+  title: string;
+  description?: string | null;
+  metadata?: {
+    funding_goal_tzs?: number;
+    project_description?: string;
+    timeline?: string;
+    expected_impact?: string;
+  } | null;
+  funded_at: string;
+  group_name: string;
+  monthly_contribution?: number | null;
+  member_count: number;
+}
+
 export default function InvestorPage() {
   const [stats, setStats] = useState<NetworkStats | null>(null);
+  const [fundingRequests, setFundingRequests] = useState<FundingRequest[]>([]);
 
   useEffect(() => {
     fetch('/api/investor/stats')
       .then(r => r.ok ? r.json() : null)
       .then(data => data && setStats(data))
+      .catch(() => null);
+
+    fetch('/api/investor/funding-requests')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => data?.requests && setFundingRequests(data.requests))
       .catch(() => null);
   }, []);
 
@@ -61,12 +83,12 @@ export default function InvestorPage() {
             wanajua biashara zao na jamii zao.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              href="mailto:invest@jukumufund.co.tz"
+            <Link
+              href="/investor/signup"
               className="inline-flex items-center justify-center px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
             >
-              Wasiliana nasi
-            </a>
+              Anza Kuwekeza →
+            </Link>
             <Link
               href="/#about"
               className="inline-flex items-center justify-center px-8 py-4 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
@@ -239,6 +261,69 @@ export default function InvestorPage() {
           </a>
         </div>
       </section>
+
+      {/* ── Prodast: Live Funding Requests ── */}
+      {fundingRequests.length > 0 && (
+        <section className="py-20 bg-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 text-xs font-semibold uppercase tracking-widest mb-4">Prodast</span>
+              <h2 className="text-3xl font-bold text-foreground mb-3">Miradi Inayotafuta Wawekezaji</h2>
+              <p className="text-foreground/50 max-w-xl mx-auto">Makundi yaliyopitisha kura na yanatafuta ushirikiano wa fedha. Kila mradi unapendekeza wawekezaji kuchangia pamoja.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fundingRequests.map(req => (
+                <div key={req.id} className="rounded-2xl bg-card border border-border p-6 flex flex-col gap-4 hover:border-purple-500/30 transition-colors">
+                  {/* Group + members */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-purple-600 bg-purple-500/10 px-2.5 py-1 rounded-full">{req.group_name}</span>
+                    <span className="text-[10px] text-muted-foreground">{req.member_count} wanachama</span>
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground leading-snug mb-1">{req.title}</h3>
+                    {(req.metadata?.project_description || req.description) && (
+                      <p className="text-xs text-foreground/50 line-clamp-3">
+                        {req.metadata?.project_description || req.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="flex gap-3 flex-wrap">
+                    {req.metadata?.funding_goal_tzs && (
+                      <div className="flex-1 min-w-0 rounded-xl bg-foreground/[0.03] border border-border px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Lengo</p>
+                        <p className="text-sm font-bold text-foreground">TSH {Number(req.metadata.funding_goal_tzs).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {req.metadata?.timeline && (
+                      <div className="flex-1 min-w-0 rounded-xl bg-foreground/[0.03] border border-border px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Muda</p>
+                        <p className="text-sm font-bold text-foreground">{req.metadata.timeline}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {req.metadata?.expected_impact && (
+                    <p className="text-[11px] text-foreground/40 italic">"{req.metadata.expected_impact}"</p>
+                  )}
+
+                  {/* CTA */}
+                  <a
+                    href="mailto:invest@jukumufund.co.tz"
+                    className="mt-auto w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold text-center transition-colors"
+                  >
+                    Wasiliana Nasi
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>

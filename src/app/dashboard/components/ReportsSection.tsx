@@ -43,41 +43,41 @@ export default function ReportsSection({ adminStats }: { adminStats: any }) {
   const specialReports = ['Takwimu za Jinsia', 'Ukuaji wa Biashara', 'Athari za Kijamii'];
 
   return (
-    <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
-      <h2 className="text-base font-semibold text-white mb-5">Ripoti na Takwimu</h2>
+    <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-foreground mb-5">Ripoti na Takwimu</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-white/40 mb-3">Ripoti za Mwezi</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-3">Ripoti za Mwezi</p>
           {adminStats ? monthlyReports.map((report, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <span className="text-sm text-white/60">Ripoti ya {report.label}</span>
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-foreground/[0.03] border border-border">
+              <span className="text-sm text-foreground/60">Ripoti ya {report.label}</span>
               <button
                 onClick={() => handleDownloadMonthlyReport(report.offset)}
                 disabled={downloadingReport === `monthly-${report.offset}`}
-                className="text-xs text-orange-400 hover:text-orange-300 font-medium disabled:opacity-40 transition-colors"
+                className="text-xs text-orange-500 hover:text-orange-600 font-medium disabled:opacity-40 transition-colors"
               >
                 {downloadingReport === `monthly-${report.offset}` ? 'Inafungua...' : 'Pakua PDF'}
               </button>
             </div>
           )) : (
-            <p className="text-xs text-white/25 py-4 text-center">Hakuna takwimu bado</p>
+            <p className="text-xs text-muted-foreground py-4 text-center">Hakuna takwimu bado</p>
           )}
         </div>
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-white/40 mb-3">Ripoti za Maalum</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-3">Ripoti za Maalum</p>
           {adminStats ? specialReports.map((report, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <span className="text-sm text-white/60">{report}</span>
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-foreground/[0.03] border border-border">
+              <span className="text-sm text-foreground/60">{report}</span>
               <button
                 onClick={() => handleGenerateSpecialReport(report)}
                 disabled={generatingReport === report}
-                className="text-xs text-orange-400 hover:text-orange-300 font-medium disabled:opacity-40 transition-colors"
+                className="text-xs text-orange-500 hover:text-orange-600 font-medium disabled:opacity-40 transition-colors"
               >
                 {generatingReport === report ? 'Inafungua...' : 'Angalia PDF'}
               </button>
             </div>
           )) : (
-            <p className="text-xs text-white/25 py-4 text-center">Hakuna takwimu bado</p>
+            <p className="text-xs text-muted-foreground py-4 text-center">Hakuna takwimu bado</p>
           )}
         </div>
       </div>

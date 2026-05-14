@@ -128,25 +128,25 @@ export default function ContentSection({ educationalContent, user, loadAdminData
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-white">Mafunzo na Elimu</h2>
+        <h2 className="text-base font-semibold text-foreground">Mafunzo na Elimu</h2>
         <button onClick={() => { setEditingContent(null); setContentFormTab('ai'); setAiCoursePreview(null); setAiCourseError(null); setAiCoursePrompt(''); setContentForm(resetContentForm()); setShowContentForm(true); }} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
           <PlusIcon className="h-4 w-4" /> Mafunzo Mapya
         </button>
       </div>
 
       {showContentForm && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-overlay border border-border max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-semibold text-white">{editingContent ? 'Hariri Mafunzo' : 'Mafunzo Mapya'}</h3>
-                <button onClick={() => { setShowContentForm(false); setEditingContent(null); setAiCoursePreview(null); }} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
+                <h3 className="text-base font-semibold text-foreground">{editingContent ? 'Hariri Mafunzo' : 'Mafunzo Mapya'}</h3>
+                <button onClick={() => { setShowContentForm(false); setEditingContent(null); setAiCoursePreview(null); }} className="text-muted-foreground hover:text-foreground text-2xl leading-none">×</button>
               </div>
 
               {!editingContent && (
-                <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
-                  <button onClick={() => { setContentFormTab('ai'); setAiCoursePreview(null); setAiCourseError(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'ai' ? 'bg-orange-500 text-white shadow' : 'text-white/40 hover:text-white/60'}`}>✦ AI Generate</button>
-                  <button onClick={() => setContentFormTab('manual')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'manual' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}>Manual</button>
+                <div className="flex gap-1 p-1 rounded-xl bg-foreground/[0.04] border border-border mb-5">
+                  <button onClick={() => { setContentFormTab('ai'); setAiCoursePreview(null); setAiCourseError(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'ai' ? 'bg-orange-500 text-white shadow' : 'text-muted-foreground hover:text-foreground'}`}>✦ AI Generate</button>
+                  <button onClick={() => setContentFormTab('manual')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${contentFormTab === 'manual' ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Manual</button>
                 </div>
               )}
 
@@ -161,34 +161,34 @@ export default function ContentSection({ educationalContent, user, loadAdminData
                         <div><label className={dkLabel}>Kategoria</label><select value={aiCourseCategory} onChange={e => setAiCourseCategory(e.target.value)} className={dkSelect}><option value="Biashara">Biashara</option><option value="Fedha">Fedha</option><option value="Uongozi">Uongozi</option><option value="Akiba">Akiba</option><option value="Teknolojia">Teknolojia</option></select></div>
                         <div><label className={dkLabel}>Idadi ya Masomo</label><input type="number" min={1} max={20} value={aiCourseLessonCount} onChange={e => setAiCourseLessonCount(parseInt(e.target.value||'1'))} className={dkInput} /></div>
                       </div>
-                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
+                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600">{aiCourseError}</div>}
                       <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                        <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
                         <button onClick={() => handleAiGenerateCourse(false)} disabled={aiCourseGenerating || !aiCoursePrompt.trim()} className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">{aiCourseGenerating ? 'Inatengeneza...' : '✦ Tengeneza na AI'}</button>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="rounded-xl bg-orange-500/5 border border-orange-500/20 p-4">
-                        <p className="text-xs text-orange-400 font-semibold mb-3">✦ Preview ya Kozi Iliyotengenezwa na AI</p>
-                        <h4 className="text-base font-bold text-white mb-1">{aiCoursePreview.title}</h4>
-                        <p className="text-xs text-white/50 mb-3">{aiCoursePreview.description}</p>
-                        <div className="flex items-center gap-3 text-xs text-white/30"><span>{aiCoursePreview.category}</span><span>·</span><span>{aiCoursePreview.difficulty_level}</span><span>·</span><span>{aiCoursePreview.duration}</span></div>
+                        <p className="text-xs text-orange-500 font-semibold mb-3">✦ Preview ya Kozi Iliyotengenezwa na AI</p>
+                        <h4 className="text-base font-bold text-foreground mb-1">{aiCoursePreview.title}</h4>
+                        <p className="text-xs text-foreground/50 mb-3">{aiCoursePreview.description}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground"><span>{aiCoursePreview.category}</span><span>·</span><span>{aiCoursePreview.difficulty_level}</span><span>·</span><span>{aiCoursePreview.duration}</span></div>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-white/40 mb-2">Masomo ({aiCoursePreview.lessons?.length})</p>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Masomo ({aiCoursePreview.lessons?.length})</p>
                         <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                           {aiCoursePreview.lessons?.map((l: any, i: number) => (
-                            <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-                              <div className="flex items-center justify-between"><p className="text-xs font-semibold text-white">{i+1}. {l.title}</p><p className="text-[10px] text-white/25">{l.duration_minutes} min</p></div>
-                              <p className="text-[10px] text-white/30 mt-1 line-clamp-2">{String(l.content||'').slice(0, 140)}...</p>
+                            <div key={i} className="rounded-lg bg-foreground/[0.03] border border-border p-3">
+                              <div className="flex items-center justify-between"><p className="text-xs font-semibold text-foreground">{i+1}. {l.title}</p><p className="text-[10px] text-muted-foreground">{l.duration_minutes} min</p></div>
+                              <p className="text-[10px] text-foreground/40 mt-1 line-clamp-2">{String(l.content||'').slice(0, 140)}...</p>
                             </div>
                           ))}
                         </div>
                       </div>
-                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiCourseError}</div>}
+                      {aiCourseError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600">{aiCourseError}</div>}
                       <div className="flex gap-2 pt-1">
-                        <button onClick={() => { setAiCoursePreview(null); setAiCourseError(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">← Rudi</button>
+                        <button onClick={() => { setAiCoursePreview(null); setAiCourseError(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">← Rudi</button>
                         <button onClick={() => handleAiGenerateCourse(true)} disabled={aiCourseSaving} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">{aiCourseSaving ? 'Inahifadhi...' : '✓ Hifadhi Kozi na Masomo Yote'}</button>
                       </div>
                     </>
@@ -209,16 +209,16 @@ export default function ContentSection({ educationalContent, user, loadAdminData
                     <div><label className={dkLabel}>Kiwango</label><select value={contentForm.difficulty_level} onChange={e => setContentForm({...contentForm, difficulty_level: e.target.value})} className={dkSelect}><option value="beginner">Mwanzo</option><option value="intermediate">Kati</option><option value="advanced">Juu</option></select></div>
                     <div><label className={dkLabel}>URL ya Picha</label><input type="url" value={contentForm.image_url} onChange={e => setContentForm({...contentForm, image_url: e.target.value})} className={dkInput} /></div>
                   </div>
-                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 space-y-3">
-                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Chaguo za Kozi</p>
-                    <label className="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked={contentForm.is_published} onChange={e => setContentForm({...contentForm, is_published: e.target.checked})} className="accent-orange-500 w-4 h-4" /><span className="text-sm text-white/60">Chapisha mara moja</span></label>
-                    <label className="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked={contentForm.certificates_enabled} onChange={e => setContentForm({...contentForm, certificates_enabled: e.target.checked})} className="accent-orange-500 w-4 h-4" /><div><span className="text-sm text-white/60">Toa Cheti cha Kukamilisha</span><p className="text-xs text-white/25 mt-0.5">Wanachama watapata cheti baada ya kukamilisha kozi</p></div></label>
+                  <div className="rounded-xl bg-foreground/[0.03] border border-border p-4 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Chaguo za Kozi</p>
+                    <label className="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked={contentForm.is_published} onChange={e => setContentForm({...contentForm, is_published: e.target.checked})} className="accent-orange-500 w-4 h-4" /><span className="text-sm text-foreground/60">Chapisha mara moja</span></label>
+                    <label className="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked={contentForm.certificates_enabled} onChange={e => setContentForm({...contentForm, certificates_enabled: e.target.checked})} className="accent-orange-500 w-4 h-4" /><div><span className="text-sm text-foreground/60">Toa Cheti cha Kukamilisha</span><p className="text-xs text-foreground/30 mt-0.5">Wanachama watapata cheti baada ya kukamilisha kozi</p></div></label>
                     {contentForm.certificates_enabled && (
-                      <div className="pl-6"><label className={dkLabel}>Kiwango cha Kupita (% ya masomo)</label><div className="flex items-center gap-3"><input type="range" min={50} max={100} step={5} value={contentForm.pass_threshold} onChange={e => setContentForm({...contentForm, pass_threshold: parseInt(e.target.value)})} className="flex-1 accent-orange-500" /><span className="text-sm font-semibold text-orange-400 w-12 text-right">{contentForm.pass_threshold}%</span></div></div>
+                      <div className="pl-6"><label className={dkLabel}>Kiwango cha Kupita (% ya masomo)</label><div className="flex items-center gap-3"><input type="range" min={50} max={100} step={5} value={contentForm.pass_threshold} onChange={e => setContentForm({...contentForm, pass_threshold: parseInt(e.target.value)})} className="flex-1 accent-orange-500" /><span className="text-sm font-semibold text-orange-500 w-12 text-right">{contentForm.pass_threshold}%</span></div></div>
                     )}
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                    <button type="button" onClick={() => { setShowContentForm(false); setEditingContent(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
                     <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingContent ? 'Hifadhi Mabadiliko' : 'Hifadhi'}</button>
                   </div>
                 </form>
@@ -229,20 +229,20 @@ export default function ContentSection({ educationalContent, user, loadAdminData
       )}
 
       {viewingContent && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-3xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-overlay border border-border max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="p-6">
               <div className="flex items-start justify-between mb-5">
-                <div><h2 className="text-lg font-bold text-white">{viewingContent.title}</h2><p className="text-xs text-white/30 mt-1">{viewingContent.category} · {viewingContent.difficulty_level} · {viewingContent.duration} dakika</p></div>
-                <button onClick={() => setViewingContent(null)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
+                <div><h2 className="text-lg font-bold text-foreground">{viewingContent.title}</h2><p className="text-xs text-muted-foreground mt-1">{viewingContent.category} · {viewingContent.difficulty_level} · {viewingContent.duration} dakika</p></div>
+                <button onClick={() => setViewingContent(null)} className="text-muted-foreground hover:text-foreground text-2xl leading-none">×</button>
               </div>
-              <div className="mb-4"><p className="text-xs font-semibold text-white/30 mb-2">Maelezo</p><p className="text-sm text-white/60">{viewingContent.description}</p></div>
-              <div className="mb-5"><p className="text-xs font-semibold text-white/30 mb-2">Maudhui</p><div className="text-sm text-white/50 whitespace-pre-wrap leading-relaxed">{viewingContent.content}</div></div>
-              <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
-                <p className="text-xs text-white/25">Imeandikwa na {viewingContent.author_name} · {new Date(viewingContent.created_at).toLocaleDateString('sw-TZ')}</p>
+              <div className="mb-4"><p className="text-xs font-semibold text-muted-foreground mb-2">Maelezo</p><p className="text-sm text-foreground/60">{viewingContent.description}</p></div>
+              <div className="mb-5"><p className="text-xs font-semibold text-muted-foreground mb-2">Maudhui</p><div className="text-sm text-foreground/50 whitespace-pre-wrap leading-relaxed">{viewingContent.content}</div></div>
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground">Imeandikwa na {viewingContent.author_name} · {new Date(viewingContent.created_at).toLocaleDateString('sw-TZ')}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => { setViewingContent(null); handleEditContent(viewingContent); }} className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-sm transition-colors">Hariri</button>
-                  <button onClick={() => handleTogglePublish(viewingContent.id, viewingContent.is_published)} className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-colors ${viewingContent.is_published ? 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400'}`}>{viewingContent.is_published ? 'Ficha' : 'Chapisha'}</button>
+                  <button onClick={() => { setViewingContent(null); handleEditContent(viewingContent); }} className="px-3.5 py-2 rounded-xl bg-foreground/5 hover:bg-foreground/10 text-foreground/50 text-sm transition-colors">Hariri</button>
+                  <button onClick={() => handleTogglePublish(viewingContent.id, viewingContent.is_published)} className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-colors ${viewingContent.is_published ? 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600'}`}>{viewingContent.is_published ? 'Ficha' : 'Chapisha'}</button>
                 </div>
               </div>
             </div>
@@ -251,15 +251,15 @@ export default function ContentSection({ educationalContent, user, loadAdminData
       )}
 
       {managingLessons && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-5xl rounded-2xl bg-[#1a1a1a] border border-white/10 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-5xl rounded-2xl bg-overlay border border-border max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <div><h3 className="text-base font-semibold text-white">Dhibiti Masomo</h3><p className="text-xs text-white/30 mt-0.5">{managingLessons.title}</p></div>
+                <div><h3 className="text-base font-semibold text-foreground">Dhibiti Masomo</h3><p className="text-xs text-muted-foreground mt-0.5">{managingLessons.title}</p></div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => { setShowAiLessonGenerator(s => !s); setAiError(null); setAiGeneratedLessons(null); }} className="px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/20 transition-colors">AI Generate</button>
-                  <button onClick={() => { setEditingLesson(null); setLessonForm({ language: 'sw', title: '', content: '', duration_minutes: 15, lesson_type: 'text', video_url: '' }); setShowLessonForm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/20 transition-colors"><PlusIcon className="h-3.5 w-3.5" /> Somo Jipya</button>
-                  <button onClick={() => setManagingLessons(null)} className="text-white/30 hover:text-white/60 text-2xl leading-none">×</button>
+                  <button onClick={() => { setShowAiLessonGenerator(s => !s); setAiError(null); setAiGeneratedLessons(null); }} className="px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 text-xs font-semibold border border-orange-500/20 transition-colors">AI Generate</button>
+                  <button onClick={() => { setEditingLesson(null); setLessonForm({ language: 'sw', title: '', content: '', duration_minutes: 15, lesson_type: 'text', video_url: '' }); setShowLessonForm(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 text-xs font-semibold border border-blue-500/20 transition-colors"><PlusIcon className="h-3.5 w-3.5" /> Somo Jipya</button>
+                  <button onClick={() => setManagingLessons(null)} className="text-muted-foreground hover:text-foreground text-2xl leading-none">×</button>
                 </div>
               </div>
 
@@ -267,7 +267,7 @@ export default function ContentSection({ educationalContent, user, loadAdminData
                 <div className="rounded-xl bg-orange-500/5 border border-orange-500/20 p-4 mb-5">
                   <div className="flex items-start gap-4">
                     <div className="flex-1 space-y-3">
-                      <p className="text-sm font-semibold text-orange-400">AI Lesson Generator</p>
+                      <p className="text-sm font-semibold text-orange-500">AI Lesson Generator</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div><label className={dkLabel}>Lugha</label><select value={aiLanguage} onChange={e => setAiLanguage(e.target.value as 'sw'|'en')} className={dkSelect}><option value="sw">Swahili</option><option value="en">English</option></select></div>
                         <div><label className={dkLabel}>Kiwango</label><select value={aiDifficulty} onChange={e => setAiDifficulty(e.target.value as any)} className={dkSelect}><option value="beginner">Mwanzo</option><option value="intermediate">Kati</option><option value="advanced">Juu</option></select></div>
@@ -275,32 +275,32 @@ export default function ContentSection({ educationalContent, user, loadAdminData
                         <div className="flex items-end"><button onClick={() => handleGenerateLessonsWithAI(false)} disabled={aiGenerating||aiSaving} className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold disabled:opacity-40 transition-colors">{aiGenerating ? 'Inatengeneza...' : 'Preview'}</button></div>
                       </div>
                       <div><label className={dkLabel}>Mada ya Masomo</label><textarea value={aiTopicPrompt} onChange={e => setAiTopicPrompt(e.target.value)} className={`${dkInput} resize-none`} rows={2} placeholder="Mfano: Financial Basics — budgeting, saving..." /></div>
-                      {aiError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{aiError}</div>}
+                      {aiError && <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600">{aiError}</div>}
                       {aiGeneratedLessons && (
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-semibold text-white/40">Preview ({aiGeneratedLessons.length} masomo)</p>
-                            <button onClick={() => handleGenerateLessonsWithAI(true)} disabled={aiSaving||aiGenerating} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/20 disabled:opacity-40">{aiSaving ? 'Inahifadhi...' : 'Hifadhi Kwa Kozi'}</button>
+                            <p className="text-xs font-semibold text-muted-foreground">Preview ({aiGeneratedLessons.length} masomo)</p>
+                            <button onClick={() => handleGenerateLessonsWithAI(true)} disabled={aiSaving||aiGenerating} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 text-xs font-semibold border border-emerald-500/20 disabled:opacity-40">{aiSaving ? 'Inahifadhi...' : 'Hifadhi Kwa Kozi'}</button>
                           </div>
                           <div className="space-y-2">
                             {aiGeneratedLessons.map((l: any, i: number) => (
-                              <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-                                <div className="flex items-center justify-between mb-1"><p className="text-xs font-semibold text-white">{l.title}</p><p className="text-[10px] text-white/25">{l.duration_minutes} min · {aiLanguage.toUpperCase()}</p></div>
-                                <p className="text-[10px] text-white/30 whitespace-pre-wrap">{String(l.content||'').slice(0,300)}{String(l.content||'').length>300?'...':''}</p>
+                              <div key={i} className="rounded-xl bg-foreground/[0.03] border border-border p-3">
+                                <div className="flex items-center justify-between mb-1"><p className="text-xs font-semibold text-foreground">{l.title}</p><p className="text-[10px] text-muted-foreground">{l.duration_minutes} min · {aiLanguage.toUpperCase()}</p></div>
+                                <p className="text-[10px] text-foreground/40 whitespace-pre-wrap">{String(l.content||'').slice(0,300)}{String(l.content||'').length>300?'...':''}</p>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-                    <button onClick={() => { setShowAiLessonGenerator(false); setAiError(null); setAiGeneratedLessons(null); }} className="text-white/30 hover:text-white/60 text-xl leading-none">×</button>
+                    <button onClick={() => { setShowAiLessonGenerator(false); setAiError(null); setAiGeneratedLessons(null); }} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
                   </div>
                 </div>
               )}
 
               {showLessonForm && (
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 mb-5">
-                  <p className="text-sm font-semibold text-white mb-3">{editingLesson ? 'Hariri Somo' : 'Somo Jipya'}</p>
+                <div className="rounded-xl bg-foreground/[0.03] border border-border p-4 mb-5">
+                  <p className="text-sm font-semibold text-foreground mb-3">{editingLesson ? 'Hariri Somo' : 'Somo Jipya'}</p>
                   <form onSubmit={handleLessonSubmit} className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div><label className={dkLabel}>Kichwa cha Somo *</label><input type="text" value={lessonForm.title} onChange={e => setLessonForm({...lessonForm, title: e.target.value})} className={dkInput} required /></div>
@@ -309,7 +309,7 @@ export default function ContentSection({ educationalContent, user, loadAdminData
                     <div><label className={dkLabel}>Lugha</label><select value={(lessonForm as any).language||'sw'} onChange={e => setLessonForm({...(lessonForm as any), language: e.target.value})} className={dkSelect}><option value="sw">Swahili</option><option value="en">English</option></select></div>
                     <div><label className={dkLabel}>Maudhui ya Somo *</label><textarea value={lessonForm.content} onChange={e => setLessonForm({...lessonForm, content: e.target.value})} className={`${dkInput} resize-none`} rows={6} placeholder="Andika maudhui ya somo hapa..." required /></div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLesson(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLesson(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
                       <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{editingLesson ? 'Hifadhi Mabadiliko' : 'Hifadhi Somo'}</button>
                     </div>
                   </form>
@@ -317,30 +317,30 @@ export default function ContentSection({ educationalContent, user, loadAdminData
               )}
 
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-white/40">Masomo ({lessons.length})</p>
+                <p className="text-xs font-semibold text-muted-foreground">Masomo ({lessons.length})</p>
                 {lessons.length > 0 ? lessons.map(lesson => (
-                  <div key={lesson.id} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                  <div key={lesson.id} className="rounded-xl bg-foreground/[0.03] border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold">#{lesson.lesson_order}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 font-semibold">{(lesson.language||'sw').toUpperCase()}</span>
-                          <span className="text-[10px] text-white/25">{lesson.duration_minutes} dakika</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold">#{lesson.lesson_order}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/5 text-foreground/40 font-semibold">{(lesson.language||'sw').toUpperCase()}</span>
+                          <span className="text-[10px] text-muted-foreground">{lesson.duration_minutes} dakika</span>
                         </div>
-                        <p className="text-sm font-semibold text-white mb-1">{lesson.title}</p>
-                        <p className="text-xs text-white/30 line-clamp-2">{lesson.content.substring(0,200)}...</p>
+                        <p className="text-sm font-semibold text-foreground mb-1">{lesson.title}</p>
+                        <p className="text-xs text-foreground/40 line-clamp-2">{lesson.content.substring(0,200)}...</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={() => { setEditingLesson(lesson); setLessonForm({ language: lesson.language||'sw', title: lesson.title, content: lesson.content, duration_minutes: lesson.duration_minutes, lesson_type: lesson.lesson_type, video_url: lesson.video_url||'' }); setShowLessonForm(true); }} className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/10 text-white/30 hover:text-emerald-400 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => { setEditingLesson(lesson); setLessonForm({ language: lesson.language||'sw', title: lesson.title, content: lesson.content, duration_minutes: lesson.duration_minutes, lesson_type: lesson.lesson_type, video_url: lesson.video_url||'' }); setShowLessonForm(true); }} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-emerald-500/10 text-foreground/30 hover:text-emerald-600 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-red-500/10 text-foreground/30 hover:text-red-600 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   </div>
                 )) : (
                   <div className="text-center py-10">
-                    <BookOpenIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
-                    <p className="text-sm text-white/25">Hakuna masomo bado</p>
-                    <p className="text-xs text-white/15 mt-1">Bonyeza &ldquo;Somo Jipya&rdquo; kuanza</p>
+                    <BookOpenIcon className="h-8 w-8 mx-auto text-foreground/10 mb-3" />
+                    <p className="text-sm text-muted-foreground">Hakuna masomo bado</p>
+                    <p className="text-xs text-foreground/20 mt-1">Bonyeza &ldquo;Somo Jipya&rdquo; kuanza</p>
                   </div>
                 )}
               </div>
@@ -349,31 +349,31 @@ export default function ContentSection({ educationalContent, user, loadAdminData
         </div>
       )}
 
-      <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+      <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
         <table className="min-w-full">
-          <thead><tr className="border-b border-white/[0.06]">
+          <thead><tr className="border-b border-border">
             {['Mafunzo','Hali','Mwandishi','Tarehe','Vitendo'].map(h => (
-              <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-white/30 uppercase">{h}</th>
+              <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>
             ))}
           </tr></thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-border">
             {educationalContent.length > 0 ? educationalContent.map(c => (
-              <tr key={c.id} className="hover:bg-white/[0.02]">
-                <td className="px-4 py-3"><p className="text-sm font-medium text-white">{c.title}</p><p className="text-[10px] text-white/25 mt-0.5">{c.category} · {c.difficulty_level} · {c.duration} dakika</p></td>
-                <td className="px-4 py-3"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${c.is_published ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'}`}>{c.is_published ? 'Imechapishwa' : 'Rasimu'}</span></td>
-                <td className="px-4 py-3 text-xs text-white/40">{c.author_name}</td>
-                <td className="px-4 py-3 text-xs text-white/25">{new Date(c.created_at).toLocaleDateString('sw-TZ')}</td>
+              <tr key={c.id} className="hover:bg-foreground/[0.02]">
+                <td className="px-4 py-3"><p className="text-sm font-medium text-foreground">{c.title}</p><p className="text-[10px] text-muted-foreground mt-0.5">{c.category} · {c.difficulty_level} · {c.duration} dakika</p></td>
+                <td className="px-4 py-3"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${c.is_published ? 'bg-emerald-500/10 text-emerald-600' : 'bg-foreground/5 text-foreground/40'}`}>{c.is_published ? 'Imechapishwa' : 'Rasimu'}</span></td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{c.author_name}</td>
+                <td className="px-4 py-3 text-xs text-foreground/30">{new Date(c.created_at).toLocaleDateString('sw-TZ')}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setViewingContent(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-blue-500/10 text-white/30 hover:text-blue-400 transition-colors"><EyeIcon className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleEditContent(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/10 text-white/30 hover:text-emerald-400 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleManageLessons(c)} className="p-1.5 rounded-lg bg-white/5 hover:bg-purple-500/10 text-white/30 hover:text-purple-400 transition-colors"><BookOpenIcon className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleDeleteContent(c.id)} className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setViewingContent(c)} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-blue-500/10 text-foreground/30 hover:text-blue-600 transition-colors"><EyeIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEditContent(c)} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-emerald-500/10 text-foreground/30 hover:text-emerald-600 transition-colors"><PencilIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleManageLessons(c)} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-purple-500/10 text-foreground/30 hover:text-purple-600 transition-colors"><BookOpenIcon className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleDeleteContent(c.id)} className="p-1.5 rounded-lg bg-foreground/5 hover:bg-red-500/10 text-foreground/30 hover:text-red-600 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
                   </div>
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan={5} className="px-4 py-12 text-center"><BookOpenIcon className="h-8 w-8 mx-auto text-white/10 mb-3" /><p className="text-sm text-white/25">Hakuna mafunzo bado</p></td></tr>
+              <tr><td colSpan={5} className="px-4 py-12 text-center"><BookOpenIcon className="h-8 w-8 mx-auto text-foreground/10 mb-3" /><p className="text-sm text-muted-foreground">Hakuna mafunzo bado</p></td></tr>
             )}
           </tbody>
         </table>

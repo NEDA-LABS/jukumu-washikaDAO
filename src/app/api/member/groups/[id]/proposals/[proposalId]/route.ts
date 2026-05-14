@@ -15,14 +15,8 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
-
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_group_proposals_group_id ON group_proposals(group_id);
-  `);
-
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_group_proposals_created_at ON group_proposals(created_at DESC);
-  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_group_id ON group_proposals(group_id)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_created_at ON group_proposals(created_at DESC)`);
 }
 
 async function ensureProposalVotingSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
@@ -37,34 +31,8 @@ async function ensureProposalVotingSchema(client: { query: (sql: string, params?
       UNIQUE(proposal_id, member_id)
     );
   `);
-
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_group_proposal_votes_proposal_id ON group_proposal_votes(proposal_id);
-  `);
-
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_group_proposal_votes_member_id ON group_proposal_votes(member_id);
-  `);
-}
-
-async function isMemberOfGroup(
-  client: { query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }> },
-  userId: number,
-  groupId: number
-) {
-  const membershipRes = await client.query(
-    `
-      SELECT 1
-      FROM group_members gm
-      JOIN members m ON m.id = gm.member_id
-      WHERE m.user_id = $1
-        AND gm.group_id = $2
-      LIMIT 1
-    `,
-    [userId, groupId]
-  );
-
-  return membershipRes.rows.length > 0;
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposal_votes_proposal_id ON group_proposal_votes(proposal_id)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposal_votes_member_id ON group_proposal_votes(member_id)`);
 }
 
 async function getMembership(
@@ -73,14 +41,11 @@ async function getMembership(
   groupId: number
 ) {
   const res = await client.query(
-    `
-      SELECT gm.member_id, gm.role, gm.status
-      FROM group_members gm
-      JOIN members m ON m.id = gm.member_id
-      WHERE m.user_id = $1
-        AND gm.group_id = $2
-      LIMIT 1
-    `,
+    `SELECT gm.member_id, gm.role, gm.status
+     FROM group_members gm
+     JOIN members m ON m.id = gm.member_id
+     WHERE m.user_id = $1 AND gm.group_id = $2
+     LIMIT 1`,
     [userId, groupId]
   );
   if (res.rows.length === 0) return null;
@@ -92,25 +57,17 @@ async function getVoteSummary(
   proposalId: number
 ) {
   const res = await client.query(
-    `
-      SELECT
+    `SELECT
         COUNT(*) FILTER (WHERE vote = 'yes')::int AS yes,
         COUNT(*) FILTER (WHERE vote = 'no')::int AS no,
         COUNT(*) FILTER (WHERE vote = 'abstain')::int AS abstain,
         COUNT(*)::int AS total
       FROM group_proposal_votes
-      WHERE proposal_id = $1
-    `,
+      WHERE proposal_id = $1`,
     [proposalId]
   );
-
   const row = (res.rows[0] || {}) as { yes?: number; no?: number; abstain?: number; total?: number };
-  return {
-    yes: row.yes ?? 0,
-    no: row.no ?? 0,
-    abstain: row.abstain ?? 0,
-    total: row.total ?? 0
-  };
+  return { yes: row.yes ?? 0, no: row.no ?? 0, abstain: row.abstain ?? 0, total: row.total ?? 0 };
 }
 
 export async function GET(
@@ -118,21 +75,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string; proposalId: string }> }
 ) {
   const auth = getAuthTokenPayload(request);
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id, proposalId } = await params;
   const groupId = Number.parseInt(id, 10);
   const pid = Number.parseInt(proposalId, 10);
 
-  if (!Number.isFinite(groupId)) {
-    return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
-  }
-
-  if (!Number.isFinite(pid)) {
-    return NextResponse.json({ error: 'Invalid proposal id' }, { status: 400 });
-  }
+  if (!Number.isFinite(groupId)) return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
+  if (!Number.isFinite(pid)) return NextResponse.json({ error: 'Invalid proposal id' }, { status: 400 });
 
   const client = await pool.connect();
   try {
@@ -140,61 +90,37 @@ export async function GET(
     await ensureProposalVotingSchema(client);
 
     const membership = await getMembership(client, auth.userId, groupId);
-    if (!membership) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const res = await client.query(
-      `
-        SELECT
-          p.id,
-          p.group_id,
-          p.title,
-          p.description,
-          p.status,
-          p.created_at,
-          p.updated_at,
-          m.full_name AS created_by_name,
-          m.id AS created_by_member_id
+      `SELECT
+          p.id, p.group_id, p.title, p.description, p.status,
+          p.proposal_type, p.metadata, p.funded_at,
+          p.payment_amount_tzs, p.payment_status, p.payment_tx_id, p.executed_at,
+          p.created_at, p.updated_at,
+          m.full_name AS created_by_name, m.id AS created_by_member_id
         FROM group_proposals p
         JOIN members m ON m.id = p.created_by_member_id
-        WHERE p.group_id = $1
-          AND p.id = $2
-        LIMIT 1
-      `,
+        WHERE p.group_id = $1 AND p.id = $2
+        LIMIT 1`,
       [groupId, pid]
     );
 
-    if (res.rows.length === 0) {
-      return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
-    }
-
-    const proposal = res.rows[0] as {
-      id: number;
-      group_id: number;
-      status: string;
-    };
+    if (res.rows.length === 0) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
 
     const voteSummary = await getVoteSummary(client, pid);
     const myVoteRes = await client.query(
-      `
-        SELECT vote
-        FROM group_proposal_votes
-        WHERE proposal_id = $1
-          AND member_id = $2
-        LIMIT 1
-      `,
+      `SELECT vote FROM group_proposal_votes WHERE proposal_id = $1 AND member_id = $2 LIMIT 1`,
       [pid, membership.member_id]
     );
-
     const myVote = (myVoteRes.rows[0] as { vote?: string } | undefined)?.vote;
 
     return NextResponse.json({
       success: true,
-      proposal,
+      proposal: res.rows[0],
       voteSummary,
       myVote: typeof myVote === 'string' ? myVote : null,
-      membership
+      membership,
     });
   } catch (error) {
     console.error('Member proposal details error:', error);
@@ -209,21 +135,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string; proposalId: string }> }
 ) {
   const auth = getAuthTokenPayload(request);
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id, proposalId } = await params;
   const groupId = Number.parseInt(id, 10);
   const pid = Number.parseInt(proposalId, 10);
 
-  if (!Number.isFinite(groupId)) {
-    return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
-  }
-
-  if (!Number.isFinite(pid)) {
-    return NextResponse.json({ error: 'Invalid proposal id' }, { status: 400 });
-  }
+  if (!Number.isFinite(groupId)) return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
+  if (!Number.isFinite(pid)) return NextResponse.json({ error: 'Invalid proposal id' }, { status: 400 });
 
   const body = await request.json().catch(() => null);
   const vote = typeof body?.vote === 'string' ? body.vote.trim() : '';
@@ -237,45 +156,72 @@ export async function POST(
     await ensureProposalVotingSchema(client);
 
     const membership = await getMembership(client, auth.userId, groupId);
-    if (!membership) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const proposalRes = await client.query(
-      `
-        SELECT id, group_id, status
-        FROM group_proposals
-        WHERE id = $1 AND group_id = $2
-        LIMIT 1
-      `,
+      `SELECT id, group_id, status, proposal_type FROM group_proposals WHERE id = $1 AND group_id = $2 LIMIT 1`,
       [pid, groupId]
     );
 
-    if (proposalRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
-    }
+    if (proposalRes.rows.length === 0) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
 
-    const status = (proposalRes.rows[0] as { status?: string }).status;
-    if (status !== 'open') {
+    const proposalRow = proposalRes.rows[0] as { status?: string; proposal_type?: string };
+    if (proposalRow.status !== 'open') {
       return NextResponse.json({ error: 'Voting is closed for this proposal' }, { status: 400 });
     }
 
     await client.query(
-      `
-        INSERT INTO group_proposal_votes (proposal_id, member_id, vote)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (proposal_id, member_id)
-        DO UPDATE SET vote = EXCLUDED.vote, updated_at = CURRENT_TIMESTAMP
-      `,
+      `INSERT INTO group_proposal_votes (proposal_id, member_id, vote)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (proposal_id, member_id)
+       DO UPDATE SET vote = EXCLUDED.vote, updated_at = CURRENT_TIMESTAMP`,
       [pid, membership.member_id, vote]
     );
 
     const voteSummary = await getVoteSummary(client, pid);
 
+    // Auto-close when threshold is met
+    const thresholdRes = await client.query(
+      `SELECT g.voting_threshold_numerator, g.voting_threshold_denominator,
+              COUNT(gm.member_id) FILTER (WHERE gm.status = 'active') AS total_members
+       FROM groups g
+       LEFT JOIN group_members gm ON gm.group_id = g.id
+       WHERE g.id = $1
+       GROUP BY g.id, g.voting_threshold_numerator, g.voting_threshold_denominator`,
+      [groupId]
+    );
+
+    let autoClosedStatus: string | null = null;
+    if (thresholdRes.rows.length > 0) {
+      const tRow = thresholdRes.rows[0] as {
+        voting_threshold_numerator: number;
+        voting_threshold_denominator: number;
+        total_members: string;
+      };
+      const totalMembers = Number(tRow.total_members);
+      const required = Math.ceil(totalMembers * tRow.voting_threshold_numerator / tRow.voting_threshold_denominator);
+      const passed = voteSummary.yes >= required;
+      const cannotPass = voteSummary.no > totalMembers - required;
+
+      if (passed || cannotPass) {
+        const pType = proposalRow.proposal_type ?? 'general';
+        await client.query(
+          `UPDATE group_proposals
+           SET status = 'closed',
+               funded_at = CASE WHEN $1 AND $2 THEN NOW() ELSE funded_at END,
+               updated_at = NOW()
+           WHERE id = $3`,
+          [passed, pType === 'prodast', pid]
+        );
+        autoClosedStatus = passed ? 'passed' : 'failed';
+      }
+    }
+
     return NextResponse.json({
       success: true,
       myVote: vote,
-      voteSummary
+      voteSummary,
+      ...(autoClosedStatus ? { autoClosed: autoClosedStatus } : {}),
     });
   } catch (error) {
     console.error('Cast vote error:', error);

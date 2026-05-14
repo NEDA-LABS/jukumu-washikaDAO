@@ -55,13 +55,13 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
     } catch { showToast('Hitilafu ya mtandao', 'error'); }
   };
 
-  const statusBadge = (s: string) => s === 'active' ? 'bg-emerald-500/10 text-emerald-400' : s === 'pending' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400';
+  const statusBadge = (s: string) => s === 'active' ? 'bg-emerald-500/10 text-emerald-600' : s === 'pending' ? 'bg-yellow-500/10 text-yellow-600' : 'bg-red-500/10 text-red-600';
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-5">
+      <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-white">Usimamizi wa Wanachama</h2>
+          <h2 className="text-base font-semibold text-foreground">Usimamizi wa Wanachama</h2>
           <button onClick={() => setShowMemberForm(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
             <PlusIcon className="h-4 w-4" /> Mwanachama Mpya
           </button>
@@ -80,23 +80,23 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-border">
                 {['Mwanachama','Kundi','Hali','Tarehe','Vitendo'].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-white/30 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-border">
               {filteredMembers.length > 0 ? filteredMembers.map(m => (
-                <tr key={m.id} className="hover:bg-white/[0.02]">
+                <tr key={m.id} className="hover:bg-foreground/[0.02]">
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-white">{m.full_name}</div>
-                    <div className="text-xs text-white/30 mt-0.5">{m.email}</div>
-                    <div className="text-xs text-white/20">{m.phone}</div>
+                    <div className="text-sm font-medium text-foreground">{m.full_name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{m.email}</div>
+                    <div className="text-xs text-foreground/30">{m.phone}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-white/60">{m.group_names || '—'}</div>
-                    {m.group_count > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{m.group_count} kundi</span>}
+                    <div className="text-sm text-foreground/60">{m.group_names || '—'}</div>
+                    {m.group_count > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">{m.group_count} kundi</span>}
                   </td>
                   <td className="px-4 py-3">
                     <select value={m.status} onChange={e => handleStatusChange(m.id, e.target.value)} className={`text-xs rounded-full px-2 py-1 border-0 cursor-pointer ${statusBadge(m.status)} bg-transparent`}>
@@ -105,15 +105,15 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
                       <option value="inactive">Haifanyi kazi</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/30">{new Date(m.created_at).toLocaleDateString('sw-TZ')}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString('sw-TZ')}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <select onChange={e => { if (e.target.value) handleAddToGroup(m.id, parseInt(e.target.value), e.target as HTMLSelectElement); }} className="text-xs bg-white/5 border border-white/10 text-white/50 rounded-lg px-2 py-1 focus:outline-none" defaultValue="">
+                      <select onChange={e => { if (e.target.value) handleAddToGroup(m.id, parseInt(e.target.value), e.target as HTMLSelectElement); }} className="text-xs bg-foreground/5 border border-border text-foreground/50 rounded-lg px-2 py-1 focus:outline-none" defaultValue="">
                         <option value="">+ Ongeza kwenye kundi</option>
                         {groups.filter(g => g.status === 'active').map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                       </select>
                       {m.status === 'inactive' && (
-                        <button onClick={() => handleDeleteMember(m)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Futa">
+                        <button onClick={() => handleDeleteMember(m)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-colors" title="Futa">
                           <TrashIcon className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -122,8 +122,8 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
                 </tr>
               )) : (
                 <tr><td colSpan={5} className="px-4 py-12 text-center">
-                  <UsersIcon className="h-8 w-8 mx-auto text-white/10 mb-3" />
-                  <p className="text-sm text-white/25">Hakuna wanachama</p>
+                  <UsersIcon className="h-8 w-8 mx-auto text-foreground/10 mb-3" />
+                  <p className="text-sm text-muted-foreground">Hakuna wanachama</p>
                 </td></tr>
               )}
             </tbody>
@@ -132,11 +132,11 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
       </div>
 
       {showMemberForm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-overlay border border-border p-6 max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-white">Mwanachama Mpya</h3>
-              <button onClick={() => setShowMemberForm(false)} className="text-white/30 hover:text-white/60 text-xl">×</button>
+              <h3 className="text-base font-semibold text-foreground">Mwanachama Mpya</h3>
+              <button onClick={() => setShowMemberForm(false)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
             </div>
             <form onSubmit={handleMemberSubmit} className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -160,7 +160,7 @@ export default function MembersSection({ members, groups, loadAdminData, showToa
               </div>
               <div><label className={dkLabel}>Umri *</label><input type="number" value={memberForm.age} onChange={e => setMemberForm({...memberForm, age: e.target.value})} className={dkInput} min="18" max="100" required /></div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowMemberForm(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors">Ghairi</button>
+                <button type="button" onClick={() => setShowMemberForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
                 <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Hifadhi</button>
               </div>
             </form>

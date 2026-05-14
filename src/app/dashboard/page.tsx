@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/components/ToastProvider';
 import {
   UserGroupIcon, UsersIcon, CurrencyDollarIcon, ChartBarIcon, BookOpenIcon,
-  DocumentTextIcon, CogIcon
+  DocumentTextIcon, CogIcon, SunIcon, MoonIcon
 } from '@heroicons/react/24/outline';
 import NotificationCenter from '@/components/NotificationCenter';
 import OverviewSection from './components/OverviewSection';
@@ -21,6 +22,7 @@ import SettingsSection from './components/SettingsSection';
 export default function AdminDashboard() {
   const { } = useLanguage();
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const [user, setUser] = useState<{id?: number; fullName?: string; email: string; role?: string} | null>(null);
   const [activeSection, setActiveSection] = useState('overview');
   const [adminStats, setAdminStats] = useState<any>(null);
@@ -31,95 +33,49 @@ export default function AdminDashboard() {
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  // Force cache invalidation - admin dashboard with live data
 
-  // Check authentication and load admin data
   useEffect(() => {
     const userData = localStorage.getItem('user');
-    if (!userData) {
-      router.push('/login');
-      return;
-    }
-
+    if (!userData) { router.push('/login'); return; }
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-
-    if (parsedUser.role !== 'admin') {
-      router.push('/member-dashboard');
-      return;
-    }
-
+    if (parsedUser.role !== 'admin') { router.push('/member-dashboard'); return; }
     loadAdminData();
   }, [router]);
 
   const loadAdminData = async () => {
     try {
       setLoading(true);
-      
-      // Add cache busting timestamp
       const timestamp = new Date().getTime();
       const cacheParams = `?_t=${timestamp}`;
-      
-      // Load admin statistics
+
       const statsResponse = await fetch(`/api/admin/stats${cacheParams}`, {
         cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
+        headers: { 'Cache-Control': 'no-cache' }
       });
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         console.log('Admin stats loaded:', statsData);
         setAdminStats(statsData);
       }
-      
-      // Load members
-      const membersResponse = await fetch(`/api/admin/members${cacheParams}`, {
-        cache: 'no-store'
-      });
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json();
-        setMembers(membersData);
-      }
-      
-      // Load groups
-      const groupsResponse = await fetch(`/api/admin/groups${cacheParams}`, {
-        cache: 'no-store'
-      });
-      if (groupsResponse.ok) {
-        const groupsData = await groupsResponse.json();
-        setGroups(groupsData);
-      }
-      
-      // Load investments
+
+      const membersResponse = await fetch(`/api/admin/members${cacheParams}`, { cache: 'no-store' });
+      if (membersResponse.ok) setMembers(await membersResponse.json());
+
+      const groupsResponse = await fetch(`/api/admin/groups${cacheParams}`, { cache: 'no-store' });
+      if (groupsResponse.ok) setGroups(await groupsResponse.json());
+
       try {
-        const investmentsResponse = await fetch(`/api/admin/investments${cacheParams}`, {
-          cache: 'no-store'
-        });
-        if (investmentsResponse.ok) {
-          const investmentsData = await investmentsResponse.json();
-          setInvestments(investmentsData);
-        }
-      } catch (investmentError) {
-        console.log('Failed to load investments:', investmentError);
-        setInvestments([]); // Set empty array as fallback
-      }
-      
-      // Load educational content
-      const contentResponse = await fetch(`/api/educational-content?includeUnpublished=true&_t=${timestamp}`, {
-        cache: 'no-store'
-      });
-      const contentData = await contentResponse.json();
-      setEducationalContent(contentData);
-      
-      // Load recent activities
+        const investmentsResponse = await fetch(`/api/admin/investments${cacheParams}`, { cache: 'no-store' });
+        if (investmentsResponse.ok) setInvestments(await investmentsResponse.json());
+      } catch { setInvestments([]); }
+
+      const contentResponse = await fetch(`/api/educational-content?includeUnpublished=true&_t=${timestamp}`, { cache: 'no-store' });
+      setEducationalContent(await contentResponse.json());
+
       const activitiesResponse = await fetch('/api/admin/activities');
-      if (activitiesResponse.ok) {
-        const activitiesData = await activitiesResponse.json();
-        setRecentActivities(activitiesData);
-      }
-      
-      // Load join requests
+      if (activitiesResponse.ok) setRecentActivities(await activitiesResponse.json());
+
       const joinRequestsResponse = await fetch('/api/admin/join-requests');
       if (joinRequestsResponse.ok) {
         const joinRequestsData = await joinRequestsResponse.json();
@@ -135,19 +91,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    router.push('/');
-  };
-
   const { showToast } = useToast();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent mx-auto" />
-          <p className="mt-4 text-sm text-white/30">Inapakia dashibodi...</p>
+          <p className="mt-4 text-sm text-muted-foreground">Inapakia dashibodi...</p>
         </div>
       </div>
     );
@@ -181,30 +132,39 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d]">
+    <div className="min-h-screen bg-background">
       {/* ── Sticky header ── */}
-      <div className="sticky top-0 z-30 bg-[#0d0d0d]/90 backdrop-blur-md border-b border-white/[0.06]">
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                <span className="text-xs font-bold text-orange-400">A</span>
+                <span className="text-xs font-bold text-orange-500">A</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white leading-none">Dashibodi ya Msimamizi</p>
-                <p className="text-xs text-white/25 mt-0.5">Washika DAU</p>
+                <p className="text-sm font-semibold text-foreground leading-none">Dashibodi ya Msimamizi</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Washika DAU</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationCenter userId={1} className="" />
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="h-8 w-8 rounded-full bg-foreground/5 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                title={resolvedTheme === 'dark' ? 'Mwanga' : 'Giza'}
+              >
+                {resolvedTheme === 'dark'
+                  ? <SunIcon className="h-4 w-4" />
+                  : <MoonIcon className="h-4 w-4" />}
+              </button>
               <div className="h-8 w-8 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-                <span className="text-xs font-semibold text-orange-400">
+                <span className="text-xs font-semibold text-orange-500">
                   {(user?.fullName || user?.email || 'A').charAt(0).toUpperCase()}
                 </span>
               </div>
               <button
                 onClick={() => { localStorage.removeItem('user'); router.push('/'); }}
-                className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 Toka
               </button>
@@ -218,19 +178,19 @@ export default function AdminDashboard() {
 
           {/* ── Sidebar ── */}
           <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-20">
-            <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+            <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
               {menuItems.map((item, i) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-all ${
                     activeSection === item.id
-                      ? 'bg-orange-500/10 text-orange-400 border-l-2 border-orange-500'
-                      : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03] border-l-2 border-transparent'
-                  } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
+                      ? 'bg-orange-500/10 text-orange-500 border-l-2 border-orange-500'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] border-l-2 border-transparent'
+                  } ${i !== 0 ? 'border-t border-t-border' : ''}`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <item.icon className={`h-4 w-4 ${activeSection === item.id ? 'text-orange-400' : 'text-white/25'}`} />
+                    <item.icon className={`h-4 w-4 ${activeSection === item.id ? 'text-orange-500' : 'text-muted-foreground'}`} />
                     {item.name}
                   </div>
                   {item.id === 'join-requests' && pendingRequests > 0 && (
@@ -252,13 +212,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Mobile bottom nav */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111] border-t border-white/[0.07] flex overflow-x-auto scrollbar-none">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex overflow-x-auto scrollbar-none">
         {menuItems.map(item => (
           <button
             key={item.id}
             onClick={() => setActiveSection(item.id)}
             className={`flex-1 min-w-max flex flex-col items-center gap-1 py-2.5 px-2 text-[9px] font-medium transition-all relative ${
-              activeSection === item.id ? 'text-orange-400' : 'text-white/30'
+              activeSection === item.id ? 'text-orange-500' : 'text-muted-foreground'
             }`}
           >
             <item.icon className="h-4 w-4" />

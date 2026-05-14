@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Pages that are fully public (no auth required)
-const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/portal']
+const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/investor/signup', '/portal']
 
 // Page prefixes that are fully public
 const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn']
@@ -13,6 +13,8 @@ const PUBLIC_API_PREFIXES = [
   '/api/public/',
   '/api/groups/lookup',
   '/api/webhooks/',
+  '/api/investor/stats',
+  '/api/investor/funding-requests',
 ]
 
 export function middleware(request: NextRequest) {

@@ -14,34 +14,27 @@ async function getMembership(
   groupId: number
 ) {
   const membershipRes = await client.query(
-    `
-      SELECT gm.member_id, gm.role, gm.status
-      FROM group_members gm
-      JOIN members m ON m.id = gm.member_id
-      WHERE m.user_id = $1
-        AND gm.group_id = $2
-      LIMIT 1
-    `,
+    `SELECT gm.member_id, gm.role, gm.status
+     FROM group_members gm
+     JOIN members m ON m.id = gm.member_id
+     WHERE m.user_id = $1 AND gm.group_id = $2
+     LIMIT 1`,
     [userId, groupId]
   );
-
   if (membershipRes.rows.length === 0) return null;
   return membershipRes.rows[0] as { member_id: number; role: string; status: string };
 }
 
 /**
  * POST /api/member/groups/[id]/proposals/[proposalId]/execute
- * Execute an approved payment proposal (leadership only)
- * Transfers funds from group treasury to recipient via nTZS
+ * Execute an approved ask/spend proposal — transfers from group treasury to recipient via nTZS.
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; proposalId: string }> }
 ) {
   const auth = getAuthTokenPayload(request);
-  if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id, proposalId } = await params;
   const groupId = Number.parseInt(id, 10);
@@ -61,31 +54,25 @@ export async function POST(
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
     if (!LEADERSHIP_ROLES.has(membership.role)) {
       await client.query('ROLLBACK');
-      return NextResponse.json(
-        { error: 'Only leadership can execute proposals' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Only leadership can execute proposals' }, { status: 403 });
     }
 
-    // Get proposal details
     const proposalRes = await client.query(
-      `
-        SELECT 
+      `SELECT
           p.id, p.group_id, p.title, p.description, p.status,
+          p.proposal_type,
           p.payment_amount_tzs, p.recipient_member_id, p.recipient_phone,
           p.payment_status, p.payment_tx_id,
-          g.ntzs_user_id as group_ntzs_user_id,
+          g.ntzs_user_id AS group_ntzs_user_id,
           g.voting_threshold_numerator, g.voting_threshold_denominator,
-          m.ntzs_user_id as recipient_ntzs_user_id
+          m.ntzs_user_id AS recipient_ntzs_user_id
         FROM group_proposals p
         JOIN groups g ON g.id = p.group_id
         LEFT JOIN members m ON m.id = p.recipient_member_id
         WHERE p.id = $1 AND p.group_id = $2
-        LIMIT 1
-      `,
+        LIMIT 1`,
       [proposalIdNum, groupId]
     );
 
@@ -100,6 +87,7 @@ export async function POST(
       title: string;
       description: string;
       status: string;
+      proposal_type: string;
       payment_amount_tzs: number | null;
       recipient_member_id: number | null;
       recipient_phone: string | null;
@@ -111,49 +99,44 @@ export async function POST(
       recipient_ntzs_user_id: string | null;
     };
 
-    // Validate it's a payment proposal
+    // Only ask and spend proposals can be executed
+    if (proposal.proposal_type === 'general' || proposal.proposal_type === 'prodast') {
+      await client.query('ROLLBACK');
+      return NextResponse.json({ error: 'This proposal type cannot be executed as a payment' }, { status: 400 });
+    }
+
     if (!proposal.payment_amount_tzs || proposal.payment_amount_tzs <= 0) {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Not a payment proposal' }, { status: 400 });
     }
 
-    // Check if already executed
     if (proposal.payment_status === 'executed') {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Proposal already executed' }, { status: 400 });
     }
 
-    // Check group has treasury
     if (!proposal.group_ntzs_user_id) {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Group treasury not provisioned' }, { status: 400 });
     }
 
-    // Count votes
+    // Check vote threshold
     const votesRes = await client.query(
-      `
-        SELECT 
-          COUNT(*) FILTER (WHERE vote = 'yes') as yes_votes,
-          COUNT(*) FILTER (WHERE vote = 'no') as no_votes,
-          COUNT(*) as total_votes
+      `SELECT
+          COUNT(*) FILTER (WHERE vote = 'yes') AS yes_votes,
+          COUNT(*) FILTER (WHERE vote = 'no') AS no_votes
         FROM group_proposal_votes
-        WHERE proposal_id = $1
-      `,
+        WHERE proposal_id = $1`,
       [proposalIdNum]
     );
-
-    const votes = votesRes.rows[0] as { yes_votes: string; no_votes: string; total_votes: string };
+    const votes = votesRes.rows[0] as { yes_votes: string; no_votes: string };
     const yesVotes = Number(votes.yes_votes);
-    const noVotes = Number(votes.no_votes);
 
-    // Get total active members
     const membersRes = await client.query(
-      `SELECT COUNT(*) as total FROM group_members WHERE group_id = $1 AND status = 'active'`,
+      `SELECT COUNT(*) AS total FROM group_members WHERE group_id = $1 AND status = 'active'`,
       [groupId]
     );
     const totalMembers = Number((membersRes.rows[0] as { total: string }).total);
-
-    // Check if proposal passed threshold
     const requiredYes = Math.ceil(
       (totalMembers * proposal.voting_threshold_numerator) / proposal.voting_threshold_denominator
     );
@@ -161,29 +144,30 @@ export async function POST(
     if (yesVotes < requiredYes) {
       await client.query('ROLLBACK');
       return NextResponse.json(
-        {
-          error: 'Proposal has not reached voting threshold',
-          details: `Requires ${requiredYes} yes votes, has ${yesVotes}`,
-        },
+        { error: 'Proposal has not reached voting threshold', details: `Requires ${requiredYes} yes votes, has ${yesVotes}` },
         { status: 400 }
       );
     }
 
-    // Determine recipient
+    // Resolve recipient nTZS user ID
     let recipientNtzsUserId: string;
-    let recipientType: 'member' | 'phone';
 
     if (proposal.recipient_member_id && proposal.recipient_ntzs_user_id) {
       recipientNtzsUserId = proposal.recipient_ntzs_user_id;
-      recipientType = 'member';
     } else if (proposal.recipient_phone) {
-      // For phone recipients, we'd need to create a withdrawal instead of transfer
-      // For now, require member recipient
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        { error: 'Phone-based recipients not yet supported. Recipient must be a member.' },
-        { status: 400 }
+      // Look up member by phone
+      const phoneRes = await client.query(
+        `SELECT ntzs_user_id FROM members WHERE phone = $1 AND ntzs_user_id IS NOT NULL LIMIT 1`,
+        [proposal.recipient_phone]
       );
+      if (phoneRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'Recipient phone number has no nTZS wallet. Ask them to set up a wallet first.' },
+          { status: 400 }
+        );
+      }
+      recipientNtzsUserId = (phoneRes.rows[0] as { ntzs_user_id: string }).ntzs_user_id;
     } else {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'No valid recipient specified' }, { status: 400 });
@@ -196,7 +180,6 @@ export async function POST(
       amountTzs: proposal.payment_amount_tzs,
     });
 
-    // Record transaction
     await recordTransaction(client, {
       ntzsId: transfer.id,
       type: 'transfer',
@@ -207,21 +190,15 @@ export async function POST(
       feeTzs: transfer.feeAmountTzs,
       netTzs: transfer.recipientAmountTzs,
       txHash: transfer.txHash,
-      purpose: 'disbursement',
+      purpose: proposal.proposal_type === 'spend' ? 'expense' : 'disbursement',
       note: `Proposal #${proposal.id}: ${proposal.title}`,
-      metadata: { proposalId: proposal.id },
+      metadata: { proposalId: proposal.id, proposalType: proposal.proposal_type },
     });
 
-    // Update proposal
     await client.query(
-      `
-        UPDATE group_proposals
-        SET payment_status = 'executed',
-            payment_tx_id = $1,
-            executed_at = NOW(),
-            updated_at = NOW()
-        WHERE id = $2
-      `,
+      `UPDATE group_proposals
+       SET payment_status = 'executed', payment_tx_id = $1, executed_at = NOW(), updated_at = NOW()
+       WHERE id = $2`,
       [transfer.id, proposalIdNum]
     );
 
@@ -237,10 +214,7 @@ export async function POST(
         status: transfer.status,
         txHash: transfer.txHash,
       },
-      proposal: {
-        id: proposal.id,
-        paymentStatus: 'executed',
-      },
+      proposal: { id: proposal.id, paymentStatus: 'executed' },
     });
   } catch (error) {
     await client.query('ROLLBACK');

@@ -61,12 +61,19 @@ type LeadershipRow = {
   status?: string | null;
 };
 
+type ProposalType = 'general' | 'ask' | 'spend' | 'prodast';
+
 type ProposalRow = {
   id: number;
   group_id: number;
   title: string;
   description?: string | null;
   status: 'open' | 'closed' | string;
+  proposal_type?: ProposalType;
+  metadata?: Record<string, unknown> | null;
+  payment_amount_tzs?: number | null;
+  payment_status?: string | null;
+  funded_at?: string | null;
   created_at?: string;
   updated_at?: string;
   created_by_name?: string;
@@ -175,6 +182,10 @@ export default function MemberGroupDetailsPage() {
   const [proposalTitle, setProposalTitle] = useState('');
   const [proposalDescription, setProposalDescription] = useState('');
   const [proposalSubmitting, setProposalSubmitting] = useState(false);
+  const [proposalType, setProposalType] = useState<ProposalType>('general');
+  const [proposalAmount, setProposalAmount] = useState('');
+  const [proposalPhone, setProposalPhone] = useState('');
+  const [proposalMeta, setProposalMeta] = useState<Record<string, string>>({});
 
   // Finances / Payments state
   const [groupPayments, setGroupPayments] = useState<any[]>([]);
@@ -1036,36 +1047,53 @@ export default function MemberGroupDetailsPage() {
                   <p className="text-sm font-medium text-white/25">Hakuna mapendekezo bado</p>
                   <p className="text-xs text-white/15 mt-1">{canCreateProposal ? 'Bonyeza "Pendekezo Jipya" kuanza' : 'Viongozi wanaweza kuunda mapendekezo'}</p>
                 </div>
-              ) : proposals.map((p) => (
-                <button key={p.id}
-                  onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                  className="w-full text-left rounded-2xl bg-[#141414] border border-white/[0.06] hover:border-orange-500/25 hover:bg-orange-500/[0.03] p-5 transition-all group"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                          <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              ) : proposals.map((p) => {
+                const pType = p.proposal_type ?? 'general';
+                const typeMeta: Record<string, { label: string; color: string; dot: string }> = {
+                  general:  { label: 'Jumla',     color: 'bg-white/5 text-white/40 border border-white/10',            dot: 'bg-white/20' },
+                  ask:      { label: 'Ombi',      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
+                  spend:    { label: 'Matumizi',  color: 'bg-orange-500/10 text-orange-400 border border-orange-500/20', dot: 'bg-orange-400' },
+                  prodast:  { label: 'Prodast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
+                };
+                const tm = typeMeta[pType] ?? typeMeta.general;
+                return (
+                  <button key={p.id}
+                    onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
+                    className="w-full text-left rounded-2xl bg-[#141414] border border-white/[0.06] hover:border-orange-500/25 hover:bg-orange-500/[0.03] p-5 transition-all group"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${tm.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${tm.dot}`} />
+                            {tm.label}
+                          </span>
+                          <p className="text-sm font-semibold text-white group-hover:text-orange-50 transition-colors min-w-0 truncate">{p.title}</p>
                         </div>
-                        <p className="text-sm font-semibold text-white group-hover:text-orange-50 transition-colors">{p.title}</p>
+                        {p.description && (
+                          <p className="text-xs text-white/35 line-clamp-2">{p.description}</p>
+                        )}
+                        {(pType === 'ask' || pType === 'spend') && p.payment_amount_tzs && (
+                          <p className="text-xs text-emerald-400/70 mt-1">TSH {Number(p.payment_amount_tzs).toLocaleString()}</p>
+                        )}
+                        {pType === 'prodast' && !!p.metadata?.funding_goal_tzs && (
+                          <p className="text-xs text-purple-400/70 mt-1">Lengo: TSH {Number(p.metadata!.funding_goal_tzs as number).toLocaleString()}</p>
+                        )}
+                        <p className="text-[10px] text-white/20 mt-2">
+                          na {p.created_by_name || '—'}
+                          {p.created_at && <> · {new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' })}</>}
+                        </p>
                       </div>
-                      {p.description && (
-                        <p className="text-xs text-white/35 line-clamp-2 pl-8">{p.description}</p>
-                      )}
-                      <p className="text-[10px] text-white/20 mt-2 pl-8">
-                        na {p.created_by_name || '—'}
-                        {p.created_at && <> · {new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' })}</>}
-                      </p>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                          p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/25 border border-white/10'
+                        }`}>{p.status === 'open' ? 'Wazi' : 'Imefungwa'}</span>
+                        <span className="text-white/20 group-hover:text-orange-400 transition-colors text-xs">→</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                        p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/25 border border-white/10'
-                      }`}>{p.status === 'open' ? 'Wazi' : 'Imefungwa'}</span>
-                      <span className="text-white/20 group-hover:text-orange-400 transition-colors text-xs">→</span>
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -1094,35 +1122,105 @@ export default function MemberGroupDetailsPage() {
       {/* ── Create Proposal Modal ── */}
       {showCreateProposal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 overflow-hidden">
+          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
               <div>
                 <h3 className="text-base font-bold text-white">Pendekezo Jipya</h3>
                 <p className="text-xs text-white/30 mt-0.5">{group?.name}</p>
               </div>
               <button
-                onClick={() => { setShowCreateProposal(false); setProposalTitle(''); setProposalDescription(''); }}
+                onClick={() => {
+                  setShowCreateProposal(false);
+                  setProposalTitle(''); setProposalDescription('');
+                  setProposalType('general'); setProposalAmount('');
+                  setProposalPhone(''); setProposalMeta({});
+                }}
                 className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
+            {/* Type selector tabs */}
+            <div className="flex gap-1 px-6 pt-4 pb-2 shrink-0">
+              {([
+                { value: 'general', label: 'Jumla', color: 'text-white/60' },
+                { value: 'ask', label: 'Ombi', color: 'text-blue-400' },
+                { value: 'spend', label: 'Matumizi', color: 'text-orange-400' },
+                { value: 'prodast', label: 'Prodast', color: 'text-purple-400' },
+              ] as { value: ProposalType; label: string; color: string }[]).map(tab => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => { setProposalType(tab.value); setProposalAmount(''); setProposalPhone(''); setProposalMeta({}); }}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    proposalType === tab.value
+                      ? `bg-white/10 border-white/20 ${tab.color}`
+                      : 'bg-transparent border-transparent text-white/25 hover:text-white/40'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Type description */}
+            <div className="px-6 pb-2 shrink-0">
+              <p className="text-[10px] text-white/25">
+                {proposalType === 'general' && 'Majadiliano na upigaji kura wa kawaida — bila malipo.'}
+                {proposalType === 'ask' && 'Ombi la fedha kutoka hazina ya kundi kwa ajili ya biashara yako.'}
+                {proposalType === 'spend' && 'Matumizi ya pamoja ya kundi — kwa muuzaji au huduma.'}
+                {proposalType === 'prodast' && 'Tangaza mradi kwa wawekezaji kupitia portal ya uwekezaji.'}
+              </p>
+            </div>
+
             {/* Form */}
             <form
-              className="p-6 space-y-4"
+              className="p-6 pt-2 space-y-4 overflow-y-auto"
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!groupId || !canCreateProposal) return;
                 const t = proposalTitle.trim();
                 const d = proposalDescription.trim();
                 if (!t) { showToast('Kichwa cha pendekezo kinahitajika.', 'error'); return; }
+
+                // Build type-specific payload
+                const payload: Record<string, unknown> = { title: t, description: d, proposalType };
+
+                if (proposalType === 'ask') {
+                  const amt = Number(proposalAmount);
+                  if (!amt || amt <= 0) { showToast('Ingiza kiasi halali.', 'error'); return; }
+                  payload.paymentAmountTzs = amt;
+                  payload.metadata = { business_purpose: d };
+                } else if (proposalType === 'spend') {
+                  const amt = Number(proposalAmount);
+                  if (!amt || amt <= 0) { showToast('Ingiza kiasi halali.', 'error'); return; }
+                  if (!proposalPhone.trim() && !proposalMeta.vendor_name) {
+                    showToast('Ingiza nambari ya simu ya mpokeaji.', 'error'); return;
+                  }
+                  payload.paymentAmountTzs = amt;
+                  payload.recipientPhone = proposalPhone.trim() || null;
+                  payload.metadata = {
+                    vendor_name: proposalMeta.vendor_name || '',
+                    expense_category: proposalMeta.expense_category || '',
+                  };
+                } else if (proposalType === 'prodast') {
+                  const goal = Number(proposalMeta.funding_goal_tzs);
+                  if (!goal || goal <= 0) { showToast('Ingiza lengo la fedha.', 'error'); return; }
+                  payload.metadata = {
+                    funding_goal_tzs: goal,
+                    project_description: proposalMeta.project_description || d,
+                    timeline: proposalMeta.timeline || '',
+                    expected_impact: proposalMeta.expected_impact || '',
+                  };
+                }
+
                 setProposalSubmitting(true);
                 try {
                   const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: t, description: d }),
+                    body: JSON.stringify(payload),
                   });
                   if (res.status === 401) { router.push('/login'); return; }
                   const json = await res.json().catch(() => null);
@@ -1131,6 +1229,8 @@ export default function MemberGroupDetailsPage() {
                   if (created) setProposals(prev => [created, ...prev]);
                   showToast('Pendekezo limeundwa!', 'success');
                   setProposalTitle(''); setProposalDescription('');
+                  setProposalType('general'); setProposalAmount('');
+                  setProposalPhone(''); setProposalMeta({});
                   setShowCreateProposal(false);
                   setActiveTab('decisions');
                 } catch (err) {
@@ -1140,35 +1240,151 @@ export default function MemberGroupDetailsPage() {
                 }
               }}
             >
+              {/* Title — all types */}
               <div>
                 <label className="block text-xs font-medium text-white/40 mb-1.5">Kichwa cha Pendekezo *</label>
                 <input
-                  type="text"
-                  value={proposalTitle}
+                  type="text" value={proposalTitle}
                   onChange={e => setProposalTitle(e.target.value)}
                   className={dkInput}
-                  placeholder="e.g. Ongeza mchango wa kila mwezi"
-                  autoFocus
-                  required
+                  placeholder={
+                    proposalType === 'ask' ? 'e.g. Mkopo wa mtaji wa biashara' :
+                    proposalType === 'spend' ? 'e.g. Ada ya mkutano wa mafunzo' :
+                    proposalType === 'prodast' ? 'e.g. Mradi wa kilimo cha umwagiliaji' :
+                    'e.g. Ongeza mchango wa kila mwezi'
+                  }
+                  autoFocus required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-white/40 mb-1.5">Maelezo (si lazima)</label>
-                <textarea
-                  value={proposalDescription}
-                  onChange={e => setProposalDescription(e.target.value)}
-                  className={`${dkInput} resize-none`}
-                  placeholder="Eleza pendekezo lako kwa undani zaidi..."
-                  rows={4}
-                />
+
+              {/* Amount — ask & spend */}
+              {(proposalType === 'ask' || proposalType === 'spend') && (
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Kiasi (TSH) *</label>
+                  <input
+                    type="number" value={proposalAmount}
+                    onChange={e => setProposalAmount(e.target.value)}
+                    className={dkInput} placeholder="e.g. 500000" min="1" required
+                  />
+                </div>
+              )}
+
+              {/* Recipient phone — spend only */}
+              {proposalType === 'spend' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Simu ya Mpokeaji *</label>
+                    <input
+                      type="tel" value={proposalPhone}
+                      onChange={e => setProposalPhone(e.target.value)}
+                      className={dkInput} placeholder="e.g. 0712345678"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Jina la Muuzaji</label>
+                    <input
+                      type="text" value={proposalMeta.vendor_name || ''}
+                      onChange={e => setProposalMeta(m => ({ ...m, vendor_name: e.target.value }))}
+                      className={dkInput} placeholder="e.g. Duka la vifaa"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Aina ya Matumizi</label>
+                    <input
+                      type="text" value={proposalMeta.expense_category || ''}
+                      onChange={e => setProposalMeta(m => ({ ...m, expense_category: e.target.value }))}
+                      className={dkInput} placeholder="e.g. Vifaa, Mafunzo, Tukio..."
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Prodast fields */}
+              {proposalType === 'prodast' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Lengo la Fedha (TSH) *</label>
+                    <input
+                      type="number" value={proposalMeta.funding_goal_tzs || ''}
+                      onChange={e => setProposalMeta(m => ({ ...m, funding_goal_tzs: e.target.value }))}
+                      className={dkInput} placeholder="e.g. 5000000" min="1" required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Muda wa Mradi</label>
+                    <input
+                      type="text" value={proposalMeta.timeline || ''}
+                      onChange={e => setProposalMeta(m => ({ ...m, timeline: e.target.value }))}
+                      className={dkInput} placeholder="e.g. Miezi 6"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">Athari Inayotarajiwa</label>
+                    <input
+                      type="text" value={proposalMeta.expected_impact || ''}
+                      onChange={e => setProposalMeta(m => ({ ...m, expected_impact: e.target.value }))}
+                      className={dkInput} placeholder="e.g. Kuongeza mapato kwa 30%"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Description — general & ask; optional for others */}
+              {(proposalType === 'general' || proposalType === 'ask') && (
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Maelezo {proposalType === 'general' ? '(si lazima)' : ''}</label>
+                  <textarea
+                    value={proposalDescription}
+                    onChange={e => setProposalDescription(e.target.value)}
+                    className={`${dkInput} resize-none`}
+                    placeholder="Eleza pendekezo lako kwa undani zaidi..."
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              {/* Prodast description */}
+              {proposalType === 'prodast' && (
+                <div>
+                  <label className="block text-xs font-medium text-white/40 mb-1.5">Maelezo ya Mradi *</label>
+                  <textarea
+                    value={proposalMeta.project_description || ''}
+                    onChange={e => setProposalMeta(m => ({ ...m, project_description: e.target.value }))}
+                    className={`${dkInput} resize-none`}
+                    placeholder="Eleza mradi wako kwa wawekezaji..."
+                    rows={3} required
+                  />
+                </div>
+              )}
+
+              <div className={`rounded-xl px-4 py-3 border ${
+                proposalType === 'prodast' ? 'bg-purple-500/5 border-purple-500/10' :
+                proposalType === 'ask' ? 'bg-blue-500/5 border-blue-500/10' :
+                proposalType === 'spend' ? 'bg-orange-500/5 border-orange-500/10' :
+                'bg-orange-500/5 border-orange-500/10'
+              }`}>
+                <p className={`text-xs ${
+                  proposalType === 'prodast' ? 'text-purple-400/70' :
+                  proposalType === 'ask' ? 'text-blue-400/70' :
+                  'text-orange-400/70'
+                }`}>
+                  {proposalType === 'prodast'
+                    ? 'Baada ya kura kupita, mradi utaonekana kwa wawekezaji kwenye portal.'
+                    : proposalType === 'ask'
+                    ? 'Fedha zitahamishwa moja kwa moja kwenye pochi yako baada ya kura kupita.'
+                    : 'Wanachama wote wa kundi wataweza kupiga kura baada ya pendekezo kuundwa.'}
+                </p>
               </div>
-              <div className="rounded-xl bg-orange-500/5 border border-orange-500/10 px-4 py-3">
-                <p className="text-xs text-orange-400/70">Wanachama wote wa kundi wataweza kupiga kura baada ya pendekezo kuundwa.</p>
-              </div>
+
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => { setShowCreateProposal(false); setProposalTitle(''); setProposalDescription(''); }}
+                  onClick={() => {
+                    setShowCreateProposal(false);
+                    setProposalTitle(''); setProposalDescription('');
+                    setProposalType('general'); setProposalAmount('');
+                    setProposalPhone(''); setProposalMeta({});
+                  }}
                   className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition-colors"
                 >
                   Ghairi
@@ -1176,7 +1392,11 @@ export default function MemberGroupDetailsPage() {
                 <button
                   type="submit"
                   disabled={proposalSubmitting || !proposalTitle.trim()}
-                  className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg shadow-orange-500/20"
+                  className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg ${
+                    proposalType === 'prodast' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20' :
+                    proposalType === 'ask' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' :
+                    'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+                  }`}
                 >
                   {proposalSubmitting ? 'Inaunda...' : 'Unda Pendekezo'}
                 </button>

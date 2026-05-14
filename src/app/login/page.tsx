@@ -49,6 +49,8 @@ export default function LoginPage() {
         // Role-based redirect
         if (data.user.role === 'admin') {
           router.push('/dashboard');
+        } else if (data.user.role === 'investor') {
+          router.push('/investor/dashboard');
         } else {
           router.push('/member-dashboard');
         }
