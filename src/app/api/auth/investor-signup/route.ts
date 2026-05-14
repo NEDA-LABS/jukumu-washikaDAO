@@ -10,11 +10,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-prod';
 
 async function ensureInvestorSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
   await client.query(`
-    DO $$ BEGIN
-      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    DO $$
+    DECLARE
+      c_name TEXT;
+    BEGIN
+      SELECT conname INTO c_name
+      FROM pg_constraint
+      WHERE conrelid = 'users'::regclass
+        AND contype = 'c'
+        AND pg_get_constraintdef(oid) LIKE '%role%';
+      IF c_name IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE users DROP CONSTRAINT ' || quote_ident(c_name);
+      END IF;
       ALTER TABLE users ADD CONSTRAINT users_role_check
         CHECK (role IN ('admin', 'member', 'investor'));
-    EXCEPTION WHEN others THEN NULL;
+    EXCEPTION WHEN duplicate_object THEN NULL;
     END $$;
   `);
 
