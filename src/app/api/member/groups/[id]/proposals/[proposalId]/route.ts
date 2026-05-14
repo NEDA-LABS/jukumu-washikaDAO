@@ -15,8 +15,26 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  const alterStatements = [
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_amount_tzs NUMERIC(15,2)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS recipient_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS recipient_phone VARCHAR(20)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) CHECK (payment_status IN ('pending','processing','completed','failed'))`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_tx_id VARCHAR(255)`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS executed_at TIMESTAMP`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS proposal_type VARCHAR(20) DEFAULT 'general' CHECK (proposal_type IN ('general','ask','spend','prodast'))`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS metadata JSONB`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS funded_at TIMESTAMP`,
+  ];
+  for (const sql of alterStatements) {
+    await client.query(sql);
+  }
+
   await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_group_id ON group_proposals(group_id)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_created_at ON group_proposals(created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_type ON group_proposals(proposal_type)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_funded ON group_proposals(funded_at) WHERE funded_at IS NOT NULL`);
 }
 
 async function ensureProposalVotingSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {

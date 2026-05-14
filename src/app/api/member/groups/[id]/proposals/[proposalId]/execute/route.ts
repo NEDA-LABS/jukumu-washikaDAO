@@ -110,7 +110,7 @@ export async function POST(
       return NextResponse.json({ error: 'Not a payment proposal' }, { status: 400 });
     }
 
-    if (proposal.payment_status === 'executed') {
+    if (proposal.payment_status === 'completed') {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Proposal already executed' }, { status: 400 });
     }
@@ -197,7 +197,7 @@ export async function POST(
 
     await client.query(
       `UPDATE group_proposals
-       SET payment_status = 'executed', payment_tx_id = $1, executed_at = NOW(), updated_at = NOW()
+       SET payment_status = 'completed', payment_tx_id = $1, executed_at = NOW(), updated_at = NOW()
        WHERE id = $2`,
       [transfer.id, proposalIdNum]
     );
@@ -214,7 +214,7 @@ export async function POST(
         status: transfer.status,
         txHash: transfer.txHash,
       },
-      proposal: { id: proposal.id, paymentStatus: 'executed' },
+      proposal: { id: proposal.id, paymentStatus: 'completed' },
     });
   } catch (error) {
     await client.query('ROLLBACK');
