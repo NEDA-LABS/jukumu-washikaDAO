@@ -8,6 +8,20 @@ export const runtime = 'nodejs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-prod';
 
+let cachedPasswordColumn: 'password_hash' | 'password' | null = null;
+
+async function getPasswordColumn(client: import('pg').PoolClient) {
+  if (cachedPasswordColumn) return cachedPasswordColumn;
+  const res = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'users'
+       AND column_name IN ('password_hash', 'password')`
+  );
+  const cols = new Set((res as { rows: { column_name: string }[] }).rows.map(r => r.column_name));
+  cachedPasswordColumn = cols.has('password_hash') ? 'password_hash' : cols.has('password') ? 'password' : null;
+  return cachedPasswordColumn;
+}
+
 async function ensureInvestorSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
   await client.query(`
     DO $$
@@ -82,6 +96,11 @@ export async function POST(request: NextRequest) {
     client = await pool.connect();
     await ensureInvestorSchema(client);
 
+    const passwordCol = await getPasswordColumn(client);
+    if (!passwordCol) {
+      return NextResponse.json({ error: 'Hitilafu ya muundo wa hifadhidata' }, { status: 500 });
+    }
+
     const existing = await client.query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [email]);
     if ((existing as { rows: unknown[] }).rows.length > 0) {
       return NextResponse.json({ error: 'Barua pepe hii tayari inasajiliwa' }, { status: 409 });
@@ -92,7 +111,7 @@ export async function POST(request: NextRequest) {
     await client.query('BEGIN');
 
     const userRes = await client.query(
-      `INSERT INTO users (email, password, full_name, role) VALUES ($1, $2, $3, 'investor') RETURNING id, email, full_name, role`,
+      `INSERT INTO users (email, ${passwordCol}, full_name, role) VALUES ($1, $2, $3, 'investor') RETURNING id, email, full_name, role`,
       [email, passwordHash, fullName]
     ) as { rows: { id: number; email: string; full_name: string; role: string }[] };
 
