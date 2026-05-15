@@ -267,6 +267,8 @@ export default function InvestorDashboard() {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [provisioningWallet, setProvisioningWallet] = useState(false);
   const [walletModal, setWalletModal] = useState<'deposit' | 'withdraw' | null>(null);
+  const [depositMethod, setDepositMethod] = useState<'mobile' | 'crypto' | 'bank' | 'card'>('mobile');
+  const [copied, setCopied] = useState(false);
   const [walletAmount, setWalletAmount] = useState('');
   const [walletPhone, setWalletPhone] = useState('');
   const [walletSubmitting, setWalletSubmitting] = useState(false);
@@ -1420,19 +1422,50 @@ export default function InvestorDashboard() {
                   {walletModal === 'deposit' ? 'Weka Fedha' : 'Toa Fedha'}
                 </p>
                 <p className="text-sm font-bold mt-0.5" style={{ color: '#E8D5B0' }}>
-                  {walletModal === 'deposit' ? 'Amana kupitia M-Pesa / Tigo' : 'Toa hadi nambari ya simu'}
+                  {walletModal === 'withdraw' ? 'Toa hadi nambari ya simu' : 'Chagua njia ya amana'}
                 </p>
               </div>
               <button
-                onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); }}
+                onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.05)', color: '#6B5C3E' }}
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
 
-            <form onSubmit={handleWalletAction} className="p-6 space-y-4">
+            {/* Deposit method tabs — only shown for deposit */}
+            {walletModal === 'deposit' && (
+              <div className="grid grid-cols-4 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: '#fff' }}>
+                {([
+                  { key: 'mobile', icon: '📱', label: 'M-Pesa', live: true },
+                  { key: 'crypto', icon: '◆', label: 'USDC/USDT', live: true },
+                  { key: 'bank',   icon: '🏦', label: 'Benki', live: false },
+                  { key: 'card',   icon: '💳', label: 'Kadi', live: false },
+                ] as { key: 'mobile'|'crypto'|'bank'|'card'; icon: string; label: string; live: boolean }[]).map(m => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => { if (m.live) { setDepositMethod(m.key); setWalletMsg(null); } }}
+                    className="flex flex-col items-center gap-1 py-3 text-center transition-all relative"
+                    style={{
+                      borderBottom: depositMethod === m.key ? '2px solid #D4881E' : '2px solid transparent',
+                      color: depositMethod === m.key ? '#D4881E' : m.live ? '#8A7560' : '#C4B89E',
+                      cursor: m.live ? 'pointer' : 'default',
+                    }}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    <span className="text-[9px] font-semibold">{m.label}</span>
+                    {!m.live && (
+                      <span
+                        className="absolute top-1.5 right-1 text-[7px] font-bold px-1 rounded"
+                        style={{ background: '#F5F0E8', color: '#A8997E' }}
+                      >SOON</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="p-6 space-y-4">
               {/* Balance pill */}
               <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
                 <span className="text-xs" style={{ color: '#8A7560' }}>Salio la sasa</span>
@@ -1441,73 +1474,142 @@ export default function InvestorDashboard() {
                 </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
-                  Kiasi (TSH) *
-                </label>
-                <input
-                  type="number" min="1000" step="100"
-                  value={walletAmount}
-                  onChange={e => setWalletAmount(e.target.value)}
-                  placeholder="e.g. 50000"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200', fontFamily: 'monospace' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#EDE8E0'}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
-                  Nambari ya Simu *
-                </label>
-                <input
-                  type="tel"
-                  value={walletPhone}
-                  onChange={e => setWalletPhone(e.target.value)}
-                  placeholder="e.g. 0712345678"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#EDE8E0'}
-                  required
-                />
-              </div>
-
-              {walletMsg && (
-                <div
-                  className="px-4 py-3 rounded-xl text-xs font-medium"
-                  style={{
-                    background: walletMsg.ok ? '#ECFDF5' : '#FEF2F2',
-                    color: walletMsg.ok ? '#059669' : '#DC2626',
-                    border: `1px solid ${walletMsg.ok ? '#A7F3D0' : '#FECACA'}`,
-                  }}
-                >
-                  {walletMsg.text}
+              {/* ── CRYPTO DEPOSIT ── */}
+              {walletModal === 'deposit' && depositMethod === 'crypto' && (
+                <div className="space-y-4">
+                  <div
+                    className="rounded-xl p-4 space-y-3"
+                    style={{ background: '#0E0B07', border: '1px solid #2A1F0A' }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#D4881E' }}>Anwani ya Base Network</p>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0B3D2E', color: '#4ADE80' }}>Base</span>
+                    </div>
+                    {wallet.walletAddress ? (
+                      <>
+                        <p
+                          className="text-xs font-mono break-all leading-relaxed"
+                          style={{ color: '#E8D5B0' }}
+                        >
+                          {wallet.walletAddress}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(wallet.walletAddress!);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="w-full py-2 rounded-lg text-xs font-semibold transition-all"
+                          style={{ background: copied ? '#0B3D2E' : 'rgba(212,136,30,0.15)', color: copied ? '#4ADE80' : '#D4881E' }}
+                        >
+                          {copied ? '✓ Imenakiliwa!' : 'Nakili Anwani'}
+                        </button>
+                      </>
+                    ) : (
+                      <p className="text-xs" style={{ color: '#6B5C3E' }}>Pochi haijasanidiwa bado. Kwanza sanidi pochi yako.</p>
+                    )}
+                  </div>
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
+                    <p className="text-xs font-bold" style={{ color: '#92400E' }}>Jinsi ya kuweka USDC / USDT:</p>
+                    {['Tuma USDC au USDT kwenye anwani iliyo juu', 'Tumia mtandao wa Base (Layer 2)', 'nTZS itabadilishwa moja kwa moja kwenye pochi yako'].map((s, i) => (
+                      <p key={i} className="text-xs flex gap-2" style={{ color: '#92400E' }}>
+                        <span className="font-bold shrink-0">{i + 1}.</span>{s}
+                      </p>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setWalletModal(null); setDepositMethod('mobile'); }}
+                    className="w-full py-2.5 rounded-xl text-sm"
+                    style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
+                  >Funga</button>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); }}
-                  className="flex-1 py-3 rounded-xl text-sm"
-                  style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
-                >
-                  Ghairi
-                </button>
-                <button
-                  type="submit" disabled={walletSubmitting}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                  style={{ background: walletModal === 'deposit' ? '#D4881E' : '#0B3D2E', color: '#fff' }}
-                >
-                  {walletSubmitting
-                    ? 'Inatuma...'
-                    : walletModal === 'deposit' ? 'Weka Fedha' : 'Toa Fedha'}
-                </button>
-              </div>
-            </form>
+              {/* ── COMING SOON (bank / card) ── */}
+              {walletModal === 'deposit' && (depositMethod === 'bank' || depositMethod === 'card') && (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{ background: '#F5F0E8' }}>
+                    {depositMethod === 'bank' ? '🏦' : '💳'}
+                  </div>
+                  <p className="font-bold text-sm" style={{ color: '#1A1200' }}>
+                    {depositMethod === 'bank' ? 'Amana ya Benki' : 'Amana ya Kadi'}
+                  </p>
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold" style={{ background: '#F5F0E8', color: '#8A7560' }}>
+                    Inakuja Hivi Karibuni
+                  </span>
+                  <p className="text-xs" style={{ color: '#A8997E' }}>
+                    {depositMethod === 'bank'
+                      ? 'Uhamisho wa benki utapatikana baada ya muda mfupi'
+                      : 'Malipo ya kadi ya mkopo/mdeni yanakuja hivi karibuni'}
+                  </p>
+                </div>
+              )}
+
+              {/* ── MOBILE MONEY form (deposit mobile or any withdraw) ── */}
+              {(walletModal === 'withdraw' || (walletModal === 'deposit' && depositMethod === 'mobile')) && (
+                <form onSubmit={handleWalletAction} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Kiasi (TSH) *</label>
+                    <input
+                      type="number" min="1000" step="100"
+                      value={walletAmount}
+                      onChange={e => setWalletAmount(e.target.value)}
+                      placeholder="e.g. 50000"
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                      style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200', fontFamily: 'monospace' }}
+                      onFocus={e => e.target.style.borderColor = '#D4881E'}
+                      onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Nambari ya Simu *</label>
+                    <input
+                      type="tel"
+                      value={walletPhone}
+                      onChange={e => setWalletPhone(e.target.value)}
+                      placeholder="e.g. 0712345678"
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                      style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                      onFocus={e => e.target.style.borderColor = '#D4881E'}
+                      onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                      required
+                    />
+                  </div>
+
+                  {walletMsg && (
+                    <div
+                      className="px-4 py-3 rounded-xl text-xs font-medium"
+                      style={{
+                        background: walletMsg.ok ? '#ECFDF5' : '#FEF2F2',
+                        color: walletMsg.ok ? '#059669' : '#DC2626',
+                        border: `1px solid ${walletMsg.ok ? '#A7F3D0' : '#FECACA'}`,
+                      }}
+                    >
+                      {walletMsg.text}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
+                      className="flex-1 py-3 rounded-xl text-sm"
+                      style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
+                    >Ghairi</button>
+                    <button
+                      type="submit" disabled={walletSubmitting}
+                      className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: walletModal === 'deposit' ? '#D4881E' : '#0B3D2E', color: '#fff' }}
+                    >
+                      {walletSubmitting ? 'Inatuma...' : walletModal === 'deposit' ? 'Weka Fedha' : 'Toa Fedha'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}
