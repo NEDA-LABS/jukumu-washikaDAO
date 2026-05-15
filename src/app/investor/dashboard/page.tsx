@@ -55,6 +55,30 @@ type Group = {
   total_funded: number;
 };
 
+type GroupDetail = {
+  id: number;
+  name: string;
+  description?: string | null;
+  status: string;
+  founded_date?: string | null;
+  monthly_contribution?: number | null;
+  total_investment?: number | null;
+  voting_threshold_numerator: number;
+  voting_threshold_denominator: number;
+  ntzs_user_id?: string | null;
+  leader_name?: string | null;
+  member_count: number;
+  total_proposals: number;
+  passed_proposals: number;
+  executed_proposals: number;
+  open_proposals: number;
+  last_activity?: string | null;
+  transactions_90d: number;
+  volume_90d_tzs: number;
+  projects: { id: number; title: string; description?: string | null; metadata?: Record<string, unknown> | null; funded_at?: string | null; status: string }[];
+  leadership: { full_name: string; role: string }[];
+};
+
 type NetworkStats = {
   totalMembers: number;
   totalGroups: number;
@@ -233,6 +257,9 @@ export default function InvestorDashboard() {
   const [loading, setLoading] = useState(true);
   const [contactTarget, setContactTarget] = useState<Project | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [groupDetailId, setGroupDetailId] = useState<number | null>(null);
+  const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
+  const [groupDetailLoading, setGroupDetailLoading] = useState(false);
 
   // Wallet state
   const [wallet, setWallet] = useState<WalletState>({ balanceTzs: 0, walletAddress: null, provisioned: false });
@@ -250,6 +277,21 @@ export default function InvestorDashboard() {
   const [editForm, setEditForm] = useState<Partial<InvestorProfile>>({});
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+
+  const openGroupDetail = useCallback(async (id: number) => {
+    setGroupDetailId(id);
+    setGroupDetail(null);
+    setGroupDetailLoading(true);
+    try {
+      const res = await fetch(`/api/investor/groups/${id}`);
+      if (res.ok) {
+        const d = await res.json();
+        setGroupDetail(d.group ? { ...d.group, projects: d.projects ?? [], leadership: d.leadership ?? [] } : null);
+      }
+    } finally {
+      setGroupDetailLoading(false);
+    }
+  }, []);
 
   const fetchWallet = useCallback(async () => {
     setWalletLoading(true);
@@ -659,7 +701,12 @@ export default function InvestorDashboard() {
                       </thead>
                       <tbody>
                         {groups.slice(0, 5).map((g, i) => (
-                          <tr key={g.id} style={{ borderBottom: i < 4 ? '1px solid #F5F0E8' : 'none' }}>
+                          <tr
+                            key={g.id}
+                            onClick={() => openGroupDetail(g.id)}
+                            className="cursor-pointer hover:bg-amber-50/50 transition-colors"
+                            style={{ borderBottom: i < 4 ? '1px solid #F5F0E8' : 'none' }}
+                          >
                             <td className="px-4 py-3">
                               <p className="font-semibold" style={{ color: '#1A1200' }}>{g.name}</p>
                               {g.leader_name && <p style={{ color: '#A8997E' }}>{g.leader_name}</p>}
@@ -744,7 +791,11 @@ export default function InvestorDashboard() {
                   {groups.map(g => (
                     <div
                       key={g.id}
-                      className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all hover:shadow-md"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openGroupDetail(g.id)}
+                      onKeyDown={e => e.key === 'Enter' && openGroupDetail(g.id)}
+                      className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all hover:shadow-md cursor-pointer"
                       style={{ background: '#fff', border: '1px solid #EDE8E0' }}
                     >
                       {/* Avatar + name */}
@@ -1119,6 +1170,189 @@ export default function InvestorDashboard() {
 
         </main>
       </div>
+
+      {/* ── Group Detail Drawer ───────────────────────── */}
+      {groupDetailId !== null && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+            onClick={() => { setGroupDetailId(null); setGroupDetail(null); }}
+          />
+          <aside
+            className="fixed right-0 top-0 h-full z-50 w-full max-w-lg flex flex-col shadow-2xl overflow-hidden"
+            style={{ background: '#FAFAF7', borderLeft: '1px solid #EDE8E0' }}
+          >
+            {/* Drawer header */}
+            <div
+              className="flex items-start justify-between px-6 py-5 shrink-0"
+              style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#D4881E' }}>Taarifa ya Kundi</p>
+                <h2 className="text-base font-bold truncate" style={{ color: '#E8D5B0' }}>
+                  {groupDetailLoading ? 'Inapakia...' : groupDetail?.name ?? '...'}
+                </h2>
+                {groupDetail?.leader_name && (
+                  <p className="text-xs mt-0.5" style={{ color: '#6B5C3E' }}>Kiongozi: {groupDetail.leader_name}</p>
+                )}
+              </div>
+              <button
+                onClick={() => { setGroupDetailId(null); setGroupDetail(null); }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-4"
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#6B5C3E' }}
+              >✕</button>
+            </div>
+
+            {groupDetailLoading && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl animate-pulse" style={{ background: '#EDE8E0' }} />
+              </div>
+            )}
+
+            {!groupDetailLoading && groupDetail && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+                {/* Quick stats strip */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { label: 'Wanachama', value: String(groupDetail.member_count) },
+                    { label: 'Pool/Mwezi', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
+                    { label: 'Zilipita', value: `${groupDetail.passed_proposals}/${groupDetail.total_proposals}` },
+                    { label: 'Zilitekelezwa', value: String(groupDetail.executed_proposals) },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
+                      <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: '#A8997E' }}>{s.label}</p>
+                      <p className="text-sm font-black" style={{ color: '#1A1200', fontFamily: 'monospace' }}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Financial Health */}
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
+                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◆ Afya ya Kifedha</p>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                    {[
+                      { label: 'Mchango wa Mwezi', value: fmtShort(Number(groupDetail.monthly_contribution)) },
+                      { label: 'Pool ya Mwezi (wanachama × mchango)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
+                      { label: 'Pochi ya Hazina', value: groupDetail.ntzs_user_id ? '✓ Imesanidiwa (nTZS)' : 'Haijasanidiwa bado' },
+                      { label: 'Shughuli (siku 90)', value: `${groupDetail.transactions_90d} tx` },
+                      { label: 'Kiasi (siku 90)', value: fmtShort(Number(groupDetail.volume_90d_tzs)) },
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center justify-between px-4 py-3">
+                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
+                        <p className="text-xs font-bold font-mono" style={{ color: '#1A1200' }}>{r.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Governance */}
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
+                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◈ Utawala</p>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                    {[
+                      {
+                        label: 'Kizingiti cha Kura',
+                        value: `${groupDetail.voting_threshold_numerator}/${groupDetail.voting_threshold_denominator} ya wanachama`,
+                      },
+                      { label: 'Mapendekezo Yaliyopita', value: `${groupDetail.passed_proposals} kati ya ${groupDetail.total_proposals}` },
+                      { label: 'Kiwango cha Utekelezaji', value: groupDetail.passed_proposals > 0 ? `${Math.round((groupDetail.executed_proposals / groupDetail.passed_proposals) * 100)}%` : '—' },
+                      { label: 'Mapendekezo Wazi', value: `${groupDetail.open_proposals} yanafanya kazi` },
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center justify-between px-4 py-3">
+                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
+                        <p className="text-xs font-bold" style={{ color: '#1A1200' }}>{r.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Activity */}
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
+                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◉ Shughuli za Hivi Karibuni</p>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                    {[
+                      { label: 'Shughuli ya Mwisho', value: groupDetail.last_activity ? ago(groupDetail.last_activity) : 'Haijabainishwa' },
+                      { label: 'Shughuli za Siku 90', value: `${groupDetail.transactions_90d} shughuli` },
+                      { label: 'Kilianzishwa', value: groupDetail.founded_date ? new Date(groupDetail.founded_date).toLocaleDateString('sw-TZ', { year: 'numeric', month: 'long' }) : '—' },
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center justify-between px-4 py-3">
+                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
+                        <p className="text-xs font-bold" style={{ color: '#1A1200' }}>{r.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Leadership */}
+                {groupDetail.leadership.length > 0 && (
+                  <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
+                    <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◎ Uongozi</p>
+                    </div>
+                    <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                      {groupDetail.leadership.map(l => (
+                        <div key={l.full_name} className="flex items-center justify-between px-4 py-3">
+                          <p className="text-xs font-semibold" style={{ color: '#1A1200' }}>{l.full_name}</p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full capitalize" style={{ background: '#F5F0E8', color: '#8A7560' }}>{l.role}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prodcast Projects */}
+                {groupDetail.projects.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>◆ Miradi ya Prodcast</p>
+                    <div className="space-y-3">
+                      {groupDetail.projects.map(p => {
+                        const goal = Number((p.metadata as { funding_goal_tzs?: number })?.funding_goal_tzs ?? 0);
+                        return (
+                          <div key={p.id} className="rounded-xl p-4" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <p className="text-sm font-bold" style={{ color: '#1A1200' }}>{p.title}</p>
+                              <span
+                                className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
+                                style={{ background: p.funded_at ? '#ECFDF5' : '#FEF3E2', color: p.funded_at ? '#059669' : '#D4881E' }}
+                              >
+                                {p.funded_at ? 'Imepita' : 'Inasubiri'}
+                              </span>
+                            </div>
+                            {p.description && <p className="text-xs line-clamp-2" style={{ color: '#8A7560' }}>{p.description}</p>}
+                            {goal > 0 && (
+                              <p className="text-xs font-bold font-mono mt-2" style={{ color: '#D4881E' }}>
+                                Lengo: {fmtShort(goal)}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* CTA */}
+                <a
+                  href={`mailto:invest@jukumufund.co.tz?subject=Interest in Group: ${encodeURIComponent(groupDetail.name)}&body=Habari,%0A%0ANinapenda kujua zaidi kuhusu kundi la "${groupDetail.name}".%0A%0AJina langu: ${encodeURIComponent(profile?.full_name ?? '')}%0AKampuni: ${encodeURIComponent(profile?.company ?? 'N/A')}%0A%0AAsante.`}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-bold transition-all"
+                  style={{ background: '#1A1200', color: '#D4881E' }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
+                >
+                  Wasiliana Kuhusu Kundi Hili →
+                </a>
+              </div>
+            )}
+          </aside>
+        </>
+      )}
 
       {/* ── Contact Modal ─────────────────────────────── */}
       {contactTarget && (
