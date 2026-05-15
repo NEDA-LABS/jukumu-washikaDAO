@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 
 /**
  * GET /api/investor/funding-requests
- * Public endpoint — returns Prodast proposals that passed voting (funded_at IS NOT NULL).
+ * Public endpoint — returns Prodcast proposals that passed voting (funded_at IS NOT NULL).
  * Powers the investor portal's match-funding section.
  */
 export async function GET() {
@@ -29,7 +29,7 @@ export async function GET() {
         ) AS member_count
       FROM group_proposals p
       JOIN groups g ON g.id = p.group_id
-      WHERE p.proposal_type = 'prodast'
+      WHERE p.proposal_type = 'prodcast'
         AND p.funded_at IS NOT NULL
       ORDER BY p.funded_at DESC
       LIMIT 50

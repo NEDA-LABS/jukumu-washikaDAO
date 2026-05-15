@@ -23,7 +23,7 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
     `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) CHECK (payment_status IN ('pending','processing','completed','failed'))`,
     `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS payment_tx_id VARCHAR(255)`,
     `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS executed_at TIMESTAMP`,
-    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS proposal_type VARCHAR(20) DEFAULT 'general' CHECK (proposal_type IN ('general','ask','spend','prodast'))`,
+    `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS proposal_type VARCHAR(20) DEFAULT 'general' CHECK (proposal_type IN ('general','ask','spend','prodcast'))`,
     `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS metadata JSONB`,
     `ALTER TABLE group_proposals ADD COLUMN IF NOT EXISTS funded_at TIMESTAMP`,
   ];
@@ -35,6 +35,25 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
   await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_created_at ON group_proposals(created_at DESC)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_type ON group_proposals(proposal_type)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_group_proposals_funded ON group_proposals(funded_at) WHERE funded_at IS NOT NULL`);
+
+  await client.query(`
+    DO $$
+    DECLARE c_name TEXT;
+    BEGIN
+      UPDATE group_proposals SET proposal_type = 'prodcast' WHERE proposal_type = 'prodast';
+      FOR c_name IN
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'group_proposals'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%prodast%'
+      LOOP
+        EXECUTE 'ALTER TABLE group_proposals DROP CONSTRAINT ' || quote_ident(c_name);
+      END LOOP;
+      ALTER TABLE group_proposals ADD CONSTRAINT group_proposals_proposal_type_check
+        CHECK (proposal_type IN ('general','ask','spend','prodcast'));
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
 }
 
 async function ensureProposalVotingSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
@@ -229,7 +248,7 @@ export async function POST(
                funded_at = CASE WHEN $1 AND $2 THEN NOW() ELSE funded_at END,
                updated_at = NOW()
            WHERE id = $3`,
-          [passed, pType === 'prodast', pid]
+          [passed, pType === 'prodcast', pid]
         );
         autoClosedStatus = passed ? 'passed' : 'failed';
       }

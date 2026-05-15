@@ -100,7 +100,7 @@ export async function POST(
     };
 
     // Only ask and spend proposals can be executed
-    if (proposal.proposal_type === 'general' || proposal.proposal_type === 'prodast') {
+    if (proposal.proposal_type === 'general' || proposal.proposal_type === 'prodcast') {
       await client.query('ROLLBACK');
       return NextResponse.json({ error: 'This proposal type cannot be executed as a payment' }, { status: 400 });
     }

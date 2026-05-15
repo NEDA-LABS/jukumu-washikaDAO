@@ -262,12 +262,12 @@ export default function InvestorPage() {
         </div>
       </section>
 
-      {/* ── Prodast: Live Funding Requests ── */}
+      {/* ── Prodcast: Live Funding Requests ── */}
       {fundingRequests.length > 0 && (
         <section className="py-20 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 text-xs font-semibold uppercase tracking-widest mb-4">Prodast</span>
+              <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 text-xs font-semibold uppercase tracking-widest mb-4">Prodcast</span>
               <h2 className="text-3xl font-bold text-foreground mb-3">Miradi Inayotafuta Wawekezaji</h2>
               <p className="text-foreground/50 max-w-xl mx-auto">Makundi yaliyopitisha kura na yanatafuta ushirikiano wa fedha. Kila mradi unapendekeza wawekezaji kuchangia pamoja.</p>
             </div>

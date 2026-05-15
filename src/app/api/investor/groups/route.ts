@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
         (
           SELECT COUNT(*)
           FROM group_proposals p
-          WHERE p.group_id = g.id AND p.proposal_type = 'prodast' AND p.funded_at IS NOT NULL
-        ) AS prodast_count,
+          WHERE p.group_id = g.id AND p.proposal_type = 'prodcast' AND p.funded_at IS NOT NULL
+        ) AS prodcast_count,
         (
           SELECT COALESCE(SUM(i.amount), 0)
           FROM investments i

@@ -4,7 +4,7 @@ import { getAuthTokenPayload } from '@/lib/auth';
 
 /**
  * GET /api/investor/projects
- * Authenticated — returns Prodast proposals with richer group financial data.
+ * Authenticated — returns Prodcast proposals with richer group financial data.
  */
 export async function GET(request: NextRequest) {
   const auth = getAuthTokenPayload(request);
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         ) AS total_votes
       FROM group_proposals p
       JOIN groups g ON g.id = p.group_id
-      WHERE p.proposal_type = 'prodast'
+      WHERE p.proposal_type = 'prodcast'
         AND p.funded_at IS NOT NULL
       ORDER BY p.funded_at DESC
       LIMIT 100

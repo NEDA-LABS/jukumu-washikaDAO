@@ -51,7 +51,7 @@ type Group = {
   status: string;
   leader_name?: string | null;
   member_count: number;
-  prodast_count: number;
+  prodcast_count: number;
   total_funded: number;
 };
 
@@ -156,7 +156,7 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
               className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
               style={{ background: '#FEF3E2', color: '#D4881E' }}
             >
-              Prodast
+              Prodcast
             </span>
             <span className="text-[10px]" style={{ color: '#A8997E' }}>{ago(p.funded_at)}</span>
           </div>
@@ -591,7 +591,7 @@ export default function InvestorDashboard() {
                 <StatCard
                   label="Miradi Hai"
                   value={String(projects.length)}
-                  sub="Prodast zilizoidhinishwa"
+                  sub="Prodcast zilizoidhinishwa"
                   accent
                 />
                 <StatCard
@@ -667,9 +667,9 @@ export default function InvestorDashboard() {
                             <td className="px-4 py-3 font-mono font-bold" style={{ color: '#1A1200' }}>{g.member_count}</td>
                             <td className="px-4 py-3 font-mono" style={{ color: '#1A1200' }}>{fmtShort(Number(g.monthly_contribution))}</td>
                             <td className="px-4 py-3">
-                              {Number(g.prodast_count) > 0 ? (
+                              {Number(g.prodcast_count) > 0 ? (
                                 <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3E2', color: '#D4881E' }}>
-                                  {g.prodast_count}
+                                  {g.prodcast_count}
                                 </span>
                               ) : <span style={{ color: '#C4B89E' }}>—</span>}
                             </td>
@@ -694,7 +694,7 @@ export default function InvestorDashboard() {
                     ◆
                   </div>
                   <p className="font-semibold" style={{ color: '#1A1200' }}>Bado hakuna data</p>
-                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Miradi ya Prodast itaonekana hapa baada ya kupitishwa na makundi</p>
+                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Miradi ya Prodcast itaonekana hapa baada ya kupitishwa na makundi</p>
                 </div>
               )}
             </div>
@@ -778,14 +778,14 @@ export default function InvestorDashboard() {
                           <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Uwekezaji</p>
                           <p className="text-sm font-bold font-mono" style={{ color: '#0B3D2E' }}>{fmtShort(Number(g.total_investment))}</p>
                         </div>
-                        {Number(g.prodast_count) > 0 && (
+                        {Number(g.prodcast_count) > 0 && (
                           <div className="text-center">
                             <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Miradi</p>
                             <p
                               className="text-sm font-bold px-2 py-0.5 rounded-full inline-block"
                               style={{ background: '#FEF3E2', color: '#D4881E' }}
                             >
-                              {g.prodast_count}
+                              {g.prodcast_count}
                             </p>
                           </div>
                         )}

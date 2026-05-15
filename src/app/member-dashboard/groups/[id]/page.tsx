@@ -61,7 +61,7 @@ type LeadershipRow = {
   status?: string | null;
 };
 
-type ProposalType = 'general' | 'ask' | 'spend' | 'prodast';
+type ProposalType = 'general' | 'ask' | 'spend' | 'prodcast';
 
 type ProposalRow = {
   id: number;
@@ -1053,7 +1053,7 @@ export default function MemberGroupDetailsPage() {
                   general:  { label: 'Jumla',     color: 'bg-white/5 text-white/40 border border-white/10',            dot: 'bg-white/20' },
                   ask:      { label: 'Ombi',      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
                   spend:    { label: 'Matumizi',  color: 'bg-orange-500/10 text-orange-400 border border-orange-500/20', dot: 'bg-orange-400' },
-                  prodast:  { label: 'Prodast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
+                  prodcast:  { label: 'Prodcast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
                 };
                 const tm = typeMeta[pType] ?? typeMeta.general;
                 return (
@@ -1076,7 +1076,7 @@ export default function MemberGroupDetailsPage() {
                         {(pType === 'ask' || pType === 'spend') && p.payment_amount_tzs && (
                           <p className="text-xs text-emerald-400/70 mt-1">TSH {Number(p.payment_amount_tzs).toLocaleString()}</p>
                         )}
-                        {pType === 'prodast' && !!p.metadata?.funding_goal_tzs && (
+                        {pType === 'prodcast' && !!p.metadata?.funding_goal_tzs && (
                           <p className="text-xs text-purple-400/70 mt-1">Lengo: TSH {Number(p.metadata!.funding_goal_tzs as number).toLocaleString()}</p>
                         )}
                         <p className="text-[10px] text-white/20 mt-2">
@@ -1148,7 +1148,7 @@ export default function MemberGroupDetailsPage() {
                 { value: 'general', label: 'Jumla', color: 'text-white/60' },
                 { value: 'ask', label: 'Ombi', color: 'text-blue-400' },
                 { value: 'spend', label: 'Matumizi', color: 'text-orange-400' },
-                { value: 'prodast', label: 'Prodast', color: 'text-purple-400' },
+                { value: 'prodcast', label: 'Prodcast', color: 'text-purple-400' },
               ] as { value: ProposalType; label: string; color: string }[]).map(tab => (
                 <button
                   key={tab.value}
@@ -1171,7 +1171,7 @@ export default function MemberGroupDetailsPage() {
                 {proposalType === 'general' && 'Majadiliano na upigaji kura wa kawaida — bila malipo.'}
                 {proposalType === 'ask' && 'Ombi la fedha kutoka hazina ya kundi kwa ajili ya biashara yako.'}
                 {proposalType === 'spend' && 'Matumizi ya pamoja ya kundi — kwa muuzaji au huduma.'}
-                {proposalType === 'prodast' && 'Tangaza mradi kwa wawekezaji kupitia portal ya uwekezaji.'}
+                {proposalType === 'prodcast' && 'Tangaza mradi kwa wawekezaji kupitia portal ya uwekezaji.'}
               </p>
             </div>
 
@@ -1205,7 +1205,7 @@ export default function MemberGroupDetailsPage() {
                     vendor_name: proposalMeta.vendor_name || '',
                     expense_category: proposalMeta.expense_category || '',
                   };
-                } else if (proposalType === 'prodast') {
+                } else if (proposalType === 'prodcast') {
                   const goal = Number(proposalMeta.funding_goal_tzs);
                   if (!goal || goal <= 0) { showToast('Ingiza lengo la fedha.', 'error'); return; }
                   payload.metadata = {
@@ -1250,7 +1250,7 @@ export default function MemberGroupDetailsPage() {
                   placeholder={
                     proposalType === 'ask' ? 'e.g. Mkopo wa mtaji wa biashara' :
                     proposalType === 'spend' ? 'e.g. Ada ya mkutano wa mafunzo' :
-                    proposalType === 'prodast' ? 'e.g. Mradi wa kilimo cha umwagiliaji' :
+                    proposalType === 'prodcast' ? 'e.g. Mradi wa kilimo cha umwagiliaji' :
                     'e.g. Ongeza mchango wa kila mwezi'
                   }
                   autoFocus required
@@ -1299,8 +1299,8 @@ export default function MemberGroupDetailsPage() {
                 </>
               )}
 
-              {/* Prodast fields */}
-              {proposalType === 'prodast' && (
+              {/* Prodcast fields */}
+              {proposalType === 'prodcast' && (
                 <>
                   <div>
                     <label className="block text-xs font-medium text-white/40 mb-1.5">Lengo la Fedha (TSH) *</label>
@@ -1343,8 +1343,8 @@ export default function MemberGroupDetailsPage() {
                 </div>
               )}
 
-              {/* Prodast description */}
-              {proposalType === 'prodast' && (
+              {/* Prodcast description */}
+              {proposalType === 'prodcast' && (
                 <div>
                   <label className="block text-xs font-medium text-white/40 mb-1.5">Maelezo ya Mradi *</label>
                   <textarea
@@ -1358,17 +1358,17 @@ export default function MemberGroupDetailsPage() {
               )}
 
               <div className={`rounded-xl px-4 py-3 border ${
-                proposalType === 'prodast' ? 'bg-purple-500/5 border-purple-500/10' :
+                proposalType === 'prodcast' ? 'bg-purple-500/5 border-purple-500/10' :
                 proposalType === 'ask' ? 'bg-blue-500/5 border-blue-500/10' :
                 proposalType === 'spend' ? 'bg-orange-500/5 border-orange-500/10' :
                 'bg-orange-500/5 border-orange-500/10'
               }`}>
                 <p className={`text-xs ${
-                  proposalType === 'prodast' ? 'text-purple-400/70' :
+                  proposalType === 'prodcast' ? 'text-purple-400/70' :
                   proposalType === 'ask' ? 'text-blue-400/70' :
                   'text-orange-400/70'
                 }`}>
-                  {proposalType === 'prodast'
+                  {proposalType === 'prodcast'
                     ? 'Baada ya kura kupita, mradi utaonekana kwa wawekezaji kwenye portal.'
                     : proposalType === 'ask'
                     ? 'Fedha zitahamishwa moja kwa moja kwenye pochi yako baada ya kura kupita.'
@@ -1393,7 +1393,7 @@ export default function MemberGroupDetailsPage() {
                   type="submit"
                   disabled={proposalSubmitting || !proposalTitle.trim()}
                   className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg ${
-                    proposalType === 'prodast' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20' :
+                    proposalType === 'prodcast' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20' :
                     proposalType === 'ask' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' :
                     'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
                   }`}
