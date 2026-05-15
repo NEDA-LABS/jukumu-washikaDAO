@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Pages that are fully public (no auth required)
-const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/investor/signup', '/portal']
+const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/investor/signup', '/investor/login', '/portal']
 
 // Page prefixes that are fully public
 const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn']

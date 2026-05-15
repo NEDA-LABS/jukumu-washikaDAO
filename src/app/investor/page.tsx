@@ -70,30 +70,30 @@ export default function InvestorPage() {
 
         <div className="relative z-10 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 pb-20 pt-32">
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-            Wekeza
+            Invest
           </p>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight max-w-3xl mb-6">
-            Kujenga Kesho,<br />
+            Building Tomorrow,<br />
             <span className="text-white/75 font-normal text-3xl sm:text-4xl lg:text-5xl">
-              Pamoja na Jamii
+              Together with Communities
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-white/70 max-w-xl leading-relaxed mb-10">
-            Washika DAU inaunganisha wawekezaji na makundi ya wajasiriamali wa Tanzania ambao
-            wanajua biashara zao na jamii zao.
+            Washika DAU connects investors with Tanzania&apos;s grassroots entrepreneur groups
+            who know their businesses and communities.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/investor/signup"
               className="inline-flex items-center justify-center px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
             >
-              Anza Kuwekeza →
+              Start Investing →
             </Link>
             <Link
               href="/#about"
               className="inline-flex items-center justify-center px-8 py-4 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
             >
-              Jinsi Washika DAU inavyofanya kazi
+              How Washika DAU works
             </Link>
           </div>
         </div>
@@ -112,15 +112,15 @@ export default function InvestorPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
               {[
-                { label: 'Wanachama', value: stats.totalMembers?.toLocaleString() || '—' },
-                { label: 'Makundi', value: stats.totalGroups?.toLocaleString() || '—' },
+                { label: 'Members', value: stats.totalMembers?.toLocaleString() || '—' },
+                { label: 'Groups', value: stats.totalGroups?.toLocaleString() || '—' },
                 {
-                  label: 'Uwekezaji',
+                  label: 'Investment',
                   value: stats.totalInvestment > 0
                     ? `TSH ${(stats.totalInvestment / 1_000_000).toFixed(1)}M`
                     : '—',
                 },
-                { label: 'Mikoa', value: stats.activeRegions?.toLocaleString() || '—' },
+                { label: 'Regions', value: stats.activeRegions?.toLocaleString() || '—' },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-3xl sm:text-4xl font-bold text-foreground">{value}</p>
@@ -136,10 +136,10 @@ export default function InvestorPage() {
       <section className="bg-background py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-            Mfumo
+            The Model
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground max-w-2xl leading-tight mb-16">
-            Jinsi uwekezaji unavyofanya kazi
+            How the investment model works
           </h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -147,7 +147,7 @@ export default function InvestorPage() {
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
               <Image
                 src="/PXL_20250805_160021888.PORTRAIT.jpg"
-                alt="Washika DAU kundi"
+                alt="Washika DAU group"
                 fill
                 className="object-cover"
               />
@@ -158,18 +158,18 @@ export default function InvestorPage() {
               {[
                 {
                   num: '01',
-                  title: 'Unachagua kundi',
-                  body: 'Kila kundi lina waanzilishi wanaojulikana, biashara inayofanya kazi, na rekodi ya mauzo inayoonekana kwenye dashibodi yetu.',
+                  title: 'Choose a group',
+                  body: 'Each group has known founders, an operating business, and a sales record visible directly on our dashboard.',
                 },
                 {
                   num: '02',
-                  title: 'Unaingia kwa mkataba wa hisa',
-                  body: 'Mkataba wazi unaoeleza mgawanyo wa mapato, haki za mkutano, na utaratibu wa kutoa pesa wakati wowote.',
+                  title: 'Enter a revenue-share agreement',
+                  body: 'A clear agreement outlining revenue split, meeting rights, and a withdrawal process at any time.',
                 },
                 {
                   num: '03',
-                  title: 'Unafuatilia kwa wakati halisi',
-                  body: 'Kila muamala, mkutano, na taarifa ya kila mwezi inaonekana moja kwa moja. Hakuna siri.',
+                  title: 'Track in real time',
+                  body: 'Every transaction, meeting, and monthly report is visible directly. No hidden details.',
                 },
               ].map(({ num, title, body }) => (
                 <div key={num} className="flex gap-6">
@@ -191,25 +191,25 @@ export default function InvestorPage() {
       <section className="bg-muted py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-            Misingi yetu
+            Our Principles
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground max-w-2xl leading-tight mb-16">
-            Tunaamini nini
+            What We Believe
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: 'Uwazi',
-                body: 'Hakuna takwimu zilizofichwa. Kila mwekezaji anaona data ile ile ambayo makundi yanaona — mapato, gharama, na shughuli zote.',
+                title: 'Transparency',
+                body: 'No hidden data. Every investor sees the same figures the groups see — revenue, expenses, and all transactions.',
               },
               {
-                title: 'Heshima ya Jamii',
-                body: 'Tunakataa mfumo ambao unawaambia wajasiriamali wadogo nini cha kufanya. Badala yake, tunasikiliza na kuunga mkono maamuzi yao.',
+                title: 'Community Respect',
+                body: 'We reject models that dictate to small entrepreneurs. Instead, we listen and support their decisions.',
               },
               {
-                title: 'Ukweli wa Takwimu',
-                body: 'Hatuweki ahadi za mapato. Tunakuonyesha data halisi ya makundi yanayofanya kazi — wewe unaamua.',
+                title: 'Data Integrity',
+                body: "We make no return promises. We show you real data from operating groups — you decide.",
               },
             ].map(({ title, body }) => (
               <div key={title} className="bg-card rounded-2xl p-8 border border-border">
@@ -248,10 +248,10 @@ export default function InvestorPage() {
       <section className="bg-foreground py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl font-bold text-background mb-6">
-            Uko tayari kuanza?
+            Ready to get started?
           </h2>
           <p className="text-lg text-background/60 max-w-xl mx-auto mb-10">
-            Wasiliana nasi — tutakuunganisha na kundi linalolingana na malengo yako.
+            Reach out — we&apos;ll connect you with a group that matches your goals.
           </p>
           <a
             href="mailto:invest@jukumufund.co.tz"
@@ -268,8 +268,8 @@ export default function InvestorPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 text-xs font-semibold uppercase tracking-widest mb-4">Prodcast</span>
-              <h2 className="text-3xl font-bold text-foreground mb-3">Miradi Inayotafuta Wawekezaji</h2>
-              <p className="text-foreground/50 max-w-xl mx-auto">Makundi yaliyopitisha kura na yanatafuta ushirikiano wa fedha. Kila mradi unapendekeza wawekezaji kuchangia pamoja.</p>
+              <h2 className="text-3xl font-bold text-foreground mb-3">Projects Seeking Investors</h2>
+              <p className="text-foreground/50 max-w-xl mx-auto">Groups that have passed a vote and are seeking investment partnerships. Each project invites investors to co-fund together.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -278,7 +278,7 @@ export default function InvestorPage() {
                   {/* Group + members */}
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-purple-600 bg-purple-500/10 px-2.5 py-1 rounded-full">{req.group_name}</span>
-                    <span className="text-[10px] text-muted-foreground">{req.member_count} wanachama</span>
+                    <span className="text-[10px] text-muted-foreground">{req.member_count} members</span>
                   </div>
 
                   {/* Title */}
@@ -295,20 +295,20 @@ export default function InvestorPage() {
                   <div className="flex gap-3 flex-wrap">
                     {req.metadata?.funding_goal_tzs && (
                       <div className="flex-1 min-w-0 rounded-xl bg-foreground/[0.03] border border-border px-3 py-2">
-                        <p className="text-[10px] text-muted-foreground">Lengo</p>
+                        <p className="text-[10px] text-muted-foreground">Goal</p>
                         <p className="text-sm font-bold text-foreground">TSH {Number(req.metadata.funding_goal_tzs).toLocaleString()}</p>
                       </div>
                     )}
                     {req.metadata?.timeline && (
                       <div className="flex-1 min-w-0 rounded-xl bg-foreground/[0.03] border border-border px-3 py-2">
-                        <p className="text-[10px] text-muted-foreground">Muda</p>
+                        <p className="text-[10px] text-muted-foreground">Timeline</p>
                         <p className="text-sm font-bold text-foreground">{req.metadata.timeline}</p>
                       </div>
                     )}
                   </div>
 
                   {req.metadata?.expected_impact && (
-                    <p className="text-[11px] text-foreground/40 italic">"{req.metadata.expected_impact}"</p>
+                    <p className="text-[11px] text-foreground/40 italic">&ldquo;{req.metadata.expected_impact}&rdquo;</p>
                   )}
 
                   {/* CTA */}
@@ -316,7 +316,7 @@ export default function InvestorPage() {
                     href="mailto:invest@jukumufund.co.tz"
                     className="mt-auto w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold text-center transition-colors"
                   >
-                    Wasiliana Nasi
+                    Contact Us
                   </a>
                 </div>
               ))}

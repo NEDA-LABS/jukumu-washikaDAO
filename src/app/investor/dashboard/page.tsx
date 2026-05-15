@@ -128,11 +128,11 @@ const fmtShort = (n: number | null | undefined) => {
 const ago = (s: string) => {
   const diff = Date.now() - new Date(s).getTime();
   const d = Math.floor(diff / 86400000);
-  if (d === 0) return 'Leo';
-  if (d === 1) return 'Jana';
-  if (d < 30) return `Siku ${d} zilizopita`;
+  if (d === 0) return 'Today';
+  if (d === 1) return 'Yesterday';
+  if (d < 30) return `${d} days ago`;
   const m = Math.floor(d / 30);
-  return `Miezi ${m} iliyopita`;
+  return `${m} month${m > 1 ? 's' : ''} ago`;
 };
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -205,8 +205,8 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
       {goal > 0 && (
         <div className="space-y-1.5">
           <div className="flex justify-between text-[10px]" style={{ color: '#A8997E' }}>
-            <span>Lengo: <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
-            <span>{pct}% imefundiwa</span>
+            <span>Goal: <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
+            <span>{pct}% funded</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
             <div
@@ -219,14 +219,14 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
 
       <div className="flex gap-2 flex-wrap text-[10px]" style={{ color: '#A8997E' }}>
         {p.metadata?.timeline && (
-          <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>⏱ {p.metadata.timeline}</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>◷ {p.metadata.timeline}</span>
         )}
         {p.metadata?.expected_impact && (
           <span className="px-2 py-1 rounded-lg line-clamp-1" style={{ background: '#F5F0E8' }}>↑ {p.metadata.expected_impact}</span>
         )}
         {p.monthly_contribution && (
           <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>
-            Mchango: {fmtShort(Number(p.monthly_contribution))}/mwezi
+            Contribution: {fmtShort(Number(p.monthly_contribution))}/mo
           </span>
         )}
       </div>
@@ -238,7 +238,7 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
         onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
         onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
       >
-        Wasiliana Nasi →
+        Get in Touch →
       </button>
     </div>
   );
@@ -348,13 +348,13 @@ export default function InvestorDashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
-    if (!stored) { router.push('/login?next=/investor/dashboard'); return; }
+    if (!stored) { router.push('/investor/login?next=/investor/dashboard'); return; }
     try {
       const u = JSON.parse(stored);
-      if (u.role !== 'investor') { router.push('/login'); return; }
+      if (u.role !== 'investor') { router.push('/investor/login'); return; }
       setUser(u);
     } catch {
-      router.push('/login');
+      router.push('/investor/login');
       return;
     }
     loadData();
@@ -386,7 +386,7 @@ export default function InvestorDashboard() {
         setProfile(data.profile);
         setEditForm(data.profile);
         setEditMode(false);
-        setSaveMsg('Wasifu umehifadhiwa!');
+        setSaveMsg('Profile saved!');
         setTimeout(() => setSaveMsg(''), 3000);
       }
     } finally {
@@ -410,26 +410,26 @@ export default function InvestorDashboard() {
           >
             <span className="text-white font-black">J</span>
           </div>
-          <p className="text-sm" style={{ color: '#8A7560' }}>Inapakia...</p>
+          <p className="text-sm" style={{ color: '#8A7560' }}>Loading...</p>
         </div>
       </div>
     );
   }
 
   const navItems: { id: Section; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Habari', icon: '◈' },
-    { id: 'projects', label: 'Miradi', icon: '◆' },
-    { id: 'groups', label: 'Makundi', icon: '◉' },
-    { id: 'wallet', label: 'Pochi', icon: '◇' },
-    { id: 'profile', label: 'Wasifu', icon: '◎' },
+    { id: 'overview', label: 'Overview', icon: '◈' },
+    { id: 'projects', label: 'Projects', icon: '◆' },
+    { id: 'groups', label: 'Groups', icon: '◉' },
+    { id: 'wallet', label: 'Wallet', icon: '◇' },
+    { id: 'profile', label: 'Profile', icon: '◎' },
   ];
 
   const handleWalletAction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!walletModal) return;
     const amount = Number(walletAmount);
-    if (!amount || amount <= 0) { setWalletMsg({ text: 'Ingiza kiasi halali', ok: false }); return; }
-    if (!walletPhone.trim()) { setWalletMsg({ text: 'Ingiza nambari ya simu', ok: false }); return; }
+    if (!amount || amount <= 0) { setWalletMsg({ text: 'Enter a valid amount', ok: false }); return; }
+    if (!walletPhone.trim()) { setWalletMsg({ text: 'Enter a phone number', ok: false }); return; }
     setWalletSubmitting(true);
     setWalletMsg(null);
     try {
@@ -440,14 +440,14 @@ export default function InvestorDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        setWalletMsg({ text: data.message || 'Ombi limetumwa!', ok: true });
+        setWalletMsg({ text: data.message || 'Request sent!', ok: true });
         setWalletAmount(''); setWalletPhone('');
         setTimeout(() => { setWalletModal(null); setWalletMsg(null); fetchWallet(); }, 2000);
       } else {
-        setWalletMsg({ text: data.error || 'Hitilafu imetokea', ok: false });
+        setWalletMsg({ text: data.error || 'An error occurred', ok: false });
       }
     } catch {
-      setWalletMsg({ text: 'Hitilafu ya mtandao', ok: false });
+      setWalletMsg({ text: 'Network error. Please try again.', ok: false });
     } finally {
       setWalletSubmitting(false);
     }
@@ -555,7 +555,7 @@ export default function InvestorDashboard() {
               onMouseOver={e => e.currentTarget.style.color = '#8A7560'}
               onMouseOut={e => e.currentTarget.style.color = '#4A3D2A'}
             >
-              ← Kurasa ya Umma
+              ← Public Page
             </button>
             <button
               onClick={handleLogout}
@@ -564,7 +564,7 @@ export default function InvestorDashboard() {
               onMouseOver={e => e.currentTarget.style.color = '#EF4444'}
               onMouseOut={e => e.currentTarget.style.color = '#4A3D2A'}
             >
-              ⏻ Ondoka
+              ⏻ Sign Out
             </button>
           </div>
         </aside>
@@ -593,7 +593,7 @@ export default function InvestorDashboard() {
                 {navItems.find(n => n.id === section)?.label}
               </h1>
               <p className="text-[10px]" style={{ color: '#A8997E' }}>
-                {new Date().toLocaleDateString('sw-TZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </div>
           </div>
@@ -609,7 +609,7 @@ export default function InvestorDashboard() {
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={{ background: '#D4881E', color: '#fff' }}
             >
-              Wasiliana
+              Contact
             </a>
           </div>
         </header>
@@ -623,35 +623,35 @@ export default function InvestorDashboard() {
               {/* Greeting */}
               <div>
                 <h2 className="text-2xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>
-                  Karibu, {profile?.full_name?.split(' ')[0] || 'Mwekezaji'} 👋
+                  Welcome, {profile?.full_name?.split(' ')[0] || 'Investor'}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
-                  Hapa kuna muhtasari wa fursa za uwekezaji kwenye mtandao wa JUKUMU.
+                  Here is an overview of investment opportunities across the JUKUMU network.
                 </p>
               </div>
 
               {/* Stat cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  label="Miradi Hai"
+                  label="Active Projects"
                   value={String(projects.length)}
-                  sub="Prodcast zilizoidhinishwa"
+                  sub="Approved Prodcasts"
                   accent
                 />
                 <StatCard
-                  label="Fedha Inayohitajika"
+                  label="Funding Sought"
                   value={fmtShort(totalFundingSought)}
-                  sub="Jumla ya maombi"
+                  sub="Total requested"
                 />
                 <StatCard
-                  label="Makundi"
+                  label="Groups"
                   value={String(stats?.totalGroups ?? groups.length)}
-                  sub="Yanayofanya kazi"
+                  sub="Active"
                 />
                 <StatCard
-                  label="Wanachama"
+                  label="Members"
                   value={String(stats?.totalMembers ?? '—')}
-                  sub={`Mikoa ${stats?.activeRegions ?? '—'}`}
+                  sub={`${stats?.activeRegions ?? '—'} regions`}
                 />
               </div>
 
@@ -659,13 +659,13 @@ export default function InvestorDashboard() {
               {projects.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Miradi Iliyopigiwa Kura Hivi Karibuni</h3>
+                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Recently Voted Projects</h3>
                     <button
                       onClick={() => setSection('projects')}
                       className="text-xs font-semibold"
                       style={{ color: '#D4881E' }}
                     >
-                      Angalia yote →
+                      View all →
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -680,13 +680,13 @@ export default function InvestorDashboard() {
               {groups.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Makundi Yanayofanya Kazi</h3>
+                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Active Groups</h3>
                     <button
                       onClick={() => setSection('groups')}
                       className="text-xs font-semibold"
                       style={{ color: '#D4881E' }}
                     >
-                      Angalia yote →
+                      View all →
                     </button>
                   </div>
                   <div
@@ -696,7 +696,7 @@ export default function InvestorDashboard() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr style={{ borderBottom: '1px solid #EDE8E0', background: '#FAFAF7' }}>
-                          {['Kundi', 'Wanachama', 'Mchango/Mwezi', 'Miradi'].map(h => (
+                          {['Group', 'Members', 'Monthly Contribution', 'Projects'].map(h => (
                             <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider" style={{ color: '#8A7560', fontSize: '10px' }}>{h}</th>
                           ))}
                         </tr>
@@ -742,8 +742,8 @@ export default function InvestorDashboard() {
                   >
                     ◆
                   </div>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>Bado hakuna data</p>
-                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Miradi ya Prodcast itaonekana hapa baada ya kupitishwa na makundi</p>
+                  <p className="font-semibold" style={{ color: '#1A1200' }}>No data yet</p>
+                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Prodcast projects will appear here once approved by groups</p>
                 </div>
               )}
             </div>
@@ -753,16 +753,16 @@ export default function InvestorDashboard() {
           {section === 'projects' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Miradi ya Uwekezaji</h2>
+                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Investment Projects</h2>
                 <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
-                  {projects.length} {projects.length === 1 ? 'mradi' : 'miradi'} iliyoidhinishwa na kura za wanachama
+                  {projects.length} {projects.length === 1 ? 'project' : 'projects'} approved by member vote
                 </p>
               </div>
 
               {projects.length === 0 ? (
                 <div className="rounded-2xl p-16 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>Hakuna miradi bado</p>
-                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Makundi yatawasilisha miradi hapa kupitia mchakato wa kura</p>
+                  <p className="font-semibold" style={{ color: '#1A1200' }}>No projects yet</p>
+                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Groups will submit projects here through the voting process</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -778,15 +778,15 @@ export default function InvestorDashboard() {
           {section === 'groups' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Makundi ya VICOBA</h2>
+                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>VICOBA Groups</h2>
                 <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
-                  {groups.length} kundi {groups.length === 1 ? 'linafanya' : 'yanafanya'} kazi — yenye uwazi wa kifedha
+                  {groups.length} {groups.length === 1 ? 'group' : 'groups'} active — with full financial transparency
                 </p>
               </div>
 
               {groups.length === 0 ? (
                 <div className="rounded-2xl p-16 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>Hakuna makundi bado</p>
+                  <p className="font-semibold" style={{ color: '#1A1200' }}>No groups yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -811,7 +811,7 @@ export default function InvestorDashboard() {
                         <div className="min-w-0">
                           <p className="font-bold text-sm truncate" style={{ color: '#1A1200' }}>{g.name}</p>
                           <p className="text-xs" style={{ color: '#A8997E' }}>
-                            {g.leader_name ? `Kiongozi: ${g.leader_name}` : '—'}
+                            {g.leader_name ? `Leader: ${g.leader_name}` : '—'}
                             {g.founded_date && ` · ${new Date(g.founded_date).getFullYear()}`}
                           </p>
                         </div>
@@ -820,20 +820,20 @@ export default function InvestorDashboard() {
                       {/* Stats */}
                       <div className="flex gap-6 shrink-0 flex-wrap">
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Wanachama</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Members</p>
                           <p className="text-base font-black font-mono" style={{ color: '#1A1200' }}>{g.member_count}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Mchango</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Monthly</p>
                           <p className="text-sm font-bold font-mono" style={{ color: '#1A1200' }}>{fmtShort(Number(g.monthly_contribution))}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Uwekezaji</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Investment</p>
                           <p className="text-sm font-bold font-mono" style={{ color: '#0B3D2E' }}>{fmtShort(Number(g.total_investment))}</p>
                         </div>
                         {Number(g.prodcast_count) > 0 && (
                           <div className="text-center">
-                            <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Miradi</p>
+                            <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Projects</p>
                             <p
                               className="text-sm font-bold px-2 py-0.5 rounded-full inline-block"
                               style={{ background: '#FEF3E2', color: '#D4881E' }}
@@ -854,8 +854,8 @@ export default function InvestorDashboard() {
           {section === 'wallet' && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Pochi ya nTZS</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Amana, toa, au hamisha fedha kupitia mtandao wa Base</p>
+                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>nTZS Wallet</h2>
+                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Deposit, withdraw, or transfer funds via the Base network</p>
               </div>
 
               {/* Balance hero card */}
@@ -875,7 +875,7 @@ export default function InvestorDashboard() {
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-6">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(212,136,30,0.7)' }}>Salio la Pochi</p>
+                        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(212,136,30,0.7)' }}>Wallet Balance</p>
                         <p
                           className="text-4xl font-black leading-none"
                           style={{ color: '#E8D5B0', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '-0.03em' }}
@@ -888,7 +888,7 @@ export default function InvestorDashboard() {
                         disabled={walletLoading}
                         className="w-8 h-8 rounded-lg flex items-center justify-center transition-all disabled:opacity-40"
                         style={{ background: 'rgba(212,136,30,0.15)', color: '#D4881E' }}
-                        title="Sasisha"
+                        title="Refresh"
                       >
                         <svg className={`w-4 h-4 ${walletLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -911,7 +911,7 @@ export default function InvestorDashboard() {
                         onMouseOver={e => e.currentTarget.style.background = '#B8740F'}
                         onMouseOut={e => e.currentTarget.style.background = '#D4881E'}
                       >
-                        + Weka Fedha
+                        + Deposit
                       </button>
                       <button
                         onClick={() => { setWalletModal('withdraw'); setWalletMsg(null); }}
@@ -920,7 +920,7 @@ export default function InvestorDashboard() {
                         onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
                         onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                       >
-                        − Toa Fedha
+                        − Withdraw
                       </button>
                     </div>
                   </div>
@@ -932,25 +932,25 @@ export default function InvestorDashboard() {
                   style={{ background: '#fff', border: '2px dashed #EDE8E0' }}
                 >
                   <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-2xl" style={{ background: '#FEF3E2' }}>◇</div>
-                  <p className="font-bold mb-1" style={{ color: '#1A1200' }}>Pochi Haijasanidiwa</p>
-                  <p className="text-xs mb-5" style={{ color: '#A8997E' }}>Bonyeza hapa chini kuunda pochi yako ya nTZS kwenye mtandao wa Base</p>
+                  <p className="font-bold mb-1" style={{ color: '#1A1200' }}>Wallet Not Set Up</p>
+                  <p className="text-xs mb-5" style={{ color: '#A8997E' }}>Click below to create your nTZS wallet on the Base network</p>
                   <button
                     onClick={handleProvisionWallet}
                     disabled={provisioningWallet}
                     className="px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
                     style={{ background: '#D4881E', color: '#fff' }}
                   >
-                    {provisioningWallet ? 'Inasanidi...' : 'Unda Pochi →'}
+                    {provisioningWallet ? 'Setting up...' : 'Create Wallet →'}
                   </button>
                 </div>
               )}
 
               {/* Transaction history */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>Shughuli za Hivi Karibuni</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>Recent Transactions</p>
                 {transactions.length === 0 ? (
                   <div className="rounded-2xl p-8 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                    <p className="text-sm" style={{ color: '#C4B89E' }}>Hakuna shughuli bado</p>
+                    <p className="text-sm" style={{ color: '#C4B89E' }}>No transactions yet</p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
@@ -977,11 +977,11 @@ export default function InvestorDashboard() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold capitalize" style={{ color: '#1A1200' }}>
-                              {tx.type === 'deposit' ? 'Amana' : tx.type === 'withdrawal' ? 'Kutoa' : 'Uhamisho'}
+                              {tx.type === 'deposit' ? 'Deposit' : tx.type === 'withdrawal' ? 'Withdrawal' : 'Transfer'}
                               {tx.note ? ` — ${tx.note}` : ''}
                             </p>
                             <p className="text-[10px]" style={{ color: '#A8997E' }}>
-                              {new Date(tx.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              {new Date(tx.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                               {tx.from_group_name ? ` · ${tx.from_group_name}` : ''}
                               {tx.to_group_name ? ` → ${tx.to_group_name}` : ''}
                             </p>
@@ -1009,8 +1009,8 @@ export default function InvestorDashboard() {
             <div className="space-y-6 max-w-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Wasifu Wako</h2>
-                  <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Taarifa zako za uwekezaji</p>
+                  <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Your Profile</h2>
+                  <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Your investor information</p>
                 </div>
                 {!editMode && (
                   <button
@@ -1018,7 +1018,7 @@ export default function InvestorDashboard() {
                     className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
                     style={{ background: '#1A1200', color: '#D4881E' }}
                   >
-                    Hariri
+                    Edit
                   </button>
                 )}
               </div>
@@ -1039,12 +1039,12 @@ export default function InvestorDashboard() {
                 </div>
                 <div>
                   <p className="text-xs font-bold" style={{ color: profile?.verified ? '#065F46' : '#92400E' }}>
-                    {profile?.verified ? 'Akaunti Imethibitishwa' : 'Inasubiri Uthibitisho'}
+                    {profile?.verified ? 'Account Verified' : 'Pending Verification'}
                   </p>
                   <p className="text-[10px]" style={{ color: profile?.verified ? '#6EE7B7' : '#FCD34D' }}>
                     {profile?.verified
-                      ? 'Una ufikiaji kamili wa data ya makundi'
-                      : 'Timu yetu itakuwasiliana ndani ya siku 2 za kazi'}
+                      ? 'You have full access to group data'
+                      : 'Our team will reach out within 2 business days'}
                   </p>
                 </div>
               </div>
@@ -1052,10 +1052,10 @@ export default function InvestorDashboard() {
               {editMode ? (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   {[
-                    { label: 'Jina Kamili', key: 'full_name', type: 'text' },
-                    { label: 'Kampuni', key: 'company', type: 'text' },
-                    { label: 'Nchi', key: 'country', type: 'text' },
-                    { label: 'Tovuti', key: 'website', type: 'url' },
+                    { label: 'Full Name', key: 'full_name', type: 'text' },
+                    { label: 'Company', key: 'company', type: 'text' },
+                    { label: 'Country', key: 'country', type: 'text' },
+                    { label: 'Website', key: 'website', type: 'url' },
                     { label: 'LinkedIn', key: 'linkedin', type: 'url' },
                   ].map(f => (
                     <div key={f.key}>
@@ -1073,7 +1073,7 @@ export default function InvestorDashboard() {
                   ))}
 
                   <div>
-                    <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Kumbuka / Bio</label>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Bio</label>
                     <textarea
                       value={editForm.bio || ''}
                       onChange={e => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
@@ -1082,13 +1082,13 @@ export default function InvestorDashboard() {
                       style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
                       onFocus={e => e.target.style.borderColor = '#D4881E'}
                       onBlur={e => e.target.style.borderColor = '#EDE8E0'}
-                      placeholder="Eleza maslahi yako ya uwekezaji..."
+                      placeholder="Describe your investment interests..."
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Kiwango Cha Chini (TSH)</label>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Min Investment (TSH)</label>
                       <input
                         type="number"
                         value={editForm.min_investment_tzs || ''}
@@ -1101,7 +1101,7 @@ export default function InvestorDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Kiwango Cha Juu (TSH)</label>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: '#4A3D2A' }}>Max Investment (TSH)</label>
                       <input
                         type="number"
                         value={editForm.max_investment_tzs || ''}
@@ -1122,29 +1122,29 @@ export default function InvestorDashboard() {
                       className="flex-1 py-3 rounded-xl text-sm font-semibold"
                       style={{ border: '1.5px solid #EDE8E0', color: '#8A7560', background: 'transparent' }}
                     >
-                      Ghairi
+                      Cancel
                     </button>
                     <button
                       type="submit" disabled={saving}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
                       style={{ background: '#D4881E', color: '#fff' }}
                     >
-                      {saving ? 'Inahifadhi...' : 'Hifadhi'}
+                      {saving ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </form>
               ) : (
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
                   {[
-                    { label: 'Jina Kamili', value: profile?.full_name },
-                    { label: 'Barua Pepe', value: profile?.email },
-                    { label: 'Kampuni', value: profile?.company },
-                    { label: 'Aina', value: profile?.investor_type },
-                    { label: 'Nchi', value: profile?.country },
-                    { label: 'Tovuti', value: profile?.website },
+                    { label: 'Full Name', value: profile?.full_name },
+                    { label: 'Email', value: profile?.email },
+                    { label: 'Company', value: profile?.company },
+                    { label: 'Type', value: profile?.investor_type },
+                    { label: 'Country', value: profile?.country },
+                    { label: 'Website', value: profile?.website },
                     { label: 'LinkedIn', value: profile?.linkedin },
-                    { label: 'Kiwango Cha Chini', value: fmt(profile?.min_investment_tzs) },
-                    { label: 'Kiwango Cha Juu', value: fmt(profile?.max_investment_tzs) },
+                    { label: 'Min Investment', value: fmt(profile?.min_investment_tzs) },
+                    { label: 'Max Investment', value: fmt(profile?.max_investment_tzs) },
                   ].filter(r => r.value).map((row, i, arr) => (
                     <div
                       key={row.label}
@@ -1153,7 +1153,7 @@ export default function InvestorDashboard() {
                     >
                       <p className="text-xs font-semibold w-32 shrink-0 pt-0.5" style={{ color: '#A8997E' }}>{row.label}</p>
                       <p className="text-sm font-medium flex-1" style={{ color: '#1A1200' }}>
-                        {(row.label === 'Tovuti' || row.label === 'LinkedIn') && row.value
+                        {(row.label === 'Website' || row.label === 'LinkedIn') && row.value
                           ? <a href={row.value} target="_blank" rel="noopener noreferrer" style={{ color: '#D4881E' }} className="underline">{row.value}</a>
                           : row.value}
                       </p>
@@ -1190,12 +1190,12 @@ export default function InvestorDashboard() {
               style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}
             >
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#D4881E' }}>Taarifa ya Kundi</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#D4881E' }}>Group Details</p>
                 <h2 className="text-base font-bold truncate" style={{ color: '#E8D5B0' }}>
-                  {groupDetailLoading ? 'Inapakia...' : groupDetail?.name ?? '...'}
+                  {groupDetailLoading ? 'Loading...' : groupDetail?.name ?? '...'}
                 </h2>
                 {groupDetail?.leader_name && (
-                  <p className="text-xs mt-0.5" style={{ color: '#6B5C3E' }}>Kiongozi: {groupDetail.leader_name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#6B5C3E' }}>Leader: {groupDetail.leader_name}</p>
                 )}
               </div>
               <button
@@ -1217,10 +1217,10 @@ export default function InvestorDashboard() {
                 {/* Quick stats strip */}
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { label: 'Wanachama', value: String(groupDetail.member_count) },
-                    { label: 'Pool/Mwezi', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
-                    { label: 'Zilipita', value: `${groupDetail.passed_proposals}/${groupDetail.total_proposals}` },
-                    { label: 'Zilitekelezwa', value: String(groupDetail.executed_proposals) },
+                    { label: 'Members', value: String(groupDetail.member_count) },
+                    { label: 'Pool/Month', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
+                    { label: 'Passed', value: `${groupDetail.passed_proposals}/${groupDetail.total_proposals}` },
+                    { label: 'Executed', value: String(groupDetail.executed_proposals) },
                   ].map(s => (
                     <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
                       <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: '#A8997E' }}>{s.label}</p>
@@ -1232,15 +1232,15 @@ export default function InvestorDashboard() {
                 {/* Financial Health */}
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
                   <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◆ Afya ya Kifedha</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◆ Financial Health</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
                     {[
-                      { label: 'Mchango wa Mwezi', value: fmtShort(Number(groupDetail.monthly_contribution)) },
-                      { label: 'Pool ya Mwezi (wanachama × mchango)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
-                      { label: 'Pochi ya Hazina', value: groupDetail.ntzs_user_id ? '✓ Imesanidiwa (nTZS)' : 'Haijasanidiwa bado' },
-                      { label: 'Shughuli (siku 90)', value: `${groupDetail.transactions_90d} tx` },
-                      { label: 'Kiasi (siku 90)', value: fmtShort(Number(groupDetail.volume_90d_tzs)) },
+                      { label: 'Monthly Contribution', value: fmtShort(Number(groupDetail.monthly_contribution)) },
+                      { label: 'Monthly Pool (members × contribution)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
+                      { label: 'Treasury Wallet', value: groupDetail.ntzs_user_id ? '✓ Active (nTZS)' : 'Not yet configured' },
+                      { label: 'Transactions (90d)', value: `${groupDetail.transactions_90d} tx` },
+                      { label: 'Volume (90d)', value: fmtShort(Number(groupDetail.volume_90d_tzs)) },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
                         <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
@@ -1253,17 +1253,17 @@ export default function InvestorDashboard() {
                 {/* Governance */}
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
                   <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◈ Utawala</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◈ Governance</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
                     {[
                       {
-                        label: 'Kizingiti cha Kura',
-                        value: `${groupDetail.voting_threshold_numerator}/${groupDetail.voting_threshold_denominator} ya wanachama`,
+                        label: 'Voting Threshold',
+                        value: `${groupDetail.voting_threshold_numerator}/${groupDetail.voting_threshold_denominator} of members`,
                       },
-                      { label: 'Mapendekezo Yaliyopita', value: `${groupDetail.passed_proposals} kati ya ${groupDetail.total_proposals}` },
-                      { label: 'Kiwango cha Utekelezaji', value: groupDetail.passed_proposals > 0 ? `${Math.round((groupDetail.executed_proposals / groupDetail.passed_proposals) * 100)}%` : '—' },
-                      { label: 'Mapendekezo Wazi', value: `${groupDetail.open_proposals} yanafanya kazi` },
+                      { label: 'Proposals Passed', value: `${groupDetail.passed_proposals} of ${groupDetail.total_proposals}` },
+                      { label: 'Execution Rate', value: groupDetail.passed_proposals > 0 ? `${Math.round((groupDetail.executed_proposals / groupDetail.passed_proposals) * 100)}%` : '—' },
+                      { label: 'Open Proposals', value: `${groupDetail.open_proposals} active` },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
                         <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
@@ -1276,13 +1276,13 @@ export default function InvestorDashboard() {
                 {/* Activity */}
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
                   <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◉ Shughuli za Hivi Karibuni</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◉ Recent Activity</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
                     {[
-                      { label: 'Shughuli ya Mwisho', value: groupDetail.last_activity ? ago(groupDetail.last_activity) : 'Haijabainishwa' },
-                      { label: 'Shughuli za Siku 90', value: `${groupDetail.transactions_90d} shughuli` },
-                      { label: 'Kilianzishwa', value: groupDetail.founded_date ? new Date(groupDetail.founded_date).toLocaleDateString('sw-TZ', { year: 'numeric', month: 'long' }) : '—' },
+                      { label: 'Last Activity', value: groupDetail.last_activity ? ago(groupDetail.last_activity) : 'Unknown' },
+                      { label: '90-Day Transactions', value: `${groupDetail.transactions_90d} transactions` },
+                      { label: 'Founded', value: groupDetail.founded_date ? new Date(groupDetail.founded_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—' },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
                         <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
@@ -1296,7 +1296,7 @@ export default function InvestorDashboard() {
                 {groupDetail.leadership.length > 0 && (
                   <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
                     <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◎ Uongozi</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◎ Leadership</p>
                     </div>
                     <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
                       {groupDetail.leadership.map(l => (
@@ -1312,7 +1312,7 @@ export default function InvestorDashboard() {
                 {/* Prodcast Projects */}
                 {groupDetail.projects.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>◆ Miradi ya Prodcast</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>◆ Prodcast Projects</p>
                     <div className="space-y-3">
                       {groupDetail.projects.map(p => {
                         const goal = Number((p.metadata as { funding_goal_tzs?: number })?.funding_goal_tzs ?? 0);
@@ -1324,13 +1324,13 @@ export default function InvestorDashboard() {
                                 className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
                                 style={{ background: p.funded_at ? '#ECFDF5' : '#FEF3E2', color: p.funded_at ? '#059669' : '#D4881E' }}
                               >
-                                {p.funded_at ? 'Imepita' : 'Inasubiri'}
+                                {p.funded_at ? 'Funded' : 'Pending'}
                               </span>
                             </div>
                             {p.description && <p className="text-xs line-clamp-2" style={{ color: '#8A7560' }}>{p.description}</p>}
                             {goal > 0 && (
                               <p className="text-xs font-bold font-mono mt-2" style={{ color: '#D4881E' }}>
-                                Lengo: {fmtShort(goal)}
+                                Goal: {fmtShort(goal)}
                               </p>
                             )}
                           </div>
@@ -1342,13 +1342,13 @@ export default function InvestorDashboard() {
 
                 {/* CTA */}
                 <a
-                  href={`mailto:invest@jukumufund.co.tz?subject=Interest in Group: ${encodeURIComponent(groupDetail.name)}&body=Habari,%0A%0ANinapenda kujua zaidi kuhusu kundi la "${groupDetail.name}".%0A%0AJina langu: ${encodeURIComponent(profile?.full_name ?? '')}%0AKampuni: ${encodeURIComponent(profile?.company ?? 'N/A')}%0A%0AAsante.`}
+                  href={`mailto:invest@jukumufund.co.tz?subject=Interest in Group: ${encodeURIComponent(groupDetail.name)}&body=Hello,%0A%0AI would like to learn more about the group "${groupDetail.name}".%0A%0AMy name: ${encodeURIComponent(profile?.full_name ?? '')}%0ACompany: ${encodeURIComponent(profile?.company ?? 'N/A')}%0A%0AThank you.`}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-bold transition-all"
                   style={{ background: '#1A1200', color: '#D4881E' }}
                   onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
                   onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
                 >
-                  Wasiliana Kuhusu Kundi Hili →
+                  Contact Us About This Group →
                 </a>
               </div>
             )}
@@ -1365,7 +1365,7 @@ export default function InvestorDashboard() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#D4881E' }}>Maombi ya Kuwasiliana</p>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#D4881E' }}>Contact Request</p>
                 <h3 className="text-base font-bold mt-1" style={{ color: '#1A1200' }}>{contactTarget.title}</h3>
                 <p className="text-xs" style={{ color: '#8A7560' }}>{contactTarget.group_name}</p>
               </div>
@@ -1375,23 +1375,23 @@ export default function InvestorDashboard() {
             {contactTarget.metadata?.funding_goal_tzs && (
               <div className="rounded-xl p-3" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
                 <p className="text-xs" style={{ color: '#92400E' }}>
-                  Lengo la fedha: <span className="font-black font-mono">{fmt(contactTarget.metadata.funding_goal_tzs)}</span>
+                  Funding goal: <span className="font-black font-mono">{fmt(contactTarget.metadata.funding_goal_tzs)}</span>
                 </p>
               </div>
             )}
 
             <p className="text-sm" style={{ color: '#6B5C3E' }}>
-              Timu yetu itakusaidia kuungana na{' '}
+              Our team will help you connect with{' '}
               <span className="font-semibold" style={{ color: '#1A1200' }}>{contactTarget.group_name}</span>{' '}
-              kupitia mchakato wetu wa due diligence na uandikisho.
+              through our due diligence and onboarding process.
             </p>
 
             <a
-              href={`mailto:invest@jukumufund.co.tz?subject=Interest in: ${encodeURIComponent(contactTarget.title)} (${encodeURIComponent(contactTarget.group_name)})&body=Habari,%0A%0ANinapenda kujua zaidi kuhusu mradi wa "${contactTarget.title}" kutoka kundi la ${contactTarget.group_name}.%0A%0AJina langu: ${encodeURIComponent(profile?.full_name || '')}%0AKampuni: ${encodeURIComponent(profile?.company || 'N/A')}%0A%0AAsante.`}
+              href={`mailto:invest@jukumufund.co.tz?subject=Interest in: ${encodeURIComponent(contactTarget.title)} (${encodeURIComponent(contactTarget.group_name)})&body=Hello,%0A%0AI would like to learn more about the project "${contactTarget.title}" from the group ${contactTarget.group_name}.%0A%0AMy name: ${encodeURIComponent(profile?.full_name || '')}%0ACompany: ${encodeURIComponent(profile?.company || 'N/A')}%0A%0AThank you.`}
               className="w-full py-3 rounded-xl text-sm font-semibold text-center block transition-all"
               style={{ background: '#D4881E', color: '#fff' }}
             >
-              Tuma Barua Pepe →
+              Send Email →
             </a>
 
             <button
@@ -1399,7 +1399,7 @@ export default function InvestorDashboard() {
               className="w-full py-2.5 rounded-xl text-sm"
               style={{ color: '#8A7560', border: '1px solid #EDE8E0' }}
             >
-              Funga
+              Close
             </button>
           </div>
         </div>
@@ -1419,10 +1419,10 @@ export default function InvestorDashboard() {
             >
               <div>
                 <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: '#D4881E' }}>
-                  {walletModal === 'deposit' ? 'Weka Fedha' : 'Toa Fedha'}
+                  {walletModal === 'deposit' ? 'Deposit' : 'Withdraw'}
                 </p>
                 <p className="text-sm font-bold mt-0.5" style={{ color: '#E8D5B0' }}>
-                  {walletModal === 'withdraw' ? 'Toa hadi nambari ya simu' : 'Chagua njia ya amana'}
+                  {walletModal === 'withdraw' ? 'Withdraw to mobile number' : 'Select deposit method'}
                 </p>
               </div>
               <button
@@ -1436,10 +1436,10 @@ export default function InvestorDashboard() {
             {walletModal === 'deposit' && (
               <div className="grid grid-cols-4 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: '#fff' }}>
                 {([
-                  { key: 'mobile', icon: '📱', label: 'M-Pesa', live: true },
+                  { key: 'mobile', icon: '◌', label: 'M-Pesa', live: true },
                   { key: 'crypto', icon: '◆', label: 'USDC/USDT', live: true },
-                  { key: 'bank',   icon: '🏦', label: 'Benki', live: false },
-                  { key: 'card',   icon: '💳', label: 'Kadi', live: false },
+                  { key: 'bank',   icon: '▦', label: 'Bank', live: false },
+                  { key: 'card',   icon: '▭', label: 'Card', live: false },
                 ] as { key: 'mobile'|'crypto'|'bank'|'card'; icon: string; label: string; live: boolean }[]).map(m => (
                   <button
                     key={m.key}
@@ -1468,7 +1468,7 @@ export default function InvestorDashboard() {
             <div className="p-6 space-y-4">
               {/* Balance pill */}
               <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
-                <span className="text-xs" style={{ color: '#8A7560' }}>Salio la sasa</span>
+                <span className="text-xs" style={{ color: '#8A7560' }}>Current balance</span>
                 <span className="text-sm font-black font-mono" style={{ color: '#1A1200' }}>
                   TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
                 </span>
@@ -1482,7 +1482,7 @@ export default function InvestorDashboard() {
                     style={{ background: '#0E0B07', border: '1px solid #2A1F0A' }}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#D4881E' }}>Anwani ya Base Network</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#D4881E' }}>Base Network Address</p>
                       <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0B3D2E', color: '#4ADE80' }}>Base</span>
                     </div>
                     {wallet.walletAddress ? (
@@ -1503,16 +1503,20 @@ export default function InvestorDashboard() {
                           className="w-full py-2 rounded-lg text-xs font-semibold transition-all"
                           style={{ background: copied ? '#0B3D2E' : 'rgba(212,136,30,0.15)', color: copied ? '#4ADE80' : '#D4881E' }}
                         >
-                          {copied ? '✓ Imenakiliwa!' : 'Nakili Anwani'}
+                          {copied ? '✓ Copied!' : 'Copy Address'}
                         </button>
                       </>
                     ) : (
-                      <p className="text-xs" style={{ color: '#6B5C3E' }}>Pochi haijasanidiwa bado. Kwanza sanidi pochi yako.</p>
+                      <p className="text-xs" style={{ color: '#6B5C3E' }}>Wallet not set up yet. Please create your wallet first.</p>
                     )}
                   </div>
                   <div className="rounded-xl p-4 space-y-2" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
-                    <p className="text-xs font-bold" style={{ color: '#92400E' }}>Jinsi ya kuweka USDC / USDT:</p>
-                    {['Tuma USDC au USDT kwenye anwani iliyo juu', 'Tumia mtandao wa Base (Layer 2)', 'nTZS itabadilishwa moja kwa moja kwenye pochi yako'].map((s, i) => (
+                    <p className="text-xs font-bold" style={{ color: '#92400E' }}>How to deposit USDC / USDT:</p>
+                    {[
+                      'Send USDC or USDT to the address above',
+                      'Use the Base network (Layer 2)',
+                      'nTZS will be credited directly to your wallet',
+                    ].map((s, i) => (
                       <p key={i} className="text-xs flex gap-2" style={{ color: '#92400E' }}>
                         <span className="font-bold shrink-0">{i + 1}.</span>{s}
                       </p>
@@ -1523,7 +1527,7 @@ export default function InvestorDashboard() {
                     onClick={() => { setWalletModal(null); setDepositMethod('mobile'); }}
                     className="w-full py-2.5 rounded-xl text-sm"
                     style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
-                  >Funga</button>
+                  >Close</button>
                 </div>
               )}
 
@@ -1531,18 +1535,18 @@ export default function InvestorDashboard() {
               {walletModal === 'deposit' && (depositMethod === 'bank' || depositMethod === 'card') && (
                 <div className="text-center py-6 space-y-3">
                   <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{ background: '#F5F0E8' }}>
-                    {depositMethod === 'bank' ? '🏦' : '💳'}
+                    {depositMethod === 'bank' ? '▦' : '▭'}
                   </div>
                   <p className="font-bold text-sm" style={{ color: '#1A1200' }}>
-                    {depositMethod === 'bank' ? 'Amana ya Benki' : 'Amana ya Kadi'}
+                    {depositMethod === 'bank' ? 'Bank Deposit' : 'Card Deposit'}
                   </p>
                   <span className="inline-block px-3 py-1 rounded-full text-xs font-bold" style={{ background: '#F5F0E8', color: '#8A7560' }}>
-                    Inakuja Hivi Karibuni
+                    Coming Soon
                   </span>
                   <p className="text-xs" style={{ color: '#A8997E' }}>
                     {depositMethod === 'bank'
-                      ? 'Uhamisho wa benki utapatikana baada ya muda mfupi'
-                      : 'Malipo ya kadi ya mkopo/mdeni yanakuja hivi karibuni'}
+                      ? 'Bank transfers will be available soon'
+                      : 'Credit / debit card payments are coming soon'}
                   </p>
                 </div>
               )}
@@ -1551,7 +1555,7 @@ export default function InvestorDashboard() {
               {(walletModal === 'withdraw' || (walletModal === 'deposit' && depositMethod === 'mobile')) && (
                 <form onSubmit={handleWalletAction} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Kiasi (TSH) *</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Amount (TSH) *</label>
                     <input
                       type="number" min="1000" step="100"
                       value={walletAmount}
@@ -1565,7 +1569,7 @@ export default function InvestorDashboard() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Nambari ya Simu *</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Phone Number *</label>
                     <input
                       type="tel"
                       value={walletPhone}
@@ -1598,13 +1602,13 @@ export default function InvestorDashboard() {
                       onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
                       className="flex-1 py-3 rounded-xl text-sm"
                       style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
-                    >Ghairi</button>
+                    >Cancel</button>
                     <button
                       type="submit" disabled={walletSubmitting}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
                       style={{ background: walletModal === 'deposit' ? '#D4881E' : '#0B3D2E', color: '#fff' }}
                     >
-                      {walletSubmitting ? 'Inatuma...' : walletModal === 'deposit' ? 'Weka Fedha' : 'Toa Fedha'}
+                      {walletSubmitting ? 'Sending...' : walletModal === 'deposit' ? 'Deposit' : 'Withdraw'}
                     </button>
                   </div>
                 </form>

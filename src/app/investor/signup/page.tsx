@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 type InvestorType = 'individual' | 'institutional' | 'ngo' | 'fund';
 
 const INVESTOR_TYPES: { value: InvestorType; label: string; desc: string }[] = [
-  { value: 'individual', label: 'Binafsi', desc: 'Mwekezaji mmoja mmoja' },
-  { value: 'institutional', label: 'Taasisi', desc: 'Benki, SACCOS, kampuni' },
-  { value: 'ngo', label: 'NGO/INGO', desc: 'Shirika lisilo la faida' },
-  { value: 'fund', label: 'Mfuko', desc: 'Venture fund, impact fund' },
+  { value: 'individual', label: 'Individual', desc: 'Solo investor' },
+  { value: 'institutional', label: 'Institutional', desc: 'Bank, SACCOS, company' },
+  { value: 'ngo', label: 'NGO/INGO', desc: 'Non-profit organization' },
+  { value: 'fund', label: 'Fund', desc: 'Venture fund, impact fund' },
 ];
 
 export default function InvestorSignupPage() {
@@ -34,10 +34,10 @@ export default function InvestorSignupPage() {
   const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.fullName.trim()) { setError('Jina linahitajika'); return; }
-    if (!form.email.trim()) { setError('Barua pepe inahitajika'); return; }
-    if (form.password.length < 8) { setError('Nenosiri lazima liwe na herufi 8+'); return; }
-    if (form.password !== form.confirmPassword) { setError('Manenosiri hayalingani'); return; }
+    if (!form.fullName.trim()) { setError('Name is required'); return; }
+    if (!form.email.trim()) { setError('Email is required'); return; }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return; }
     setStep(2);
   };
 
@@ -59,11 +59,11 @@ export default function InvestorSignupPage() {
         }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) { setError(data?.error || 'Hitilafu imetokea'); return; }
+      if (!res.ok) { setError(data?.error || 'An error occurred'); return; }
       localStorage.setItem('user', JSON.stringify(data.user));
       router.push('/investor/dashboard');
     } catch {
-      setError('Hitilafu ya mtandao');
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,22 +96,22 @@ export default function InvestorSignupPage() {
 
         <div className="relative z-10 space-y-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#D4881E' }}>Portal ya Wawekezaji</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#D4881E' }}>Investor Portal</p>
             <h1 className="font-bold leading-tight" style={{ color: '#E8D5B0', fontSize: '2.2rem' }}>
-              Wekeza katika<br />
-              <span style={{ color: '#D4881E' }}>Makundi</span> ya<br />
-              Mabadiliko
+              Invest in<br />
+              <span style={{ color: '#D4881E' }}>Communities</span><br />
+              Making Change
             </h1>
             <p className="mt-4 text-sm leading-relaxed" style={{ color: '#8A7560' }}>
-              Ungana na makundi ya VICOBA yaliyothibitishwa. Angalia miradi inayotafuta ufadhili na ufuatilie maendeleo kwa wakati halisi.
+              Join verified VICOBA savings groups. View projects seeking funding and track progress in real time.
             </p>
           </div>
 
           <div className="space-y-3">
             {[
-              { icon: '◆', label: 'Miradi iliyopitishwa na kura ya wanachama' },
-              { icon: '◆', label: 'Takwimu za uwazi — salio, mchango, ukuaji' },
-              { icon: '◆', label: 'Match-funding kupitia nTZS stablecoin' },
+              { icon: '◆', label: 'Projects approved by member vote' },
+              { icon: '◆', label: 'Transparent data — balance, contributions, growth' },
+              { icon: '◆', label: 'Match-funding via nTZS stablecoin' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-xs" style={{ color: '#D4881E' }}>{item.icon}</span>
@@ -123,8 +123,8 @@ export default function InvestorSignupPage() {
 
         <div className="relative z-10">
           <p className="text-xs" style={{ color: '#4A3D2A' }}>
-            Tayari una akaunti?{' '}
-            <Link href="/login" className="underline" style={{ color: '#D4881E' }}>Ingia hapa</Link>
+            Already have an account?{' '}
+            <Link href="/investor/login" className="underline" style={{ color: '#D4881E' }}>Sign in here</Link>
           </p>
         </div>
       </div>
@@ -164,14 +164,14 @@ export default function InvestorSignupPage() {
           {step === 1 && (
             <form onSubmit={handleStep1} className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Akaunti Mpya</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Jisajili kama mwekezaji wa JUKUMU</p>
+                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Create Account</h2>
+                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Sign up as a JUKUMU investor</p>
               </div>
 
-              <Field label="Jina Kamili *">
+              <Field label="Full Name *">
                 <input
                   type="text" value={form.fullName} onChange={e => set('fullName', e.target.value)}
-                  placeholder="Jina lako kamili" required
+                  placeholder="Your full name" required
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                   style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
                   onFocus={e => e.target.style.borderColor = '#D4881E'}
@@ -179,7 +179,7 @@ export default function InvestorSignupPage() {
                 />
               </Field>
 
-              <Field label="Barua Pepe *">
+              <Field label="Email Address *">
                 <input
                   type="email" value={form.email} onChange={e => set('email', e.target.value)}
                   placeholder="investor@example.com" required
@@ -190,10 +190,10 @@ export default function InvestorSignupPage() {
                 />
               </Field>
 
-              <Field label="Nenosiri *">
+              <Field label="Password *">
                 <input
                   type="password" value={form.password} onChange={e => set('password', e.target.value)}
-                  placeholder="Herufi 8 au zaidi" required minLength={8}
+                  placeholder="At least 8 characters" required minLength={8}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                   style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
                   onFocus={e => e.target.style.borderColor = '#D4881E'}
@@ -201,10 +201,10 @@ export default function InvestorSignupPage() {
                 />
               </Field>
 
-              <Field label="Thibitisha Nenosiri *">
+              <Field label="Confirm Password *">
                 <input
                   type="password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)}
-                  placeholder="Rudia nenosiri" required
+                  placeholder="Repeat password" required
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                   style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
                   onFocus={e => e.target.style.borderColor = '#D4881E'}
@@ -221,7 +221,7 @@ export default function InvestorSignupPage() {
                 onMouseOver={e => (e.currentTarget.style.background = '#B8740F')}
                 onMouseOut={e => (e.currentTarget.style.background = '#D4881E')}
               >
-                Endelea →
+                Continue →
               </button>
             </form>
           )}
@@ -231,13 +231,13 @@ export default function InvestorSignupPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <button type="button" onClick={() => setStep(1)} className="text-xs mb-3 flex items-center gap-1" style={{ color: '#8A7560' }}>
-                  ← Rudi
+                  ← Back
                 </button>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Wasifu wa Uwekezaji</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Tuambie zaidi kuhusu maslahi yako</p>
+                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Investor Profile</h2>
+                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Tell us more about your investment interests</p>
               </div>
 
-              <Field label="Aina ya Mwekezaji *">
+              <Field label="Investor Type *">
                 <div className="grid grid-cols-2 gap-2">
                   {INVESTOR_TYPES.map(t => (
                     <button
@@ -256,10 +256,10 @@ export default function InvestorSignupPage() {
                 </div>
               </Field>
 
-              <Field label="Kampuni / Shirika (si lazima)">
+              <Field label="Company / Organization (optional)">
                 <input
                   type="text" value={form.company} onChange={e => set('company', e.target.value)}
-                  placeholder="Jina la kampuni au shirika"
+                  placeholder="Company or organization name"
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                   style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
                   onFocus={e => e.target.style.borderColor = '#D4881E'}
@@ -267,7 +267,7 @@ export default function InvestorSignupPage() {
                 />
               </Field>
 
-              <Field label="Nchi">
+              <Field label="Country">
                 <input
                   type="text" value={form.country} onChange={e => set('country', e.target.value)}
                   placeholder="Tanzania"
@@ -287,21 +287,21 @@ export default function InvestorSignupPage() {
                 onMouseOver={e => !loading && (e.currentTarget.style.background = '#B8740F')}
                 onMouseOut={e => (e.currentTarget.style.background = '#D4881E')}
               >
-                {loading ? 'Inasajili...' : 'Unda Akaunti ya Mwekezaji'}
+                {loading ? 'Creating account...' : 'Create Investor Account'}
               </button>
 
               <p className="text-xs text-center" style={{ color: '#8A7560' }}>
-                Kwa kusajili, unakubali{' '}
+                By signing up, you agree to our{' '}
                 <Link href="/investor" className="underline" style={{ color: '#D4881E' }}>
-                  masharti ya matumizi
+                  terms of use
                 </Link>
               </p>
             </form>
           )}
 
           <p className="mt-6 text-center text-xs" style={{ color: '#8A7560' }}>
-            Tayari una akaunti?{' '}
-            <Link href="/login" className="font-semibold underline" style={{ color: '#D4881E' }}>Ingia</Link>
+            Already have an account?{' '}
+            <Link href="/investor/login" className="font-semibold underline" style={{ color: '#D4881E' }}>Sign in</Link>
           </p>
         </div>
       </div>
