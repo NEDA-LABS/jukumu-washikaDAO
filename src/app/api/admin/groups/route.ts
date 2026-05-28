@@ -17,7 +17,7 @@ export async function GET() {
     const client = await pool.connect();
     
     const result = await client.query(`
-      SELECT 
+      SELECT
         g.id,
         g.name,
         g.founded_date,
@@ -25,12 +25,13 @@ export async function GET() {
         g.monthly_contribution,
         g.status,
         g.created_at,
+        g.ntzs_user_id,
         u.full_name as leader_name,
         COUNT(gm.member_id) as member_count
       FROM groups g
       LEFT JOIN users u ON g.leader_id = u.id
       LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'active'
-      GROUP BY g.id, g.name, g.founded_date, g.total_investment, g.monthly_contribution, g.status, g.created_at, u.full_name
+      GROUP BY g.id, g.name, g.founded_date, g.total_investment, g.monthly_contribution, g.status, g.created_at, g.ntzs_user_id, u.full_name
       ORDER BY g.created_at DESC
     `);
     

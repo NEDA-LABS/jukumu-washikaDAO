@@ -17,6 +17,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
   const [groupTransfers, setGroupTransfers] = useState<any[]>([]);
   const [walletLoading, setWalletLoading] = useState(false);
   const [provisioningWallet, setProvisioningWallet] = useState(false);
+  const [provisioningCardId, setProvisioningCardId] = useState<number | null>(null);
   const [members] = useState<any[]>([]);
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [groupForm, setGroupForm] = useState({ name: '', leaderId: '', monthlyContribution: '', foundedDate: new Date().toISOString().split('T')[0] });
@@ -51,15 +52,33 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
       const r = await fetch(`/api/admin/groups/${group.id}/wallet`, { method: 'POST' });
       const d = await r.json();
       if (r.ok && d.success) {
-        showToast(d.message || 'Pochi imeundwa!', 'success');
+        showToast(d.message || 'Wallet created!', 'success');
         await fetchGroupWallet(group.id);
       } else {
-        showToast(d.error || 'Imeshindwa kuunda pochi', 'error');
+        showToast(d.error || 'Failed to create wallet', 'error');
       }
     } catch {
-      showToast('Hitilafu ya mtandao', 'error');
+      showToast('Network error', 'error');
     } finally {
       setProvisioningWallet(false);
+    }
+  };
+
+  const handleProvisionWalletCard = async (group: any) => {
+    setProvisioningCardId(group.id);
+    try {
+      const r = await fetch(`/api/admin/groups/${group.id}/wallet`, { method: 'POST' });
+      const d = await r.json();
+      if (r.ok && d.success) {
+        showToast(d.message || 'Wallet created!', 'success');
+        loadAdminData();
+      } else {
+        showToast(d.error || 'Failed to create wallet', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    } finally {
+      setProvisioningCardId(null);
     }
   };
 
@@ -181,17 +200,36 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-sm font-semibold text-foreground leading-snug">{g.name}</h3>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${g.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
-                  {g.status === 'active' ? 'Hai' : 'Inasubiri'}
+                  {g.status === 'active' ? 'Active' : 'Pending'}
                 </span>
               </div>
-              <div className="space-y-1 text-xs text-foreground/50 mb-4">
-                <p><span className="text-muted-foreground">Wanachama:</span> {g.member_count || 0}</p>
-                <p><span className="text-muted-foreground">Kiongozi:</span> {g.leader_name || '—'}</p>
-                <p><span className="text-muted-foreground">Mchango:</span> TSH {parseFloat(g.monthly_contribution || 0).toLocaleString()}/mwezi</p>
+              <div className="space-y-1 text-xs text-foreground/50 mb-3">
+                <p><span className="text-muted-foreground">Members:</span> {g.member_count || 0}</p>
+                <p><span className="text-muted-foreground">Leader:</span> {g.leader_name || '—'}</p>
+                <p><span className="text-muted-foreground">Contribution:</span> TSH {parseFloat(g.monthly_contribution || 0).toLocaleString()}/mo</p>
+              </div>
+              {/* Wallet status */}
+              <div className="mb-3">
+                {g.ntzs_user_id ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
+                    ◆ Wallet Active
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600">◌ No Wallet</span>
+                    <button
+                      onClick={() => handleProvisionWalletCard(g)}
+                      disabled={provisioningCardId === g.id}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white transition-colors"
+                    >
+                      {provisioningCardId === g.id ? 'Creating...' : '+ Provision'}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleViewGroup(g)} className="flex-1 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 text-xs font-medium transition-colors">Angalia</button>
-                <button onClick={() => handleEditGroup(g)} className="flex-1 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground/50 text-xs font-medium transition-colors">Hariri</button>
+                <button onClick={() => handleViewGroup(g)} className="flex-1 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 text-xs font-medium transition-colors">View</button>
+                <button onClick={() => handleEditGroup(g)} className="flex-1 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground/50 text-xs font-medium transition-colors">Edit</button>
                 <button onClick={() => handleDeleteGroup(g)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-colors"><TrashIcon className="h-3.5 w-3.5" /></button>
               </div>
             </div>
@@ -322,25 +360,24 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                   )}
 
                   {/* ── No wallet provisioned ── */}
-                  {!walletLoading && !groupWallet && !groupWalletWarning && (
+                  {!walletLoading && !groupWallet && (
                     <div className="text-center py-6 space-y-3">
                       <CurrencyDollarIcon className="h-8 w-8 mx-auto text-foreground/10" />
-                      <p className="text-sm text-muted-foreground">Hazina haijasanidiwa bado</p>
+                      {groupWalletWarning ? (
+                        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-left">
+                          <p className="text-xs font-semibold text-red-600 mb-0.5">Failed to load wallet</p>
+                          <p className="text-[10px] text-red-500/80">{groupWalletWarning}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No treasury wallet set up yet</p>
+                      )}
                       <button
                         onClick={() => handleProvisionWallet(selectedGroup)}
                         disabled={provisioningWallet}
                         className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
                       >
-                        {provisioningWallet ? 'Inaunda...' : '+ Unda Pochi ya nTZS'}
+                        {provisioningWallet ? 'Creating...' : '+ Create nTZS Treasury'}
                       </button>
-                    </div>
-                  )}
-
-                  {/* ── Fetch error (no wallet object returned) ── */}
-                  {!walletLoading && !groupWallet && groupWalletWarning && (
-                    <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
-                      <p className="text-xs font-semibold text-red-600 mb-0.5">Imeshindwa kupakia pochi</p>
-                      <p className="text-[10px] text-red-500/80">{groupWalletWarning}</p>
                     </div>
                   )}
 
