@@ -48,8 +48,9 @@ export async function GET(request: NextRequest) {
       FROM group_proposals p
       JOIN groups g ON g.id = p.group_id
       WHERE p.proposal_type = 'prodcast'
-        AND p.funded_at IS NOT NULL
-      ORDER BY p.funded_at DESC
+      ORDER BY
+        p.funded_at DESC NULLS LAST,
+        p.created_at DESC
       LIMIT 100
     `);
 

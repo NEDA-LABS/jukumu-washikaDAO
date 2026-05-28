@@ -33,6 +33,7 @@ type Project = {
     expected_impact?: string;
   } | null;
   funded_at: string;
+  created_at: string;
   group_id: number;
   group_name: string;
   monthly_contribution?: number | null;
@@ -167,22 +168,38 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
   const goal = p.metadata?.funding_goal_tzs ?? 0;
   const funded = Number(p.total_investment ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
+  const isApproved = !!p.funded_at;
 
   return (
     <div
       className="rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-lg"
-      style={{ background: '#fff', border: '1px solid #EDE8E0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+      style={{
+        background: '#fff',
+        border: `1px solid ${isApproved ? '#EDE8E0' : '#E0EBF5'}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ background: '#FEF3E2', color: '#D4881E' }}
-            >
-              Prodcast
+            {isApproved ? (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{ background: '#FEF3E2', color: '#D4881E' }}
+              >
+                Community Approved
+              </span>
+            ) : (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{ background: '#EFF6FF', color: '#3B82F6' }}
+              >
+                Seeking Vote
+              </span>
+            )}
+            <span className="text-[10px]" style={{ color: '#A8997E' }}>
+              {isApproved ? ago(p.funded_at) : ago(p.created_at)}
             </span>
-            <span className="text-[10px]" style={{ color: '#A8997E' }}>{ago(p.funded_at)}</span>
           </div>
           <h3 className="text-sm font-bold leading-snug" style={{ color: '#1A1200' }}>{p.title}</h3>
           <p className="text-xs mt-0.5" style={{ color: '#8A7560' }}>{p.group_name}</p>
@@ -201,8 +218,27 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
         </p>
       )}
 
-      {/* Funding goal + bar */}
-      {goal > 0 && (
+      {/* Vote progress (only for open proposals) */}
+      {!isApproved && (p.yes_votes > 0 || p.total_votes > 0) && (
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[10px]" style={{ color: '#A8997E' }}>
+            <span>Community vote</span>
+            <span>{p.yes_votes} yes / {p.total_votes} cast</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: p.total_votes > 0 ? `${Math.round((p.yes_votes / p.total_votes) * 100)}%` : '0%',
+                background: '#3B82F6',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Funding goal + bar (approved proposals) */}
+      {isApproved && goal > 0 && (
         <div className="space-y-1.5">
           <div className="flex justify-between text-[10px]" style={{ color: '#A8997E' }}>
             <span>Goal: <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
@@ -214,6 +250,14 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
               style={{ width: `${pct}%`, background: pct >= 80 ? '#0B3D2E' : '#D4881E' }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Funding goal amount (open proposals, no bar) */}
+      {!isApproved && goal > 0 && (
+        <div className="px-3 py-2 rounded-xl text-[10px]" style={{ background: '#F0F7FF', border: '1px solid #DBEAFE' }}>
+          <span style={{ color: '#64748B' }}>Funding goal: </span>
+          <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span>
         </div>
       )}
 
@@ -231,15 +275,24 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
         )}
       </div>
 
-      <button
-        onClick={() => onContact(p)}
-        className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
-        style={{ background: '#1A1200', color: '#D4881E' }}
-        onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
-        onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
-      >
-        Get in Touch →
-      </button>
+      {isApproved ? (
+        <button
+          onClick={() => onContact(p)}
+          className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+          style={{ background: '#1A1200', color: '#D4881E' }}
+          onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
+          onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
+        >
+          Get in Touch →
+        </button>
+      ) : (
+        <div
+          className="w-full py-2.5 rounded-xl text-xs font-semibold text-center"
+          style={{ background: '#F0F7FF', color: '#3B82F6', border: '1px solid #DBEAFE' }}
+        >
+          Awaiting community approval
+        </div>
+      )}
     </div>
   );
 }
