@@ -164,7 +164,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
   );
 }
 
-function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => void }) {
+function ProjectCard({ p, onContact, onFund }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void }) {
   const goal = p.metadata?.funding_goal_tzs ?? 0;
   const funded = Number(p.total_investment ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
@@ -276,15 +276,26 @@ function ProjectCard({ p, onContact }: { p: Project; onContact: (p: Project) => 
       </div>
 
       {isApproved ? (
-        <button
-          onClick={() => onContact(p)}
-          className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ background: '#1A1200', color: '#D4881E' }}
-          onMouseOver={e => { e.currentTarget.style.background = '#D4881E'; e.currentTarget.style.color = '#fff'; }}
-          onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#D4881E'; }}
-        >
-          Get in Touch →
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onFund(p)}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: '#D4881E', color: '#fff' }}
+            onMouseOver={e => { e.currentTarget.style.background = '#B8740F'; }}
+            onMouseOut={e => { e.currentTarget.style.background = '#D4881E'; }}
+          >
+            Fund →
+          </button>
+          <button
+            onClick={() => onContact(p)}
+            className="py-2.5 px-4 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: '#F5F0E8', color: '#6B5C3E' }}
+            onMouseOver={e => { e.currentTarget.style.background = '#EDE8E0'; }}
+            onMouseOut={e => { e.currentTarget.style.background = '#F5F0E8'; }}
+          >
+            Contact
+          </button>
+        </div>
       ) : (
         <div
           className="w-full py-2.5 rounded-xl text-xs font-semibold text-center"
@@ -326,6 +337,12 @@ export default function InvestorDashboard() {
   const [walletPhone, setWalletPhone] = useState('');
   const [walletSubmitting, setWalletSubmitting] = useState(false);
   const [walletMsg, setWalletMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Fund project state
+  const [fundTarget, setFundTarget] = useState<Project | null>(null);
+  const [fundAmount, setFundAmount] = useState('');
+  const [fundSubmitting, setFundSubmitting] = useState(false);
+  const [fundMsg, setFundMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Profile edit state
   const [editMode, setEditMode] = useState(false);
@@ -513,6 +530,34 @@ export default function InvestorDashboard() {
       if (res.ok) { await fetchWallet(); }
     } finally {
       setProvisioningWallet(false);
+    }
+  };
+
+  const handleFundProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fundTarget) return;
+    const amount = Number(fundAmount);
+    if (!amount || amount < 1000) { setFundMsg({ text: 'Minimum amount is TSH 1,000', ok: false }); return; }
+    setFundSubmitting(true);
+    setFundMsg(null);
+    try {
+      const res = await fetch('/api/investor/wallet/fund-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposalId: fundTarget.id, amountTzs: amount }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFundMsg({ text: data.message || 'Transfer sent!', ok: true });
+        setFundAmount('');
+        setTimeout(() => { setFundTarget(null); setFundMsg(null); fetchWallet(); }, 2500);
+      } else {
+        setFundMsg({ text: data.error || 'Transfer failed', ok: false });
+      }
+    } catch {
+      setFundMsg({ text: 'Network error. Please try again.', ok: false });
+    } finally {
+      setFundSubmitting(false);
     }
   };
 
@@ -723,7 +768,7 @@ export default function InvestorDashboard() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projects.slice(0, 3).map(p => (
-                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} />
+                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} />
                     ))}
                   </div>
                 </div>
@@ -820,7 +865,7 @@ export default function InvestorDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {projects.map(p => (
-                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} />
+                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} />
                   ))}
                 </div>
               )}
@@ -1454,6 +1499,106 @@ export default function InvestorDashboard() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fund Project Modal ───────────────────────── */}
+      {fundTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5" style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}>
+              <div>
+                <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: '#D4881E' }}>Fund Project</p>
+                <p className="text-sm font-bold mt-0.5 truncate max-w-[220px]" style={{ color: '#E8D5B0' }}>{fundTarget.title}</p>
+              </div>
+              <button
+                onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#6B5C3E' }}
+              >✕</button>
+            </div>
+
+            <form onSubmit={handleFundProject} className="p-6 space-y-4">
+              {/* Recipient */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0" style={{ background: '#0B3D2E', color: '#4ADE80' }}>
+                  {fundTarget.group_name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold truncate" style={{ color: '#1A1200' }}>{fundTarget.group_name}</p>
+                  <p className="text-[10px]" style={{ color: '#A8997E' }}>{fundTarget.member_count} members</p>
+                </div>
+              </div>
+
+              {/* Balance */}
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
+                <span className="text-xs" style={{ color: '#8A7560' }}>Your balance</span>
+                <span className="text-sm font-black font-mono" style={{ color: wallet.balanceTzs > 0 ? '#059669' : '#DC2626' }}>
+                  TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
+                </span>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>Amount (nTZS) *</label>
+                <input
+                  type="number" min="1000" step="100"
+                  value={fundAmount}
+                  onChange={e => setFundAmount(e.target.value)}
+                  placeholder="e.g. 100000"
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                  style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200', fontFamily: 'monospace' }}
+                  onFocus={e => e.target.style.borderColor = '#D4881E'}
+                  onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                  required
+                />
+                {fundTarget.metadata?.funding_goal_tzs && (
+                  <p className="text-[10px] mt-1.5" style={{ color: '#A8997E' }}>
+                    Funding goal: <span style={{ fontFamily: 'monospace', color: '#1A1200' }}>TSH {Number(fundTarget.metadata.funding_goal_tzs).toLocaleString()}</span>
+                  </p>
+                )}
+              </div>
+
+              {fundMsg && (
+                <div
+                  className="px-4 py-3 rounded-xl text-xs font-medium"
+                  style={{
+                    background: fundMsg.ok ? '#ECFDF5' : '#FEF2F2',
+                    color: fundMsg.ok ? '#059669' : '#DC2626',
+                    border: `1px solid ${fundMsg.ok ? '#A7F3D0' : '#FECACA'}`,
+                  }}
+                >
+                  {fundMsg.text}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                  style={{ border: '1.5px solid #EDE8E0', color: '#8A7560', background: 'transparent' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={fundSubmitting || !wallet.provisioned}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
+                  style={{ background: '#D4881E', color: '#fff' }}
+                >
+                  {fundSubmitting ? 'Sending...' : 'Send nTZS →'}
+                </button>
+              </div>
+
+              {!wallet.provisioned && (
+                <p className="text-[10px] text-center" style={{ color: '#DC2626' }}>
+                  Set up your wallet first before funding a project.
+                </p>
+              )}
+            </form>
           </div>
         </div>
       )}
