@@ -13,7 +13,13 @@ type ProposalRow = {
   updated_at?: string;
   created_by_name?: string;
   created_by_member_id?: number;
+  proposal_type?: 'general' | 'ask' | 'spend' | 'prodcast' | string;
+  payment_amount_tzs?: string | number | null;
+  payment_status?: 'pending' | 'processing' | 'completed' | 'failed' | null;
+  executed_at?: string | null;
 };
+
+const LEADERSHIP_ROLES = ['leader', 'mwenyekiti', 'katibu', 'mwekahazina'];
 
 type VoteSummary = {
   yes: number;
@@ -36,6 +42,10 @@ export default function MemberGroupProposalDetailsPage() {
   const [voteSubmitting, setVoteSubmitting] = useState(false);
   const [voteError, setVoteError] = useState('');
   const [error, setError] = useState('');
+  const [membershipRole, setMembershipRole] = useState<string | null>(null);
+  const [executing, setExecuting] = useState(false);
+  const [executeError, setExecuteError] = useState('');
+  const [executeSuccess, setExecuteSuccess] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +64,7 @@ export default function MemberGroupProposalDetailsPage() {
         setVoteSummary((json?.voteSummary as VoteSummary) || { yes: 0, no: 0, abstain: 0, total: 0 });
         const v = json?.myVote;
         setMyVote(v === 'yes' || v === 'no' || v === 'abstain' ? v : null);
+        setMembershipRole((json?.membership as { role?: string } | undefined)?.role ?? null);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Imeshindikana kupakua pendekezo.');
@@ -87,8 +98,28 @@ export default function MemberGroupProposalDetailsPage() {
     }
   };
 
+  const handleExecute = async () => {
+    if (!groupId || !proposalId) return;
+    setExecuting(true); setExecuteError(''); setExecuteSuccess('');
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}/execute`, { method: 'POST' });
+      if (res.status === 401) { router.push('/login'); return; }
+      const json = await res.json().catch(() => null);
+      if (!res.ok) { setExecuteError(json?.error || json?.details || 'Imeshindikana kutekeleza malipo.'); return; }
+      setExecuteSuccess('Malipo yamekamilika! (Funds disbursed)');
+      setProposal(p => (p ? { ...p, payment_status: 'completed' } : p));
+    } catch (e) {
+      setExecuteError(e instanceof Error ? e.message : 'Imeshindikana kutekeleza malipo.');
+    } finally {
+      setExecuting(false);
+    }
+  };
+
   const pct = (n: number) => voteSummary.total > 0 ? Math.round((n / voteSummary.total) * 100) : 0;
   const isOpen = proposal?.status === 'open';
+  const isPayment = proposal?.proposal_type === 'ask' || proposal?.proposal_type === 'spend';
+  const isPaid = proposal?.payment_status === 'completed';
+  const isLeadership = membershipRole ? LEADERSHIP_ROLES.includes(membershipRole) : false;
 
   if (loading) {
     return (
@@ -214,6 +245,51 @@ export default function MemberGroupProposalDetailsPage() {
                 </p>
               )}
             </div>
+
+            {/* Payment / disbursement (ask & spend proposals) */}
+            {isPayment && (
+              <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+                <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Malipo (Payment)</p>
+
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-white/50">Kiasi</span>
+                  <span className="text-sm font-semibold text-white tabular-nums">
+                    TZS {Number(proposal?.payment_amount_tzs ?? 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/50">Hali</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                           : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  }`}>
+                    {isPaid ? 'Imelipwa' : 'Inasubiri'}
+                  </span>
+                </div>
+
+                {executeError && (
+                  <div className="mt-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{executeError}</div>
+                )}
+                {executeSuccess && (
+                  <div className="mt-3 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">{executeSuccess}</div>
+                )}
+
+                {isLeadership && !isPaid && (
+                  <>
+                    <button
+                      onClick={handleExecute}
+                      disabled={executing}
+                      className="mt-4 w-full py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {executing ? 'Inatekeleza...' : 'Tekeleza Malipo (Disburse)'}
+                    </button>
+                    <p className="text-xs text-white/20 mt-2 text-center">
+                      Inahitaji kura za kutosha za &quot;Ndio&quot; na salio la hazina.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
           </div>
         )}
