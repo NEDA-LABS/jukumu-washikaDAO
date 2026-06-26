@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
+import { getBalanceTzs } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -70,25 +71,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ntzs_wallet_address: string | null;
     };
 
-    if (!group.ntzs_user_id) {
-      return NextResponse.json({
-        success: true,
-        treasury: null,
-        balanceTzs: 0,
-        membership,
-      });
-    }
-
-    // Fetch balance from nTZS — degrade gracefully if API is unavailable
-    let balanceTzs = 0;
-    let balanceError: string | null = null;
-    try {
-      const balance = await ntzs.users.getBalance(group.ntzs_user_id);
-      balanceTzs = balance.balanceTzs ?? 0;
-    } catch (balErr) {
-      balanceError = balErr instanceof Error ? balErr.message : String(balErr);
-      console.error('Treasury balance fetch failed:', balanceError);
-    }
+    // Balance from the custodial ledger — every group has a DB account.
+    const balanceTzs = await getBalanceTzs(client, { ownerType: 'group', ownerId: groupId });
 
     return NextResponse.json({
       success: true,
@@ -97,7 +81,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         walletAddress: group.ntzs_wallet_address,
       },
       balanceTzs,
-      balanceError,
       membership,
     });
   } catch (error) {

@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
+import { getBalanceTzs } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -53,18 +54,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       [groupId]
     );
 
-    let balanceTzs = 0;
-    let balanceError: string | null = null;
-    if (process.env.NTZS_API_KEY) {
-      try {
-        const profile = await ntzs.users.getBalance(group.ntzs_user_id);
-        balanceTzs = profile.balanceTzs ?? 0;
-      } catch (e) {
-        balanceError = e instanceof NtzsApiError
-          ? (e.body?.message || e.body?.error)
-          : (e instanceof Error ? e.message : String(e));
-      }
-    }
+    // Balance from the custodial ledger.
+    const balanceTzs = await getBalanceTzs(client, { ownerType: 'group', ownerId: groupId });
+    const balanceError: string | null = null;
 
     return NextResponse.json({
       success: true,
