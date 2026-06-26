@@ -74,23 +74,9 @@ export async function POST(request: NextRequest) {
 
     await client.query('COMMIT');
 
-    // Provision nTZS treasury wallet (non-blocking)
-    let walletAddress: string | null = null;
-    try {
-      await ensureNtzsSchema(client);
-      const ntzsUser = await ntzs.users.create({
-        externalId: `group_${group.id}`,
-        email: `group_${group.id}@groups.jukumu`,
-      });
-      await linkGroupWallet(client, group.id, ntzsUser.id, ntzsUser.walletAddress);
-      walletAddress = ntzsUser.walletAddress;
-    } catch (walletErr) {
-      if (walletErr instanceof NtzsApiError) {
-        console.error(`[member/groups] nTZS wallet error (${walletErr.status}):`, walletErr.body);
-      } else {
-        console.error('[member/groups] nTZS wallet error:', walletErr);
-      }
-    }
+    // The group treasury is now an implicit ledger account, created on first
+    // use — no per-group nTZS wallet to provision.
+    const walletAddress: string | null = null;
 
     return NextResponse.json({
       success: true,

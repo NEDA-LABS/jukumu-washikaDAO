@@ -144,30 +144,28 @@ export async function POST(request: NextRequest) {
 
     await client.query('COMMIT');
 
-    // Provision nTZS wallet (non-blocking — signup succeeds even if nTZS is down)
-    let walletAddress: string | null = null;
+    // Ensure the linked member record exists. The wallet is now an implicit
+    // ledger account (created on first use), so there is no per-entity nTZS
+    // provisioning here — and no async race.
+    const walletAddress: string | null = null;
     try {
-      // Run schema setup only once per process lifetime
       if (!ntzsSchemaReady) {
         await ensureNtzsSchema(client);
         ntzsSchemaReady = true;
       }
 
-      // Find or create the linked member record
-      let memberRes = await client.query(
-        `SELECT id, phone, email FROM members WHERE user_id = $1 LIMIT 1`,
+      const memberRes = await client.query(
+        `SELECT id FROM members WHERE user_id = $1 LIMIT 1`,
         [user.id]
       );
 
-      // No member record linked yet — create one automatically
       if (memberRes.rows.length === 0) {
         const numericAge = age !== undefined && age !== null && age !== ''
           ? Number.parseInt(String(age), 10)
           : null;
-        const newMember = await client.query(
+        await client.query(
           `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')
-           RETURNING id, phone, email`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')`,
           [
             user.id,
             fullName,
@@ -181,43 +179,10 @@ export async function POST(request: NextRequest) {
             Number.isFinite(numericAge) ? numericAge : null,
           ]
         );
-        memberRes = newMember;
         console.log(`Auto-created member record for user ${user.id}`);
       }
-
-      if (memberRes.rows.length > 0) {
-        const member = memberRes.rows[0] as { id: number; phone: string | null; email: string | null };
-
-        // Skip if wallet already exists (e.g. pre-linked member)
-        const existingWallet = await client.query(
-          `SELECT ntzs_user_id FROM members WHERE id = $1 AND ntzs_user_id IS NOT NULL LIMIT 1`,
-          [member.id]
-        );
-
-        if (existingWallet.rows.length === 0) {
-          const ntzsUser = await Promise.race([
-            ntzs.users.create({
-              externalId: `member_${member.id}`,
-              email: member.email || user.email || undefined,
-              phone: member.phone ? normalizePhone(member.phone) : undefined,
-            }),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('nTZS timeout')), 5000)
-            ),
-          ]);
-
-          await linkMemberWallet(client, member.id, ntzsUser.id, ntzsUser.walletAddress);
-          walletAddress = ntzsUser.walletAddress;
-          console.log(`nTZS wallet provisioned for member ${member.id}: ${ntzsUser.walletAddress}`);
-        }
-      }
-    } catch (walletErr) {
-      // Log but don't fail signup
-      if (walletErr instanceof NtzsApiError) {
-        console.error(`nTZS wallet provisioning failed (${walletErr.status}):`, walletErr.body);
-      } else {
-        console.error('nTZS wallet provisioning failed:', walletErr);
-      }
+    } catch (memberErr) {
+      console.error('Member record setup failed:', memberErr);
     }
 
     return NextResponse.json({

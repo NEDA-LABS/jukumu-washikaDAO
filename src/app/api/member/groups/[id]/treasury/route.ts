@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
-import { getBalanceTzs } from '@/lib/wallet/ledger';
+import { getBalanceTzs, getOrCreateAccount } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -140,36 +140,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ntzs_wallet_address: string | null;
     };
 
-    // If already exists, return it
-    if (group.ntzs_user_id) {
-      const balance = await ntzs.users.getBalance(group.ntzs_user_id);
-      return NextResponse.json({
-        success: true,
-        treasury: {
-          ntzsUserId: group.ntzs_user_id,
-          walletAddress: group.ntzs_wallet_address,
-        },
-        balanceTzs: balance.balanceTzs,
-        membership,
-      });
-    }
-
-    // Create nTZS user for group
-    const ntzsUser = await ntzs.users.create({
-      externalId: `group_${groupId}`,
-      email: `group_${groupId}@groups.washikadau.com`,
-    });
-
-    // Link to group record
-    await linkGroupWallet(client, groupId, ntzsUser.id, ntzsUser.walletAddress);
+    // The treasury is the group's ledger account — ensure it exists.
+    await getOrCreateAccount(client, { ownerType: 'group', ownerId: groupId });
+    const balanceTzs = await getBalanceTzs(client, { ownerType: 'group', ownerId: groupId });
 
     return NextResponse.json({
       success: true,
       treasury: {
-        ntzsUserId: ntzsUser.id,
-        walletAddress: ntzsUser.walletAddress,
+        ntzsUserId: group.ntzs_user_id,
+        walletAddress: group.ntzs_wallet_address,
       },
-      balanceTzs: 0,
+      balanceTzs,
       membership,
     });
   } catch (error) {

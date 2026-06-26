@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
-import { getBalanceTzs } from '@/lib/wallet/ledger';
+import { getBalanceTzs, getOrCreateAccount } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -89,10 +89,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
   }
 
-  if (!process.env.NTZS_API_KEY) {
-    return NextResponse.json({ error: 'Wallet service not configured. Contact support.' }, { status: 503 });
-  }
-
   const client = await pool.connect();
   try {
     await ensureNtzsSchema(client);
@@ -109,28 +105,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ntzs_user_id: string | null; ntzs_wallet_address: string | null;
     };
 
-    if (group.ntzs_user_id) {
-      const profile = await ntzs.users.getBalance(group.ntzs_user_id);
-      return NextResponse.json({
-        success: true,
-        wallet: { network: 'Base (nTZS)', address: group.ntzs_wallet_address, ntzsUserId: group.ntzs_user_id },
-        balanceTzs: profile.balanceTzs ?? 0,
-        message: 'Wallet already provisioned',
-      });
-    }
-
-    const ntzsUser = await ntzs.users.create({
-      externalId: `group_${groupId}`,
-      email: `group_${groupId}@groups.washikadau.com`,
-    });
-
-    await linkGroupWallet(client, groupId, ntzsUser.id, ntzsUser.walletAddress);
+    // The group treasury is its ledger account — ensure it exists.
+    await getOrCreateAccount(client, { ownerType: 'group', ownerId: groupId });
+    const balanceTzs = await getBalanceTzs(client, { ownerType: 'group', ownerId: groupId });
 
     return NextResponse.json({
       success: true,
-      wallet: { network: 'Base (nTZS)', address: ntzsUser.walletAddress, ntzsUserId: ntzsUser.id },
-      balanceTzs: 0,
-      message: 'Hazina imeundwa kwa mafanikio! (Treasury created successfully)',
+      wallet: { network: 'nTZS (custodial)', address: group.ntzs_wallet_address, ntzsUserId: group.ntzs_user_id },
+      balanceTzs,
+      message: 'Hazina iko tayari (Treasury ready)',
     });
   } catch (error) {
     console.error('Admin group wallet POST error:', error);
