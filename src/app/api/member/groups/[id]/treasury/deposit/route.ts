@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
-import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
-import { ntzs } from '@/lib/ntzs';
+import { ensureNtzsSchema } from '@/lib/ntzs-db';
+import { internalTransfer, LedgerError } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -12,30 +12,22 @@ async function getMembership(
   groupId: number
 ) {
   const membershipRes = await client.query(
-    `
-      SELECT gm.member_id, gm.role, gm.status, m.ntzs_user_id
-      FROM group_members gm
-      JOIN members m ON m.id = gm.member_id
-      WHERE m.user_id = $1
-        AND gm.group_id = $2
-      LIMIT 1
-    `,
+    `SELECT gm.member_id, gm.role, gm.status
+     FROM group_members gm
+     JOIN members m ON m.id = gm.member_id
+     WHERE m.user_id = $1 AND gm.group_id = $2
+     LIMIT 1`,
     [userId, groupId]
   );
-
   if (membershipRes.rows.length === 0) return null;
-  return membershipRes.rows[0] as {
-    member_id: number;
-    role: string;
-    status: string;
-    ntzs_user_id: string | null;
-  };
+  return membershipRes.rows[0] as { member_id: number; role: string; status: string };
 }
 
 /**
  * POST /api/member/groups/[id]/treasury/deposit
- * Member deposits funds to group treasury via nTZS P2P transfer
- * 
+ * Member contributes to the group treasury — an internal ledger transfer
+ * (member account → group account). Pure DB, atomic.
+ *
  * Body: { amountTzs: number }
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -63,85 +55,56 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const client = await pool.connect();
+  let inTx = false;
   try {
-    await client.query('BEGIN');
     await ensureNtzsSchema(client);
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (!membership) {
-      await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (!membership.ntzs_user_id) {
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        { error: 'Member wallet not provisioned. Please contact support.' },
-        { status: 400 }
-      );
-    }
-
     const groupRes = await client.query(
-      `SELECT id, name, ntzs_user_id FROM groups WHERE id = $1 LIMIT 1`,
+      `SELECT id, name FROM groups WHERE id = $1 LIMIT 1`,
       [groupId]
     );
-
     if (groupRes.rows.length === 0) {
-      await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
+    const group = groupRes.rows[0] as { id: number; name: string };
 
-    const group = groupRes.rows[0] as {
-      id: number;
-      name: string;
-      ntzs_user_id: string | null;
-    };
-
-    if (!group.ntzs_user_id) {
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        { error: 'Group treasury not created. Leadership must create it first.' },
-        { status: 400 }
-      );
-    }
-
-    // Execute P2P transfer via nTZS
-    const transfer = await ntzs.transfers.create({
-      fromUserId: membership.ntzs_user_id,
-      toUserId: group.ntzs_user_id,
+    await client.query('BEGIN');
+    inTx = true;
+    const result = await internalTransfer(client, {
+      from: { ownerType: 'member', ownerId: membership.member_id },
+      to: { ownerType: 'group', ownerId: groupId },
       amountTzs,
-    });
-
-    // Record in local ledger
-    await recordTransaction(client, {
-      ntzsId: transfer.id,
-      type: 'transfer',
-      status: transfer.status,
-      fromMemberId: membership.member_id,
-      toGroupId: groupId,
-      amountTzs: transfer.amountTzs,
-      feeTzs: transfer.feeAmountTzs,
-      netTzs: transfer.recipientAmountTzs,
-      txHash: transfer.txHash,
       purpose: 'contribution',
       note: `Member contribution to ${group.name}`,
     });
-
     await client.query('COMMIT');
+    inTx = false;
 
     return NextResponse.json({
       success: true,
       transfer: {
-        id: transfer.id,
-        amountTzs: transfer.amountTzs,
-        feeAmountTzs: transfer.feeAmountTzs,
-        recipientAmountTzs: transfer.recipientAmountTzs,
-        status: transfer.status,
-        txHash: transfer.txHash,
+        id: result.journalId,
+        amountTzs: result.amountTzs,
+        feeAmountTzs: 0,
+        recipientAmountTzs: result.amountTzs,
+        status: 'completed',
+        txHash: null,
       },
+      balanceTzs: result.fromBalanceTzs,
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (inTx) await client.query('ROLLBACK').catch(() => {});
+    if (error instanceof LedgerError) {
+      const msg = error.code === 'insufficient_balance'
+        ? 'Salio haitoshi (Insufficient balance)'
+        : error.message;
+      return NextResponse.json({ error: msg, code: error.code }, { status: 400 });
+    }
     console.error('Treasury deposit error:', error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: 'Internal server error', details: message }, { status: 500 });
