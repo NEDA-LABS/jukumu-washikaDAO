@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ntzs } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
+import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -36,33 +37,35 @@ export async function POST(request: NextRequest) {
     await ensureNtzsSchema(client);
 
     const profileRes = await client.query(
-      `SELECT ntzs_user_id FROM investor_profiles WHERE user_id = $1 LIMIT 1`,
+      `SELECT user_id FROM investor_profiles WHERE user_id = $1 LIMIT 1`,
       [auth.userId]
-    ) as { rows: { ntzs_user_id: string | null }[] };
-
-    const ntzsUserId = profileRes.rows[0]?.ntzs_user_id;
-    if (!ntzsUserId) {
-      return NextResponse.json({ error: 'Pochi haijasanidiwa bado' }, { status: 400 });
+    ) as { rows: { user_id: number }[] };
+    if (profileRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Wasifu wa mwekezaji haujapatikana' }, { status: 404 });
     }
 
-    const deposit = await ntzs.deposits.create({ userId: ntzsUserId, amountTzs, phoneNumber: phone });
+    const masterUserId = await getMasterNtzsUserId(client);
+    const deposit = await ntzs.deposits.create({ userId: masterUserId, amountTzs, phoneNumber: phone });
 
+    // Pending — investor balance is credited on settlement (webhook/sync).
     await recordTransaction(client, {
       ntzsId: deposit.id,
       type: 'deposit',
       status: deposit.status,
-      amountTzs: deposit.amountTzs,
+      amountTzs: deposit.amountTzs ?? amountTzs,
+      netTzs: deposit.amountTzs ?? amountTzs,
       phone,
       purpose: 'deposit',
-      note: `Investor deposit`,
+      note: 'Investor deposit',
       metadata: { investor_id: auth.userId },
+      posted: false,
     });
 
     return NextResponse.json({
       success: true,
       depositId: deposit.id,
       status: deposit.status,
-      amountTzs: deposit.amountTzs,
+      amountTzs: deposit.amountTzs ?? amountTzs,
       message: 'Ombi la amana limetumwa. Angalia simu yako kukamilisha.',
     });
   } catch (error) {
