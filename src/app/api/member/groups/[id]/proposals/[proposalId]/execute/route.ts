@@ -58,6 +58,13 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
+  // Optional leadership-supplied overrides — so a passed proposal can still be
+  // disbursed even if the amount/recipient weren't captured at creation time.
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+  const overrideAmount = body?.amountTzs != null ? Number(body.amountTzs) : null;
+  const overrideRecipientMemberId = body?.recipientMemberId != null ? Number(body.recipientMemberId) : null;
+  const overridePhone = typeof body?.recipientPhone === 'string' ? body.recipientPhone.trim() : null;
+
   const client = await pool.connect();
   let inTx = false;
   try {
@@ -99,14 +106,16 @@ export async function POST(
       voting_threshold_numerator: number; voting_threshold_denominator: number;
     };
 
-    if (proposal.proposal_type === 'general' || proposal.proposal_type === 'prodcast') {
+    // Prodcasts are funded by investors, not disbursed from the treasury.
+    if (proposal.proposal_type === 'prodcast') {
       await client.query('ROLLBACK');
-      return NextResponse.json({ error: 'This proposal type cannot be executed as a payment' }, { status: 400 });
+      return NextResponse.json({ error: 'Prodcast proposals are funded by investors, not disbursed from the treasury' }, { status: 400 });
     }
-    const amount = Number(proposal.payment_amount_tzs);
+    // Amount: leadership override wins, else the proposal's amount.
+    const amount = overrideAmount && overrideAmount > 0 ? Math.round(overrideAmount) : Number(proposal.payment_amount_tzs);
     if (!Number.isFinite(amount) || amount <= 0) {
       await client.query('ROLLBACK');
-      return NextResponse.json({ error: 'Not a payment proposal' }, { status: 400 });
+      return NextResponse.json({ error: 'Weka kiasi cha malipo (set a payment amount to disburse)' }, { status: 400 });
     }
     if (proposal.payment_status === 'completed') {
       await client.query('ROLLBACK');
@@ -135,12 +144,13 @@ export async function POST(
       );
     }
 
-    // Resolve recipient: prefer a member account; fall back to a phone payout.
-    let recipientMemberId = proposal.recipient_member_id;
-    if (!recipientMemberId && proposal.recipient_phone) {
+    // Resolve recipient: leadership override → proposal's recipient → phone lookup.
+    let recipientMemberId = overrideRecipientMemberId || proposal.recipient_member_id;
+    const recipientPhone = overridePhone || proposal.recipient_phone;
+    if (!recipientMemberId && recipientPhone) {
       const phoneRes = await client.query(
         `SELECT id FROM members WHERE phone = $1 LIMIT 1`,
-        [proposal.recipient_phone]
+        [recipientPhone]
       );
       if (phoneRes.rows.length > 0) recipientMemberId = (phoneRes.rows[0] as { id: number }).id;
     }
@@ -161,7 +171,7 @@ export async function POST(
       paymentTxId = String(result.journalId);
       payout = { type: 'internal', amountTzs: amount, recipientMemberId, status: 'completed' };
 
-    } else if (proposal.recipient_phone) {
+    } else if (recipientPhone) {
       // External off-ramp to a non-member phone.
       if (!process.env.NTZS_API_KEY) {
         await client.query('ROLLBACK');
@@ -169,7 +179,7 @@ export async function POST(
       }
       await debit(client, { ownerType: 'group', ownerId: groupId }, amount); // reserve from treasury
       const masterUserId = await getMasterNtzsUserId(client);
-      const phone = normalizePhone(proposal.recipient_phone);
+      const phone = normalizePhone(recipientPhone);
       const withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: phone });
       await recordTransaction(client, {
         ntzsId: withdrawal.id,
