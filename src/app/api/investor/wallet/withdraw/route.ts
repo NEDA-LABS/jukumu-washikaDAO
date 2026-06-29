@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
-import { ntzs } from '@/lib/ntzs';
+import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
+import { getMasterNtzsUserId, debit, LedgerError } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 
@@ -30,45 +31,64 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nambari ya simu inahitajika' }, { status: 400 });
   }
 
-  let client;
+  const client = await pool.connect();
+  let inTx = false;
   try {
-    client = await pool.connect();
     await ensureNtzsSchema(client);
 
     const profileRes = await client.query(
-      `SELECT ntzs_user_id FROM investor_profiles WHERE user_id = $1 LIMIT 1`,
+      `SELECT user_id FROM investor_profiles WHERE user_id = $1 LIMIT 1`,
       [auth.userId]
-    ) as { rows: { ntzs_user_id: string | null }[] };
-
-    const ntzsUserId = profileRes.rows[0]?.ntzs_user_id;
-    if (!ntzsUserId) {
-      return NextResponse.json({ error: 'Pochi haijasanidiwa bado' }, { status: 400 });
+    ) as { rows: { user_id: number }[] };
+    if (profileRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Wasifu wa mwekezaji haujapatikana' }, { status: 404 });
     }
 
-    const withdrawal = await ntzs.withdrawals.create({ userId: ntzsUserId, amountTzs, phoneNumber: phone });
+    const masterUserId = await getMasterNtzsUserId(client);
+
+    await client.query('BEGIN');
+    inTx = true;
+
+    const newBalance = await debit(client, { ownerType: 'investor', ownerId: auth.userId }, amountTzs);
+    const withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs, phoneNumber: phone });
 
     await recordTransaction(client, {
       ntzsId: withdrawal.id,
       type: 'withdrawal',
       status: withdrawal.status,
-      amountTzs: withdrawal.amountTzs,
+      amountTzs,
+      netTzs: amountTzs,
       phone,
       purpose: 'withdrawal',
       note: 'Investor withdrawal',
       metadata: { investor_id: auth.userId },
+      posted: true,
     });
+
+    await client.query('COMMIT');
+    inTx = false;
 
     return NextResponse.json({
       success: true,
       withdrawalId: withdrawal.id,
       status: withdrawal.status,
-      amountTzs: withdrawal.amountTzs,
+      amountTzs,
+      balanceTzs: newBalance,
       message: 'Ombi la kutoa limetumwa. Fedha zitafika hivi karibuni.',
     });
   } catch (error) {
+    if (inTx) await client.query('ROLLBACK').catch(() => {});
+    if (error instanceof LedgerError) {
+      const msg = error.code === 'insufficient_balance' ? 'Salio haitoshi' : error.message;
+      return NextResponse.json({ error: msg, code: error.code }, { status: 400 });
+    }
+    if (error instanceof NtzsApiError) {
+      console.error('Investor withdrawal nTZS error:', error.status, error.body);
+      return NextResponse.json({ error: error.body?.message || 'Imeshindwa kuwasilisha ombi la kutoa' }, { status: 400 });
+    }
     console.error('Investor withdrawal error:', error);
     return NextResponse.json({ error: 'Imeshindwa kuwasilisha ombi la kutoa' }, { status: 500 });
   } finally {
-    client?.release();
+    client.release();
   }
 }

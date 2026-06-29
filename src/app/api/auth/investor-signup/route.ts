@@ -125,25 +125,8 @@ export async function POST(request: NextRequest) {
 
     await client.query('COMMIT');
 
-    // Provision nTZS wallet — non-blocking (doesn't fail signup on error)
-    setImmediate(async () => {
-      let walletClient;
-      try {
-        const ntzsUser = await Promise.race([
-          ntzs.users.create({ externalId: `investor_${user.id}`, email: user.email }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-        ]);
-        walletClient = await pool.connect();
-        await walletClient.query(
-          `UPDATE investor_profiles SET ntzs_user_id = $1, ntzs_wallet_address = $2, updated_at = NOW() WHERE user_id = $3`,
-          [(ntzsUser as { id: string }).id, (ntzsUser as { walletAddress: string }).walletAddress, user.id]
-        );
-      } catch (err) {
-        console.error(`Investor wallet provision failed for user ${user.id}:`, err);
-      } finally {
-        walletClient?.release();
-      }
-    });
+    // The investor wallet is now an implicit ledger account, created on first
+    // use — no per-entity nTZS provisioning, no background race.
 
     const token = jwt.sign({ userId: user.id, email: user.email, role: 'investor' }, JWT_SECRET, { expiresIn: '7d' });
     const userData = { id: user.id, email: user.email, fullName: user.full_name, role: 'investor' };

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 
+const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina']);
+
 async function ensureProposalSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS group_proposals (
@@ -52,6 +54,32 @@ async function ensureProposalSchema(client: { query: (sql: string, params?: unkn
       ALTER TABLE group_proposals ADD CONSTRAINT group_proposals_proposal_type_check
         CHECK (proposal_type IN ('general','ask','spend','prodcast'));
     EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
+
+  // Repair divergent payment_status CHECK constraints. Older databases (migration
+  // 002 / setup-treasury) created this column with CHECK (... IN
+  // ('pending','approved','executed','rejected')), which rejects the 'completed'
+  // status the disbursement flow writes. ADD COLUMN IF NOT EXISTS can't alter an
+  // existing column's constraint, so drop every payment_status CHECK and re-add
+  // one allowing the union of legacy + current values (legacy values are kept so
+  // the re-add can't fail on pre-existing rows).
+  await client.query(`
+    DO $$
+    DECLARE c_name TEXT;
+    BEGIN
+      FOR c_name IN
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'group_proposals'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) ILIKE '%payment_status%'
+      LOOP
+        EXECUTE 'ALTER TABLE group_proposals DROP CONSTRAINT ' || quote_ident(c_name);
+      END LOOP;
+      ALTER TABLE group_proposals ADD CONSTRAINT group_proposals_payment_status_check
+        CHECK (payment_status IS NULL OR payment_status IN
+          ('pending','processing','completed','failed','approved','executed','rejected'));
+    EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
 }
@@ -134,10 +162,13 @@ export async function GET(
           p.id, p.group_id, p.title, p.description, p.status,
           p.proposal_type, p.metadata, p.funded_at,
           p.payment_amount_tzs, p.payment_status, p.payment_tx_id, p.executed_at,
+          p.recipient_member_id, p.recipient_phone,
           p.created_at, p.updated_at,
-          m.full_name AS created_by_name, m.id AS created_by_member_id
+          m.full_name AS created_by_name, m.id AS created_by_member_id,
+          rm.full_name AS recipient_name
         FROM group_proposals p
         JOIN members m ON m.id = p.created_by_member_id
+        LEFT JOIN members rm ON rm.id = p.recipient_member_id
         WHERE p.group_id = $1 AND p.id = $2
         LIMIT 1`,
       [groupId, pid]
@@ -152,12 +183,25 @@ export async function GET(
     );
     const myVote = (myVoteRes.rows[0] as { vote?: string } | undefined)?.vote;
 
+    // Did it pass? yes-votes vs the group's threshold of active members.
+    const thrRes = await client.query(
+      `SELECT g.voting_threshold_numerator AS num, g.voting_threshold_denominator AS den,
+              (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id AND gm.status = 'active')::int AS active_members
+       FROM groups g WHERE g.id = $1 LIMIT 1`,
+      [groupId]
+    );
+    const thr = thrRes.rows[0] as { num: number; den: number; active_members: number } | undefined;
+    const requiredYes = Math.ceil(((thr?.active_members ?? 0) * (thr?.num ?? 3)) / (thr?.den ?? 5));
+    const passed = voteSummary.yes >= requiredYes;
+
     return NextResponse.json({
       success: true,
       proposal: res.rows[0],
       voteSummary,
       myVote: typeof myVote === 'string' ? myVote : null,
       membership,
+      requiredYes,
+      passed,
     });
   } catch (error) {
     console.error('Member proposal details error:', error);
@@ -262,6 +306,63 @@ export async function POST(
     });
   } catch (error) {
     console.error('Cast vote error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * PATCH — leadership/admin actions on a proposal.
+ * Body: { action: 'reopen' } re-opens voting on a proposal that didn't pass
+ * (e.g. members should vote again), as long as it hasn't been paid.
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; proposalId: string }> }
+) {
+  const auth = getAuthTokenPayload(request);
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { id, proposalId } = await params;
+  const groupId = Number.parseInt(id, 10);
+  const pid = Number.parseInt(proposalId, 10);
+  if (!Number.isFinite(groupId) || !Number.isFinite(pid)) {
+    return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const action = typeof body?.action === 'string' ? body.action : '';
+
+  const client = await pool.connect();
+  try {
+    await ensureProposalSchema(client);
+    await ensureProposalVotingSchema(client);
+
+    const membership = await getMembership(client, auth.userId, groupId);
+    if (auth.role !== 'admin') {
+      if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (!LEADERSHIP_ROLES.has(membership.role)) {
+        return NextResponse.json({ error: 'Only leadership can manage this proposal' }, { status: 403 });
+      }
+    }
+
+    if (action === 'reopen') {
+      const upd = await client.query(
+        `UPDATE group_proposals SET status = 'open', funded_at = NULL, updated_at = NOW()
+         WHERE id = $1 AND group_id = $2 AND payment_status IS DISTINCT FROM 'completed'
+         RETURNING id`,
+        [pid, groupId]
+      );
+      if (upd.rows.length === 0) {
+        return NextResponse.json({ error: 'Cannot re-open (not found or already paid)' }, { status: 400 });
+      }
+      return NextResponse.json({ success: true, status: 'open' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('Proposal PATCH error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   } finally {
     client.release();

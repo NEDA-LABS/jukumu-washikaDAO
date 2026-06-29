@@ -1,100 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { ntzs, NtzsApiError } from '@/lib/ntzs';
-import { ensureNtzsSchema, linkMemberWallet } from '@/lib/ntzs-db';
+import { getOrCreateAccount } from '@/lib/wallet/ledger';
 
 /**
- * Provision an nTZS wallet for an existing member who doesn't have one yet.
- * Called from the dashboard when a member first accesses wallet features.
+ * In the custodial model every member has an implicit ledger account, so
+ * "provisioning" just ensures the account row exists and returns success —
+ * no per-entity on-chain wallet, no async race, no failure mode. Kept as an
+ * endpoint for backward compatibility with the dashboard's wallet setup call.
  */
 export async function POST(request: NextRequest) {
   const client = await pool.connect();
 
   try {
     const { userId } = await request.json();
-
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
-    await ensureNtzsSchema(client);
-
     const memberRes = await client.query(
-      `SELECT m.id, m.ntzs_user_id, m.ntzs_wallet_address, m.phone, m.email, m.full_name, u.email as user_email
+      `SELECT m.id, m.ntzs_wallet_address
        FROM members m JOIN users u ON u.id = m.user_id
        WHERE u.id = $1 LIMIT 1`,
       [userId]
     );
-
     if (memberRes.rows.length === 0) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
+    const member = memberRes.rows[0] as { id: number; ntzs_wallet_address: string | null };
 
-    const member = memberRes.rows[0] as {
-      id: number;
-      ntzs_user_id: string | null;
-      ntzs_wallet_address: string | null;
-      phone: string | null;
-      email: string | null;
-      user_email: string | null;
-      full_name: string;
-    };
-
-    // Already provisioned
-    if (member.ntzs_user_id && member.ntzs_wallet_address) {
-      return NextResponse.json({
-        walletAddress: member.ntzs_wallet_address,
-        provisioned: true,
-        message: 'Wallet tayari ipo (Wallet already exists)',
-      });
-    }
-
-    // Check API key before calling nTZS
-    if (!process.env.NTZS_API_KEY) {
-      console.error('NTZS_API_KEY not configured');
-      return NextResponse.json({ error: 'Wallet service is not configured. Contact admin.' }, { status: 503 });
-    }
-
-    // Normalize phone
-    const phone = member.phone?.replace(/\D/g, '') || undefined;
-    let normalizedPhone = phone;
-    if (phone && phone.length === 10 && phone.startsWith('0')) {
-      normalizedPhone = `255${phone.slice(1)}`;
-    } else if (phone && phone.length === 9) {
-      normalizedPhone = `255${phone}`;
-    }
-
-    // For phone-only users, members.email is NULL but users.email holds a synthetic
-    // "{phone}@phone.jukumu" address. Use it as fallback so nTZS always gets an email.
-    const ntzsEmail = member.email || member.user_email || undefined;
-
-    const ntzsUser = await ntzs.users.create({
-      externalId: `member_${member.id}`,
-      email: ntzsEmail,
-      phone: normalizedPhone,
-    });
-
-    await linkMemberWallet(client, member.id, ntzsUser.id, ntzsUser.walletAddress);
-
-    console.log(`nTZS wallet provisioned for member ${member.id}: ${ntzsUser.walletAddress}`);
+    await getOrCreateAccount(client, { ownerType: 'member', ownerId: member.id });
 
     return NextResponse.json({
-      walletAddress: ntzsUser.walletAddress,
+      walletAddress: member.ntzs_wallet_address,
       provisioned: true,
-      message: 'Wallet imetengenezwa kwa mafanikio! (Wallet created successfully)',
+      message: 'Wallet tayari ipo (Wallet ready)',
     });
   } catch (error) {
-    if (error instanceof NtzsApiError) {
-      console.error('nTZS provision error:', error.status, error.body);
-      return NextResponse.json({
-        error: error.body.message || error.body.error || 'Wallet provisioning failed',
-        details: error.body,
-        ntzsStatus: error.status,
-      }, { status: error.status });
-    }
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error('Provision error:', errMsg);
-    return NextResponse.json({ error: errMsg || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   } finally {
     client.release();
   }
