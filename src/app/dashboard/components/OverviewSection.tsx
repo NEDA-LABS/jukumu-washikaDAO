@@ -26,6 +26,11 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [reconcileLoading, setReconcileLoading] = useState(true);
   const [sweeping, setSweeping] = useState(false);
   const [sweepMsg, setSweepMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [recPhone, setRecPhone] = useState('');
+  const [recAmount, setRecAmount] = useState('');
+  const [recRef, setRecRef] = useState('');
+  const [reconciling, setReconciling] = useState(false);
+  const [recMsg, setRecMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -82,6 +87,37 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       setSweepMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
     } finally {
       setSweeping(false);
+    }
+  };
+
+  const handleReconcile = async () => {
+    const amount = Math.round(Number(recAmount));
+    if (!recPhone.trim() || !Number.isFinite(amount) || amount <= 0) {
+      setRecMsg({ type: 'error', text: 'Weka namba ya simu na kiasi sahihi.' });
+      return;
+    }
+    if (!window.confirm(`Punguza TSH ${amount.toLocaleString()} kwenye salio la mwanachama (${recPhone})? Tumia tu kwa malipo yaliyokwisha tolewa nje (nTZS).`)) return;
+    setReconciling(true);
+    setRecMsg(null);
+    try {
+      const r = await fetch('/api/admin/treasury/record-external-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberPhone: recPhone.trim(), amountTzs: amount, reference: recRef.trim() || undefined }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setRecMsg({ type: 'success', text: `Imerekebishwa: ${d.memberName || 'mwanachama'} salio ${Number(d.balanceBeforeTzs).toLocaleString()} → ${Number(d.balanceAfterTzs).toLocaleString()} TSH.` });
+        setRecAmount(''); setRecRef('');
+        loadReconcile();
+        loadWalletTotals();
+      } else {
+        setRecMsg({ type: 'error', text: d?.error || d?.details || 'Imeshindikana kurekebisha' });
+      }
+    } catch {
+      setRecMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setReconciling(false);
     }
   };
 
@@ -188,6 +224,48 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
             >
               {sweeping ? 'Inahamisha…' : 'Hamisha fedha kwa Hazina Kuu'}
             </button>
+
+            {/* Reconcile a withdrawal that left on nTZS but didn't debit the member */}
+            <div className="mt-2 pt-3 border-t border-border space-y-2">
+              <p className="text-[11px] font-semibold text-foreground">Rekebisha malipo yaliyotoka nje</p>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Tumia tu kama pesa zilitoka (nTZS) lakini salio la mwanachama halikupungua. Punguza salio lake kwa kiasi kilichotoka tayari.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="tel"
+                  value={recPhone}
+                  onChange={(e) => setRecPhone(e.target.value)}
+                  placeholder="Simu ya mwanachama"
+                  className="rounded-lg bg-background border border-border px-3 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  value={recAmount}
+                  onChange={(e) => setRecAmount(e.target.value)}
+                  placeholder="Kiasi kilichotoka (TZS)"
+                  className="rounded-lg bg-background border border-border px-3 py-2 text-sm"
+                />
+              </div>
+              <input
+                type="text"
+                value={recRef}
+                onChange={(e) => setRecRef(e.target.value)}
+                placeholder="Kumbukumbu ya nTZS / withdrawal id (hiari)"
+                className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm"
+              />
+              {recMsg && (
+                <p className={`text-xs ${recMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{recMsg.text}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleReconcile}
+                disabled={reconciling}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-border text-foreground hover:bg-foreground/5 disabled:opacity-50"
+              >
+                {reconciling ? 'Inarekebisha…' : 'Rekebisha salio'}
+              </button>
+            </div>
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">Imeshindwa kupakia taarifa za hazina.</p>
