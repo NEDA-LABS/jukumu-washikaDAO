@@ -11,6 +11,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
   const [showEditGroup, setShowEditGroup] = useState(false);
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [groupProposals, setGroupProposals] = useState<any[]>([]);
+  const [executingProposalId, setExecutingProposalId] = useState<number | null>(null);
   const [groupWallet, setGroupWallet] = useState<any>(null);
   const [groupWalletBalances, setGroupWalletBalances] = useState<any>(null);
   const [groupWalletWarning, setGroupWalletWarning] = useState<string>('');
@@ -96,6 +97,33 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
       if (r.ok) { const d = await r.json(); setGroupProposals(d.proposals || []); }
     } catch { setGroupProposals([]); }
     fetchGroupWallet(group.id);
+  };
+
+  const reloadProposals = async (groupId: number) => {
+    try {
+      const r = await fetch(`/api/admin/groups/${groupId}/proposals`);
+      if (r.ok) { const d = await r.json(); setGroupProposals(d.proposals || []); }
+    } catch { /* keep current list */ }
+  };
+
+  const handleExecuteProposal = async (proposalId: number) => {
+    if (!selectedGroup) return;
+    setExecutingProposalId(proposalId);
+    try {
+      const r = await fetch(`/api/member/groups/${selectedGroup.id}/proposals/${proposalId}/execute`, { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        showToast('Malipo yamekamilika! (Funds disbursed)', 'success');
+        await reloadProposals(selectedGroup.id);
+        fetchGroupWallet(selectedGroup.id);
+      } else {
+        showToast(d?.error || d?.details || 'Imeshindikana kutekeleza malipo', 'error');
+      }
+    } catch {
+      showToast('Hitilafu ya mtandao', 'error');
+    } finally {
+      setExecutingProposalId(null);
+    }
   };
 
   const handleEditGroup = (group: any) => {
@@ -324,7 +352,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                   {groupProposals.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
-                        <thead><tr className="border-b border-border">{['Kichwa','Hali','Kura','Mwandishi','Tarehe'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
+                        <thead><tr className="border-b border-border">{['Kichwa','Hali','Kura','Mwandishi','Tarehe','Kitendo'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
                         <tbody className="divide-y divide-border">
                           {groupProposals.map(p => (
                             <tr key={p.id} className="hover:bg-foreground/[0.02]">
@@ -333,6 +361,23 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                               <td className="px-3 py-2.5 text-[10px] text-foreground/40">✓{p.yes_votes||0} ✗{p.no_votes||0}</td>
                               <td className="px-3 py-2.5 text-[10px] text-muted-foreground">{p.created_by_name||'—'}</td>
                               <td className="px-3 py-2.5 text-[10px] text-foreground/30">{p.created_at?new Date(p.created_at).toLocaleDateString('sw-TZ'):'—'}</td>
+                              <td className="px-3 py-2.5">
+                                {p.payment_status === 'completed' ? (
+                                  <span className="text-[10px] text-emerald-600 font-semibold">✓ Imelipwa</span>
+                                ) : p.can_execute ? (
+                                  <button
+                                    onClick={() => handleExecuteProposal(p.id)}
+                                    disabled={executingProposalId === p.id}
+                                    className="text-[10px] px-2 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    {executingProposalId === p.id ? 'Inatekeleza...' : `Tekeleza TZS ${Number(p.payment_amount_tzs||0).toLocaleString()}`}
+                                  </button>
+                                ) : p.is_payment ? (
+                                  <span className="text-[10px] text-foreground/30">{Number(p.yes_votes||0)}/{p.required_yes||0} kura</span>
+                                ) : (
+                                  <span className="text-[10px] text-foreground/20">—</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

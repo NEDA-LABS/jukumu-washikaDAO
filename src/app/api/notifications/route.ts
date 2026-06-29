@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { ensureNotificationsSchema } from '@/lib/notifications-db';
 
 // GET - Fetch notifications for a user
 export async function GET(request: NextRequest) {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
 
     try {
+      await ensureNotificationsSchema(client);
       let query = `
         SELECT 
           id,
@@ -76,7 +78,8 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error fetching notifications:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Degrade gracefully — an empty bell beats a 500 on every dashboard load.
+    return NextResponse.json({ notifications: [], unreadCount: 0, total: 0, hasMore: false });
   }
 }
 
@@ -105,6 +108,7 @@ export async function POST(request: NextRequest) {
     const client = await pool.connect();
 
     try {
+      await ensureNotificationsSchema(client);
       const result = await client.query(`
         SELECT create_notification($1, $2, $3, $4, $5, $6, $7, $8, $9) as notification_id
       `, [
@@ -149,6 +153,7 @@ export async function PUT(request: NextRequest) {
     const client = await pool.connect();
 
     try {
+      await ensureNotificationsSchema(client);
       let result;
       
       if (markAllRead) {

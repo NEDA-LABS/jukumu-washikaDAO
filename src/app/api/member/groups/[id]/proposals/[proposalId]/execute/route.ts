@@ -63,10 +63,14 @@ export async function POST(
   try {
     await ensureNtzsSchema(client);
 
-    const membership = await getMembership(client, auth.userId, groupId);
-    if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    if (!LEADERSHIP_ROLES.has(membership.role)) {
-      return NextResponse.json({ error: 'Only leadership can execute proposals' }, { status: 403 });
+    // Platform admins can execute any group's approved proposal; otherwise the
+    // caller must be group leadership.
+    if (auth.role !== 'admin') {
+      const membership = await getMembership(client, auth.userId, groupId);
+      if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (!LEADERSHIP_ROLES.has(membership.role)) {
+        return NextResponse.json({ error: 'Only leadership can execute proposals' }, { status: 403 });
+      }
     }
 
     await client.query('BEGIN');
