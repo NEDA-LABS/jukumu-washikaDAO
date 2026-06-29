@@ -110,14 +110,15 @@ export async function POST(request: NextRequest) {
     await ensureNtzsSchema(client);
     const entities = await gatherEntities(client);
 
-    let onChainTotal = 0, corrected = 0, failed = 0;
+    let onChainTotal = 0, restored = 0, skippedHigherInDb = 0, failed = 0;
 
     for (const e of entities) {
       try {
         const onchain = await onChainBalance(e.ntzsUserId);
         const db = await dbBalance(client, e.ownerType, e.ownerId);
         onChainTotal += onchain;
-        if (onchain !== db) {
+        if (onchain > db) {
+          // Restore a missing/under-seeded balance up to the on-chain amount.
           await client.query(
             `INSERT INTO wallet_accounts (owner_type, owner_id, balance_tzs)
              VALUES ($1, $2, $3)
@@ -125,7 +126,11 @@ export async function POST(request: NextRequest) {
              DO UPDATE SET balance_tzs = EXCLUDED.balance_tzs, updated_at = NOW()`,
             [e.ownerType, e.ownerId, onchain]
           );
-          corrected++;
+          restored++;
+        } else if (onchain < db) {
+          // SAFETY: never reduce a DB balance from an on-chain read — it could
+          // be a transient/zero read, or a legitimate internal-transfer surplus.
+          skippedHigherInDb++;
         }
       } catch {
         failed++;
@@ -136,10 +141,11 @@ export async function POST(request: NextRequest) {
       success: true,
       mode: 'applied',
       entities: entities.length,
-      corrected,
+      restored,
+      skippedHigherInDb,
       failed,
       onChainTotalTzs: onChainTotal,
-      note: 'DB balances set to on-chain values. Refresh the app.',
+      note: 'Restored under-seeded balances up to on-chain values (never reduced any balance). Refresh the app.',
     });
   } catch (error) {
     console.error('Treasury resync (apply) error:', error);
