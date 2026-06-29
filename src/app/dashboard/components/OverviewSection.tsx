@@ -22,13 +22,51 @@ function fmtTzs(n: number) {
 export default function OverviewSection({ adminStats, recentActivities }: { adminStats: any; recentActivities: any[] }) {
   const [walletTotals, setWalletTotals] = useState<WalletTotals | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [reconcile, setReconcile] = useState<any>(null);
+  const [reconcileLoading, setReconcileLoading] = useState(true);
+  const [sweeping, setSweeping] = useState(false);
+  const [sweepMsg, setSweepMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
+  const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setWalletTotals(d); })
       .finally(() => setWalletLoading(false));
-  }, []);
+  };
+
+  const loadReconcile = () => {
+    setReconcileLoading(true);
+    fetch('/api/admin/treasury/reconcile')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setReconcile(d); })
+      .finally(() => setReconcileLoading(false));
+  };
+
+  useEffect(() => { loadWalletTotals(); loadReconcile(); }, []);
+
+  const handleSweep = async () => {
+    if (!window.confirm('Hamisha fedha zote za pochi za zamani kwenda Hazina Kuu? Hii inawezesha kutoa pesa (withdrawals).')) return;
+    setSweeping(true);
+    setSweepMsg(null);
+    try {
+      const r = await fetch('/api/admin/treasury/sweep', { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setSweepMsg({
+          type: 'success',
+          text: `Imekamilika: pochi ${d.swept} zimehamishwa (TSH ${Number(d.totalReceivedTzs || 0).toLocaleString()} kwa hazina kuu)${d.failed ? `, ${d.failed} zimeshindwa` : ''}.`,
+        });
+        loadReconcile();
+        loadWalletTotals();
+      } else {
+        setSweepMsg({ type: 'error', text: d?.error || d?.details || 'Imeshindikana kuhamisha fedha' });
+      }
+    } catch {
+      setSweepMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setSweeping(false);
+    }
+  };
 
   const stats = [
     { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
@@ -87,6 +125,56 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Master treasury — reconcile readout + on-chain sweep */}
+      <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="text-sm font-semibold text-foreground">Hazina Kuu (Master Treasury)</h3>
+          {reconcile && (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(reconcile.driftTzs ?? 0) < 0 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-600'}`}>
+              {(reconcile.driftTzs ?? 0) < 0 ? 'Inahitaji kufadhiliwa' : 'Imefadhiliwa'}
+            </span>
+          )}
+        </div>
+        {reconcileLoading ? (
+          <p className="text-xs text-muted-foreground">Inapakia…</p>
+        ) : reconcile ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-[10px] text-muted-foreground">Salio la mnyororo (on-chain)</p>
+                <p className="text-base font-bold text-foreground">{fmtTzs(reconcile.masterOnChainTzs ?? 0)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">Madeni (salio za watumiaji)</p>
+                <p className="text-base font-bold text-foreground">{fmtTzs(reconcile.ledgerLiabilitiesTzs ?? 0)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">Tofauti</p>
+                <p className={`text-base font-bold ${(reconcile.driftTzs ?? 0) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmtTzs(reconcile.driftTzs ?? 0)}</p>
+              </div>
+            </div>
+            {(reconcile.driftTzs ?? 0) < 0 && (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Hazina kuu ina pungufu — fedha bado ziko kwenye pochi za zamani. Bonyeza kuzihamisha ili kutoa pesa (withdrawals) kufanye kazi.
+              </p>
+            )}
+            {sweepMsg && (
+              <p className={`text-xs ${sweepMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{sweepMsg.text}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleSweep}
+              disabled={sweeping}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+            >
+              {sweeping ? 'Inahamisha…' : 'Hamisha fedha kwa Hazina Kuu'}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Imeshindwa kupakia taarifa za hazina.</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
