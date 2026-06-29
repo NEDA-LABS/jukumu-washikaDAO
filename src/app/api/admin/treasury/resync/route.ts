@@ -6,24 +6,23 @@ import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { ntzs } from '@/lib/ntzs';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 /**
  * Treasury resync / repair (admin only).
  *
- *   GET  → dry run: for every entity with an on-chain wallet, report on-chain
- *          balance vs DB ledger balance, and list the mismatches. Changes nothing.
- *   POST → apply: set each entity's DB balance to its on-chain balance.
+ *   GET  → dry run: report on-chain balance vs DB ledger balance per entity,
+ *          list mismatches. Changes nothing.
+ *   POST → restore: set a DB balance to its on-chain value only when on-chain is
+ *          HIGHER (never reduces a balance). Repairs under-seeded accounts.
  *
- * This restores any balances the one-time import missed (e.g. an nTZS read that
- * errored, or a preview DB that was never seeded). The on-chain wallets are the
- * source of truth at migration time, before funds are swept into the master
- * wallet — so DB = on-chain is the correct reconciliation here.
- *
- * NOTE: POST force-overwrites DB balances with on-chain values, so run it during
- * migration/repair, before real internal-transfer activity has diverged the
- * ledger from the chain.
+ * On-chain reads run in parallel batches so this finishes within the function
+ * timeout even for hundreds of entities. The on-chain wallets are the source of
+ * truth at migration time (funds not yet swept), so no funds are at risk.
  */
 type Entity = { ownerType: 'member' | 'group' | 'investor'; ownerId: number; ntzsUserId: string };
+
+const BATCH = 20;
 
 async function gatherEntities(client: PoolClient): Promise<Entity[]> {
   const out: Entity[] = [];
@@ -38,17 +37,28 @@ async function gatherEntities(client: PoolClient): Promise<Entity[]> {
   return out;
 }
 
+async function onChainBalance(ntzsUserId: string): Promise<number> {
+  const u = await ntzs.users.getBalance(ntzsUserId);
+  return Math.round(Number(u.balanceTzs ?? 0));
+}
+
+/** Fetch on-chain balances in parallel batches; aligned with `entities`, null = read failed. */
+async function fetchOnChain(entities: Entity[]): Promise<(number | null)[]> {
+  const balances: (number | null)[] = new Array(entities.length).fill(null);
+  for (let i = 0; i < entities.length; i += BATCH) {
+    const slice = entities.slice(i, i + BATCH);
+    const res = await Promise.all(slice.map(e => onChainBalance(e.ntzsUserId).then(v => v).catch(() => null)));
+    for (let j = 0; j < slice.length; j++) balances[i + j] = res[j];
+  }
+  return balances;
+}
+
 async function dbBalance(client: PoolClient, ownerType: string, ownerId: number): Promise<number> {
   const r = await client.query(
     `SELECT balance_tzs FROM wallet_accounts WHERE owner_type = $1 AND owner_id = $2 LIMIT 1`,
     [ownerType, ownerId]
   );
   return r.rows[0] ? Number((r.rows[0] as { balance_tzs: string }).balance_tzs) : 0;
-}
-
-async function onChainBalance(ntzsUserId: string): Promise<number> {
-  const u = await ntzs.users.getBalance(ntzsUserId);
-  return Math.round(Number(u.balanceTzs ?? 0));
 }
 
 export async function GET(request: NextRequest) {
@@ -60,37 +70,34 @@ export async function GET(request: NextRequest) {
   try {
     await ensureNtzsSchema(client);
     const entities = await gatherEntities(client);
+    const balances = await fetchOnChain(entities);
 
     let onChainTotal = 0, dbTotal = 0, failed = 0;
     const mismatches: Record<string, unknown>[] = [];
 
-    for (const e of entities) {
-      try {
-        const onchain = await onChainBalance(e.ntzsUserId);
-        const db = await dbBalance(client, e.ownerType, e.ownerId);
-        onChainTotal += onchain;
-        dbTotal += db;
-        if (onchain !== db) {
-          if (mismatches.length < 100) {
-            mismatches.push({ ownerType: e.ownerType, ownerId: e.ownerId, onChainTzs: onchain, dbTzs: db, diffTzs: onchain - db });
-          }
-        }
-      } catch {
-        failed++;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      const onchain = balances[i];
+      if (onchain === null) { failed++; continue; }
+      const db = await dbBalance(client, e.ownerType, e.ownerId);
+      onChainTotal += onchain;
+      dbTotal += db;
+      if (onchain !== db && mismatches.length < 100) {
+        mismatches.push({ ownerType: e.ownerType, ownerId: e.ownerId, onChainTzs: onchain, dbTzs: db, diffTzs: onchain - db });
       }
     }
 
     return NextResponse.json({
       success: true,
       mode: 'dry-run',
-      entities: entities.length,
+      entitiesWithWallet: entities.length,
       onChainTotalTzs: onChainTotal,
       dbTotalTzs: dbTotal,
-      mismatchCount: mismatches.length,
       missingInDbTzs: onChainTotal - dbTotal,
+      mismatchCount: mismatches.length,
       failed,
       mismatches,
-      note: 'Nothing changed. POST to this endpoint to set DB balances = on-chain.',
+      note: 'Nothing changed. POST to restore under-seeded DB balances up to on-chain.',
     });
   } catch (error) {
     console.error('Treasury resync (dry-run) error:', error);
@@ -109,43 +116,39 @@ export async function POST(request: NextRequest) {
   try {
     await ensureNtzsSchema(client);
     const entities = await gatherEntities(client);
+    const balances = await fetchOnChain(entities);
 
     let onChainTotal = 0, restored = 0, skippedHigherInDb = 0, failed = 0;
 
-    for (const e of entities) {
-      try {
-        const onchain = await onChainBalance(e.ntzsUserId);
-        const db = await dbBalance(client, e.ownerType, e.ownerId);
-        onChainTotal += onchain;
-        if (onchain > db) {
-          // Restore a missing/under-seeded balance up to the on-chain amount.
-          await client.query(
-            `INSERT INTO wallet_accounts (owner_type, owner_id, balance_tzs)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (owner_type, owner_id)
-             DO UPDATE SET balance_tzs = EXCLUDED.balance_tzs, updated_at = NOW()`,
-            [e.ownerType, e.ownerId, onchain]
-          );
-          restored++;
-        } else if (onchain < db) {
-          // SAFETY: never reduce a DB balance from an on-chain read — it could
-          // be a transient/zero read, or a legitimate internal-transfer surplus.
-          skippedHigherInDb++;
-        }
-      } catch {
-        failed++;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      const onchain = balances[i];
+      if (onchain === null) { failed++; continue; }
+      onChainTotal += onchain;
+      const db = await dbBalance(client, e.ownerType, e.ownerId);
+      if (onchain > db) {
+        await client.query(
+          `INSERT INTO wallet_accounts (owner_type, owner_id, balance_tzs)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (owner_type, owner_id)
+           DO UPDATE SET balance_tzs = EXCLUDED.balance_tzs, updated_at = NOW()`,
+          [e.ownerType, e.ownerId, onchain]
+        );
+        restored++;
+      } else if (onchain < db) {
+        skippedHigherInDb++; // SAFETY: never reduce a balance from an on-chain read
       }
     }
 
     return NextResponse.json({
       success: true,
       mode: 'applied',
-      entities: entities.length,
+      entitiesWithWallet: entities.length,
       restored,
       skippedHigherInDb,
       failed,
       onChainTotalTzs: onChainTotal,
-      note: 'Restored under-seeded balances up to on-chain values (never reduced any balance). Refresh the app.',
+      note: 'Restored under-seeded balances up to on-chain values (never reduced any). Refresh the app.',
     });
   } catch (error) {
     console.error('Treasury resync (apply) error:', error);
