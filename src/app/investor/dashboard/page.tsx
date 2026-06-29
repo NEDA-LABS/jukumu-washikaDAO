@@ -994,13 +994,6 @@ export default function InvestorDashboard() {
                       </button>
                     </div>
 
-                    {wallet.walletAddress && (
-                      <p className="text-xs font-mono mb-5" style={{ color: 'rgba(232,213,176,0.4)' }}>
-                        {wallet.walletAddress.slice(0, 6)}...{wallet.walletAddress.slice(-4)}
-                        <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(11,61,46,0.6)', color: '#4ADE80' }}>Base Network</span>
-                      </p>
-                    )}
-
                     <div className="flex gap-3">
                       <button
                         onClick={() => { setWalletModal('deposit'); setWalletMsg(null); }}

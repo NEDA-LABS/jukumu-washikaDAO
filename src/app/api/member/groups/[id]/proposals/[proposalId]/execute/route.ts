@@ -70,6 +70,32 @@ export async function POST(
   try {
     await ensureNtzsSchema(client);
 
+    // Repair divergent payment_status CHECK constraints before the money txn.
+    // Older databases (migration 002 / setup-treasury) created this column with
+    // CHECK (... IN ('pending','approved','executed','rejected')), which rejects
+    // the 'completed' status written below. Drop every payment_status CHECK and
+    // re-add one allowing the union of legacy + current values (legacy values
+    // kept so the re-add can't fail on pre-existing rows). Runs in autocommit,
+    // ahead of BEGIN, so the DDL commits independently of the disbursement.
+    await client.query(`
+      DO $$
+      DECLARE c_name TEXT;
+      BEGIN
+        FOR c_name IN
+          SELECT conname FROM pg_constraint
+          WHERE conrelid = 'group_proposals'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) ILIKE '%payment_status%'
+        LOOP
+          EXECUTE 'ALTER TABLE group_proposals DROP CONSTRAINT ' || quote_ident(c_name);
+        END LOOP;
+        ALTER TABLE group_proposals ADD CONSTRAINT group_proposals_payment_status_check
+          CHECK (payment_status IS NULL OR payment_status IN
+            ('pending','processing','completed','failed','approved','executed','rejected'));
+      EXCEPTION WHEN others THEN NULL;
+      END $$;
+    `);
+
     // Platform admins can execute any group's approved proposal; otherwise the
     // caller must be group leadership.
     if (auth.role !== 'admin') {

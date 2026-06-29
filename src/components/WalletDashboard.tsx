@@ -88,7 +88,6 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
 export default function WalletDashboard({ userId, username }: WalletDashboardProps) {
   const [balance, setBalance] = useState<number>(0);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [provisioned, setProvisioned] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -106,7 +105,6 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       const res = await fetch(`/api/wallet/balance?userId=${userId}`);
       const data = await res.json();
       setBalance(data.balanceTzs || 0);
-      setWalletAddress(data.walletAddress);
       setProvisioned(data.provisioned ?? false);
     } catch {
       console.error('Failed to fetch balance');
@@ -193,7 +191,6 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       });
       const data = await res.json();
       if (res.ok) {
-        setWalletAddress(data.walletAddress);
         setProvisioned(true);
         setFeedback({ type: 'success', message: data.message || 'Wallet imetengenezwa!' });
       } else {
@@ -341,11 +338,6 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
             {username && (
               <p className="text-sm text-emerald-400 mt-2 font-medium">
                 @{username}
-              </p>
-            )}
-            {walletAddress && (
-              <p className="text-xs text-muted-foreground mt-1 font-mono">
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </p>
             )}
           </div>

@@ -117,7 +117,11 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
         await reloadProposals(selectedGroup.id);
         fetchGroupWallet(selectedGroup.id);
       } else {
-        showToast(d?.error || d?.details || 'Imeshindikana kutekeleza malipo', 'error');
+        // Surface the real cause: append `details` when it adds info beyond `error`.
+        const msg = d?.error
+          ? (d?.details && d.details !== d.error ? `${d.error} — ${d.details}` : d.error)
+          : (d?.details || 'Imeshindikana kutekeleza malipo');
+        showToast(msg, 'error');
       }
     } catch {
       showToast('Hitilafu ya mtandao', 'error');
@@ -445,12 +449,6 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                             <p className="text-[10px] text-muted-foreground mt-1">Imesasishwa sasa hivi · Base (nTZS)</p>
                           </>
                         )}
-                      </div>
-
-                      {/* Wallet address */}
-                      <div className="rounded-xl bg-foreground/[0.03] border border-border p-3">
-                        <p className="text-[10px] text-muted-foreground mb-1">Anwani ya Pochi</p>
-                        <p className="text-[10px] font-mono text-foreground/50 break-all">{groupWallet.address || '—'}</p>
                       </div>
                     </div>
                   )}
