@@ -297,6 +297,7 @@ interface SettlementRow extends JournalOwnerRow {
   posted: boolean;
   amount_tzs: number;
   net_tzs: number | null;
+  fee_tzs: number | null;
 }
 
 /**
@@ -316,7 +317,7 @@ export async function settleExternalTransaction(
 ): Promise<{ applied: boolean; type?: string }> {
   await ensureNtzsSchema(client);
   const res = await client.query(
-    `SELECT id, type, status, posted, amount_tzs, net_tzs,
+    `SELECT id, type, status, posted, amount_tzs, net_tzs, fee_tzs,
             from_member_id, from_group_id, to_member_id, to_group_id, metadata
      FROM ntzs_transactions WHERE ntzs_id = $1 FOR UPDATE`,
     [ntzsId]
@@ -333,10 +334,11 @@ export async function settleExternalTransaction(
       applied = true;
     }
   } else if (row.type === 'withdrawal' && row.posted && finalStatus === 'failed') {
-    // The debit happened at creation; give it back.
+    // The debit (amount + fee) happened at creation; give all of it back — a
+    // failed withdrawal must not keep the fee.
     const owner = resolveOwnerFromRow(row, 'from');
     if (owner) {
-      await credit(client, owner, row.amount_tzs);
+      await credit(client, owner, row.amount_tzs + (row.fee_tzs ?? 0));
     }
   }
 
