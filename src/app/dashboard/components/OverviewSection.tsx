@@ -48,18 +48,35 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     if (!window.confirm('Hamisha fedha zote za pochi za zamani kwenda Hazina Kuu? Hii inawezesha kutoa pesa (withdrawals).')) return;
     setSweeping(true);
     setSweepMsg(null);
+    // The sweep runs in budgeted passes (so it can't time out); loop until done.
+    let totalSwept = 0, totalReceived = 0, lastFailed = 0;
     try {
-      const r = await fetch('/api/admin/treasury/sweep', { method: 'POST' });
-      const d = await r.json().catch(() => null);
-      if (r.ok && d?.success) {
-        setSweepMsg({
-          type: 'success',
-          text: `Imekamilika: pochi ${d.swept} zimehamishwa (TSH ${Number(d.totalReceivedTzs || 0).toLocaleString()} kwa hazina kuu)${d.failed ? `, ${d.failed} zimeshindwa` : ''}.`,
-        });
+      for (let pass = 0; pass < 15; pass++) {
+        const r = await fetch('/api/admin/treasury/sweep', { method: 'POST' });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d?.success) {
+          setSweepMsg({ type: 'error', text: d?.error || d?.details || 'Imeshindikana kuhamisha fedha' });
+          break;
+        }
+        totalSwept += Number(d.swept || 0);
+        totalReceived += Number(d.totalReceivedTzs || 0);
+        lastFailed = Number(d.failed || 0);
         loadReconcile();
         loadWalletTotals();
-      } else {
-        setSweepMsg({ type: 'error', text: d?.error || d?.details || 'Imeshindikana kuhamisha fedha' });
+        if (d.done) {
+          setSweepMsg({
+            type: lastFailed > 0 ? 'error' : 'success',
+            text: `Imekamilika: pochi ${totalSwept} zimehamishwa (TSH ${totalReceived.toLocaleString()} kwa hazina kuu)${lastFailed ? `, ${lastFailed} zimeshindwa` : ''}.`,
+          });
+          break;
+        }
+        // Budget hit mid-way — show progress and continue with the next pass.
+        setSweepMsg({ type: 'success', text: `Inahamisha… pochi ${totalSwept} (TSH ${totalReceived.toLocaleString()}), ${d.remaining} zinaendelea…` });
+        if (Number(d.swept || 0) === 0) {
+          // No progress this pass — stop rather than loop forever.
+          setSweepMsg({ type: 'error', text: `Imesimama baada ya pochi ${totalSwept}. ${d.remaining} hazijahamishwa — jaribu tena.` });
+          break;
+        }
       }
     } catch {
       setSweepMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
