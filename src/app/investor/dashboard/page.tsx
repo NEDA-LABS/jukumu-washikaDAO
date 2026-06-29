@@ -331,8 +331,7 @@ export default function InvestorDashboard() {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [provisioningWallet, setProvisioningWallet] = useState(false);
   const [walletModal, setWalletModal] = useState<'deposit' | 'withdraw' | null>(null);
-  const [depositMethod, setDepositMethod] = useState<'mobile' | 'crypto' | 'bank' | 'card'>('mobile');
-  const [copied, setCopied] = useState(false);
+  const [depositMethod, setDepositMethod] = useState<'mobile' | 'bank' | 'card'>('mobile');
   const [walletAmount, setWalletAmount] = useState('');
   const [walletPhone, setWalletPhone] = useState('');
   const [walletSubmitting, setWalletSubmitting] = useState(false);
@@ -1625,13 +1624,12 @@ export default function InvestorDashboard() {
 
             {/* Deposit method tabs — only shown for deposit */}
             {walletModal === 'deposit' && (
-              <div className="grid grid-cols-4 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: '#fff' }}>
+              <div className="grid grid-cols-3 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: '#fff' }}>
                 {([
                   { key: 'mobile', icon: '◌', label: 'M-Pesa', live: true },
-                  { key: 'crypto', icon: '◆', label: 'USDC/USDT', live: true },
                   { key: 'bank',   icon: '▦', label: 'Bank', live: false },
                   { key: 'card',   icon: '▭', label: 'Card', live: false },
-                ] as { key: 'mobile'|'crypto'|'bank'|'card'; icon: string; label: string; live: boolean }[]).map(m => (
+                ] as { key: 'mobile'|'bank'|'card'; icon: string; label: string; live: boolean }[]).map(m => (
                   <button
                     key={m.key}
                     type="button"
@@ -1664,63 +1662,6 @@ export default function InvestorDashboard() {
                   TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
                 </span>
               </div>
-
-              {/* ── CRYPTO DEPOSIT ── */}
-              {walletModal === 'deposit' && depositMethod === 'crypto' && (
-                <div className="space-y-4">
-                  <div
-                    className="rounded-xl p-4 space-y-3"
-                    style={{ background: '#0E0B07', border: '1px solid #2A1F0A' }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#D4881E' }}>Base Network Address</p>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0B3D2E', color: '#4ADE80' }}>Base</span>
-                    </div>
-                    {wallet.walletAddress ? (
-                      <>
-                        <p
-                          className="text-xs font-mono break-all leading-relaxed"
-                          style={{ color: '#E8D5B0' }}
-                        >
-                          {wallet.walletAddress}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(wallet.walletAddress!);
-                            setCopied(true);
-                            setTimeout(() => setCopied(false), 2000);
-                          }}
-                          className="w-full py-2 rounded-lg text-xs font-semibold transition-all"
-                          style={{ background: copied ? '#0B3D2E' : 'rgba(212,136,30,0.15)', color: copied ? '#4ADE80' : '#D4881E' }}
-                        >
-                          {copied ? '✓ Copied!' : 'Copy Address'}
-                        </button>
-                      </>
-                    ) : (
-                      <p className="text-xs" style={{ color: '#6B5C3E' }}>Wallet not set up yet. Please create your wallet first.</p>
-                    )}
-                  </div>
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
-                    <p className="text-xs font-bold" style={{ color: '#92400E' }}>How to deposit USDC / USDT:</p>
-                    {[
-                      'Send USDC or USDT to the address above',
-                      'Use the Base network (Layer 2)',
-                      'nTZS will be credited directly to your wallet',
-                    ].map((s, i) => (
-                      <p key={i} className="text-xs flex gap-2" style={{ color: '#92400E' }}>
-                        <span className="font-bold shrink-0">{i + 1}.</span>{s}
-                      </p>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setWalletModal(null); setDepositMethod('mobile'); }}
-                    className="w-full py-2.5 rounded-xl text-sm"
-                    style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
-                  >Close</button>
-                </div>
-              )}
 
               {/* ── COMING SOON (bank / card) ── */}
               {walletModal === 'deposit' && (depositMethod === 'bank' || depositMethod === 'card') && (
