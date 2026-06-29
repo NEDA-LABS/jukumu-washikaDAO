@@ -27,7 +27,7 @@ async function _runEnsureNtzsSchema(client: PoolClient) {
       id SERIAL PRIMARY KEY,
       ntzs_id VARCHAR(100) NOT NULL,
       type VARCHAR(20) NOT NULL CHECK (type IN ('deposit', 'transfer', 'withdrawal')),
-      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'submitted', 'processing', 'completed', 'minted', 'failed')),
+      status VARCHAR(30) NOT NULL DEFAULT 'pending',
       from_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
       from_group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL,
       to_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
@@ -45,12 +45,14 @@ async function _runEnsureNtzsSchema(client: PoolClient) {
     )
   `);
 
-  // Fix status constraint to include 'submitted' (nTZS API uses this status)
+  // `status` mirrors an external nTZS API value we don't control. An over-strict
+  // CHECK has broken inserts as their status vocabulary/casing drifted (a
+  // withdrawal returned a status outside our known set), so drop it entirely and
+  // widen the column — status is informational and stored as returned. Idempotent.
   await client.query(`
     DO $$ BEGIN
       ALTER TABLE ntzs_transactions DROP CONSTRAINT IF EXISTS ntzs_transactions_status_check;
-      ALTER TABLE ntzs_transactions ADD CONSTRAINT ntzs_transactions_status_check
-        CHECK (status IN ('pending', 'submitted', 'processing', 'completed', 'minted', 'failed'));
+      ALTER TABLE ntzs_transactions ALTER COLUMN status TYPE VARCHAR(30);
     EXCEPTION WHEN undefined_table THEN NULL;
     END $$;
   `);
