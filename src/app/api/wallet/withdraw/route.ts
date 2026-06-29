@@ -2,17 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
-import { getMasterNtzsUserId, debit, LedgerError } from '@/lib/wallet/ledger';
+import { getMasterNtzsUserId, debit, credit, LedgerError } from '@/lib/wallet/ledger';
+import { withdrawalFeeTzs } from '@/lib/wallet/fees';
 
 /**
- * Off-ramp: member balance → mobile money. The member's database balance is
- * debited up front (reserved); the master wallet burns nTZS out to their phone.
- * Any failure before COMMIT rolls the debit back; an async failure is refunded
- * by the webhook.
+ * Off-ramp: member balance → mobile money.
+ *
+ * Fee model (on-top): the member is debited `amount + fee`; the recipient
+ * receives the full `amount`. The fee accrues as master-wallet surplus, so the
+ * reserve is never depleted by the payout. The rate is configurable (see
+ * src/lib/wallet/fees.ts) and defaults to 0.
+ *
+ * Ordering (so a payout can never be un-charged): the debit + a `pending` ledger
+ * row are committed BEFORE the nTZS call. If the call fails, we refund and mark
+ * it failed (nothing left). If it succeeds, we finalize the row with the nTZS
+ * id/status — and never roll the debit back, because the money has already left.
+ * Async status changes are handled by the webhook via settleExternalTransaction.
  */
 export async function POST(request: NextRequest) {
   const client = await pool.connect();
-  let inTx = false;
 
   try {
     const { userId, amountTzs, phone } = await request.json();
@@ -20,7 +28,8 @@ export async function POST(request: NextRequest) {
     if (!userId || !amountTzs || !phone) {
       return NextResponse.json({ error: 'userId, amountTzs, and phone are required' }, { status: 400 });
     }
-    if (amountTzs < 100) {
+    const amount = Math.round(Number(amountTzs));
+    if (!Number.isFinite(amount) || amount < 100) {
       return NextResponse.json({ error: 'Minimum withdrawal is 100 TZS' }, { status: 400 });
     }
     if (!process.env.NTZS_API_KEY) {
@@ -48,47 +57,80 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid phone number format. Use 07XX XXX XXX or 255 7XX XXX XXX' }, { status: 400 });
     }
 
+    const fee = withdrawalFeeTzs(amount);
+    const totalDebit = amount + fee;
+    const owner = { ownerType: 'member' as const, ownerId: member.id };
     const masterUserId = await getMasterNtzsUserId(client);
 
-    await client.query('BEGIN');
-    inTx = true;
+    // ── Phase 1: reserve funds + write a pending record (committed up front) ──
+    let intentId: number;
+    let newBalance: number;
+    try {
+      await client.query('BEGIN');
+      newBalance = await debit(client, owner, totalDebit); // throws insufficient_balance
+      intentId = await recordTransaction(client, {
+        ntzsId: null,
+        type: 'withdrawal',
+        status: 'pending',
+        fromMemberId: member.id,
+        amountTzs: amount,
+        feeTzs: fee,
+        netTzs: amount,
+        phone: normalizedPhone,
+        purpose: 'withdrawal',
+        note: `Mobile money withdrawal by ${member.full_name}`,
+        posted: true,
+        metadata: { feeTzs: fee, totalDebitTzs: totalDebit, channel: 'member' },
+      });
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    }
 
-    // Reserve funds first — throws insufficient_balance if the member can't cover it.
-    const newBalance = await debit(client, { ownerType: 'member', ownerId: member.id }, amountTzs);
+    // ── Phase 2: the actual payout (money leaves the master) ──
+    let withdrawal;
+    try {
+      withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: normalizedPhone });
+    } catch (err) {
+      // The send failed → nothing left; refund the full debit and mark failed.
+      try {
+        await client.query('BEGIN');
+        await credit(client, owner, totalDebit);
+        await client.query(
+          `UPDATE ntzs_transactions SET status = 'failed', posted = false, updated_at = NOW() WHERE id = $1`,
+          [intentId]
+        );
+        await client.query('COMMIT');
+      } catch (refundErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('Withdrawal refund failed; reconcile intent', intentId, refundErr);
+      }
+      throw err;
+    }
 
-    // Burn from the master wallet out to mobile money. If this throws, the
-    // ROLLBACK below undoes the debit.
-    const withdrawal = await ntzs.withdrawals.create({
-      userId: masterUserId,
-      amountTzs,
-      phoneNumber: normalizedPhone,
-    });
-
-    await recordTransaction(client, {
-      ntzsId: withdrawal.id,
-      type: 'withdrawal',
-      status: withdrawal.status,
-      fromMemberId: member.id,
-      amountTzs,
-      netTzs: amountTzs,
-      phone: normalizedPhone,
-      purpose: 'withdrawal',
-      note: `Mobile money withdrawal by ${member.full_name}`,
-      posted: true,
-    });
-
-    await client.query('COMMIT');
-    inTx = false;
+    // ── Phase 3: finalize (money already gone — never roll the debit back) ──
+    try {
+      await client.query(
+        `UPDATE ntzs_transactions SET ntzs_id = $1, status = $2, updated_at = NOW() WHERE id = $3`,
+        [withdrawal.id, withdrawal.status, intentId]
+      );
+    } catch (finErr) {
+      console.error('Withdrawal sent but finalize failed; reconcile intent', intentId, withdrawal.id, finErr);
+    }
 
     return NextResponse.json({
       withdrawalId: withdrawal.id,
       status: withdrawal.status,
-      amountTzs,
+      amountTzs: amount,
+      feeTzs: fee,
+      totalDebitedTzs: totalDebit,
       balanceTzs: newBalance,
-      message: 'Withdrawal initiated. TZS will be sent to your mobile money.',
+      message: fee > 0
+        ? `Withdrawal initiated. TSh ${amount.toLocaleString()} to your mobile money (fee TSh ${fee.toLocaleString()}).`
+        : 'Withdrawal initiated. TZS will be sent to your mobile money.',
     });
   } catch (error) {
-    if (inTx) await client.query('ROLLBACK').catch(() => {});
     if (error instanceof LedgerError) {
       const msg = error.code === 'insufficient_balance'
         ? 'Salio haitoshi (Insufficient balance)'
