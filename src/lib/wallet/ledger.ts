@@ -301,6 +301,24 @@ interface SettlementRow extends JournalOwnerRow {
 }
 
 /**
+ * Whether a deposit's provider status means the funds actually landed (so we can
+ * credit the recipient). The nTZS API's success vocabulary has drifted before
+ * (a deposit that minted came back as something other than 'minted'), leaving
+ * money in the master wallet uncredited. Accept the known success terminals and
+ * exclude anything in-flight or failed, so we never credit a deposit that didn't
+ * settle.
+ */
+const DEPOSIT_SUCCESS = new Set(['minted', 'completed', 'success', 'successful', 'settled', 'confirmed', 'paid']);
+const DEPOSIT_NOT_SUCCESS = new Set(['pending', 'submitted', 'processing', 'failed', 'cancelled', 'canceled', 'expired', 'reversed', 'refunded', 'rejected']);
+
+export function isDepositSuccessStatus(status: string | null | undefined): boolean {
+  if (!status) return false;
+  const s = status.toLowerCase().trim();
+  if (DEPOSIT_NOT_SUCCESS.has(s)) return false;
+  return DEPOSIT_SUCCESS.has(s);
+}
+
+/**
  * Apply the balance effect of a settled external transaction, exactly once.
  *
  * - deposit success → credit the destination by the net amount
@@ -327,7 +345,7 @@ export async function settleExternalTransaction(
 
   let applied = false;
 
-  if (row.type === 'deposit' && !row.posted && (finalStatus === 'minted' || finalStatus === 'completed')) {
+  if (row.type === 'deposit' && !row.posted && isDepositSuccessStatus(finalStatus)) {
     const owner = resolveOwnerFromRow(row, 'to');
     if (owner) {
       await credit(client, owner, row.net_tzs ?? row.amount_tzs);
