@@ -1,4 +1,6 @@
 import type { PoolClient } from 'pg';
+import { credit } from '@/lib/wallet/ledger';
+import { recordTransaction } from '@/lib/ntzs-db';
 
 export async function ensureSnippeSchema(client: PoolClient) {
   await client.query(`
@@ -28,9 +30,66 @@ export async function ensureSnippeSchema(client: PoolClient) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  // Tracks whether a completed payment has been credited to the custodial
+  // ledger (wallet_accounts). Guards exactly-once crediting across webhook
+  // re-delivery, polling, and backfill.
+  await client.query(`ALTER TABLE snippe_payments ADD COLUMN IF NOT EXISTS ledger_posted BOOLEAN NOT NULL DEFAULT false`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_snippe_payments_reference ON snippe_payments(reference);`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_snippe_payments_member_id ON snippe_payments(member_id);`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_snippe_payments_group_id ON snippe_payments(group_id);`);
+}
+
+/**
+ * Credit a completed Snippe payment to the custodial ledger, exactly once.
+ * Contributions and group top-ups fund the GROUP treasury; a member-only
+ * payment (no group) funds the member. Idempotent via the `ledger_posted`
+ * flag + a row lock, so webhook re-delivery / polling / backfill can't
+ * double-credit. Caller must hold an open transaction.
+ *
+ * Returns the amount credited (0 if nothing was done).
+ */
+export async function creditSnippePaymentToLedger(
+  client: PoolClient,
+  reference: string
+): Promise<number> {
+  const r = await client.query(
+    `SELECT id, event_type, status, amount_tzs, member_id, group_id, payment_type, ledger_posted
+     FROM snippe_payments WHERE reference = $1 FOR UPDATE`,
+    [reference]
+  );
+  if (r.rows.length === 0) return 0;
+  const p = r.rows[0] as {
+    id: number; event_type: string; status: string; amount_tzs: number;
+    member_id: number | null; group_id: number | null; payment_type: string; ledger_posted: boolean;
+  };
+
+  if (p.ledger_posted) return 0;                       // already credited
+  if (p.event_type !== 'payment.completed') return 0;  // only settle successes
+  const amount = Math.round(Number(p.amount_tzs));
+  if (!(amount > 0)) return 0;
+
+  const owner: { ownerType: 'member' | 'group'; ownerId: number } | null =
+    p.group_id ? { ownerType: 'group', ownerId: p.group_id }
+    : p.member_id ? { ownerType: 'member', ownerId: p.member_id }
+    : null;
+  if (!owner) return 0;
+
+  await credit(client, owner, amount);
+  await recordTransaction(client, {
+    ntzsId: reference,
+    type: 'deposit',
+    status: 'completed',
+    toMemberId: owner.ownerType === 'member' ? owner.ownerId : null,
+    toGroupId: owner.ownerType === 'group' ? owner.ownerId : null,
+    amountTzs: amount,
+    netTzs: amount,
+    purpose: p.payment_type === 'contribution' ? 'contribution' : 'topup',
+    note: `Snippe ${p.payment_type} (${reference})`,
+    posted: true,
+    metadata: { snippeReference: reference, memberId: p.member_id, paymentType: p.payment_type },
+  });
+  await client.query(`UPDATE snippe_payments SET ledger_posted = true WHERE id = $1`, [p.id]);
+  return amount;
 }
 
 /**

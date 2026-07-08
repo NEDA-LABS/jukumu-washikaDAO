@@ -31,6 +31,8 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [recRef, setRecRef] = useState('');
   const [reconciling, setReconciling] = useState(false);
   const [recMsg, setRecMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -118,6 +120,44 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       setRecMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
     } finally {
       setReconciling(false);
+    }
+  };
+
+  const handleBackfill = async () => {
+    setBackfilling(true);
+    setBackfillMsg(null);
+    try {
+      // Preview first so the admin sees the total before crediting.
+      const pre = await fetch('/api/admin/treasury/backfill-deposits');
+      const pd = await pre.json().catch(() => null);
+      if (!pre.ok || !pd?.success) {
+        setBackfillMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
+        return;
+      }
+      if (!pd.uncreditedPayments) {
+        setBackfillMsg({ type: 'success', text: 'Hakuna malipo yaliyobaki — yote yameonekana kwenye salio.' });
+        loadReconcile();
+        return;
+      }
+      if (!window.confirm(`Weka malipo ${pd.uncreditedPayments} ya Snippe (jumla TSH ${Number(pd.totalTzs || 0).toLocaleString()}) kwenye salio la vikundi/wanachama?`)) {
+        return;
+      }
+      const r = await fetch('/api/admin/treasury/backfill-deposits', { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setBackfillMsg({
+          type: 'success',
+          text: `Imekamilika: malipo ${d.credited} yamewekwa kwenye salio (TSH ${Number(d.totalTzs || 0).toLocaleString()})${d.failed ? `, ${d.failed} yameshindwa` : ''}.`,
+        });
+        loadReconcile();
+        loadWalletTotals();
+      } else {
+        setBackfillMsg({ type: 'error', text: d?.error || 'Imeshindikana kurejesha malipo' });
+      }
+    } catch {
+      setBackfillMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -224,6 +264,24 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
             >
               {sweeping ? 'Inahamisha…' : 'Hamisha fedha kwa Hazina Kuu'}
             </button>
+
+            {/* Backfill Snippe deposits that completed before the webhook credited the ledger */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Malipo ya Snippe (michango / topup) yaliyokamilika bila kuonekana kwenye salio la kikundi — bonyeza kurejesha.
+              </p>
+              {backfillMsg && (
+                <p className={`text-xs ${backfillMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{backfillMsg.text}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleBackfill}
+                disabled={backfilling}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-orange-500/40 text-orange-600 hover:bg-orange-500/10 disabled:opacity-50"
+              >
+                {backfilling ? 'Inarejesha…' : 'Rejesha malipo ya Snippe kwenye salio'}
+              </button>
+            </div>
 
             {/* Reconcile a withdrawal that left on nTZS but didn't debit the member */}
             <div className="mt-2 pt-3 border-t border-border space-y-2">

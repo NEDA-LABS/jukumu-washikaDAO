@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import crypto from 'crypto';
-import { ensureSnippeSchema } from '@/lib/snippe-db';
+import { ensureSnippeSchema, creditSnippePaymentToLedger } from '@/lib/snippe-db';
+import { ensureNtzsSchema } from '@/lib/ntzs-db';
 
 function verifySignature(rawBody: string, signature: string, secret: string): boolean {
   try {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
   const client = await pool.connect();
   try {
     await ensureSnippeSchema(client);
+    await ensureNtzsSchema(client);
 
     await client.query(
       `
@@ -106,6 +108,20 @@ export async function POST(request: NextRequest) {
         `,
         [memberId, groupId, amount, monthDate, reference]
       );
+    }
+
+    // Credit the custodial ledger (group/member balance) so the deposit
+    // reflects on the wallet — exactly once, guarded by ledger_posted.
+    if (eventType === 'payment.completed') {
+      await client.query('BEGIN');
+      try {
+        const credited = await creditSnippePaymentToLedger(client, reference);
+        await client.query('COMMIT');
+        if (credited > 0) console.log(`Snippe ${reference}: credited ${credited} TZS to ledger`);
+      } catch (creditErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('Snippe ledger credit failed for', reference, creditErr);
+      }
     }
 
     return NextResponse.json({ received: true });
