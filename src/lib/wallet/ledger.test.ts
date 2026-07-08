@@ -5,10 +5,30 @@ import {
   ownerToJournalColumns,
   resolveOwnerFromRow,
   internalTransfer,
+  isDepositSuccessStatus,
   LedgerError,
 } from './ledger';
 
 // ── Pure helpers ──
+
+describe('isDepositSuccessStatus', () => {
+  it('accepts known success terminals (any casing)', () => {
+    for (const s of ['minted', 'completed', 'success', 'Successful', 'SETTLED', 'confirmed', 'paid']) {
+      expect(isDepositSuccessStatus(s)).toBe(true);
+    }
+  });
+  it('rejects in-flight and failure statuses', () => {
+    for (const s of ['pending', 'submitted', 'processing', 'failed', 'cancelled', 'expired', 'reversed', 'rejected']) {
+      expect(isDepositSuccessStatus(s)).toBe(false);
+    }
+  });
+  it('rejects empty / unknown', () => {
+    expect(isDepositSuccessStatus(null)).toBe(false);
+    expect(isDepositSuccessStatus(undefined)).toBe(false);
+    expect(isDepositSuccessStatus('')).toBe(false);
+    expect(isDepositSuccessStatus('weird_status')).toBe(false);
+  });
+});
 
 describe('normalizeAmountTzs', () => {
   it('rounds to whole TZS', () => {

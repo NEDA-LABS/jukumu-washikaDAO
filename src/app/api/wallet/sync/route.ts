@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
        FROM ntzs_transactions
        WHERE (from_member_id = $1 OR to_member_id = $1)
          AND ntzs_id IS NOT NULL
-         AND status IN ('pending', 'submitted', 'processing')
+         AND (status IN ('pending', 'submitted', 'processing')
+              OR (type = 'deposit' AND posted = false))
        ORDER BY created_at DESC
        LIMIT 20`,
       [memberId]

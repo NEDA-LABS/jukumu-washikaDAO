@@ -33,6 +33,8 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [recMsg, setRecMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [settling, setSettling] = useState(false);
+  const [settleMsg, setSettleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -161,6 +163,48 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     }
   };
 
+  const handleSettleDeposits = async () => {
+    setSettling(true);
+    setSettleMsg(null);
+    try {
+      const pre = await fetch('/api/admin/treasury/settle-deposits');
+      const pd = await pre.json().catch(() => null);
+      if (!pre.ok || !pd?.success) {
+        setSettleMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
+        return;
+      }
+      if (!pd.unsettledDeposits) {
+        setSettleMsg({ type: 'success', text: 'Hakuna amana zilizokwama — zote zimewekwa kwenye salio.' });
+        loadReconcile();
+        return;
+      }
+      const breakdown = Object.entries(pd.liveStatusBreakdown || {})
+        .map(([k, v]) => `${k}: ${(v as { count: number }).count}${(v as { willCredit: boolean }).willCredit ? '✓' : '✗'}`)
+        .join(', ');
+      if (!pd.creditableCount) {
+        setSettleMsg({ type: 'error', text: `Amana ${pd.unsettledDeposits} zimekwama, hakuna inayoweza kuwekwa. Hali za nTZS: ${breakdown || '—'}. Tuma hizi hali kwa msanidi.` });
+        return;
+      }
+      if (!window.confirm(`Weka amana ${pd.creditableCount} (TSH ${Number(pd.creditableTzs || 0).toLocaleString()}) kwenye salio za wanachama? Hali za nTZS: ${breakdown}`)) return;
+      const r = await fetch('/api/admin/treasury/settle-deposits', { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setSettleMsg({
+          type: 'success',
+          text: `Imekamilika: amana ${d.credited} zimewekwa kwenye salio (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.skipped ? `, ${d.skipped} bado hazijakamilika` : ''}.`,
+        });
+        loadReconcile();
+        loadWalletTotals();
+      } else {
+        setSettleMsg({ type: 'error', text: d?.error || 'Imeshindikana kuweka amana' });
+      }
+    } catch {
+      setSettleMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setSettling(false);
+    }
+  };
+
   const stats = [
     { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
@@ -280,6 +324,24 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
                 className="px-4 py-2 rounded-lg text-sm font-semibold border border-orange-500/40 text-orange-600 hover:bg-orange-500/10 disabled:opacity-50"
               >
                 {backfilling ? 'Inarejesha…' : 'Rejesha malipo ya Snippe kwenye salio'}
+              </button>
+            </div>
+
+            {/* Settle nTZS deposits that minted into the master but never credited the member */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Amana (top-up) zilizoingia kwenye hazina kuu lakini hazikuonekana kwenye salio la mwanachama — bonyeza kuziweka.
+              </p>
+              {settleMsg && (
+                <p className={`text-xs ${settleMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{settleMsg.text}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleSettleDeposits}
+                disabled={settling}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
+              >
+                {settling ? 'Inaweka…' : 'Weka amana kwenye salio (deposits)'}
               </button>
             </div>
 
