@@ -178,20 +178,18 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         loadReconcile();
         return;
       }
-      const breakdown = Object.entries(pd.liveStatusBreakdown || {})
-        .map(([k, v]) => `${k}: ${(v as { count: number }).count}${(v as { willCredit: boolean }).willCredit ? '✓' : '✗'}`)
-        .join(', ');
-      if (!pd.creditableCount) {
-        setSettleMsg({ type: 'error', text: `Amana ${pd.unsettledDeposits} zimekwama, hakuna inayoweza kuwekwa. Hali za nTZS: ${breakdown || '—'}. Tuma hizi hali kwa msanidi.` });
+      const noOwnerNote = pd.landedNoOwner ? ` (${pd.landedNoOwner} zimefika lakini hazina mmiliki — TSH ${Number(pd.landedNoOwnerTzs || 0).toLocaleString()})` : '';
+      if (!pd.landedWithOwner) {
+        setSettleMsg({ type: 'error', text: `Amana ${pd.unsettledDeposits} zimekwama, hakuna yenye mmiliki wa kuweka${noOwnerNote}. Fungua /api/admin/treasury/settle-deposits kuona sababu.` });
         return;
       }
-      if (!window.confirm(`Weka amana ${pd.creditableCount} (TSH ${Number(pd.creditableTzs || 0).toLocaleString()}) kwenye salio za wanachama? Hali za nTZS: ${breakdown}`)) return;
+      if (!window.confirm(`Weka amana ${pd.landedWithOwner} (TSH ${Number(pd.landedWithOwnerTzs || 0).toLocaleString()}) kwenye salio?${noOwnerNote}`)) return;
       const r = await fetch('/api/admin/treasury/settle-deposits', { method: 'POST' });
       const d = await r.json().catch(() => null);
       if (r.ok && d?.success) {
         setSettleMsg({
           type: 'success',
-          text: `Imekamilika: amana ${d.credited} zimewekwa kwenye salio (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.skipped ? `, ${d.skipped} bado hazijakamilika` : ''}.`,
+          text: `Imekamilika: amana ${d.credited} zimewekwa (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.noOwner ? `, ${d.noOwner} bila mmiliki` : ''}${d.inFlight ? `, ${d.inFlight} bado hazijafika` : ''}.`,
         });
         loadReconcile();
         loadWalletTotals();

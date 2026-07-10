@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import type { PoolClient } from 'pg';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
-import { settleExternalTransaction, isDepositSuccessStatus } from '@/lib/wallet/ledger';
+import { settleExternalTransaction, isDepositSuccessStatus, resolveOwnerFromRow } from '@/lib/wallet/ledger';
 import { ntzs } from '@/lib/ntzs';
 
 export const runtime = 'nodejs';
@@ -11,27 +11,38 @@ export const maxDuration = 60;
 
 /**
  * Settle nTZS deposits that minted into the master wallet but never credited the
- * member (the webhook wasn't delivered / the sync didn't catch it). This is the
- * money-in side of the +drift: funds are in the master, not on anyone's balance.
+ * owner. This is the money-in side of the +drift: funds are in the master, not
+ * on anyone's balance.
  *
- *   GET  → diagnostic: every unsettled deposit's DB status vs its LIVE nTZS
- *          status, grouped, plus the total that would credit. Changes nothing.
- *   POST → settle: for each unsettled deposit whose live status means it landed,
- *          credit the recipient (idempotent via settleExternalTransaction).
+ *   GET  → diagnostic: dumps each unsettled deposit's owner columns / metadata /
+ *          note, the owner settlement WOULD resolve, and the live nTZS status.
+ *          Read-only — this is how we see why a deposit isn't crediting.
+ *   POST → settle: for each landed deposit, credit the resolved owner
+ *          (member / group / investor) via settleExternalTransaction (idempotent).
  */
-type Pending = { id: number; ntzsId: string; amountTzs: number; dbStatus: string };
+type Pending = {
+  id: number; ntzsId: string; amountTzs: number; dbStatus: string;
+  toMemberId: number | null; toGroupId: number | null; fromMemberId: number | null;
+  metadata: Record<string, unknown> | null; note: string | null;
+};
 
 const BATCH = 15;
 
 async function gatherPending(client: PoolClient): Promise<Pending[]> {
   const r = await client.query(
-    `SELECT id, ntzs_id, amount_tzs, status
+    `SELECT id, ntzs_id, amount_tzs, status, to_member_id, to_group_id, from_member_id, metadata, note
      FROM ntzs_transactions
      WHERE type = 'deposit' AND posted = false AND ntzs_id IS NOT NULL
      ORDER BY created_at ASC`
   );
-  return (r.rows as { id: number; ntzs_id: string; amount_tzs: string; status: string }[]).map((x) => ({
+  return (r.rows as {
+    id: number; ntzs_id: string; amount_tzs: string; status: string;
+    to_member_id: number | null; to_group_id: number | null; from_member_id: number | null;
+    metadata: Record<string, unknown> | null; note: string | null;
+  }[]).map((x) => ({
     id: x.id, ntzsId: x.ntzs_id, amountTzs: Math.round(Number(x.amount_tzs)), dbStatus: x.status,
+    toMemberId: x.to_member_id, toGroupId: x.to_group_id, fromMemberId: x.from_member_id,
+    metadata: x.metadata, note: x.note,
   }));
 }
 
@@ -49,6 +60,13 @@ async function fetchLive(list: Pending[]): Promise<(string | null)[]> {
   return out;
 }
 
+function resolvedOwnerOf(p: Pending) {
+  return resolveOwnerFromRow(
+    { to_member_id: p.toMemberId, to_group_id: p.toGroupId, from_member_id: p.fromMemberId, from_group_id: null, metadata: p.metadata },
+    'to'
+  );
+}
+
 export async function GET(request: NextRequest) {
   const auth = getAuthTokenPayload(request);
   if (!auth || auth.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -60,32 +78,32 @@ export async function GET(request: NextRequest) {
     const pending = await gatherPending(client);
     const live = await fetchLive(pending);
 
-    // Group by live status so we can SEE what a landed deposit actually reports.
-    const byStatus: Record<string, { count: number; totalTzs: number; willCredit: boolean }> = {};
-    let creditableCount = 0, creditableTzs = 0, readFailed = 0;
-    for (let i = 0; i < pending.length; i++) {
+    let landedWithOwner = 0, landedWithOwnerTzs = 0, landedNoOwner = 0, landedNoOwnerTzs = 0;
+    const deposits = pending.map((p, i) => {
       const s = live[i];
-      if (s === null) { readFailed++; continue; }
-      const key = s.toLowerCase();
-      const willCredit = isDepositSuccessStatus(s);
-      byStatus[key] ??= { count: 0, totalTzs: 0, willCredit };
-      byStatus[key].count++;
-      byStatus[key].totalTzs += pending[i].amountTzs;
-      if (willCredit) { creditableCount++; creditableTzs += pending[i].amountTzs; }
-    }
+      const owner = resolvedOwnerOf(p);
+      const landed = isDepositSuccessStatus(s);
+      if (landed && owner) { landedWithOwner++; landedWithOwnerTzs += p.amountTzs; }
+      if (landed && !owner) { landedNoOwner++; landedNoOwnerTzs += p.amountTzs; }
+      return {
+        amountTzs: p.amountTzs, dbStatus: p.dbStatus, liveStatus: s, note: p.note,
+        toMemberId: p.toMemberId, toGroupId: p.toGroupId, metadata: p.metadata,
+        resolvesTo: owner ? `${owner.ownerType}#${owner.ownerId}` : null,
+        wouldCredit: !!(landed && owner),
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      mode: 'dry-run',
+      mode: 'diagnostic',
       unsettledDeposits: pending.length,
-      readFailed,
-      creditableCount,
-      creditableTzs,
-      liveStatusBreakdown: byStatus,
-      note: 'These deposits minted but never credited. POST to credit the ones whose live nTZS status means they landed. If a landed status is missing from creditable, tell the developer the status name.',
+      landedWithOwner, landedWithOwnerTzs,
+      landedNoOwner, landedNoOwnerTzs,
+      deposits,
+      note: 'wouldCredit=true rows will land on POST. landedNoOwner rows minted but carry no owner (no to_member_id/to_group_id/metadata.investor_id) — those are the ones that need attribution.',
     });
   } catch (error) {
-    console.error('Settle deposits (dry-run) error:', error);
+    console.error('Settle deposits (diagnostic) error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   } finally {
     client.release();
@@ -103,15 +121,16 @@ export async function POST(request: NextRequest) {
     const pending = await gatherPending(client);
     const live = await fetchLive(pending);
 
-    let credited = 0, creditedTzs = 0, skipped = 0, failed = 0;
+    let credited = 0, creditedTzs = 0, noOwner = 0, inFlight = 0, failed = 0;
     for (let i = 0; i < pending.length; i++) {
       const s = live[i];
-      if (!isDepositSuccessStatus(s)) { skipped++; continue; }
+      if (!isDepositSuccessStatus(s)) { inFlight++; continue; }
+      if (!resolvedOwnerOf(pending[i])) { noOwner++; continue; }
       await client.query('BEGIN');
       try {
         const r = await settleExternalTransaction(client, pending[i].ntzsId, s as string);
         await client.query('COMMIT');
-        if (r.applied) { credited++; creditedTzs += pending[i].amountTzs; }
+        if (r.applied) { credited++; creditedTzs += pending[i].amountTzs; } else { noOwner++; }
       } catch (e) {
         await client.query('ROLLBACK').catch(() => {});
         failed++;
@@ -123,11 +142,8 @@ export async function POST(request: NextRequest) {
       success: true,
       mode: 'applied',
       unsettledDeposits: pending.length,
-      credited,
-      creditedTzs,
-      skipped,
-      failed,
-      note: 'Credited deposits that landed. Balances now reflect them; the drift should shrink by the credited total.',
+      credited, creditedTzs, noOwner, inFlight, failed,
+      note: 'Credited landed deposits that carry an owner. noOwner ones still need attribution.',
     });
   } catch (error) {
     console.error('Settle deposits (apply) error:', error);
