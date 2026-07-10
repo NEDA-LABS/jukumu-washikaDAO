@@ -142,16 +142,17 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
 
   useEffect(() => {
     const load = async () => {
-      const [, txs] = await Promise.all([fetchBalance(), fetchTransactions()]);
+      // Balance first — it self-syncs minted deposits — then read the (updated) list.
+      await fetchBalance();
+      await fetchTransactions();
       setLoading(false);
-      // Auto-sync if any pending transactions exist
-      const hasPending = txs.some((t: { status: string }) =>
-        ['pending', 'submitted', 'processing'].includes(t.status)
-      );
-      if (hasPending) syncTransactions();
     };
     load();
-  }, [fetchBalance, fetchTransactions, syncTransactions]);
+    // Keep the wallet live: re-checking the balance also settles any deposit that
+    // has minted since it was opened, so it lands without a manual refresh.
+    const iv = setInterval(() => { fetchBalance(); fetchTransactions(); }, 12000);
+    return () => clearInterval(iv);
+  }, [fetchBalance, fetchTransactions]);
 
   const fetchTransferOptions = async () => {
     setLoadingOptions(true);
