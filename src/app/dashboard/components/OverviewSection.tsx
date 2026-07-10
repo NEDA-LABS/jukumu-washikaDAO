@@ -178,18 +178,26 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         loadReconcile();
         return;
       }
-      const noOwnerNote = pd.landedNoOwner ? ` (${pd.landedNoOwner} zimefika lakini hazina mmiliki — TSH ${Number(pd.landedNoOwnerTzs || 0).toLocaleString()})` : '';
+      const inFlightNote = pd.inFlight ? ` ${pd.inFlight} bado hazijafika (submitted — zitawekwa zikikamilika/minted, TSH ${Number(pd.inFlightTzs || 0).toLocaleString()}).` : '';
+      const noOwnerNote = pd.landedNoOwner ? ` ${pd.landedNoOwner} zimefika lakini hazina mmiliki (TSH ${Number(pd.landedNoOwnerTzs || 0).toLocaleString()}).` : '';
       if (!pd.landedWithOwner) {
-        setSettleMsg({ type: 'error', text: `Amana ${pd.unsettledDeposits} zimekwama, hakuna yenye mmiliki wa kuweka${noOwnerNote}. Fungua /api/admin/treasury/settle-deposits kuona sababu.` });
+        // Nothing minted-with-owner to credit. If deposits are merely still
+        // submitted, that's expected — only minted deposits are confirmed money.
+        setSettleMsg({
+          type: pd.inFlight ? 'success' : 'error',
+          text: pd.inFlight
+            ? `Hakuna amana mpya iliyokamilika (minted) sasa hivi.${inFlightNote}${noOwnerNote}`
+            : `Amana ${pd.unsettledDeposits} zimekwama.${noOwnerNote} Fungua /api/admin/treasury/settle-deposits kuona sababu.`,
+        });
         return;
       }
-      if (!window.confirm(`Weka amana ${pd.landedWithOwner} (TSH ${Number(pd.landedWithOwnerTzs || 0).toLocaleString()}) kwenye salio?${noOwnerNote}`)) return;
+      if (!window.confirm(`Weka amana ${pd.landedWithOwner} zilizokamilika (minted, TSH ${Number(pd.landedWithOwnerTzs || 0).toLocaleString()}) kwenye salio?${inFlightNote}${noOwnerNote}`)) return;
       const r = await fetch('/api/admin/treasury/settle-deposits', { method: 'POST' });
       const d = await r.json().catch(() => null);
       if (r.ok && d?.success) {
         setSettleMsg({
           type: 'success',
-          text: `Imekamilika: amana ${d.credited} zimewekwa (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.noOwner ? `, ${d.noOwner} bila mmiliki` : ''}${d.inFlight ? `, ${d.inFlight} bado hazijafika` : ''}.`,
+          text: `Imekamilika: amana ${d.credited} zimewekwa (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.noOwner ? `, ${d.noOwner} bila mmiliki` : ''}${d.inFlight ? `, ${d.inFlight} bado hazijafika (submitted)` : ''}.`,
         });
         loadReconcile();
         loadWalletTotals();

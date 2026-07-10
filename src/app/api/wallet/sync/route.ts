@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const memberId = (memberRes.rows[0] as { id: number }).id;
 
     const pendingRes = await client.query(
-      `SELECT ntzs_id, type, status
+      `SELECT ntzs_id, type, status, posted
        FROM ntzs_transactions
        WHERE (from_member_id = $1 OR to_member_id = $1)
          AND ntzs_id IS NOT NULL
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     let synced = 0;
 
-    for (const row of pendingRes.rows as { ntzs_id: string; type: string; status: string }[]) {
+    for (const row of pendingRes.rows as { ntzs_id: string; type: string; status: string; posted: boolean }[]) {
       try {
         let newStatus: string | null = null;
         let txHash: string | undefined;
@@ -63,11 +63,16 @@ export async function POST(request: NextRequest) {
           txHash = t.txHash;
         }
 
-        if (newStatus && newStatus !== row.status) {
+        // Settle on any status change, AND always retry an unposted deposit even
+        // when its status is unchanged: a deposit whose status already reads
+        // 'minted' but was never credited (posted=false) would otherwise be
+        // skipped forever by a status-change-only guard, stranding the money.
+        const unpostedDeposit = row.type === 'deposit' && row.posted === false;
+        if (newStatus && (newStatus !== row.status || unpostedDeposit)) {
           await client.query('BEGIN');
-          await settleExternalTransaction(client, row.ntzs_id, newStatus, txHash);
+          const r = await settleExternalTransaction(client, row.ntzs_id, newStatus, txHash);
           await client.query('COMMIT');
-          synced++;
+          if (r.applied || newStatus !== row.status) synced++;
         }
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
