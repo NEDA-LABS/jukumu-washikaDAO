@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { getBalanceTzs } from '@/lib/wallet/ledger';
+import { syncMemberDeposits } from '@/lib/wallet/settlement';
 
 /**
  * Balance is read from the custodial ledger (wallet_accounts), not the nTZS
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
     );
     if (res.rows.length === 0) return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     const row = res.rows[0] as { id: number; ntzs_wallet_address: string | null; full_name: string };
+    // Self-sync against nTZS: credit any deposit that has minted since last read,
+    // so the balance always reflects landed money even if the webhook never fired.
+    await syncMemberDeposits(client, row.id);
     const balanceTzs = await getBalanceTzs(client, { ownerType: 'member', ownerId: row.id });
     return NextResponse.json({ balanceTzs, walletAddress: row.ntzs_wallet_address, name: row.full_name, provisioned: true });
   } catch (error) {
