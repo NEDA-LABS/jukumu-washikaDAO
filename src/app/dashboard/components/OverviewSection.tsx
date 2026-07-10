@@ -35,6 +35,8 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [backfillMsg, setBackfillMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [settling, setSettling] = useState(false);
   const [settleMsg, setSettleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [repairing, setRepairing] = useState(false);
+  const [repairMsg, setRepairMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -211,6 +213,52 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     }
   };
 
+  const handleRepairDeposits = async () => {
+    setRepairing(true);
+    setRepairMsg(null);
+    try {
+      // Dry-run first so the admin verifies the total (should match the drift).
+      const pre = await fetch('/api/admin/treasury/repair-deposits');
+      const pd = await pre.json().catch(() => null);
+      if (!pre.ok || !pd?.success) {
+        setRepairMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
+        return;
+      }
+      const inFlightNote = pd.inFlightTzs ? ` (${fmtTzs(pd.inFlightTzs)} bado hazijafika/submitted).` : '';
+      if (!pd.wouldCreditCount) {
+        setRepairMsg({
+          type: pd.inFlightTzs ? 'success' : 'success',
+          text: `Hakuna amana iliyokamilika (minted) inayohitaji kurekebishwa katika kipindi hiki.${inFlightNote}`,
+        });
+        return;
+      }
+      if (!window.confirm(
+        `Weka amana ${pd.wouldCreditCount} zilizokamilika (minted) za tarehe ${pd.window.from} hadi ${pd.window.to} kwenye salio za wanachama?\n\n` +
+        `Jumla: ${fmtTzs(pd.wouldCreditTzs)}\nZiada ya hazina (surplus): ${pd.treasurySurplusTzs != null ? fmtTzs(pd.treasurySurplusTzs) : 'haijulikani'}\n\n` +
+        `Inaweka tu zilizokamilika, haiwezi kuzidi ziada ya hazina, na haiwezi kuweka mara mbili.`
+      )) return;
+      const r = await fetch('/api/admin/treasury/repair-deposits', { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setRepairMsg({
+          type: 'success',
+          text: `Imekamilika: amana ${d.credited} zimewekwa kwenye salio (${fmtTzs(d.creditedTzs || 0)})`
+            + `${d.skippedInFlight ? `, ${d.skippedInFlight} bado hazijafika` : ''}`
+            + `${d.cappedOut ? `, ${d.cappedOut} zimezuiwa na kikomo cha hazina` : ''}`
+            + `${d.failed ? `, ${d.failed} zimeshindwa` : ''}.`,
+        });
+        loadReconcile();
+        loadWalletTotals();
+      } else {
+        setRepairMsg({ type: 'error', text: d?.error || 'Imeshindikana kurekebisha amana' });
+      }
+    } catch {
+      setRepairMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setRepairing(false);
+    }
+  };
+
   const stats = [
     { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
@@ -348,6 +396,25 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
                 className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
               >
                 {settling ? 'Inaweka…' : 'Weka amana kwenye salio (deposits)'}
+              </button>
+            </div>
+
+            {/* Repair deposits that minted into the master but were wrongly marked
+                settled without crediting the member (the money-in side of +drift) */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Rekebisha amana zilizoingia hazina kuu (8–10 Julai) lakini hazikuwekwa kwenye salio la mwanachama. Inaweka tu zilizokamilika (minted), haiwezi kuzidi ziada ya hazina, wala kuweka mara mbili.
+              </p>
+              {repairMsg && (
+                <p className={`text-xs ${repairMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{repairMsg.text}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleRepairDeposits}
+                disabled={repairing}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {repairing ? 'Inarekebisha…' : 'Rekebisha amana za 8–10 Julai kwenye salio'}
               </button>
             </div>
 
