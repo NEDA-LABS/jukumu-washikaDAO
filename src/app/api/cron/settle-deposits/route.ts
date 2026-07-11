@@ -14,25 +14,30 @@ export const maxDuration = 60;
  * Automatic deposit reconciliation — the durable fix for "balances don't
  * reflect deposits."
  *
- * Since deposits now mint into ONE master wallet, a user's balance is a DB
- * value that must be explicitly credited on confirmation. That credit used to
- * fire only when a member opened their wallet (self-sync) or the webhook fired
- * (it doesn't), so confirmed money sat in the master uncredited. This endpoint
- * settles EVERY confirmed-but-uncredited deposit across both rails, globally,
- * with no dependence on any screen. Run on a schedule (Netlify Scheduled
- * Function) every couple of minutes; also safe to hit manually.
+ * Since deposits mint into ONE master wallet, a user's balance is a DB value
+ * that must be explicitly credited on confirmation. This settles EVERY
+ * confirmed-but-uncredited deposit across both rails, globally. Runs every 2
+ * minutes via a Netlify Scheduled Function; also triggered by the admin "sync
+ * now" button. Idempotent (posted / ledger_posted guards).
  *
- * Idempotent (posted / ledger_posted guards). Bounded per run so it never
- * exceeds the function timeout; the next run picks up the rest.
+ * Failure design: each rail runs independently and reports its own error, so
+ * one bad rail (or one bad row) can never turn the whole run into an opaque
+ * 500 — the response always says exactly what happened. The per-run work is
+ * budgeted to finish inside the platform's function time limit; the next run
+ * picks up anything left.
  *
- * Auth: if CRON_SECRET is set, require header `x-cron-key` to match. If it is
- * not set, the call is allowed (the work is idempotent and only credits money
- * that already landed).
+ * Auth: if CRON_SECRET is set, require header `x-cron-key` to match. Without
+ * it the call is open — acceptable because the work is idempotent and only
+ * credits money that already landed.
  */
-const NTZS_LIMIT = 80;
-const SNIPPE_PENDING_LIMIT = 80;
+const NTZS_LIMIT = 40;
+const SNIPPE_PENDING_LIMIT = 40;
 const BATCH = 10;
-const BUDGET_MS = 22_000;
+const BUDGET_MS = 8_000; // finish well inside the platform's ~10s function budget
+
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
 
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -42,7 +47,7 @@ function authorized(request: NextRequest): boolean {
 
 /** Settle nTZS deposits that minted into the master but were never credited. */
 async function settleNtzs(client: PoolClient, deadline: number) {
-  if (!process.env.NTZS_API_KEY) return { checked: 0, credited: 0, creditedTzs: 0, liveStatusCounts: {}, sample: [], apiError: 'NTZS_API_KEY missing' };
+  if (!process.env.NTZS_API_KEY) return { checked: 0, credited: 0, creditedTzs: 0, liveStatusCounts: {}, apiError: 'NTZS_API_KEY missing' };
   const r = await client.query(
     `SELECT ntzs_id, amount_tzs, status FROM ntzs_transactions
      WHERE type = 'deposit' AND posted = false AND ntzs_id IS NOT NULL
@@ -51,10 +56,7 @@ async function settleNtzs(client: PoolClient, deadline: number) {
   );
   const rows = r.rows as { ntzs_id: string; amount_tzs: string; status: string }[];
   let checked = 0, credited = 0, creditedTzs = 0;
-  // Diagnostics: what nTZS's API actually returns for each deposit, so we can
-  // see whether the live status reads as minted (or something unexpected).
   const liveStatusCounts: Record<string, number> = {};
-  const sample: { amountTzs: number; dbStatus: string; liveStatus: string | null; credited: boolean }[] = [];
   let apiError: string | null = null;
   for (let i = 0; i < rows.length; i += BATCH) {
     if (Date.now() > deadline) break;
@@ -62,35 +64,35 @@ async function settleNtzs(client: PoolClient, deadline: number) {
     const statuses = await Promise.all(
       slice.map(async (row) => {
         try { return { row, status: (await ntzs.deposits.get(row.ntzs_id)).status as string | null, err: null as string | null }; }
-        catch (e) { return { row, status: null, err: e instanceof Error ? e.message : String(e) }; }
+        catch (e) { return { row, status: null, err: errMsg(e) }; }
       })
     );
     for (const { row, status, err } of statuses) {
       checked++;
       if (err && !apiError) apiError = err;
-      const key = status ?? 'ERROR';
-      liveStatusCounts[key] = (liveStatusCounts[key] ?? 0) + 1;
-      let applied = false;
-      if (status) {
-        await client.query('BEGIN');
-        try {
-          const res = await settleExternalTransaction(client, row.ntzs_id, status);
-          await client.query('COMMIT');
-          if (res.applied) { applied = true; credited++; creditedTzs += Math.round(Number(row.amount_tzs)); }
-        } catch (e) {
-          await client.query('ROLLBACK').catch(() => {});
-          console.error('cron settleNtzs failed for', row.ntzs_id, e);
-        }
+      liveStatusCounts[status ?? 'ERROR'] = (liveStatusCounts[status ?? 'ERROR'] ?? 0) + 1;
+      if (!status) continue;
+      await client.query('BEGIN');
+      try {
+        // Also advances the stored status (e.g. submitted -> minted), so the
+        // member's transaction list stops showing a stale state.
+        const res = await settleExternalTransaction(client, row.ntzs_id, status);
+        await client.query('COMMIT');
+        if (res.applied) { credited++; creditedTzs += Math.round(Number(row.amount_tzs)); }
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        if (!apiError) apiError = errMsg(e);
+        console.error('cron settleNtzs failed for', row.ntzs_id, e);
       }
-      if (sample.length < 20) sample.push({ amountTzs: Math.round(Number(row.amount_tzs)), dbStatus: row.status, liveStatus: status, credited: applied });
     }
   }
-  return { checked, credited, creditedTzs, liveStatusCounts, sample, apiError };
+  return { checked, credited, creditedTzs, liveStatusCounts, apiError };
 }
 
 /** Reconcile Snippe pending payments, then credit all completed-but-unposted. */
 async function settleSnippe(client: PoolClient, deadline: number) {
-  if (!process.env.SNIPPE_API_KEY) return { reconciled: 0, credited: 0, creditedTzs: 0 };
+  if (!process.env.SNIPPE_API_KEY) return { reconciled: 0, credited: 0, creditedTzs: 0, apiError: 'SNIPPE_API_KEY missing' };
+  let apiError: string | null = null;
 
   // 1) Discover completions Snippe knows about but our DB still marks pending.
   const pend = await client.query(
@@ -107,7 +109,7 @@ async function settleSnippe(client: PoolClient, deadline: number) {
     const results = await Promise.all(
       slice.map(async (ref) => {
         try { return { ref, status: (await getPaymentStatus(ref)).data.status as string | null }; }
-        catch { return { ref, status: null }; }
+        catch (e) { if (!apiError) apiError = errMsg(e); return { ref, status: null }; }
       })
     );
     for (const { ref, status } of results) {
@@ -139,43 +141,42 @@ async function settleSnippe(client: PoolClient, deadline: number) {
       if (amt > 0) { credited++; creditedTzs += amt; }
     } catch (e) {
       await client.query('ROLLBACK').catch(() => {});
+      if (!apiError) apiError = errMsg(e);
       console.error('cron settleSnippe credit failed for', row.reference, e);
     }
   }
-  return { reconciled, credited, creditedTzs };
+  return { reconciled, credited, creditedTzs, apiError };
 }
 
 async function run() {
   const deadline = Date.now() + BUDGET_MS;
+  const errors: string[] = [];
   const client = await pool.connect();
   try {
-    await ensureNtzsSchema(client);
-    await ensureSnippeSchema(client);
-    const ntzsRes = await settleNtzs(client, deadline);
-    const snippeRes = await settleSnippe(client, deadline);
-    return { success: true, ntzs: ntzsRes, snippe: snippeRes };
+    try { await ensureNtzsSchema(client); } catch (e) { errors.push(`schema(ntzs): ${errMsg(e)}`); }
+    try { await ensureSnippeSchema(client); } catch (e) { errors.push(`schema(snippe): ${errMsg(e)}`); }
+
+    let ntzsRes = null, snippeRes = null;
+    try { ntzsRes = await settleNtzs(client, deadline); } catch (e) { errors.push(`ntzs: ${errMsg(e)}`); }
+    try { snippeRes = await settleSnippe(client, deadline); } catch (e) { errors.push(`snippe: ${errMsg(e)}`); }
+
+    return { success: true, ntzs: ntzsRes, snippe: snippeRes, errors };
   } finally {
     client.release();
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handle(request: NextRequest) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     return NextResponse.json(await run());
   } catch (error) {
+    // Only pool.connect can land here; surface the real reason instead of a
+    // generic string so the admin button shows what actually broke.
     console.error('cron settle-deposits error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: errMsg(error) }, { status: 500 });
   }
 }
 
-// GET allowed too, so the schedule (or a manual check) can trigger it simply.
-export async function GET(request: NextRequest) {
-  if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  try {
-    return NextResponse.json(await run());
-  } catch (error) {
-    console.error('cron settle-deposits error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+export async function POST(request: NextRequest) { return handle(request); }
+export async function GET(request: NextRequest) { return handle(request); }

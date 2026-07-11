@@ -6,9 +6,16 @@ let _schemaReady: Promise<void> | null = null;
  * Ensure nTZS wallet columns and transaction table exist.
  * Cached per process — DDL only runs once.
  */
-export async function ensureNtzsSchema(client: PoolClient) {
-  if (_schemaReady) return _schemaReady;
-  _schemaReady = _runEnsureNtzsSchema(client);
+export function ensureNtzsSchema(client: PoolClient): Promise<void> {
+  if (!_schemaReady) {
+    _schemaReady = _runEnsureNtzsSchema(client).catch((err) => {
+      // Never cache a failure: a one-time transient error (cold DB start, lock
+      // timeout) would otherwise poison this server instance and make EVERY
+      // request it serves fail with the same stale error until redeploy.
+      _schemaReady = null;
+      throw err;
+    });
+  }
   return _schemaReady;
 }
 

@@ -2,7 +2,20 @@ import type { PoolClient } from 'pg';
 import { credit } from '@/lib/wallet/ledger';
 import { recordTransaction } from '@/lib/ntzs-db';
 
-export async function ensureSnippeSchema(client: PoolClient) {
+let _snippeSchemaReady: Promise<void> | null = null;
+
+/** Cached per process like ensureNtzsSchema; a failed run is retried, never cached. */
+export function ensureSnippeSchema(client: PoolClient): Promise<void> {
+  if (!_snippeSchemaReady) {
+    _snippeSchemaReady = _runEnsureSnippeSchema(client).catch((err) => {
+      _snippeSchemaReady = null;
+      throw err;
+    });
+  }
+  return _snippeSchemaReady;
+}
+
+async function _runEnsureSnippeSchema(client: PoolClient) {
   await client.query(`
     ALTER TABLE monthly_contributions
     ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100)
