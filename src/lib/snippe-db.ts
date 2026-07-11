@@ -64,7 +64,12 @@ export async function creditSnippePaymentToLedger(
   };
 
   if (p.ledger_posted) return 0;                       // already credited
-  if (p.event_type !== 'payment.completed') return 0;  // only settle successes
+  // Settle on the authoritative `status` field: the webhook sets it AND so does
+  // the status-poll fallback, whereas `event_type` stays 'payment.pending' when
+  // only the poll ran. Keying on status means a completed payment credits no
+  // matter which path observed the completion.
+  const isComplete = p.status === 'completed' || p.event_type === 'payment.completed';
+  if (!isComplete) return 0;
   const amount = Math.round(Number(p.amount_tzs));
   if (!(amount > 0)) return 0;
 
