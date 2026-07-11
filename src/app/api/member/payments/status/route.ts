@@ -58,21 +58,25 @@ export async function GET(request: NextRequest) {
       if (status === 'completed' || status === 'failed') {
         // Mark terminal — set event_type too so downstream (backfill/queries)
         // that key on it stay consistent with the poll.
+        // Parameters may not be reused in a second type context (e.g. status
+        // assignment + string comparison) — the DB rejects the statement with
+        // "inconsistent types deduced". Completion is passed as its own boolean.
+        const isCompleted = status === 'completed';
         const upd = await client.query(
           `UPDATE snippe_payments
              SET status = $1,
                  event_type = $2,
-                 completed_at = CASE WHEN $1 = 'completed' THEN NOW() ELSE completed_at END
+                 completed_at = CASE WHEN $4::boolean THEN NOW() ELSE completed_at END
            WHERE reference = $3 AND status NOT IN ('completed', 'failed')
            RETURNING id`,
-          [status, `payment.${status}`, reference]
+          [status, `payment.${status}`, reference, isCompleted]
         );
         if (upd.rowCount === 0 && !dbRow) {
           await client.query(
             `INSERT INTO snippe_payments (reference, event_type, status, amount_tzs, payment_type, completed_at)
-             VALUES ($1, $2, $3, $4, 'contribution', CASE WHEN $3 = 'completed' THEN NOW() ELSE NULL END)
+             VALUES ($1, $2, $3, $4, 'contribution', CASE WHEN $5::boolean THEN NOW() ELSE NULL END)
              ON CONFLICT (reference) DO NOTHING`,
-            [reference, `payment.${status}`, status, amount]
+            [reference, `payment.${status}`, status, amount, isCompleted]
           );
         }
       }

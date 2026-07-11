@@ -114,11 +114,13 @@ async function settleSnippe(client: PoolClient, deadline: number) {
     );
     for (const { ref, status } of results) {
       if (status !== 'completed' && status !== 'failed') continue;
+      // $4 boolean instead of reusing $1 in a comparison — dual-typed parameter
+      // reuse is rejected by the database ("inconsistent types deduced").
       await client.query(
         `UPDATE snippe_payments SET status = $1, event_type = $2,
-               completed_at = CASE WHEN $1 = 'completed' THEN NOW() ELSE completed_at END
+               completed_at = CASE WHEN $4::boolean THEN NOW() ELSE completed_at END
          WHERE reference = $3 AND status NOT IN ('completed','failed')`,
-        [status, `payment.${status}`, ref]
+        [status, `payment.${status}`, ref, status === 'completed']
       );
       if (status === 'completed') reconciled++;
     }
