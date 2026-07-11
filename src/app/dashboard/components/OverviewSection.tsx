@@ -31,12 +31,6 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [recRef, setRecRef] = useState('');
   const [reconciling, setReconciling] = useState(false);
   const [recMsg, setRecMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [backfilling, setBackfilling] = useState(false);
-  const [backfillMsg, setBackfillMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [settling, setSettling] = useState(false);
-  const [settleMsg, setSettleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [repairing, setRepairing] = useState(false);
-  const [repairMsg, setRepairMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [fundAmount, setFundAmount] = useState('6000');
   const [fundPhone, setFundPhone] = useState('');
   const [funding, setFunding] = useState(false);
@@ -133,138 +127,6 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     }
   };
 
-  const handleBackfill = async () => {
-    setBackfilling(true);
-    setBackfillMsg(null);
-    try {
-      // Preview first so the admin sees the total before crediting.
-      const pre = await fetch('/api/admin/treasury/backfill-deposits');
-      const pd = await pre.json().catch(() => null);
-      if (!pre.ok || !pd?.success) {
-        setBackfillMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
-        return;
-      }
-      if (!pd.uncreditedPayments) {
-        setBackfillMsg({ type: 'success', text: 'Hakuna malipo yaliyobaki — yote yameonekana kwenye salio.' });
-        loadReconcile();
-        return;
-      }
-      if (!window.confirm(`Weka malipo ${pd.uncreditedPayments} ya Snippe (jumla TSH ${Number(pd.totalTzs || 0).toLocaleString()}) kwenye salio la vikundi/wanachama?`)) {
-        return;
-      }
-      const r = await fetch('/api/admin/treasury/backfill-deposits', { method: 'POST' });
-      const d = await r.json().catch(() => null);
-      if (r.ok && d?.success) {
-        setBackfillMsg({
-          type: 'success',
-          text: `Imekamilika: malipo ${d.credited} yamewekwa kwenye salio (TSH ${Number(d.totalTzs || 0).toLocaleString()})${d.failed ? `, ${d.failed} yameshindwa` : ''}.`,
-        });
-        loadReconcile();
-        loadWalletTotals();
-      } else {
-        setBackfillMsg({ type: 'error', text: d?.error || 'Imeshindikana kurejesha malipo' });
-      }
-    } catch {
-      setBackfillMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
-    } finally {
-      setBackfilling(false);
-    }
-  };
-
-  const handleSettleDeposits = async () => {
-    setSettling(true);
-    setSettleMsg(null);
-    try {
-      const pre = await fetch('/api/admin/treasury/settle-deposits');
-      const pd = await pre.json().catch(() => null);
-      if (!pre.ok || !pd?.success) {
-        setSettleMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
-        return;
-      }
-      if (!pd.unsettledDeposits) {
-        setSettleMsg({ type: 'success', text: 'Hakuna amana zilizokwama — zote zimewekwa kwenye salio.' });
-        loadReconcile();
-        return;
-      }
-      const inFlightNote = pd.inFlight ? ` ${pd.inFlight} bado hazijafika (submitted — zitawekwa zikikamilika/minted, TSH ${Number(pd.inFlightTzs || 0).toLocaleString()}).` : '';
-      const noOwnerNote = pd.landedNoOwner ? ` ${pd.landedNoOwner} zimefika lakini hazina mmiliki (TSH ${Number(pd.landedNoOwnerTzs || 0).toLocaleString()}).` : '';
-      if (!pd.landedWithOwner) {
-        // Nothing minted-with-owner to credit. If deposits are merely still
-        // submitted, that's expected — only minted deposits are confirmed money.
-        setSettleMsg({
-          type: pd.inFlight ? 'success' : 'error',
-          text: pd.inFlight
-            ? `Hakuna amana mpya iliyokamilika (minted) sasa hivi.${inFlightNote}${noOwnerNote}`
-            : `Amana ${pd.unsettledDeposits} zimekwama.${noOwnerNote} Fungua /api/admin/treasury/settle-deposits kuona sababu.`,
-        });
-        return;
-      }
-      if (!window.confirm(`Weka amana ${pd.landedWithOwner} zilizokamilika (minted, TSH ${Number(pd.landedWithOwnerTzs || 0).toLocaleString()}) kwenye salio?${inFlightNote}${noOwnerNote}`)) return;
-      const r = await fetch('/api/admin/treasury/settle-deposits', { method: 'POST' });
-      const d = await r.json().catch(() => null);
-      if (r.ok && d?.success) {
-        setSettleMsg({
-          type: 'success',
-          text: `Imekamilika: amana ${d.credited} zimewekwa (TSH ${Number(d.creditedTzs || 0).toLocaleString()})${d.noOwner ? `, ${d.noOwner} bila mmiliki` : ''}${d.inFlight ? `, ${d.inFlight} bado hazijafika (submitted)` : ''}.`,
-        });
-        loadReconcile();
-        loadWalletTotals();
-      } else {
-        setSettleMsg({ type: 'error', text: d?.error || 'Imeshindikana kuweka amana' });
-      }
-    } catch {
-      setSettleMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
-    } finally {
-      setSettling(false);
-    }
-  };
-
-  const handleRepairDeposits = async () => {
-    setRepairing(true);
-    setRepairMsg(null);
-    try {
-      // Dry-run first so the admin verifies the total (should match the drift).
-      const pre = await fetch('/api/admin/treasury/repair-deposits');
-      const pd = await pre.json().catch(() => null);
-      if (!pre.ok || !pd?.success) {
-        setRepairMsg({ type: 'error', text: pd?.error || 'Imeshindikana kupata taarifa' });
-        return;
-      }
-      const inFlightNote = pd.inFlightTzs ? ` (${fmtTzs(pd.inFlightTzs)} bado hazijafika/submitted).` : '';
-      if (!pd.wouldCreditCount) {
-        setRepairMsg({
-          type: pd.inFlightTzs ? 'success' : 'success',
-          text: `Hakuna amana iliyokamilika (minted) inayohitaji kurekebishwa katika kipindi hiki.${inFlightNote}`,
-        });
-        return;
-      }
-      if (!window.confirm(
-        `Weka amana ${pd.wouldCreditCount} zilizokamilika (minted) za tarehe ${pd.window.from} hadi ${pd.window.to} kwenye salio za wanachama?\n\n` +
-        `Jumla: ${fmtTzs(pd.wouldCreditTzs)}\nZiada ya hazina (surplus): ${pd.treasurySurplusTzs != null ? fmtTzs(pd.treasurySurplusTzs) : 'haijulikani'}\n\n` +
-        `Inaweka tu zilizokamilika, haiwezi kuzidi ziada ya hazina, na haiwezi kuweka mara mbili.`
-      )) return;
-      const r = await fetch('/api/admin/treasury/repair-deposits', { method: 'POST' });
-      const d = await r.json().catch(() => null);
-      if (r.ok && d?.success) {
-        setRepairMsg({
-          type: 'success',
-          text: `Imekamilika: amana ${d.credited} zimewekwa kwenye salio (${fmtTzs(d.creditedTzs || 0)})`
-            + `${d.skippedInFlight ? `, ${d.skippedInFlight} bado hazijafika` : ''}`
-            + `${d.cappedOut ? `, ${d.cappedOut} zimezuiwa na kikomo cha hazina` : ''}`
-            + `${d.failed ? `, ${d.failed} zimeshindwa` : ''}.`,
-        });
-        loadReconcile();
-        loadWalletTotals();
-      } else {
-        setRepairMsg({ type: 'error', text: d?.error || 'Imeshindikana kurekebisha amana' });
-      }
-    } catch {
-      setRepairMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
-    } finally {
-      setRepairing(false);
-    }
-  };
-
   const handleFund = async () => {
     const amt = Number(fundAmount);
     if (!amt || amt < 100 || !fundPhone.trim()) {
@@ -284,7 +146,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       if (r.ok && d?.success) {
         setFundMsg({
           type: 'success',
-          text: `STK push imetumwa (TSH ${amt.toLocaleString()} → ${d.phone}). Ithibitishe kwenye simu; ikishakamilika (minted), bonyeza "Rekebisha amana" tena ili kumlipa mwanachama aliyebaki.`,
+          text: `STK push imetumwa (TSH ${amt.toLocaleString()} → ${d.phone}). Ithibitishe kwenye simu; ikishakamilika (minted), hazina itaongezeka kiotomatiki.`,
         });
         setTimeout(() => loadReconcile(), 3000);
       } else {
@@ -309,15 +171,24 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       }
       const n = d.ntzs || {};
       const s = d.snippe || {};
+      const errParts = [
+        ...(Array.isArray(d.errors) ? d.errors : []),
+        ...(n.apiError ? [`nTZS: ${n.apiError}`] : []),
+        ...(s.apiError ? [`Snippe: ${s.apiError}`] : []),
+      ];
+      const errNote = errParts.length ? ` | Hitilafu: ${errParts.join(' | ')}` : '';
       const creditedTotal = (n.credited || 0) + (s.credited || 0);
       const creditedTzs = (n.creditedTzs || 0) + (s.creditedTzs || 0);
       if (creditedTotal > 0) {
-        setSyncAllMsg({ type: 'success', text: `Imekamilika: amana ${creditedTotal} zimewekwa kwenye salio (${fmtTzs(creditedTzs)}).` });
+        setSyncAllMsg({ type: 'success', text: `Imekamilika: amana ${creditedTotal} zimewekwa kwenye salio (${fmtTzs(creditedTzs)}).${errNote}` });
       } else {
-        // Nothing credited — surface what nTZS actually returned so we can see why.
+        // Nothing new to credit. That's healthy unless an error was reported —
+        // show what nTZS returned either way so there's never a mystery.
         const counts = n.liveStatusCounts ? Object.entries(n.liveStatusCounts).map(([k, v]) => `${k}:${v}`).join(', ') : 'hakuna';
-        const err = n.apiError ? ` | nTZS error: ${n.apiError}` : '';
-        setSyncAllMsg({ type: 'error', text: `Hakuna iliyowekwa. nTZS ilichunguzwa ${n.checked || 0}, hali: ${counts}${err}` });
+        setSyncAllMsg({
+          type: errParts.length ? 'error' : 'success',
+          text: `Hakuna amana mpya ya kuweka. Zimechunguzwa ${n.checked || 0} (hali: ${counts}).${errNote}`,
+        });
       }
       loadReconcile();
       loadWalletTotals();
@@ -449,61 +320,6 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
             >
               {sweeping ? 'Inahamisha…' : 'Hamisha fedha kwa Hazina Kuu'}
             </button>
-
-            {/* Backfill Snippe deposits that completed before the webhook credited the ledger */}
-            <div className="space-y-1 pt-1">
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                Malipo ya Snippe (michango / topup) yaliyokamilika bila kuonekana kwenye salio la kikundi — bonyeza kurejesha.
-              </p>
-              {backfillMsg && (
-                <p className={`text-xs ${backfillMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{backfillMsg.text}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleBackfill}
-                disabled={backfilling}
-                className="px-4 py-2 rounded-lg text-sm font-semibold border border-orange-500/40 text-orange-600 hover:bg-orange-500/10 disabled:opacity-50"
-              >
-                {backfilling ? 'Inarejesha…' : 'Rejesha malipo ya Snippe kwenye salio'}
-              </button>
-            </div>
-
-            {/* Settle nTZS deposits that minted into the master but never credited the member */}
-            <div className="space-y-1 pt-1">
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                Amana (top-up) zilizoingia kwenye hazina kuu lakini hazikuonekana kwenye salio la mwanachama — bonyeza kuziweka.
-              </p>
-              {settleMsg && (
-                <p className={`text-xs ${settleMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{settleMsg.text}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleSettleDeposits}
-                disabled={settling}
-                className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50"
-              >
-                {settling ? 'Inaweka…' : 'Weka amana kwenye salio (deposits)'}
-              </button>
-            </div>
-
-            {/* Repair deposits that minted into the master but were wrongly marked
-                settled without crediting the member (the money-in side of +drift) */}
-            <div className="space-y-1 pt-1">
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                Rekebisha amana zilizoingia hazina kuu (8–10 Julai) lakini hazikuwekwa kwenye salio la mwanachama. Inaweka tu zilizokamilika (minted), haiwezi kuzidi ziada ya hazina, wala kuweka mara mbili.
-              </p>
-              {repairMsg && (
-                <p className={`text-xs ${repairMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{repairMsg.text}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleRepairDeposits}
-                disabled={repairing}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {repairing ? 'Inarekebisha…' : 'Rekebisha amana za 8–10 Julai kwenye salio'}
-              </button>
-            </div>
 
             {/* Fund the master treasury (STK push mints straight into the master,
                 no member credited) — covers the sweep-fee shortfall */}
