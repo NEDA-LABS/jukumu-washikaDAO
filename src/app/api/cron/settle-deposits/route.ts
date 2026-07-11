@@ -42,39 +42,50 @@ function authorized(request: NextRequest): boolean {
 
 /** Settle nTZS deposits that minted into the master but were never credited. */
 async function settleNtzs(client: PoolClient, deadline: number) {
-  if (!process.env.NTZS_API_KEY) return { checked: 0, credited: 0, creditedTzs: 0 };
+  if (!process.env.NTZS_API_KEY) return { checked: 0, credited: 0, creditedTzs: 0, liveStatusCounts: {}, sample: [], apiError: 'NTZS_API_KEY missing' };
   const r = await client.query(
-    `SELECT ntzs_id FROM ntzs_transactions
+    `SELECT ntzs_id, amount_tzs, status FROM ntzs_transactions
      WHERE type = 'deposit' AND posted = false AND ntzs_id IS NOT NULL
      ORDER BY created_at DESC LIMIT $1`,
     [NTZS_LIMIT]
   );
-  const ids = (r.rows as { ntzs_id: string }[]).map((x) => x.ntzs_id);
+  const rows = r.rows as { ntzs_id: string; amount_tzs: string; status: string }[];
   let checked = 0, credited = 0, creditedTzs = 0;
-  for (let i = 0; i < ids.length; i += BATCH) {
+  // Diagnostics: what nTZS's API actually returns for each deposit, so we can
+  // see whether the live status reads as minted (or something unexpected).
+  const liveStatusCounts: Record<string, number> = {};
+  const sample: { amountTzs: number; dbStatus: string; liveStatus: string | null; credited: boolean }[] = [];
+  let apiError: string | null = null;
+  for (let i = 0; i < rows.length; i += BATCH) {
     if (Date.now() > deadline) break;
-    const slice = ids.slice(i, i + BATCH);
+    const slice = rows.slice(i, i + BATCH);
     const statuses = await Promise.all(
-      slice.map(async (id) => {
-        try { return { id, status: (await ntzs.deposits.get(id)).status as string | null }; }
-        catch { return { id, status: null }; }
+      slice.map(async (row) => {
+        try { return { row, status: (await ntzs.deposits.get(row.ntzs_id)).status as string | null, err: null as string | null }; }
+        catch (e) { return { row, status: null, err: e instanceof Error ? e.message : String(e) }; }
       })
     );
-    for (const { id, status } of statuses) {
+    for (const { row, status, err } of statuses) {
       checked++;
-      if (!status) continue;
-      await client.query('BEGIN');
-      try {
-        const res = await settleExternalTransaction(client, id, status);
-        await client.query('COMMIT');
-        if (res.applied) { credited++; }
-      } catch (e) {
-        await client.query('ROLLBACK').catch(() => {});
-        console.error('cron settleNtzs failed for', id, e);
+      if (err && !apiError) apiError = err;
+      const key = status ?? 'ERROR';
+      liveStatusCounts[key] = (liveStatusCounts[key] ?? 0) + 1;
+      let applied = false;
+      if (status) {
+        await client.query('BEGIN');
+        try {
+          const res = await settleExternalTransaction(client, row.ntzs_id, status);
+          await client.query('COMMIT');
+          if (res.applied) { applied = true; credited++; creditedTzs += Math.round(Number(row.amount_tzs)); }
+        } catch (e) {
+          await client.query('ROLLBACK').catch(() => {});
+          console.error('cron settleNtzs failed for', row.ntzs_id, e);
+        }
       }
+      if (sample.length < 20) sample.push({ amountTzs: Math.round(Number(row.amount_tzs)), dbStatus: row.status, liveStatus: status, credited: applied });
     }
   }
-  return { checked, credited, creditedTzs };
+  return { checked, credited, creditedTzs, liveStatusCounts, sample, apiError };
 }
 
 /** Reconcile Snippe pending payments, then credit all completed-but-unposted. */
