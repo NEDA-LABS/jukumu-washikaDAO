@@ -37,6 +37,10 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [settleMsg, setSettleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [repairing, setRepairing] = useState(false);
   const [repairMsg, setRepairMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [fundAmount, setFundAmount] = useState('6000');
+  const [fundPhone, setFundPhone] = useState('');
+  const [funding, setFunding] = useState(false);
+  const [fundMsg, setFundMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -259,6 +263,38 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     }
   };
 
+  const handleFund = async () => {
+    const amt = Number(fundAmount);
+    if (!amt || amt < 100 || !fundPhone.trim()) {
+      setFundMsg({ type: 'error', text: 'Weka kiasi (≥100) na namba ya simu.' });
+      return;
+    }
+    if (!window.confirm(`Tuma STK push ya TSH ${amt.toLocaleString()} kwa ${fundPhone} kuongeza fedha kwenye hazina kuu?`)) return;
+    setFunding(true);
+    setFundMsg(null);
+    try {
+      const r = await fetch('/api/admin/treasury/fund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amountTzs: amt, phone: fundPhone.trim() }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.success) {
+        setFundMsg({
+          type: 'success',
+          text: `STK push imetumwa (TSH ${amt.toLocaleString()} → ${d.phone}). Ithibitishe kwenye simu; ikishakamilika (minted), bonyeza "Rekebisha amana" tena ili kumlipa mwanachama aliyebaki.`,
+        });
+        setTimeout(() => loadReconcile(), 3000);
+      } else {
+        setFundMsg({ type: 'error', text: d?.error || 'Imeshindikana kutuma STK push' });
+      }
+    } catch {
+      setFundMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setFunding(false);
+    }
+  };
+
   const stats = [
     { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
@@ -415,6 +451,41 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 {repairing ? 'Inarekebisha…' : 'Rekebisha amana za 8–10 Julai kwenye salio'}
+              </button>
+            </div>
+
+            {/* Fund the master treasury (STK push mints straight into the master,
+                no member credited) — covers the sweep-fee shortfall */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Ongeza fedha kwenye hazina kuu (STK push huingiza moja kwa moja kwenye hazina, hakuna mwanachama anayelipwa). Tumia kufidia upungufu wa ada za usafirishaji.
+              </p>
+              {fundMsg && (
+                <p className={`text-xs ${fundMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{fundMsg.text}</p>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  value={fundAmount}
+                  onChange={(e) => setFundAmount(e.target.value)}
+                  placeholder="Kiasi (TZS)"
+                  className="rounded-lg bg-background border border-border px-3 py-2 text-sm"
+                />
+                <input
+                  type="tel"
+                  value={fundPhone}
+                  onChange={(e) => setFundPhone(e.target.value)}
+                  placeholder="Namba ya simu (07XX...)"
+                  className="rounded-lg bg-background border border-border px-3 py-2 text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleFund}
+                disabled={funding}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-blue-500/40 text-blue-600 hover:bg-blue-500/10 disabled:opacity-50"
+              >
+                {funding ? 'Inatuma STK…' : 'Ongeza fedha kwenye hazina (STK)'}
               </button>
             </div>
 
