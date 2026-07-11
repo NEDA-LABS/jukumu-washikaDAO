@@ -360,18 +360,24 @@ export async function settleExternalTransaction(
     }
   }
 
+  // Each parameter must appear in exactly ONE type context. Reusing $1 both as
+  // `status = $1` and in a comparison (`$1 = 'failed'`) makes the database
+  // deduce conflicting types ("inconsistent types deduced for parameter $1")
+  // and reject the statement — which silently blocked every automatic credit
+  // in production. Decisions are computed here and passed as booleans.
+  const reopenFailedWithdrawal = row.type === 'withdrawal' && finalStatus === 'failed';
   await client.query(
     `UPDATE ntzs_transactions
        SET status = $1,
            tx_hash = COALESCE($2, tx_hash),
            posted = CASE
              WHEN $3::boolean THEN true
-             WHEN type = 'withdrawal' AND $1 = 'failed' THEN false
+             WHEN $4::boolean THEN false
              ELSE posted
            END,
            updated_at = NOW()
-     WHERE id = $4`,
-    [finalStatus, txHash ?? null, applied, row.id]
+     WHERE id = $5`,
+    [finalStatus, txHash ?? null, applied, reopenFailedWithdrawal, row.id]
   );
 
   return { applied, type: row.type };

@@ -534,18 +534,21 @@ export async function getCourseProgressForMember(memberId: number, courseId: num
 export async function upsertCourseProgress(memberId: number, courseId: number, status: CourseStatus): Promise<void> {
   const client = await pool.connect();
   try {
+    // $4/$5 booleans instead of reusing $3 in comparisons — a parameter used in
+    // two type contexts is rejected by the database ("inconsistent types
+    // deduced for parameter"), which made this upsert fail silently.
     await client.query(
       `INSERT INTO edu_course_progress (member_id, course_id, status, started_at, completed_at)
        VALUES ($1, $2, $3,
-         CASE WHEN $3 != 'not_started' THEN CURRENT_TIMESTAMP ELSE NULL END,
-         CASE WHEN $3 = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END)
+         CASE WHEN $4::boolean THEN CURRENT_TIMESTAMP ELSE NULL END,
+         CASE WHEN $5::boolean THEN CURRENT_TIMESTAMP ELSE NULL END)
        ON CONFLICT (member_id, course_id)
        DO UPDATE SET
          status = $3,
          started_at = COALESCE(edu_course_progress.started_at,
-           CASE WHEN $3 != 'not_started' THEN CURRENT_TIMESTAMP ELSE NULL END),
-         completed_at = CASE WHEN $3 = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END`,
-      [memberId, courseId, status]
+           CASE WHEN $4::boolean THEN CURRENT_TIMESTAMP ELSE NULL END),
+         completed_at = CASE WHEN $5::boolean THEN CURRENT_TIMESTAMP ELSE NULL END`,
+      [memberId, courseId, status, status !== 'not_started', status === 'completed']
     );
   } finally {
     client.release();
