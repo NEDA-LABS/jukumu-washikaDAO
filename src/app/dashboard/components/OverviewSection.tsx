@@ -41,6 +41,8 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   const [fundPhone, setFundPhone] = useState('');
   const [funding, setFunding] = useState(false);
   const [fundMsg, setFundMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const [syncAllMsg, setSyncAllMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadWalletTotals = () => {
     fetch('/api/admin/wallet-totals')
@@ -295,6 +297,37 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
     }
   };
 
+  const handleSyncAll = async () => {
+    setSyncingAll(true);
+    setSyncAllMsg(null);
+    try {
+      const r = await fetch('/api/cron/settle-deposits', { method: 'POST', headers: { 'content-type': 'application/json' } });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d?.success) {
+        setSyncAllMsg({ type: 'error', text: d?.error || 'Imeshindikana kusawazisha' });
+        return;
+      }
+      const n = d.ntzs || {};
+      const s = d.snippe || {};
+      const creditedTotal = (n.credited || 0) + (s.credited || 0);
+      const creditedTzs = (n.creditedTzs || 0) + (s.creditedTzs || 0);
+      if (creditedTotal > 0) {
+        setSyncAllMsg({ type: 'success', text: `Imekamilika: amana ${creditedTotal} zimewekwa kwenye salio (${fmtTzs(creditedTzs)}).` });
+      } else {
+        // Nothing credited — surface what nTZS actually returned so we can see why.
+        const counts = n.liveStatusCounts ? Object.entries(n.liveStatusCounts).map(([k, v]) => `${k}:${v}`).join(', ') : 'hakuna';
+        const err = n.apiError ? ` | nTZS error: ${n.apiError}` : '';
+        setSyncAllMsg({ type: 'error', text: `Hakuna iliyowekwa. nTZS ilichunguzwa ${n.checked || 0}, hali: ${counts}${err}` });
+      }
+      loadReconcile();
+      loadWalletTotals();
+    } catch {
+      setSyncAllMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+    } finally {
+      setSyncingAll(false);
+    }
+  };
+
   const stats = [
     { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
@@ -387,6 +420,24 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
                 Hazina kuu ina pungufu — fedha bado ziko kwenye pochi za zamani. Bonyeza kuzihamisha ili kutoa pesa (withdrawals) kufanye kazi.
               </p>
             )}
+            {/* Primary: pull every minted deposit from nTZS onto balances now */}
+            <div className="space-y-1 pb-1">
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Sasisha amana zote: huchukua hali halisi kutoka nTZS na kuweka zote zilizokamilika (minted) kwenye salio la mwanachama/kikundi. Ndicho kinachotokea kila baada ya dakika 2 kiotomatiki.
+              </p>
+              {syncAllMsg && (
+                <p className={`text-xs ${syncAllMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{syncAllMsg.text}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleSyncAll}
+                disabled={syncingAll}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {syncingAll ? 'Inasasisha…' : 'Sasisha amana zote sasa (sync)'}
+              </button>
+            </div>
+
             {sweepMsg && (
               <p className={`text-xs ${sweepMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{sweepMsg.text}</p>
             )}
