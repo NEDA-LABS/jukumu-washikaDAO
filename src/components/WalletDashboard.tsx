@@ -71,7 +71,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
                 }}
                 className={`w-full px-4 py-3 text-left text-sm transition-colors ${
                   value === option.value
-                    ? 'bg-orange-500/10 text-[#e4a233]'
+                    ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-white/5'
                 }`}
               >

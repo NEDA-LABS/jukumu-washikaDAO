@@ -155,8 +155,8 @@ export default function MemberDashboard() {
 
   if (!mounted || !user) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -199,7 +199,7 @@ export default function MemberDashboard() {
     <div className="relative min-h-[100dvh] bg-background text-foreground flex overflow-hidden">
 
       {/* ── Ambient warm gradient backdrop ── */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-[#d1622b]/25 blur-[130px]" />
         <div className="absolute top-1/3 -right-40 h-[26rem] w-[26rem] rounded-full bg-[#e4a233]/15 blur-[130px]" />
         <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-[#7c3f14]/20 blur-[130px]" />
@@ -618,7 +618,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
     <div className="space-y-4">
       {/* Profile header card */}
       <div className="rounded-xl bg-card border border-border p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0">
           <span className="text-lg font-bold text-foreground">{initials}</span>
         </div>
         <div className="flex-1 min-w-0">
@@ -846,7 +846,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               <div
                 key={g.id}
                 onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
-                className="rounded-xl bg-card border border-border hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
+                className="rounded-xl bg-card border border-border hover:border-primary/30 p-5 cursor-pointer transition-all group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -880,7 +880,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-orange-500/30 transition-all"
+            className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
           >
             + Jiunge na Kundi Jingine
           </button>
@@ -1194,7 +1194,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
   return (
     <div className="space-y-4">
       {/* Summary card */}
-      <div className="rounded-2xl bg-[#141414] border border-border p-6">
+      <div className="rounded-2xl bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-[#e4a233]/10 border border-[#e4a233]/20 flex items-center justify-center">
             <BookOpenIcon className="h-5 w-5 text-[#e4a233]" />
@@ -1314,9 +1314,9 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       {/* Profile card */}
       <button
         onClick={() => onNavigate('profile')}
-        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
+        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:bg-muted transition-all text-left"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
           <span className="text-lg font-bold text-foreground">
             {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
           </span>

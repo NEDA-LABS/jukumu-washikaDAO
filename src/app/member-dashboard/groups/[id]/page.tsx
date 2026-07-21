@@ -484,7 +484,7 @@ export default function MemberGroupDetailsPage() {
   return (
     <div className="relative min-h-[100dvh] bg-background text-foreground overflow-x-hidden">
       {/* Ambient warm glow */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-[#d1622b]/20 blur-[130px]" />
         <div className="absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-[#e4a233]/12 blur-[130px]" />
       </div>
@@ -564,8 +564,18 @@ export default function MemberGroupDetailsPage() {
               )}
             </div>
 
+            {/* Treasury balance — prominent, at the top */}
+            <div className="mt-5 pt-5 border-t border-border">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Salio la Hazina</p>
+              <p className="mt-1 font-display text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums text-foreground">
+                <span className="text-xl sm:text-2xl align-top text-muted-foreground mr-1">TSh</span>
+                {(treasurySummary?.balanceTzs ?? 0).toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Fedha za kundi zinazodhibitiwa na mapendekezo yaliyoidhinishwa</p>
+            </div>
+
             {/* hero stat row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
               {[
                 { label: 'Wanachama', value: animMembers.toLocaleString(), unit: '' },
                 { label: 'Mchango/Mwezi', value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
@@ -721,16 +731,6 @@ export default function MemberGroupDetailsPage() {
 
                 {treasuryError && (
                   <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{treasuryError}</div>
-                )}
-
-                {treasurySummary?.treasury && (
-                  <div className="rounded-2xl bg-gradient-to-br from-[#e4a233]/12 to-red-500/10 border border-[#e4a233]/25 p-5 mb-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Salio la Hazina</p>
-                    <p className="text-3xl font-bold text-foreground">
-                      TSh <span className="text-[#e4a233]">{(treasurySummary.balanceTzs || 0).toLocaleString()}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">Fedha zinazotumika kupitia mapendekezo yaliyoidhinishwa</p>
-                  </div>
                 )}
 
                 {treasurySummary?.treasury && (
@@ -1103,7 +1103,7 @@ export default function MemberGroupDetailsPage() {
       </div>
 
       {/* ── Mobile bottom nav ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111] border-t border-border flex">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border flex">
         {tabs.map(t => (
           <button
             key={t.id}
