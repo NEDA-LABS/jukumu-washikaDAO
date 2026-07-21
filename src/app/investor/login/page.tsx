@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
 
 export default function InvestorLoginPage() {
   const router = useRouter();
@@ -41,7 +42,9 @@ export default function InvestorLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <>
+    <Header />
+    <div className="min-h-screen flex pt-[68px]" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       {/* Left panel — brand */}
       <div
         className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden"
@@ -101,14 +104,6 @@ export default function InvestorLoginPage() {
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center p-8" style={{ background: '#FAFAF7' }}>
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#D4881E' }}>
-              <span className="text-black font-black text-sm">J</span>
-            </div>
-            <span className="font-bold" style={{ color: '#1A1200' }}>JUKUMU Investor</span>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Sign In</h2>
@@ -162,6 +157,7 @@ export default function InvestorLoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
