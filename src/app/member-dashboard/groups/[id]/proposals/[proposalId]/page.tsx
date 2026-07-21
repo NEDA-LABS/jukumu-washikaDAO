@@ -178,14 +178,14 @@ export default function MemberGroupProposalDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0b0a09] flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d]">
+    <div className="min-h-screen bg-[#0b0a09]">
       <div className="max-w-2xl mx-auto px-4 py-8">
 
         <button
@@ -203,7 +203,7 @@ export default function MemberGroupProposalDetailsPage() {
           <div className="space-y-4">
 
             {/* Header card */}
-            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-6">
+            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="min-w-0">
                   <h1 className="text-lg font-bold text-white leading-snug">{proposal.title}</h1>
@@ -229,7 +229,7 @@ export default function MemberGroupProposalDetailsPage() {
             </div>
 
             {/* Vote results */}
-            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
               <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Matokeo ya Kura</p>
 
               <div className="space-y-3 mb-4">
@@ -253,7 +253,7 @@ export default function MemberGroupProposalDetailsPage() {
               <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
                 <p className="text-xs text-white/25">Jumla: {voteSummary.total} kura{requiredYes > 0 ? ` · zinahitajika ${requiredYes} "Ndio"` : ''}</p>
                 {myVote && (
-                  <p className="text-xs text-orange-400">
+                  <p className="text-xs text-[#e4a233]">
                     Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? 'Ndio' : myVote === 'no' ? 'Hapana' : 'Jiepushe'}</span>
                   </p>
                 )}
@@ -261,7 +261,7 @@ export default function MemberGroupProposalDetailsPage() {
             </div>
 
             {/* Vote action */}
-            <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Piga Kura</p>
                 {!isOpen && <p className="text-xs text-white/25">Upigaji kura umefungwa</p>}
@@ -299,7 +299,7 @@ export default function MemberGroupProposalDetailsPage() {
 
             {/* Requested amount (visible to everyone, if any) */}
             {hasAmount && (
-              <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+              <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white/50">Kiasi kilichoombwa</span>
                   <span className="text-sm font-semibold text-white tabular-nums">TZS {Number(proposal.payment_amount_tzs ?? 0).toLocaleString()}</span>
@@ -323,7 +323,7 @@ export default function MemberGroupProposalDetailsPage() {
 
             {/* Leadership actions on a closed proposal */}
             {isLeadership && !isOpen && (
-              <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-5">
+              <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
                 <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Kitendo cha Uongozi</p>
 
                 {executeError && (
@@ -357,16 +357,16 @@ export default function MemberGroupProposalDetailsPage() {
                         onChange={e => setRecipientInput(e.target.value)}
                         className="mt-1 w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/40"
                       >
-                        <option value="" className="bg-[#141414]">— Chagua mwanachama —</option>
+                        <option value="" className="bg-white/[0.04]">— Chagua mwanachama —</option>
                         {members.map(mm => (
-                          <option key={mm.id} value={mm.id} className="bg-[#141414]">{mm.full_name}</option>
+                          <option key={mm.id} value={mm.id} className="bg-white/[0.04]">{mm.full_name}</option>
                         ))}
                       </select>
                     </div>
                     <button
                       onClick={handleExecute}
                       disabled={executing}
-                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {executing ? 'Inatekeleza...' : 'Tekeleza Malipo (Disburse)'}
                     </button>

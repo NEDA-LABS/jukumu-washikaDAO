@@ -19,9 +19,12 @@ import {
 } from '@heroicons/react/24/outline';
 import WalletDashboard from '@/components/WalletDashboard';
 import Logo from '@/components/Logo';
+import { useTheme } from '@/contexts/ThemeContext';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 
 export default function MemberDashboard() {
-  const { } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
+  const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<{id?: number; fullName?: string; email: string; role?: string} | null>(null);
   const [memberInfo, setMemberInfo] = useState<{id?: number; fullName?: string; email?: string} | null>(null);
@@ -279,11 +282,24 @@ export default function MemberDashboard() {
             <h1 className="hidden lg:block text-lg font-semibold text-white">{activeName}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] font-medium text-emerald-300">nTZS live</span>
             </div>
+            <button
+              onClick={toggleLanguage}
+              className="rounded-full border border-white/[0.12] bg-white/[0.06] hover:bg-white/[0.12] px-2.5 py-1.5 text-xs font-semibold text-white/85 transition-colors"
+            >
+              {language === 'sw' ? 'EN' : 'SW'}
+            </button>
+            <button
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="rounded-full border border-white/[0.12] bg-white/[0.06] hover:bg-white/[0.12] p-2 text-white/85 transition-colors"
+              aria-label={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+            </button>
             <button onClick={() => setActiveSection('settings')} className="h-9 w-9 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-white/10 hover:ring-[#e4a233]/40 transition-all">
               <span className="text-xs font-bold text-white">{initials}</span>
             </button>

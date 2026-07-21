@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastProvider';
+import DashTopBar from '@/components/DashTopBar';
 
 function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0);
@@ -456,7 +457,7 @@ export default function MemberGroupDetailsPage() {
   };
 
   // ── shared dark input style ──
-  const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50';
+  const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60';
 
   // ── animated counters — must be above any early return (Rules of Hooks) ──
   const animTotal    = useCountUp(paymentSummary.total_collected);
@@ -466,8 +467,8 @@ export default function MemberGroupDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
+      <div className="min-h-screen bg-[#0b0a09] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#e4a233] border-t-transparent" />
       </div>
     );
   }
@@ -481,39 +482,39 @@ export default function MemberGroupDetailsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="relative min-h-[100dvh] bg-[#0b0a09] text-white overflow-x-hidden">
+      {/* Ambient warm glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-[#d1622b]/20 blur-[130px]" />
+        <div className="absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-[#e4a233]/12 blur-[130px]" />
+      </div>
 
-        {/* ── Back nav ── */}
-        <button
-          onClick={() => router.push('/member-dashboard?section=group')}
-          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-4"
-        >
-          ← Rudi Makundi Yangu
-        </button>
+      <DashTopBar back="/member-dashboard?section=group" />
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 md:pb-8">
 
         {/* ── Hero banner ── */}
         <div className="relative rounded-2xl overflow-hidden mb-6">
           {/* gradient bg */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/30 via-orange-500/10 to-transparent" />
-          <div className="absolute inset-0 bg-[#141414]" style={{ zIndex: -1 }} />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#d1622b]/40 via-[#e4a233]/10 to-transparent" />
+          <div className="absolute inset-0 bg-white/[0.04]" style={{ zIndex: -1 }} />
           {/* decorative circles */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-orange-500/10 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-orange-500/5 blur-xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#e4a233]/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-[#e4a233]/8 blur-xl pointer-events-none" />
 
           <div className="relative p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex items-start gap-4">
                 {/* group avatar */}
-                <div className="w-12 h-12 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0">
-                  <span className="text-xl font-bold text-orange-400">
+                <div className="w-12 h-12 rounded-xl bg-[#e4a233]/20 border border-[#e4a233]/35 flex items-center justify-center shrink-0">
+                  <span className="text-xl font-bold text-[#e4a233]">
                     {(group?.name || 'G').charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">{group?.name || 'Kundi'}</h1>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/15 text-orange-400 border border-orange-500/25">
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/15 text-[#e4a233] border border-[#e4a233]/30">
                       {roleLabel(membership?.role)}
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-xs ${
@@ -536,10 +537,10 @@ export default function MemberGroupDetailsPage() {
                           setTimeout(() => setCodeCopied(false), 2000);
                         });
                       }}
-                      className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/30 transition-all group/code"
+                      className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#e4a233]/35 transition-all group/code"
                       title="Gusa kunakili nambari ya kundi"
                     >
-                      <span className="text-xs font-mono font-semibold text-orange-400 tracking-wider">{group.group_code}</span>
+                      <span className="text-xs font-mono font-semibold text-[#e4a233] tracking-wider">{group.group_code}</span>
                       <svg className={`w-3.5 h-3.5 transition-colors ${codeCopied ? 'text-emerald-400' : 'text-white/30 group-hover/code:text-white/60'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {codeCopied
                           ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -556,7 +557,7 @@ export default function MemberGroupDetailsPage() {
               {canCreateProposal && (
                 <button
                   onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-                  className="shrink-0 self-start sm:self-auto px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                  className="shrink-0 self-start sm:self-auto px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
                 >
                   + Pendekezo
                 </button>
@@ -591,18 +592,18 @@ export default function MemberGroupDetailsPage() {
 
           {/* ── Sidebar (desktop) ── */}
           <aside className="hidden md:flex flex-col w-44 shrink-0 sticky top-6">
-            <div className="rounded-xl bg-[#141414] border border-white/[0.06] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden">
               {tabs.map((t, i) => (
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
                   className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-all ${
                     activeTab === t.id
-                      ? 'bg-orange-500/10 text-orange-400 border-l-2 border-orange-500'
+                      ? 'bg-[#e4a233]/10 text-[#e4a233] border-l-2 border-[#e4a233]'
                       : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03] border-l-2 border-transparent'
                   } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
                 >
-                  <span className={activeTab === t.id ? 'text-orange-400' : 'text-white/25'}>{t.icon}</span>
+                  <span className={activeTab === t.id ? 'text-[#e4a233]' : 'text-white/25'}>{t.icon}</span>
                   {t.label}
                 </button>
               ))}
@@ -610,7 +611,7 @@ export default function MemberGroupDetailsPage() {
             {canCreateProposal && (
               <button
                 onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-                className="mt-3 w-full px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                className="mt-3 w-full px-3 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
               >
                 + Pendekezo
               </button>
@@ -624,17 +625,17 @@ export default function MemberGroupDetailsPage() {
 
               {/* Group stat cards */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4">
                   <p className="text-xs text-white/30 mb-1">Mchango/Mwezi</p>
-                  <p className="text-base font-semibold text-orange-400">
+                  <p className="text-base font-semibold text-[#e4a233]">
                     TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4">
                   <p className="text-xs text-white/30 mb-1">Wanachama</p>
                   <p className="text-base font-semibold text-white">{group?.member_count ?? members.length}</p>
                 </div>
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4">
                   <p className="text-xs text-white/30 mb-1">Kiongozi</p>
                   <p className="text-base font-semibold text-white truncate">{group?.leader_name || '—'}</p>
                 </div>
@@ -645,10 +646,10 @@ export default function MemberGroupDetailsPage() {
                 {[
                   { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
                   { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
-                  { label: 'Waliolipa Mwezi Huu',  value: String(paymentSummary.this_month_payers), accent: 'text-orange-400' },
+                  { label: 'Waliolipa Mwezi Huu',  value: String(paymentSummary.this_month_payers), accent: 'text-[#e4a233]' },
                   { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
-                  <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-3">
+                  <div key={i} className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-3">
                     <p className="text-xs text-white/30 mb-1">{c.label}</p>
                     <p className={`text-sm font-semibold ${c.accent}`}>{c.value}</p>
                   </div>
@@ -656,7 +657,7 @@ export default function MemberGroupDetailsPage() {
               </div>
 
               {/* Group Treasury (nTZS) */}
-              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+              <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="text-sm font-semibold text-white">Hazina ya Kundi</p>
@@ -686,7 +687,7 @@ export default function MemberGroupDetailsPage() {
                           } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana kuunda hazina.'; setTreasuryError(msg); showToast(msg, 'error'); }
                           finally { setTreasuryLoading(false); }
                         }}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#d1622b] hover:bg-[#b9531f] text-white disabled:opacity-50 transition-colors"
                       >
                         {treasuryLoading ? 'Inaunda...' : 'Unda Hazina'}
                       </button>
@@ -723,10 +724,10 @@ export default function MemberGroupDetailsPage() {
                 )}
 
                 {treasurySummary?.treasury && (
-                  <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 p-5 mb-4">
+                  <div className="rounded-2xl bg-gradient-to-br from-[#e4a233]/12 to-red-500/10 border border-[#e4a233]/25 p-5 mb-4">
                     <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Salio la Hazina</p>
                     <p className="text-3xl font-bold text-white">
-                      TSh <span className="text-orange-400">{(treasurySummary.balanceTzs || 0).toLocaleString()}</span>
+                      TSh <span className="text-[#e4a233]">{(treasurySummary.balanceTzs || 0).toLocaleString()}</span>
                     </p>
                     <p className="text-xs text-white/30 mt-2">Fedha zinazotumika kupitia mapendekezo yaliyoidhinishwa</p>
                   </div>
@@ -739,7 +740,7 @@ export default function MemberGroupDetailsPage() {
                       {treasuryActivities.length === 0 ? (
                         <p className="text-xs text-white/20 py-3 text-center">— Hakuna shughuli bado —</p>
                       ) : treasuryActivities.map((activity) => (
-                        <div key={activity.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
+                        <div key={activity.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.07] px-3 py-2.5">
                           <div>
                             <p className="text-xs font-medium text-white">
                               {activity.type === 'deposit' && '↓ Mchango'}
@@ -768,10 +769,10 @@ export default function MemberGroupDetailsPage() {
               </div>
 
               {/* Recent proposals preview */}
-              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+              <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-white">Mapendekezo ya Hivi Karibuni</p>
-                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-orange-400 hover:text-orange-300 transition-colors">
+                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-[#e4a233] hover:text-[#f0b95a] transition-colors">
                     Angalia yote →
                   </button>
                 </div>
@@ -781,7 +782,7 @@ export default function MemberGroupDetailsPage() {
                   ) : recentProposals.map((p) => (
                     <button key={p.id}
                       onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                      className="w-full text-left rounded-lg bg-white/[0.03] border border-white/5 hover:border-orange-500/20 hover:bg-orange-500/5 px-3 py-2.5 transition-all"
+                      className="w-full text-left rounded-lg bg-white/[0.03] border border-white/[0.07] hover:border-[#e4a233]/25 hover:bg-[#e4a233]/8 px-3 py-2.5 transition-all"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
@@ -801,7 +802,7 @@ export default function MemberGroupDetailsPage() {
 
           {/* ── Members tab ── */}
           {activeTab === 'members' && (
-            <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
+            <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] overflow-hidden">
               {members.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-14 px-6">
                   <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
@@ -817,8 +818,8 @@ export default function MemberGroupDetailsPage() {
                     return (
                       <div key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-semibold text-orange-400">
+                          <div className="w-8 h-8 rounded-full bg-[#e4a233]/10 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-[#e4a233]">
                               {m.full_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -829,7 +830,7 @@ export default function MemberGroupDetailsPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={`px-2 py-0.5 rounded-full text-xs ${
-                            m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-orange-500/10 text-orange-400'
+                            m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-[#e4a233]/10 text-[#e4a233]'
                             : m.role === 'katibu' || m.role === 'mwekahazina' ? 'bg-blue-500/10 text-blue-400'
                             : 'bg-white/5 text-white/30'
                           }`}>{roleLabel(m.role)}</span>
@@ -851,7 +852,7 @@ export default function MemberGroupDetailsPage() {
           {activeTab === 'leadership' && (
             <div className="space-y-2">
               {leadership.length === 0 ? (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 flex flex-col items-center justify-center py-14 px-6">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] flex flex-col items-center justify-center py-14 px-6">
                   <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-3">
                     <svg className="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                   </div>
@@ -859,7 +860,7 @@ export default function MemberGroupDetailsPage() {
                   <p className="text-xs text-white/15 mt-1">Viongozi watateuliwa na msimamizi</p>
                 </div>
               ) : leadership.map((l) => (
-                <div key={l.id} className="rounded-xl bg-[#1a1a1a] border border-white/5 px-4 py-3 flex items-center justify-between gap-4">
+                <div key={l.id} className="rounded-xl bg-white/[0.04] border border-white/[0.07] px-4 py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
                       <span className="text-sm font-semibold text-blue-400">{l.full_name.charAt(0).toUpperCase()}</span>
@@ -869,7 +870,7 @@ export default function MemberGroupDetailsPage() {
                       <p className="text-xs text-white/25">{l.email || ''}</p>
                     </div>
                   </div>
-                  <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                  <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25">
                     {roleLabel(l.role)}
                   </span>
                 </div>
@@ -885,10 +886,10 @@ export default function MemberGroupDetailsPage() {
                 {[
                   { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
                   { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
-                  { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-orange-400' },
+                  { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-[#e4a233]' },
                   { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
-                  <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-3">
+                  <div key={i} className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-3">
                     <p className="text-xs text-white/30 mb-1">{c.label}</p>
                     <p className={`text-sm font-semibold ${c.accent}`}>{c.value}</p>
                   </div>
@@ -898,7 +899,7 @@ export default function MemberGroupDetailsPage() {
               {/* Pay buttons */}
               <div className="flex gap-3">
                 <button onClick={() => handleOpenPay('contribution')}
-                  className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors">
                   Lipa Mchango
                 </button>
                 <button onClick={() => handleOpenPay('topup')}
@@ -909,7 +910,7 @@ export default function MemberGroupDetailsPage() {
 
               {/* Member payment status (leader only) */}
               {isLeader && memberPaymentStatus.length > 0 && (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
                   <p className="text-sm font-semibold text-white mb-3">
                     Hali ya Michango — {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}
                   </p>
@@ -931,7 +932,7 @@ export default function MemberGroupDetailsPage() {
 
               {/* Disbursement form (leader only) */}
               {isLeader && (
-                <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
                   <p className="text-sm font-semibold text-white mb-0.5">Tuma Fedha kwa Mwanachama</p>
                   <p className="text-xs text-white/30 mb-4">Tuma pesa moja kwa moja kupitia mobile money.</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -953,7 +954,7 @@ export default function MemberGroupDetailsPage() {
                     <div>
                       <label className="block text-xs text-white/40 mb-1">Mtandao</label>
                       <select value={disburseProvider} onChange={e => setDisburseProvider(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-white/10 text-sm text-white focus:outline-none focus:border-orange-500/50 [&>option]:bg-[#1a1a1a] [&>option]:text-white">
+                        className="w-full px-3 py-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white focus:outline-none focus:border-[#e4a233]/60 [&>option]:bg-white/[0.04] [&>option]:text-white">
                         <option value="airtel">Airtel Money</option>
                         <option value="mpesa">Vodacom M-Pesa</option>
                         <option value="tigopesa">Tigo Pesa</option>
@@ -969,15 +970,15 @@ export default function MemberGroupDetailsPage() {
                   {disburseError && <p className="text-xs text-red-400 mt-2">{disburseError}</p>}
                   {disburseSuccess && <p className="text-xs text-emerald-400 mt-2">{disburseSuccess}</p>}
                   <button onClick={handleDisburse} disabled={disburseLoading}
-                    className="mt-4 px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    className="mt-4 px-5 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {disburseLoading ? 'Inatuma...' : 'Tuma Fedha'}
                   </button>
                 </div>
               )}
 
               {/* Payment history */}
-              <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/5">
+              <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/[0.07]">
                   <p className="text-sm font-semibold text-white">Historia ya Malipo</p>
                 </div>
                 {groupPayments.length === 0 ? (
@@ -1031,7 +1032,7 @@ export default function MemberGroupDetailsPage() {
                 {canCreateProposal && (
                   <button
                     onClick={() => setShowCreateProposal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                     Pendekezo Jipya
@@ -1040,7 +1041,7 @@ export default function MemberGroupDetailsPage() {
               </div>
 
               {proposals.length === 0 ? (
-                <div className="rounded-2xl bg-[#141414] border border-white/[0.06] flex flex-col items-center justify-center py-16 px-6">
+                <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] flex flex-col items-center justify-center py-16 px-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
                     <svg className="w-7 h-7 text-white/15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
@@ -1052,14 +1053,14 @@ export default function MemberGroupDetailsPage() {
                 const typeMeta: Record<string, { label: string; color: string; dot: string }> = {
                   general:  { label: 'Jumla',     color: 'bg-white/5 text-white/40 border border-white/10',            dot: 'bg-white/20' },
                   ask:      { label: 'Ombi',      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
-                  spend:    { label: 'Matumizi',  color: 'bg-orange-500/10 text-orange-400 border border-orange-500/20', dot: 'bg-orange-400' },
+                  spend:    { label: 'Matumizi',  color: 'bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25', dot: 'bg-[#e4a233]' },
                   prodcast:  { label: 'Prodcast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
                 };
                 const tm = typeMeta[pType] ?? typeMeta.general;
                 return (
                   <button key={p.id}
                     onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                    className="w-full text-left rounded-2xl bg-[#141414] border border-white/[0.06] hover:border-orange-500/25 hover:bg-orange-500/[0.03] p-5 transition-all group"
+                    className="w-full text-left rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-[#e4a233]/30 hover:bg-[#e4a233]/[0.05] p-5 transition-all group"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
@@ -1068,7 +1069,7 @@ export default function MemberGroupDetailsPage() {
                             <span className={`w-1.5 h-1.5 rounded-full ${tm.dot}`} />
                             {tm.label}
                           </span>
-                          <p className="text-sm font-semibold text-white group-hover:text-orange-50 transition-colors min-w-0 truncate">{p.title}</p>
+                          <p className="text-sm font-semibold text-white group-hover:text-white transition-colors min-w-0 truncate">{p.title}</p>
                         </div>
                         {p.description && (
                           <p className="text-xs text-white/35 line-clamp-2">{p.description}</p>
@@ -1088,7 +1089,7 @@ export default function MemberGroupDetailsPage() {
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                           p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/25 border border-white/10'
                         }`}>{p.status === 'open' ? 'Wazi' : 'Imefungwa'}</span>
-                        <span className="text-white/20 group-hover:text-orange-400 transition-colors text-xs">→</span>
+                        <span className="text-white/20 group-hover:text-[#e4a233] transition-colors text-xs">→</span>
                       </div>
                     </div>
                   </button>
@@ -1108,10 +1109,10 @@ export default function MemberGroupDetailsPage() {
             key={t.id}
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-all ${
-              activeTab === t.id ? 'text-orange-400' : 'text-white/30'
+              activeTab === t.id ? 'text-[#e4a233]' : 'text-white/30'
             }`}
           >
-            <span className={activeTab === t.id ? 'text-orange-400' : 'text-white/25'}>{t.icon}</span>
+            <span className={activeTab === t.id ? 'text-[#e4a233]' : 'text-white/25'}>{t.icon}</span>
             {t.label}
           </button>
         ))}
@@ -1122,7 +1123,7 @@ export default function MemberGroupDetailsPage() {
       {/* ── Create Proposal Modal ── */}
       {showCreateProposal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-[#1a1a1a] border border-white/10 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="w-full max-w-lg rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
               <div>
@@ -1147,7 +1148,7 @@ export default function MemberGroupDetailsPage() {
               {([
                 { value: 'general', label: 'Jumla', color: 'text-white/60' },
                 { value: 'ask', label: 'Ombi', color: 'text-blue-400' },
-                { value: 'spend', label: 'Matumizi', color: 'text-orange-400' },
+                { value: 'spend', label: 'Matumizi', color: 'text-[#e4a233]' },
                 { value: 'prodcast', label: 'Prodcast', color: 'text-purple-400' },
               ] as { value: ProposalType; label: string; color: string }[]).map(tab => (
                 <button
@@ -1360,13 +1361,13 @@ export default function MemberGroupDetailsPage() {
               <div className={`rounded-xl px-4 py-3 border ${
                 proposalType === 'prodcast' ? 'bg-purple-500/5 border-purple-500/10' :
                 proposalType === 'ask' ? 'bg-blue-500/5 border-blue-500/10' :
-                proposalType === 'spend' ? 'bg-orange-500/5 border-orange-500/10' :
-                'bg-orange-500/5 border-orange-500/10'
+                proposalType === 'spend' ? 'bg-[#e4a233]/8 border-[#e4a233]/15' :
+                'bg-[#e4a233]/8 border-[#e4a233]/15'
               }`}>
                 <p className={`text-xs ${
                   proposalType === 'prodcast' ? 'text-purple-400/70' :
                   proposalType === 'ask' ? 'text-blue-400/70' :
-                  'text-orange-400/70'
+                  'text-[#e4a233]/70'
                 }`}>
                   {proposalType === 'prodcast'
                     ? 'Baada ya kura kupita, mradi utaonekana kwa wawekezaji kwenye portal.'
@@ -1395,7 +1396,7 @@ export default function MemberGroupDetailsPage() {
                   className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg ${
                     proposalType === 'prodcast' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20' :
                     proposalType === 'ask' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' :
-                    'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+                    'bg-[#d1622b] hover:bg-[#b9531f] shadow-[#d1622b]/25'
                   }`}
                 >
                   {proposalSubmitting ? 'Inaunda...' : 'Unda Pendekezo'}
@@ -1409,7 +1410,7 @@ export default function MemberGroupDetailsPage() {
       {/* ── Payment modal ── */}
       {payModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-[#1a1a1a] border border-white/10 p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-white/[0.04] border border-white/10 p-6">
 
             {payStatus === 'input' && (
               <>
@@ -1418,7 +1419,7 @@ export default function MemberGroupDetailsPage() {
                 </h3>
                 <p className="text-xs text-white/30 mb-4">{group?.name}</p>
                 {payModal.type === 'contribution' && (
-                  <p className="text-xs text-orange-400/70 mb-4 px-3 py-2 rounded-lg bg-orange-500/5 border border-orange-500/10">
+                  <p className="text-xs text-[#e4a233]/70 mb-4 px-3 py-2 rounded-lg bg-[#e4a233]/8 border border-[#e4a233]/15">
                     Mchango wa kawaida: TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
                   </p>
                 )}
@@ -1444,7 +1445,7 @@ export default function MemberGroupDetailsPage() {
                     Ghairi
                   </button>
                   <button onClick={handlePay} disabled={payLoading}
-                    className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
                   </button>
                 </div>
@@ -1453,12 +1454,12 @@ export default function MemberGroupDetailsPage() {
 
             {payStatus === 'waiting' && (
               <div className="text-center py-4">
-                <div className="w-14 h-14 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mx-auto mb-4" />
+                <div className="w-14 h-14 rounded-full border-2 border-[#e4a233] border-t-transparent animate-spin mx-auto mb-4" />
                 <h3 className="text-base font-semibold text-white mb-2">Inasubiri Uthibitisho...</h3>
                 <p className="text-sm text-white/40 mb-1">Arifa imetumwa kwa <span className="text-white">{payPhone}</span></p>
                 <p className="text-xs text-white/25 mb-4">Ingiza PIN kwenye simu yako kuthibitisha TSh {parseInt(payAmount).toLocaleString()}</p>
-                <div className="px-4 py-3 rounded-xl bg-orange-500/5 border border-orange-500/10 mb-4">
-                  <p className="text-xs text-orange-400/70">Usifunge ukurasa huu hadi malipo yakamilike.</p>
+                <div className="px-4 py-3 rounded-xl bg-[#e4a233]/8 border border-[#e4a233]/15 mb-4">
+                  <p className="text-xs text-[#e4a233]/70">Usifunge ukurasa huu hadi malipo yakamilike.</p>
                 </div>
                 <button onClick={handleClosePay} className="text-xs text-white/25 hover:text-white/50 underline transition-colors">Ghairi</button>
               </div>
@@ -1490,7 +1491,7 @@ export default function MemberGroupDetailsPage() {
                 <div className="flex gap-2">
                   <button onClick={handleClosePay} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm hover:bg-white/5 transition-colors">Funga</button>
                   <button onClick={() => { setPayStatus('input'); setPayError(''); }}
-                    className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Jaribu Tena</button>
+                    className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors">Jaribu Tena</button>
                 </div>
               </div>
             )}
