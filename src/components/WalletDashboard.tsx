@@ -51,7 +51,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/50"
+        className="w-full flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4a233]/60"
       >
         <span>{selectedOption?.label || placeholder || 'Chagua...'}</span>
         <ChevronDownIcon className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -60,7 +60,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute z-20 mt-1 w-full rounded-lg border border-white/10 bg-[#1a1a1a] shadow-xl overflow-hidden">
+          <div className="absolute z-20 mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] shadow-xl overflow-hidden">
             {options.map((option) => (
               <button
                 key={option.value}
@@ -71,7 +71,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
                 }}
                 className={`w-full px-4 py-3 text-left text-sm transition-colors ${
                   value === option.value
-                    ? 'bg-orange-500/10 text-orange-400'
+                    ? 'bg-orange-500/10 text-[#e4a233]'
                     : 'text-white hover:bg-white/5'
                 }`}
               >

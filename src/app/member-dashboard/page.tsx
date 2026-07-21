@@ -529,8 +529,8 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 const inputCls = (editing: boolean) =>
   `w-full px-3 py-2.5 rounded-lg text-sm border transition-colors focus:outline-none ${
     editing
-      ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-orange-500/50'
-      : 'bg-white/[0.03] border-white/5 text-white/50 cursor-default'
+      ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-[#e4a233]/60'
+      : 'bg-white/[0.03] border-white/[0.07] text-white/50 cursor-default'
   }`;
 
 function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile: any; user: any; loadMemberData: () => void }) {
@@ -594,7 +594,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
   return (
     <div className="space-y-4">
       {/* Profile header card */}
-      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5 flex items-center gap-4">
+      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5 flex items-center gap-4">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0">
           <span className="text-lg font-bold text-white">{initials}</span>
         </div>
@@ -612,7 +612,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           disabled={saving}
           className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
             isEditing
-              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+              ? 'bg-[#d1622b] hover:bg-[#b9531f] text-white'
               : 'bg-white/5 hover:bg-white/10 text-white/70'
           }`}
         >
@@ -621,7 +621,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       </div>
 
       {/* Personal info */}
-      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
         <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Jina Kamili" value={formData.fullName} field="fullName" />
@@ -632,7 +632,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       </div>
 
       {/* Business info */}
-      <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
         <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa za Biashara</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Jina la Biashara" value={formData.businessName} field="businessName" />
@@ -663,7 +663,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {saving ? 'Inahifadhi...' : 'Hifadhi Mabadiliko'}
           </button>
@@ -810,7 +810,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         </div>
         <button
           onClick={() => { setShowCreateModal(true); setCreateError(''); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-medium transition-colors"
         >
           <span className="text-base leading-none">+</span> Unda Kundi
         </button>
@@ -823,13 +823,13 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               <div
                 key={g.id}
                 onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
-                className="rounded-xl bg-[#1a1a1a] border border-white/5 hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
+                className="rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-base font-semibold text-white truncate">{g.name}</h3>
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-orange-500/10 text-orange-400">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
                         {g.member_role || 'mwanachama'}
                       </span>
                     </div>
@@ -838,17 +838,17 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-orange-400">
+                    <p className="text-sm font-semibold text-[#e4a233]">
                       TSh {parseInt(g.monthly_contribution || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-white/30 mt-0.5">kwa mwezi</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between">
                   <p className="text-xs text-white/30">Gusa kuangalia kundi →</p>
                   <div className="flex items-center gap-1.5">
                     <UserGroupIcon className="h-3.5 w-3.5 text-white/30" />
-                    <span className="text-xs text-white/30 group-hover:text-orange-400 transition-colors">Angalia →</span>
+                    <span className="text-xs text-white/30 group-hover:text-[#e4a233] transition-colors">Angalia →</span>
                   </div>
                 </div>
               </div>
@@ -863,7 +863,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           </button>
         </>
       ) : (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-10 text-center">
+        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-10 text-center">
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
             <UserGroupIcon className="h-6 w-6 text-white/30" />
           </div>
@@ -871,7 +871,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           <p className="text-xs text-white/25 mb-5">Pata nambari ya kundi (mfano: JKM-A3F9K2) kutoka kwa kiongozi.</p>
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+            className="px-5 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors"
           >
             Jiunge na Kundi
           </button>
@@ -880,11 +880,11 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
       {/* Pending join requests */}
       {joinRequests.length > 0 && (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
+        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
           <h3 className="text-sm font-semibold text-white mb-3">Maombi Yangu</h3>
           <div className="space-y-2">
             {joinRequests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+              <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/[0.07] last:border-0">
                 <div>
                   <p className="text-sm text-white">{r.group_name}</p>
                   <p className="text-xs text-white/30 mt-0.5">
@@ -903,7 +903,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Create Group modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-base font-semibold text-white mb-1">Unda Kundi Jipya</h3>
             <p className="text-xs text-white/40 mb-5">Utakuwa kiongozi wa kundi hili moja kwa moja.</p>
 
@@ -914,7 +914,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Mfano: Vikundi vya Maendeleo"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
               </div>
@@ -927,7 +927,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   onChange={e => setCreateForm(f => ({ ...f, monthlyContribution: e.target.value }))}
                   placeholder="Mfano: 50000"
                   min="1"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
               </div>
@@ -940,7 +940,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     value={createForm.votingNumerator}
                     onChange={e => setCreateForm(f => ({ ...f, votingNumerator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-orange-500/50"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
                   <span className="text-white/30 text-sm">kati ya</span>
                   <input
@@ -948,7 +948,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     value={createForm.votingDenominator}
                     onChange={e => setCreateForm(f => ({ ...f, votingDenominator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-orange-500/50"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
                   <span className="text-xs text-white/30">kura kupita</span>
                 </div>
@@ -972,7 +972,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? 'Inaunda...' : 'Unda Kundi'}
                 </button>
@@ -985,7 +985,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Join by Code modal */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-semibold text-white">Jiunge na Kundi</h3>
               <button onClick={resetJoinModal} className="text-white/30 hover:text-white/70 transition-colors">
@@ -1004,12 +1004,12 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 onKeyDown={e => { if (e.key === 'Enter') handleLookupCode(); }}
                 placeholder="Mfano: JKM-A3F9K2"
                 maxLength={12}
-                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 uppercase tracking-wider"
+                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60 uppercase tracking-wider"
               />
               <button
                 onClick={handleLookupCode}
                 disabled={joinLookupLoading || !joinCode.trim()}
-                className="px-4 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
+                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
               >
                 {joinLookupLoading ? '...' : 'Tafuta'}
               </button>
@@ -1029,11 +1029,11 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <p className="text-xs text-white/40 mt-0.5">Kiongozi: {joinLookupResult.leader_name || 'Hajapewa'}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-orange-400">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-[#e4a233]">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
                     <p className="text-xs text-white/30">kwa mwezi</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-white/30 pt-1 border-t border-white/5">
+                <div className="flex items-center gap-3 text-xs text-white/30 pt-1 border-t border-white/[0.07]">
                   <span>{joinLookupResult.member_count} wanachama</span>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <span className={joinLookupResult.join_policy === 'open' ? 'text-emerald-400' : 'text-yellow-400'}>
@@ -1048,7 +1048,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                       value={joinMessage}
                       onChange={e => setJoinMessage(e.target.value)}
                       placeholder="Eleza kwa nini ungependa kujiunga..."
-                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60 resize-none"
                       rows={2}
                     />
                   </div>
@@ -1057,7 +1057,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   onClick={handleJoinByCode}
                   disabled={joinLoading}
-                  className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {joinLoading ? 'Inajiunga...' : joinLookupResult.join_policy === 'open' ? 'Jiunga Sasa' : 'Tuma Ombi'}
                 </button>
@@ -1085,7 +1085,7 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
   const summaryCards = [
     { label: 'Jumla ya Uwekezaji', value: `TSh ${totalInvestment.toLocaleString()}`, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: 'Faida Halisi', value: `TSh ${totalReturns.toLocaleString()}`, accent: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Kiwango cha Faida', value: `${returnRate}%`, accent: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { label: 'Kiwango cha Faida', value: `${returnRate}%`, accent: 'text-[#e4a233]', bg: 'bg-[#e4a233]/10' },
   ];
 
   return (
@@ -1093,7 +1093,7 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {summaryCards.map((c, i) => (
-          <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4">
+          <div key={i} className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4">
             <p className="text-xs text-white/40 mb-1">{c.label}</p>
             <p className={`text-lg font-semibold ${c.accent}`}>{c.value}</p>
           </div>
@@ -1102,9 +1102,9 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
 
       {/* List */}
       {memberInvestments.length > 0 ? (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 overflow-hidden">
+        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] overflow-hidden">
           {memberInvestments.map((inv, i) => (
-            <div key={i} className="p-5 border-b border-white/5 last:border-0">
+            <div key={i} className="p-5 border-b border-white/[0.07] last:border-0">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-semibold text-white">{inv.group_name}</h3>
@@ -1135,7 +1135,7 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
           ))}
         </div>
       ) : (
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-12 text-center">
+        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
             <CurrencyDollarIcon className="h-6 w-6 text-white/30" />
           </div>
@@ -1173,8 +1173,8 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
       {/* Summary card */}
       <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-            <BookOpenIcon className="h-5 w-5 text-orange-400" />
+          <div className="w-10 h-10 rounded-xl bg-[#e4a233]/10 border border-[#e4a233]/20 flex items-center justify-center">
+            <BookOpenIcon className="h-5 w-5 text-[#e4a233]" />
           </div>
           <h3 className="text-base font-bold text-white">Masomo</h3>
         </div>
@@ -1182,7 +1182,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
             <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Kozi Zinaendelea</p>
-            <p className="text-2xl font-bold text-orange-400">{coursesInProgress}</p>
+            <p className="text-2xl font-bold text-[#e4a233]">{coursesInProgress}</p>
           </div>
           <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
             <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Vyeti Vilivyopatikana</p>
@@ -1193,7 +1193,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/jifunze')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-colors"
           >
             Endelea Kujifunza
           </button>
@@ -1291,7 +1291,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       {/* Profile card */}
       <button
         onClick={() => onNavigate('profile')}
-        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#1a1a1a] border border-white/[0.06] hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
+        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
       >
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
           <span className="text-lg font-bold text-white">
@@ -1308,7 +1308,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       </button>
 
       {/* Username section */}
-      <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
         <h3 className="text-sm font-semibold text-white mb-1">Username ya Uhamisho Pesa</h3>
         <p className="text-xs text-white/40 mb-4">
           {memberProfile?.username 
@@ -1344,7 +1344,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
                   value={username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   placeholder="juma_ally"
-                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50"
+                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
                   pattern="[a-z0-9_]{3,30}"
                   minLength={3}
                   maxLength={30}
@@ -1361,7 +1361,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
             <button
               onClick={saveUsername}
               disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
-              className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
             </button>
@@ -1370,7 +1370,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       </div>
 
       {/* Settings menu items */}
-      <div className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] divide-y divide-white/[0.04]">
+      <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] divide-y divide-white/[0.04]">
         {[
           { label: 'Taarifa za Akaunti', desc: 'Jina, nambari ya simu, barua pepe', icon: UserIcon },
           { label: 'Usalama', desc: 'Nywila na uthibitishaji', icon: CogIcon },
