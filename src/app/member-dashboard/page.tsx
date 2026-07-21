@@ -18,6 +18,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import WalletDashboard from '@/components/WalletDashboard';
+import Logo from '@/components/Logo';
 
 export default function MemberDashboard() {
   const { } = useLanguage();
@@ -188,167 +189,162 @@ export default function MemberDashboard() {
 
   const activeName = menuItems.find(m => m.id === activeSection)?.name || 'Overview';
 
-  return (
-    <div className="min-h-[100dvh] bg-[#0d0d0d] flex">
+  const initials = (user.fullName || user.email || 'U')[0].toUpperCase();
 
-      {/* ── Mobile overlay ── */}
+  return (
+    <div className="relative min-h-[100dvh] bg-[#0b0a09] text-white flex overflow-hidden">
+
+      {/* ── Ambient warm gradient backdrop ── */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute -top-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-[#d1622b]/25 blur-[130px]" />
+        <div className="absolute top-1/3 -right-40 h-[26rem] w-[26rem] rounded-full bg-[#e4a233]/15 blur-[130px]" />
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-[#7c3f14]/20 blur-[130px]" />
+      </div>
+
+      {/* ── Mobile drawer overlay ── */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ── Sidebar ── */}
       <aside className={`
-        fixed top-0 left-0 h-[100dvh] w-60 bg-[#111111] border-r border-white/5
-        flex flex-col z-30 transition-transform duration-300
+        fixed top-0 left-0 h-[100dvh] w-64 z-50 flex flex-col
+        bg-[#100d0b]/95 backdrop-blur-xl border-r border-white/[0.06]
+        transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:flex
+        lg:translate-x-0 lg:static lg:z-20 lg:flex lg:shrink-0
       `}>
         {/* Brand */}
-        <div className="px-5 py-6 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shrink-0">
-              <span className="text-sm font-bold text-white">J</span>
-            </div>
+        <div className="px-5 py-5 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Logo markOnly className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Washika DAU</p>
-              <p className="text-xs text-white/40 truncate">{user.fullName || user.email}</p>
+              <p className="text-sm font-bold text-white leading-none">Washika<span className="text-[#e4a233]">DAU</span></p>
+              <p className="text-[10px] text-white/40 truncate mt-1">{user.fullName || user.email}</p>
             </div>
           </div>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/40 hover:text-white">
+            <XMarkIcon className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
           {menuItems.map((item) => {
             const active = activeSection === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
-                className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm
-                  transition-all duration-150
-                  ${ active
-                    ? 'bg-orange-500/15 text-orange-400 font-medium'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/5'
-                  }
-                `}
+                className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
+                  active
+                    ? 'bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white font-semibold shadow-lg shadow-[#d1622b]/25'
+                    : 'text-white/55 hover:text-white hover:bg-white/[0.06]'
+                }`}
               >
-                <item.icon className={`h-4.5 w-4.5 shrink-0 ${ active ? 'text-orange-400' : '' }`} />
+                <item.icon className="h-5 w-5 shrink-0" />
                 <span>{item.name}</span>
-                {active && <span className="ml-auto w-1 h-4 rounded-full bg-orange-400" />}
               </button>
             );
           })}
         </nav>
 
-        {/* Logout pinned to bottom */}
-        <div className="px-3 py-4 border-t border-white/5">
+        {/* Logout */}
+        <div className="px-3 py-4 border-t border-white/[0.06]">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/45 hover:text-red-300 hover:bg-red-500/10 transition-all"
           >
-            <ArrowRightOnRectangleIcon className="h-4.5 w-4.5 shrink-0" />
+            <ArrowRightOnRectangleIcon className="h-5 w-5 shrink-0" />
             <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      {/* ── Main column ── */}
+      <div className="relative z-10 flex-1 flex flex-col min-w-0">
 
-        {/* Top bar (mobile only — page title + avatar) */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#111111] border-b border-white/5 sticky top-0 z-10">
-          <span className="text-sm font-semibold text-white">{activeName}</span>
-          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-            <span className="text-xs font-bold text-white">{(user.fullName || user.email || 'U')[0].toUpperCase()}</span>
+        {/* Sticky branded top header — visible throughout */}
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-white/[0.06] bg-[#0b0a09]/70 backdrop-blur-xl">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile: menu + logo */}
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-white/70 hover:text-white -ml-1 p-1">
+              <Bars3Icon className="h-6 w-6" />
+            </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <Logo markOnly className="h-7 w-auto" />
+              <span className="text-sm font-bold">Washika<span className="text-[#e4a233]">DAU</span></span>
+            </div>
+            {/* Desktop: page title */}
+            <h1 className="hidden lg:block text-lg font-semibold text-white">{activeName}</h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-medium text-emerald-300">nTZS live</span>
+            </div>
+            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-white/10 hover:ring-[#e4a233]/40 transition-all">
+              <span className="text-xs font-bold text-white">{initials}</span>
+            </button>
           </div>
         </header>
 
-        {/* Page title bar (desktop) */}
-        <div className="hidden lg:flex items-center justify-between px-8 pt-8 pb-2">
-          <h1 className="text-xl font-semibold text-white">{activeName}</h1>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-              <span className="text-xs font-bold text-white">
-                {(user.fullName || user.email || 'U')[0].toUpperCase()}
-              </span>
-            </div>
-            <span className="text-sm text-white/50">{user.fullName || user.email}</span>
-          </div>
-        </div>
-
         {/* Content */}
-        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-6 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-5 lg:py-7 pb-28 lg:pb-8">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#e4a233] border-t-transparent" />
             </div>
           ) : (
             renderContent()
           )}
         </main>
       </div>
+
       {/* ── Mobile Bottom Nav ── */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111]/95 backdrop-blur-xl border-t border-white/[0.06]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#100d0b]/90 backdrop-blur-xl border-t border-white/[0.07]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-end justify-around px-1 h-16">
-          {/* Home */}
-          <button
-            onClick={() => setActiveSection('overview')}
-            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'overview' ? 'text-orange-400' : 'text-white/30'}`}
-          >
-            <ChartBarIcon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Nyumbani</span>
-          </button>
-
-          {/* Wallet */}
-          <button
-            onClick={() => setActiveSection('wallet')}
-            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'wallet' ? 'text-orange-400' : 'text-white/30'}`}
-          >
-            <WalletIcon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Pochi</span>
-          </button>
+          {[
+            { id: 'overview', label: 'Nyumbani', icon: ChartBarIcon },
+            { id: 'wallet', label: 'Pochi', icon: WalletIcon },
+          ].map((t) => {
+            const active = activeSection === t.id;
+            return (
+              <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-white/35'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-white/35'}`}>{t.label}</span>
+              </button>
+            );
+          })}
 
           {/* Groups — elevated centre tab */}
-          <button
-            onClick={() => setActiveSection('group')}
-            className="flex flex-col items-center gap-1 -mt-5"
-          >
+          <button onClick={() => setActiveSection('group')} className="flex flex-col items-center gap-1 -mt-5">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
               activeSection === 'group'
-                ? 'bg-orange-500 shadow-xl shadow-orange-500/40 scale-105'
-                : 'bg-[#1e1e1e] border border-orange-500/20 shadow-lg shadow-orange-500/10'
+                ? 'bg-gradient-to-br from-[#d1622b] to-[#e4a233] shadow-xl shadow-[#d1622b]/40 scale-105'
+                : 'bg-[#1e1a16] border border-[#e4a233]/25 shadow-lg shadow-[#d1622b]/10'
             }`}>
-              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-white/50'}`} />
+              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-white/55'}`} />
             </div>
-            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-orange-400' : 'text-white/30'}`}>Kundi</span>
+            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-white/35'}`}>Kundi</span>
           </button>
 
-          {/* Training */}
-          <button
-            onClick={() => setActiveSection('learning')}
-            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${activeSection === 'learning' ? 'text-orange-400' : 'text-white/30'}`}
-          >
-            <AcademicCapIcon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Mafunzo</span>
-          </button>
-
-          {/* Settings (includes Profile) */}
-          <button
-            onClick={() => setActiveSection('settings')}
-            className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${
-              activeSection === 'settings' || activeSection === 'profile' ? 'text-orange-400' : 'text-white/30'
-            }`}
-          >
-            <CogIcon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Zaidi</span>
-          </button>
+          {[
+            { id: 'learning', label: 'Mafunzo', icon: AcademicCapIcon },
+            { id: 'settings', label: 'Zaidi', icon: CogIcon, extra: 'profile' },
+          ].map((t) => {
+            const active = activeSection === t.id || activeSection === (t as { extra?: string }).extra;
+            return (
+              <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-white/35'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-white/35'}`}>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>
@@ -373,110 +369,135 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
   const isActive = memberProfile?.status === 'active';
 
   const stats = [
-    { name: 'Hali ya Uanachama', value: isActive ? 'Hai' : 'Inasubiri', icon: UserIcon, accent: isActive ? 'text-emerald-400' : 'text-yellow-400', bg: isActive ? 'bg-emerald-500/10' : 'bg-yellow-500/10' },
-    { name: 'Kundi Langu', value: memberProfile?.group_name || 'Hujajiunga', icon: UserGroupIcon, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { name: 'Uwekezaji Wangu', value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, accent: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { name: 'Faida Inayotarajiwa', value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, accent: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { name: 'Hali ya Uanachama', value: isActive ? 'Hai' : 'Inasubiri', icon: UserIcon, from: isActive ? 'from-emerald-400' : 'from-yellow-400', to: isActive ? 'to-teal-500' : 'to-amber-500' },
+    { name: 'Kundi Langu', value: memberProfile?.group_name || 'Hujajiunga', icon: UserGroupIcon, from: 'from-sky-400', to: 'to-blue-600' },
+    { name: 'Uwekezaji Wangu', value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-[#e4a233]', to: 'to-[#d1622b]' },
+    { name: 'Faida Inayotarajiwa', value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, from: 'from-fuchsia-400', to: 'to-purple-600' },
   ];
 
   const displayActivities = recentActivities.length > 0
     ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString('sw-TZ') }))
     : [{ action: 'Umejiunga na Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('sw-TZ') : 'Leo' }];
 
+  const actions = [
+    { label: 'Weka Pesa', icon: 'M12 4v16m8-8H4', section: 'wallet' },
+    { label: 'Toa Pesa', icon: 'M20 12H4m8 8l-8-8 8-8', section: 'wallet' },
+    { label: 'Hamisha', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', section: 'wallet' },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Greeting + inline balance */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-semibold text-white">
-            Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
-          </h2>
-          <p className="text-sm text-white/40 mt-0.5">Hapa kuna muhtasari wa akaunti yako</p>
-        </div>
-        {/* Balance pill — top right of greeting */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#1a1a1a] border border-white/[0.07]">
-          <div className="w-7 h-7 rounded-lg bg-orange-500/15 flex items-center justify-center shrink-0">
-            <WalletIcon className="h-3.5 w-3.5 text-orange-400" />
-          </div>
-          <div>
-            <p className="text-[10px] text-white/30 uppercase tracking-wider leading-none mb-0.5">Salio</p>
-            {balanceLoading ? (
-              <div className="h-4 w-20 rounded bg-white/5 animate-pulse" />
-            ) : (
-              <p className="text-sm font-bold text-white leading-none">
-                TSh <span className="text-orange-400">{(balanceTzs ?? 0).toLocaleString()}</span>
-              </p>
-            )}
-          </div>
-        </div>
+    <div className="space-y-5 max-w-5xl mx-auto">
+      {/* Greeting */}
+      <div>
+        <h2 className="font-display text-3xl text-white">
+          Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
+        </h2>
+        <p className="text-sm text-white/45 mt-1">Hapa kuna muhtasari wa akaunti yako</p>
       </div>
 
-      {/* ── Compact web3-style action strip ── */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onNavigate('wallet')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-lg shadow-orange-500/20"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-          Weka Pesa
-        </button>
-        <button
-          onClick={() => onNavigate('wallet')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 text-xs font-medium border border-white/[0.08] transition-colors"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" /></svg>
-          Toa Pesa
-        </button>
-        <button
-          onClick={() => onNavigate('wallet')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 text-xs font-medium border border-white/[0.08] transition-colors"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-          Hamisha
-        </button>
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] text-white/25">nTZS live</span>
+      {/* ── Balance hero card ── */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 bg-gradient-to-br from-[#d1622b] via-[#c25a24] to-[#7c3f14] shadow-2xl shadow-[#d1622b]/30">
+        {/* decorative hexagon watermark */}
+        <div aria-hidden className="absolute -right-8 -top-10 opacity-[0.12]">
+          <Logo markOnly className="h-52 w-52" />
+        </div>
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
+
+        <div className="relative">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-widest text-white/70">Salio Lako</p>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              <span className="text-[10px] font-semibold text-white">nTZS</span>
+            </div>
+          </div>
+
+          {balanceLoading ? (
+            <div className="h-11 w-52 rounded-lg bg-white/20 animate-pulse mt-3" />
+          ) : (
+            <p className="mt-2 font-display text-4xl sm:text-5xl font-semibold text-white tracking-tight">
+              <span className="text-2xl sm:text-3xl align-top text-white/70 mr-1">TSh</span>
+              {(balanceTzs ?? 0).toLocaleString()}
+            </p>
+          )}
+
+          {/* Quick actions */}
+          <div className="mt-6 grid grid-cols-3 gap-2.5">
+            {actions.map((a) => (
+              <button
+                key={a.label}
+                onClick={() => onNavigate(a.section)}
+                className="group flex flex-col items-center gap-2 rounded-2xl bg-white/12 hover:bg-white/20 backdrop-blur-sm border border-white/15 py-3 transition-all hover:-translate-y-0.5"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[#c25a24] group-hover:scale-110 transition-transform">
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.4}><path strokeLinecap="round" strokeLinejoin="round" d={a.icon} /></svg>
+                </span>
+                <span className="text-xs font-semibold text-white">{a.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s, i) => (
-          <div key={i} className="rounded-xl bg-[#1a1a1a] border border-white/5 p-4 flex flex-col gap-3">
-            <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
-              <s.icon className={`h-4 w-4 ${s.accent}`} />
+          <div key={i} className="group rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] p-4 flex flex-col gap-3 transition-all hover:-translate-y-1 hover:border-white/15">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.from} ${s.to} flex items-center justify-center shadow-lg`}>
+              <s.icon className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-xs text-white/40 mb-0.5">{s.name}</p>
-              <p className="text-sm font-semibold text-white leading-tight">{s.value}</p>
+              <p className="text-[11px] text-white/45 mb-0.5">{s.name}</p>
+              <p className="text-sm font-bold text-white leading-tight">{s.value}</p>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Governance teaser */}
+      <button
+        onClick={() => onNavigate('group')}
+        className="w-full text-left relative overflow-hidden rounded-2xl p-5 bg-gradient-to-r from-[#1a1512] to-[#14100d] border border-[#e4a233]/20 hover:border-[#e4a233]/40 transition-all group"
+      >
+        <div aria-hidden className="absolute -right-6 -bottom-8 h-32 w-32 rounded-full bg-[#e4a233]/10 blur-2xl" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e4a233] to-[#d1622b] shadow-lg">
+            <DocumentTextIcon className="h-6 w-6 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-white">Maamuzi ya Kikundi</p>
+            <p className="text-xs text-white/50 mt-0.5">Shiriki katika kupiga kura na maazimio ya kundi lako</p>
+          </div>
+          <span className="text-[#e4a233] group-hover:translate-x-1 transition-transform text-lg">→</span>
+        </div>
+      </button>
+
       {/* Activity + nav shortcuts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent activity */}
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Shughuli za Hivi Karibuni</h3>
-          <div className="space-y-3">
+        {/* Recent activity — timeline */}
+        <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
+          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
+            Shughuli za Hivi Karibuni
+          </h3>
+          <div className="relative space-y-4 pl-4 before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
             {displayActivities.slice(0, 5).map((a, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-white/80 truncate">{a.action}</p>
-                  <p className="text-xs text-white/30 mt-0.5">{a.time}</p>
-                </div>
+              <div key={i} className="relative">
+                <span className="absolute -left-4 top-1 w-2 h-2 rounded-full bg-[#e4a233] ring-4 ring-[#e4a233]/15" />
+                <p className="text-sm text-white/85 leading-snug">{a.action}</p>
+                <p className="text-xs text-white/30 mt-0.5">{a.time}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Nav shortcuts */}
-        <div className="rounded-xl bg-[#1a1a1a] border border-white/5 p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Nenda Haraka</h3>
-          <div className="space-y-2">
+        <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
+          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
+            Nenda Haraka
+          </h3>
+          <div className="space-y-1.5">
             {[
               { label: 'Wallet Yangu', sub: 'Historia na mabadiliko ya salio', icon: WalletIcon, section: 'wallet' },
               { label: 'Kundi Langu', sub: 'Angalia wanachama na shughuli', icon: UserGroupIcon, section: 'group' },
@@ -486,14 +507,16 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
               <button
                 key={item.section}
                 onClick={() => onNavigate(item.section)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left group"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.06] transition-colors text-left group"
               >
-                <item.icon className="h-4 w-4 text-white/30 group-hover:text-orange-400 transition-colors shrink-0" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] group-hover:bg-[#e4a233]/15 transition-colors shrink-0">
+                  <item.icon className="h-4.5 w-4.5 text-white/50 group-hover:text-[#e4a233] transition-colors" />
+                </span>
                 <div className="min-w-0">
-                  <p className="text-sm text-white/70 group-hover:text-white transition-colors">{item.label}</p>
-                  <p className="text-xs text-white/25">{item.sub}</p>
+                  <p className="text-sm text-white/80 group-hover:text-white transition-colors">{item.label}</p>
+                  <p className="text-xs text-white/30">{item.sub}</p>
                 </div>
-                <span className="ml-auto text-white/20 group-hover:text-orange-400 transition-colors text-sm">→</span>
+                <span className="ml-auto text-white/20 group-hover:text-[#e4a233] transition-colors">→</span>
               </button>
             ))}
           </div>
