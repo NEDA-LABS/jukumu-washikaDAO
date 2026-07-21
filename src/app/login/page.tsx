@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '@/components/AnimatedBackground';
-import Logo from '@/components/Logo';
 import Header from '@/components/Header';
 
 export default function LoginPage() {
-  const { } = useLanguage();
+  const { t } = useLanguage();
   const router = useRouter();
   const [formData, setFormData] = useState({
     identifier: '',
@@ -99,50 +98,38 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 border-r border-border relative overflow-hidden">
         <AnimatedBackground />
 
-        <Link href="/" className="flex items-center gap-3 relative z-10">
-          <Logo markOnly className="h-11 w-auto" />
-          <div>
-            <p className="text-sm font-bold text-foreground leading-none">Washika DAU</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Jukumu Platform</p>
-          </div>
-        </Link>
-
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-8 mt-auto">
           <div>
             <h2 className="text-3xl font-bold text-foreground leading-tight mb-3">
-              Karibu tena<br />kwenye jamii yako
+              {t('login.welcome.l1')}<br />{t('login.welcome.l2')}
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Ingia kuendelea na safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.
+              {t('login.welcome.sub')}
             </p>
           </div>
 
           <div className="space-y-3">
-            {[
-              { label: 'Fuatilia uwekezaji wako' },
-              { label: 'Endelea na masomo na vyeti' },
-              { label: 'Shirikiana na kundi lako' },
-            ].map((item, i) => (
+            {[t('login.feature1'), t('login.feature2'), t('login.feature3')].map((label, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                <p className="text-sm text-muted-foreground">{item.label}</p>
+                <p className="text-sm text-muted-foreground">{label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-[10px] text-muted-foreground relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
+        <p className="text-[10px] text-muted-foreground relative z-10 mt-auto">© {new Date().getFullYear()} Washika DAU · {t('common.platform')}</p>
       </div>
 
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Ingia</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-1">{t('login.heading')}</h1>
             <p className="text-sm text-muted-foreground">
-              Bado huna akaunti?{' '}
+              {t('login.no_account')}{' '}
               <Link href="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                Jisajili hapa
+                {t('login.register_here')}
               </Link>
             </p>
           </div>
@@ -157,7 +144,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="identifier" className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Barua pepe au nambari ya simu
+                {t('login.field.identifier')}
               </label>
               <input
                 id="identifier"
@@ -167,7 +154,7 @@ export default function LoginPage() {
                 value={formData.identifier}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
-                placeholder="07xx xxx xxx au email@example.com"
+                placeholder={t('login.ph.identifier')}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -179,10 +166,10 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="password" className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Nywila
+                  {t('login.field.password')}
                 </label>
                 <a href="#" className="text-xs text-primary/70 hover:text-primary transition-colors">
-                  Umesahau?
+                  {t('login.forgot')}
                 </a>
               </div>
               <div className="relative">
@@ -194,7 +181,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all pr-11"
-                  placeholder="Weka nywila yako"
+                  placeholder={t('login.ph.password')}
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
@@ -217,7 +204,7 @@ export default function LoginPage() {
                 type="checkbox"
                 className="w-4 h-4 accent-primary rounded"
               />
-              <label htmlFor="remember-me" className="text-xs text-muted-foreground">Nikumbuke kwenye kifaa hiki</label>
+              <label htmlFor="remember-me" className="text-xs text-muted-foreground">{t('login.remember')}</label>
             </div>
 
             <button
@@ -228,9 +215,9 @@ export default function LoginPage() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  Inaingia...
+                  {t('login.submitting')}
                 </span>
-              ) : 'Ingia'}
+              ) : t('login.submit')}
             </button>
           </form>
         </div>

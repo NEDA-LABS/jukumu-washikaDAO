@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'sw' | 'en';
 
@@ -70,15 +70,107 @@ const translations = {
     'investor.title': 'Kwa Nini Uwekeze na Washika DAU?',
     'investor.subtitle': 'Mfumo wa hisa ya 30%, uongozi wa kijamii, athari endelevu.',
     'investor.cta': 'Pakua Hati za Mwekezaji',
-    
-    // Footer
-    'footer.contact': 'Mawasiliano',
-    'footer.social': 'Mitandao ya Kijamii',
-    'footer.legal': 'Kisheria',
-    'footer.privacy': 'Sera ya Faragha',
-    'footer.terms': 'Masharti',
-    
+    'investor.eyebrow': 'Wekeza',
+    'investor.intro': 'Tunashirikiana na wawekezaji ambao wanaelewa kwamba ukuaji wa kweli unaanzia katika jamii.',
+    'investor.card1.title': 'Mfumo wa Hisa',
+    'investor.card1.text': 'Unapowekeza katika kundi la Washika DAU, unapata hisa ya moja kwa moja ndani ya biashara zao. Mapato yanashirikiwa kwa uwazi kulingana na mikataba iliyowekwa wazi.',
+    'investor.card2.title': 'Ufuatiliaji wa Wakati Halisi',
+    'investor.card2.text': 'Kila muamala, malipo, na mkutano wa kundi unaweza kuonekana kupitia dashibodi yetu. Uwazi kamili — hakuna siri.',
+    'investor.card3.title': 'Athari ya Kijamii',
+    'investor.card3.text': 'Uwekezaji wako unasaidia wajasiriamali wadogo kupata mtaji, mafunzo, na mtandao wa kuwaendeleza biashara zao.',
+    'investor.contact': 'Wasiliana nasi',
+
+    // Hero extras
+    'hero.motto': 'Pamoja Tunajengana',
+    'hero.cta.join': 'Jiunge Sasa',
+    'hero.stat.groups': 'Vikundi',
+    'hero.stat.businesses': 'Biashara',
+    'hero.stat.trainers': 'Wakufunzi',
+
+    // About / process rail
+    'about.eyebrow': 'Mchakato Wetu',
+    'about.heading': 'Washika DAU mfumo wa vikundi kidijitali',
+    'about.subheading': 'Fuata hatua hizi nne za kimsingi kujiunge na jamii yetu ya wajasiriamali',
+
+    // Join CTA
+    'join.eyebrow': 'Jiunge',
+    'join.title': 'Jiunge na sisi Leo',
+
+    // Login page
+    'login.welcome.l1': 'Karibu tena',
+    'login.welcome.l2': 'kwenye jamii yako',
+    'login.welcome.sub': 'Ingia kuendelea na safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.',
+    'login.feature1': 'Fuatilia uwekezaji wako',
+    'login.feature2': 'Endelea na masomo na vyeti',
+    'login.feature3': 'Shirikiana na kundi lako',
+    'login.heading': 'Ingia',
+    'login.no_account': 'Bado huna akaunti?',
+    'login.register_here': 'Jisajili hapa',
+    'login.field.identifier': 'Barua pepe au nambari ya simu',
+    'login.ph.identifier': '07xx xxx xxx au email@example.com',
+    'login.field.password': 'Nywila',
+    'login.ph.password': 'Weka nywila yako',
+    'login.forgot': 'Umesahau?',
+    'login.remember': 'Nikumbuke kwenye kifaa hiki',
+    'login.submit': 'Ingia',
+    'login.submitting': 'Inaingia...',
+
+    // Register page
+    'register.welcome.l1': 'Jiunge na jamii',
+    'register.welcome.l2': 'ya wajasiriamali',
+    'register.welcome.sub': 'Sajili leo na uanze safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.',
+    'register.feature1': 'Mafunzo ya biashara na vyeti',
+    'register.feature2': 'Vikundi vya akiba na uwekezaji',
+    'register.feature3': 'Malipo ya M-Pesa yaliyosalimishwa',
+    'register.feature4': 'Fuatilia ukuaji wa biashara yako',
+    'register.heading': 'Unda Akaunti',
+    'register.have_account': 'Una akaunti tayari?',
+    'register.login_here': 'Ingia hapa',
+    'register.section.personal': 'Taarifa za Kibinafsi',
+    'register.section.business': 'Biashara na Kitambulisho',
+    'register.section.password': 'Unda Nywila',
+    'register.f.fullname': 'Jina Kamili',
+    'register.ph.fullname': 'Jina lako kamili',
+    'register.f.phone': 'Nambari ya Simu',
+    'register.f.email': 'Barua Pepe',
+    'register.optional': '(si lazima)',
+    'register.f.location': 'Mji / Mkoa',
+    'register.f.gender': 'Jinsia',
+    'register.opt.select_gender': 'Chagua jinsia',
+    'register.gender.female': 'Mwanamke',
+    'register.gender.male': 'Mwanamume',
+    'register.f.age': 'Umri',
+    'register.ph.age': 'Umri wako',
+    'register.f.business': 'Aina ya Biashara',
+    'register.opt.select_type': 'Chagua aina',
+    'register.biz.agriculture': 'Kilimo',
+    'register.biz.livestock': 'Ufugaji',
+    'register.biz.small': 'Biashara Ndogo',
+    'register.biz.arts': 'Sanaa na Ubunifu',
+    'register.biz.services': 'Huduma',
+    'register.biz.tech': 'Teknolojia',
+    'register.biz.other': 'Nyingine',
+    'register.f.idtype': 'Aina ya Kitambulisho',
+    'register.id.national': 'Kitambulisho cha Taifa',
+    'register.id.voter': 'Kitambulisho cha Mpiga Kura',
+    'register.id.passport': 'Paspoti',
+    'register.f.idnumber': 'Nambari ya Kitambulisho',
+    'register.ph.idnumber': 'Ingiza nambari ya kitambulisho',
+    'register.f.password': 'Nywila',
+    'register.ph.password': 'Nywila yenye nguvu',
+    'register.f.confirm': 'Thibitisha Nywila',
+    'register.ph.confirm': 'Rudia nywila',
+    'register.submit': 'Unda Akaunti',
+    'register.submitting': 'Inasajili...',
+    'register.terms': 'Kwa kusajili, unakubali masharti na sera ya faragha ya Washika DAU.',
+    'register.err.mismatch': 'Nywila hazifanani',
+    'register.success.title': 'Umefanikiwa!',
+    'register.success.text': 'Akaunti yako imeundwa. Unaweza sasa kuingia kwenye jukwaa.',
+    'register.success.cta': 'Ingia Sasa',
+    'register.register_another': 'Sajili mtu mwingine',
+
     // Common
+    'common.platform': 'Jukumu Platform',
     'tagline': 'Jukwaa la Wajasiriamali Tanzania',
   },
   en: {
@@ -140,15 +232,107 @@ const translations = {
     'investor.title': 'Why Invest with Washika DAU?',
     'investor.subtitle': '30% equity model, community-driven, sustainable impact.',
     'investor.cta': 'Download Investor Deck',
-    
-    // Footer
-    'footer.contact': 'Contact',
-    'footer.social': 'Social Media',
-    'footer.legal': 'Legal',
-    'footer.privacy': 'Privacy Policy',
-    'footer.terms': 'Terms of Service',
-    
+    'investor.eyebrow': 'Invest',
+    'investor.intro': 'We partner with investors who understand that true growth starts within the community.',
+    'investor.card1.title': 'Equity Model',
+    'investor.card1.text': 'When you invest in a Washika DAU group, you receive direct equity in their businesses. Returns are shared transparently based on clearly defined agreements.',
+    'investor.card2.title': 'Real-time Tracking',
+    'investor.card2.text': 'Every transaction, payment, and group meeting is visible through our dashboard. Full transparency — no secrets.',
+    'investor.card3.title': 'Social Impact',
+    'investor.card3.text': 'Your investment helps small entrepreneurs access capital, training, and a network to grow their businesses.',
+    'investor.contact': 'Contact us',
+
+    // Hero extras
+    'hero.motto': 'Together We Build',
+    'hero.cta.join': 'Join Now',
+    'hero.stat.groups': 'Groups',
+    'hero.stat.businesses': 'Businesses',
+    'hero.stat.trainers': 'Trainers',
+
+    // About / process rail
+    'about.eyebrow': 'Our Process',
+    'about.heading': 'Washika DAU — a digital groups platform',
+    'about.subheading': 'Follow these four essential steps to join our community of entrepreneurs',
+
+    // Join CTA
+    'join.eyebrow': 'Join',
+    'join.title': 'Join Us Today',
+
+    // Login page
+    'login.welcome.l1': 'Welcome back',
+    'login.welcome.l2': 'to your community',
+    'login.welcome.sub': 'Sign in to continue your journey of business, training, and investment with your peers.',
+    'login.feature1': 'Track your investments',
+    'login.feature2': 'Continue your courses and certificates',
+    'login.feature3': 'Collaborate with your group',
+    'login.heading': 'Sign In',
+    'login.no_account': "Don't have an account yet?",
+    'login.register_here': 'Register here',
+    'login.field.identifier': 'Email or phone number',
+    'login.ph.identifier': '07xx xxx xxx or email@example.com',
+    'login.field.password': 'Password',
+    'login.ph.password': 'Enter your password',
+    'login.forgot': 'Forgot?',
+    'login.remember': 'Remember me on this device',
+    'login.submit': 'Sign In',
+    'login.submitting': 'Signing in...',
+
+    // Register page
+    'register.welcome.l1': 'Join the community',
+    'register.welcome.l2': 'of entrepreneurs',
+    'register.welcome.sub': 'Register today and start your journey of business, training, and investment with your peers.',
+    'register.feature1': 'Business training and certificates',
+    'register.feature2': 'Savings and investment groups',
+    'register.feature3': 'Secure M-Pesa payments',
+    'register.feature4': 'Track your business growth',
+    'register.heading': 'Create Account',
+    'register.have_account': 'Already have an account?',
+    'register.login_here': 'Sign in here',
+    'register.section.personal': 'Personal Information',
+    'register.section.business': 'Business & ID',
+    'register.section.password': 'Create Password',
+    'register.f.fullname': 'Full Name',
+    'register.ph.fullname': 'Your full name',
+    'register.f.phone': 'Phone Number',
+    'register.f.email': 'Email',
+    'register.optional': '(optional)',
+    'register.f.location': 'City / Region',
+    'register.f.gender': 'Gender',
+    'register.opt.select_gender': 'Select gender',
+    'register.gender.female': 'Female',
+    'register.gender.male': 'Male',
+    'register.f.age': 'Age',
+    'register.ph.age': 'Your age',
+    'register.f.business': 'Business Type',
+    'register.opt.select_type': 'Select type',
+    'register.biz.agriculture': 'Agriculture',
+    'register.biz.livestock': 'Livestock',
+    'register.biz.small': 'Small Business',
+    'register.biz.arts': 'Arts & Crafts',
+    'register.biz.services': 'Services',
+    'register.biz.tech': 'Technology',
+    'register.biz.other': 'Other',
+    'register.f.idtype': 'ID Type',
+    'register.id.national': 'National ID',
+    'register.id.voter': 'Voter ID',
+    'register.id.passport': 'Passport',
+    'register.f.idnumber': 'ID Number',
+    'register.ph.idnumber': 'Enter ID number',
+    'register.f.password': 'Password',
+    'register.ph.password': 'Strong password',
+    'register.f.confirm': 'Confirm Password',
+    'register.ph.confirm': 'Repeat password',
+    'register.submit': 'Create Account',
+    'register.submitting': 'Registering...',
+    'register.terms': "By registering, you agree to Washika DAU's terms and privacy policy.",
+    'register.err.mismatch': 'Passwords do not match',
+    'register.success.title': 'Success!',
+    'register.success.text': 'Your account has been created. You can now sign in to the platform.',
+    'register.success.cta': 'Sign In Now',
+    'register.register_another': 'Register another person',
+
     // Common
+    'common.platform': 'Jukumu Platform',
     'tagline': 'Empowering Entrepreneurs, Building a Circular Economy.',
   },
 };
@@ -158,8 +342,18 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('sw');
 
+  // Restore the saved language on mount
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem('wd-lang') : null;
+    if (saved === 'en' || saved === 'sw') setLanguage(saved);
+  }, []);
+
   const toggleLanguage = () => {
-    setLanguage(prev => prev === 'sw' ? 'en' : 'sw');
+    setLanguage(prev => {
+      const next = prev === 'sw' ? 'en' : 'sw';
+      if (typeof window !== 'undefined') window.localStorage.setItem('wd-lang', next);
+      return next;
+    });
   };
 
   const t = (key: string): string => {

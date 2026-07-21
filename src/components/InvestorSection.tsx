@@ -15,7 +15,7 @@ export default function InvestorSection() {
 
         {/* Eyebrow */}
         <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-          Wekeza
+          {t('investor.eyebrow')}
         </p>
 
         {/* Headline */}
@@ -24,7 +24,7 @@ export default function InvestorSection() {
         </h2>
 
         <p className="text-lg text-muted-foreground max-w-xl mb-16">
-          Tunashirikiana na wawekezaji ambao wanaelewa kwamba ukuaji wa kweli unaanzia katika jamii.
+          {t('investor.intro')}
         </p>
 
         {/* Two-column: image left, model right */}
@@ -46,30 +46,27 @@ export default function InvestorSection() {
 
             <ScrollExpandSection startScale={0.9} startRadius={12} startOpacity={0.5}>
               <div className="border-l-2 border-primary pl-6 transition-all duration-300 hover:pl-7 hover:border-l-4">
-                <h3 className="text-xl text-foreground mb-2">Mfumo wa Hisa</h3>
+                <h3 className="text-xl text-foreground mb-2">{t('investor.card1.title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Unapowekeza katika kundi la WashikaDAO, unapata hisa ya moja kwa moja ndani ya biashara zao.
-                  Mapato yanashirikiwa kwa uwazi kulingana na mikataba iliyowekwa wazi.
+                  {t('investor.card1.text')}
                 </p>
               </div>
             </ScrollExpandSection>
 
             <ScrollExpandSection startScale={0.9} startRadius={12} startOpacity={0.5}>
               <div className="border-l-2 border-border pl-6 transition-all duration-300 hover:pl-7 hover:border-l-4 hover:border-primary">
-                <h3 className="text-xl text-foreground mb-2">Ufuatiliaji wa Wakati Halisi</h3>
+                <h3 className="text-xl text-foreground mb-2">{t('investor.card2.title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Kila muamala, malipo, na mkutano wa kundi unaweza kuonekana kupitia dashibodi yetu.
-                  Uwazi kamili — hakuna siri.
+                  {t('investor.card2.text')}
                 </p>
               </div>
             </ScrollExpandSection>
 
             <ScrollExpandSection startScale={0.9} startRadius={12} startOpacity={0.5}>
               <div className="border-l-2 border-border pl-6 transition-all duration-300 hover:pl-7 hover:border-l-4 hover:border-primary">
-                <h3 className="text-xl text-foreground mb-2">Athari ya Kijamii</h3>
+                <h3 className="text-xl text-foreground mb-2">{t('investor.card3.title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Uwekezaji wako unasaidia wajasiriamali wadogo kupata mtaji, mafunzo, na mtandao wa
-                  kuwaendeleza biashara zao.
+                  {t('investor.card3.text')}
                 </p>
               </div>
             </ScrollExpandSection>
@@ -86,7 +83,7 @@ export default function InvestorSection() {
                 href="mailto:invest@jukumufund.co.tz"
                 className="inline-flex items-center justify-center px-8 py-3.5 border border-border text-foreground font-semibold rounded-xl hover:bg-muted transition-colors"
               >
-                Wasiliana nasi
+                {t('investor.contact')}
               </a>
             </div>
 

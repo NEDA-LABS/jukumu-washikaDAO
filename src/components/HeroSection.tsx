@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import AnimatedBackground from '@/components/AnimatedBackground';
 
-const stats = [
-  { value: '120+', label: 'Vikundi' },
-  { value: '200+', label: 'Biashara' },
-  { value: '42+', label: 'Wakufunzi' },
-];
-
 function HeroContent() {
   const { t } = useLanguage();
+
+  const stats = [
+    { value: '120+', label: t('hero.stat.groups') },
+    { value: '200+', label: t('hero.stat.businesses') },
+    { value: '42+', label: t('hero.stat.trainers') },
+  ];
 
   return (
     <div className="wd-container flex flex-col items-center text-center py-28 sm:py-32">
@@ -41,7 +41,7 @@ function HeroContent() {
         className="wd-rise mt-5 font-display text-2xl sm:text-3xl text-foreground/55 italic"
         style={{ animationDelay: '150ms' }}
       >
-        Pamoja Tunajengana
+        {t('hero.motto')}
       </p>
 
       {/* Subtitle */}
@@ -61,7 +61,7 @@ function HeroContent() {
           href="/register"
           className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0"
         >
-          Jiunge Sasa
+          {t('hero.cta.join')}
           <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
         </Link>
         <Link

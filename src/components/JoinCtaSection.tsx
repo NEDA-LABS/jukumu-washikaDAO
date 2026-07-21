@@ -24,10 +24,10 @@ export default function JoinCtaSection() {
 
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">
-              Jiunge
+              {t('join.eyebrow')}
             </div>
             <h2 className="text-4xl sm:text-5xl text-foreground mb-6">
-              Jiunge na sisi Leo
+              {t('join.title')}
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
               {t('hero.subtitle')}

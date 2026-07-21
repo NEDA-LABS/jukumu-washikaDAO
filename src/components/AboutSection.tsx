@@ -42,9 +42,9 @@ export default function AboutSection() {
     <section id="about" className="w-full">
       <FocusRail
         items={items}
-        eyebrow="Mchakato Wetu"
-        heading="Washika DAU mfumo wa vikundi kidijitali"
-        subheading="Fuata hatua hizi nne za kimsingi kujiunge na jamii yetu ya wajasiriamali"
+        eyebrow={t('about.eyebrow')}
+        heading={t('about.heading')}
+        subheading={t('about.subheading')}
         loop
         autoPlay={false}
       />
