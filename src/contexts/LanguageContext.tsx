@@ -273,6 +273,14 @@ const translations = {
     'grp.payContribution': 'Lipa Mchango',
     'grp.regularContribution': 'Mchango wa kawaida',
     'grp.perMonth': 'mwezi',
+    'grp.proposals': 'Mapendekezo',
+    'grp.proposalsWord': 'pendekezo',
+    'grp.newProposalBtn': 'Pendekezo Jipya',
+    'grp.clickToStart': 'Bonyeza "Pendekezo Jipya" kuanza',
+    'grp.target': 'Lengo',
+    'grp.statusOpen': 'Wazi',
+    'grp.statusClosed': 'Imefungwa',
+    'grp.by': 'na',
 
     // Wallet
     'wal.balance': 'Salio la Wallet',
@@ -582,6 +590,14 @@ const translations = {
     'grp.payContribution': 'Pay Contribution',
     'grp.regularContribution': 'Regular contribution',
     'grp.perMonth': 'month',
+    'grp.proposals': 'Proposals',
+    'grp.proposalsWord': 'proposals',
+    'grp.newProposalBtn': 'New Proposal',
+    'grp.clickToStart': 'Click "New Proposal" to start',
+    'grp.target': 'Target',
+    'grp.statusOpen': 'Open',
+    'grp.statusClosed': 'Closed',
+    'grp.by': 'by',
 
     // Wallet
     'wal.balance': 'Wallet Balance',

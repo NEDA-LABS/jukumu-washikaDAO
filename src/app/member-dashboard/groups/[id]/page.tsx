@@ -156,7 +156,7 @@ export default function MemberGroupDetailsPage() {
   const routeParams = useParams<{ id?: string | string[] }>();
   const groupId = Array.isArray(routeParams?.id) ? routeParams?.id[0] : routeParams?.id;
   const { showToast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<Group | null>(null);
@@ -907,7 +907,7 @@ export default function MemberGroupDetailsPage() {
               {isLeader && memberPaymentStatus.length > 0 && (
                 <div className="rounded-xl bg-card border border-border p-5">
                   <p className="text-sm font-semibold text-foreground mb-3">
-                    Hali ya Michango — {new Date().toLocaleDateString('sw-TZ', { month: 'long', year: 'numeric' })}
+                    Hali ya Michango — {new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'sw-TZ', { month: 'long', year: 'numeric' })}
                   </p>
                   <div className="divide-y divide-white/5">
                     {memberPaymentStatus.map((mp: any) => (
@@ -993,7 +993,7 @@ export default function MemberGroupDetailsPage() {
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {p.payment_type === 'contribution' ? 'Mchango' : p.payment_type === 'group_topup' ? 'Mfuko' : 'Malipo'}
                             {' · '}
-                            {p.created_at ? new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' }) : '—'}
+                            {p.created_at ? new Date(p.created_at).toLocaleDateString(language === 'en' ? 'en-GB' : 'sw-TZ', { day: '2-digit', month: 'short' }) : '—'}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
@@ -1021,8 +1021,8 @@ export default function MemberGroupDetailsPage() {
               {/* Header row with create button */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Mapendekezo</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{proposals.length} pendekezo{proposals.length !== 1 ? '' : ''}</p>
+                  <p className="text-sm font-semibold text-foreground">{t('grp.proposals')}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{proposals.length} {t('grp.proposalsWord')}</p>
                 </div>
                 {canCreateProposal && (
                   <button
@@ -1030,7 +1030,7 @@ export default function MemberGroupDetailsPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                    Pendekezo Jipya
+                    {t('grp.newProposalBtn')}
                   </button>
                 )}
               </div>
@@ -1041,7 +1041,7 @@ export default function MemberGroupDetailsPage() {
                     <svg className="w-7 h-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
                   <p className="text-sm font-medium text-muted-foreground">{t('grp.noProposals')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{canCreateProposal ? 'Bonyeza "Pendekezo Jipya" kuanza' : t('grp.leadersCanPropose')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{canCreateProposal ? t('grp.clickToStart') : t('grp.leadersCanPropose')}</p>
                 </div>
               ) : proposals.map((p) => {
                 const pType = p.proposal_type ?? 'general';
@@ -1073,17 +1073,17 @@ export default function MemberGroupDetailsPage() {
                           <p className="text-xs text-emerald-400/70 mt-1">TSH {Number(p.payment_amount_tzs).toLocaleString()}</p>
                         )}
                         {pType === 'prodcast' && !!p.metadata?.funding_goal_tzs && (
-                          <p className="text-xs text-purple-400/70 mt-1">Lengo: TSH {Number(p.metadata!.funding_goal_tzs as number).toLocaleString()}</p>
+                          <p className="text-xs text-purple-400/70 mt-1">{t('grp.target')}: TSH {Number(p.metadata!.funding_goal_tzs as number).toLocaleString()}</p>
                         )}
                         <p className="text-[10px] text-muted-foreground mt-2">
-                          na {p.created_by_name || '—'}
-                          {p.created_at && <> · {new Date(p.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short' })}</>}
+                          {t('grp.by')} {p.created_by_name || '—'}
+                          {p.created_at && <> · {new Date(p.created_at).toLocaleDateString(language === 'en' ? 'en-GB' : 'sw-TZ', { day: '2-digit', month: 'short' })}</>}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                           p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-muted-foreground border border-border'
-                        }`}>{p.status === 'open' ? 'Wazi' : 'Imefungwa'}</span>
+                        }`}>{p.status === 'open' ? t('grp.statusOpen') : t('grp.statusClosed')}</span>
                         <span className="text-muted-foreground group-hover:text-[#e4a233] transition-colors text-xs">→</span>
                       </div>
                     </div>
