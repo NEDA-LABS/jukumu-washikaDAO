@@ -24,7 +24,7 @@ import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import QuickActionModal, { type ActionType } from '@/components/QuickActionModal';
 
 export default function MemberDashboard() {
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<{id?: number; fullName?: string; email: string; role?: string} | null>(null);
@@ -162,12 +162,12 @@ export default function MemberDashboard() {
   }
 
   const menuItems = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
-    { id: 'wallet', name: 'Wallet', icon: WalletIcon },
-    { id: 'group', name: 'My Group', icon: UserGroupIcon },
-    { id: 'investments', name: 'My Investments', icon: CurrencyDollarIcon },
-    { id: 'learning', name: 'Training', icon: AcademicCapIcon },
-    { id: 'settings', name: 'Settings', icon: CogIcon },
+    { id: 'overview', name: t('dash.nav.overview'), icon: ChartBarIcon },
+    { id: 'wallet', name: t('dash.nav.wallet'), icon: WalletIcon },
+    { id: 'group', name: t('dash.nav.group'), icon: UserGroupIcon },
+    { id: 'investments', name: t('dash.nav.investments'), icon: CurrencyDollarIcon },
+    { id: 'learning', name: t('dash.nav.training'), icon: AcademicCapIcon },
+    { id: 'settings', name: t('dash.nav.settings'), icon: CogIcon },
   ];
 
   const renderContent = () => {
@@ -260,7 +260,7 @@ export default function MemberDashboard() {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-red-300 hover:bg-red-500/10 transition-all"
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5 shrink-0" />
-            <span>Logout</span>
+            <span>{t('dash.logout')}</span>
           </button>
         </div>
       </aside>
@@ -326,8 +326,8 @@ export default function MemberDashboard() {
       >
         <div className="flex items-end justify-around px-1 h-16">
           {[
-            { id: 'overview', label: 'Nyumbani', icon: ChartBarIcon },
-            { id: 'wallet', label: 'Pochi', icon: WalletIcon },
+            { id: 'overview', label: t('dash.nav.overview'), icon: ChartBarIcon },
+            { id: 'wallet', label: t('dash.nav.wallet'), icon: WalletIcon },
           ].map((t) => {
             const active = activeSection === t.id;
             return (
@@ -347,12 +347,12 @@ export default function MemberDashboard() {
             }`}>
               <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-muted-foreground'}`} />
             </div>
-            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>Kundi</span>
+            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t('dash.nav.group')}</span>
           </button>
 
           {[
-            { id: 'learning', label: 'Mafunzo', icon: AcademicCapIcon },
-            { id: 'settings', label: 'Zaidi', icon: CogIcon, extra: 'profile' },
+            { id: 'learning', label: t('dash.nav.training'), icon: AcademicCapIcon },
+            { id: 'settings', label: t('dash.nav.more'), icon: CogIcon, extra: 'profile' },
           ].map((t) => {
             const active = activeSection === t.id || activeSection === (t as { extra?: string }).extra;
             return (
@@ -369,6 +369,7 @@ export default function MemberDashboard() {
 }
 
 function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void; userId: number }) {
+  const { t } = useLanguage();
   const [balanceTzs, setBalanceTzs] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [modal, setModal] = useState<ActionType | null>(null);
@@ -389,20 +390,20 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
   const isActive = memberProfile?.status === 'active';
 
   const stats = [
-    { name: 'Hali ya Uanachama', value: isActive ? 'Hai' : 'Inasubiri', icon: UserIcon, from: isActive ? 'from-emerald-400' : 'from-yellow-400', to: isActive ? 'to-teal-500' : 'to-amber-500' },
-    { name: 'Kundi Langu', value: memberProfile?.group_name || 'Hujajiunga', icon: UserGroupIcon, from: 'from-sky-400', to: 'to-blue-600' },
-    { name: 'Uwekezaji Wangu', value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-[#e4a233]', to: 'to-[#d1622b]' },
-    { name: 'Faida Inayotarajiwa', value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, from: 'from-fuchsia-400', to: 'to-purple-600' },
+    { name: t('dash.stat.membership'), value: isActive ? t('dash.stat.active') : t('dash.stat.pending'), icon: UserIcon, from: isActive ? 'from-emerald-400' : 'from-yellow-400', to: isActive ? 'to-teal-500' : 'to-amber-500' },
+    { name: t('dash.stat.mygroup'), value: memberProfile?.group_name || t('dash.stat.nogroup'), icon: UserGroupIcon, from: 'from-sky-400', to: 'to-blue-600' },
+    { name: t('dash.stat.investment'), value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-[#e4a233]', to: 'to-[#d1622b]' },
+    { name: t('dash.stat.returns'), value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, from: 'from-fuchsia-400', to: 'to-purple-600' },
   ];
 
   const displayActivities = recentActivities.length > 0
-    ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString('sw-TZ') }))
-    : [{ action: 'Umejiunga na Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('sw-TZ') : 'Leo' }];
+    ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString() }))
+    : [{ action: t('dash.joined'), time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString() : '' }];
 
   const actions: { label: string; icon: string; action: ActionType }[] = [
-    { label: 'Weka Pesa', icon: 'M12 4v16m8-8H4', action: 'deposit' },
-    { label: 'Toa Pesa', icon: 'M20 12H4m8 8l-8-8 8-8', action: 'withdraw' },
-    { label: 'Hamisha', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', action: 'transfer' },
+    { label: t('dash.action.deposit'), icon: 'M12 4v16m8-8H4', action: 'deposit' },
+    { label: t('dash.action.withdraw'), icon: 'M20 12H4m8 8l-8-8 8-8', action: 'withdraw' },
+    { label: t('dash.action.transfer'), icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', action: 'transfer' },
   ];
 
   return (
@@ -413,9 +414,9 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       {/* Greeting */}
       <div>
         <h2 className="font-display text-3xl text-foreground">
-          Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
+          {t('dash.greeting')}, {memberProfile?.full_name?.split(' ')[0] || t('dash.member')} 👋
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">Hapa kuna muhtasari wa akaunti yako</p>
+        <p className="text-sm text-muted-foreground mt-1">{t('dash.overview.subtitle')}</p>
       </div>
 
       {/* ── Balance hero card ── */}
@@ -428,7 +429,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 
         <div className="relative">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-widest text-white/70">Salio Lako</p>
+            <p className="text-xs font-medium uppercase tracking-widest text-white/70">{t('dash.balance.label')}</p>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
               <span className="text-[10px] font-semibold text-white">nTZS</span>
@@ -488,8 +489,8 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
             <DocumentTextIcon className="h-6 w-6 text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-foreground">Maamuzi ya Kikundi</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Shiriki katika kupiga kura na maazimio ya kundi lako</p>
+            <p className="text-sm font-bold text-foreground">{t('dash.governance.title')}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('dash.governance.sub')}</p>
           </div>
           <span className="text-primary group-hover:translate-x-1 transition-transform text-lg">→</span>
         </div>
@@ -501,7 +502,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
-            Shughuli za Hivi Karibuni
+            {t('dash.activity.title')}
           </h3>
           <div className="relative space-y-4 pl-4 before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-px before:bg-border">
             {displayActivities.slice(0, 5).map((a, i) => (
@@ -518,14 +519,14 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
-            Nenda Haraka
+            {t('dash.quicknav.title')}
           </h3>
           <div className="space-y-1.5">
             {[
-              { label: 'Wallet Yangu', sub: 'Historia na mabadiliko ya salio', icon: WalletIcon, section: 'wallet' },
-              { label: 'Kundi Langu', sub: 'Angalia wanachama na shughuli', icon: UserGroupIcon, section: 'group' },
-              { label: 'Mafunzo', sub: 'Endelea na masomo', icon: AcademicCapIcon, section: 'learning' },
-              { label: 'Uwekezaji', sub: 'Fuatilia mapato yako', icon: CurrencyDollarIcon, section: 'investments' },
+              { label: t('dash.quicknav.wallet'), sub: t('dash.quicknav.wallet.sub'), icon: WalletIcon, section: 'wallet' },
+              { label: t('dash.quicknav.group'), sub: t('dash.quicknav.group.sub'), icon: UserGroupIcon, section: 'group' },
+              { label: t('dash.quicknav.training'), sub: t('dash.quicknav.training.sub'), icon: AcademicCapIcon, section: 'learning' },
+              { label: t('dash.quicknav.investment'), sub: t('dash.quicknav.investment.sub'), icon: CurrencyDollarIcon, section: 'investments' },
             ].map((item) => (
               <button
                 key={item.section}
