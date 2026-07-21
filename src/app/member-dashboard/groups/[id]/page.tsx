@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
 
 function useCountUp(target: number, duration = 900) {
@@ -134,19 +135,19 @@ function formatBaseUnits(amountBaseUnits: string | number | null | undefined, de
   return fracTrimmed ? `${withCommas}.${fracTrimmed}` : withCommas;
 }
 
-function roleLabel(role?: string) {
+function roleLabel(role: string | undefined, t: (k: string) => string) {
   switch (role) {
     case 'leader':
-      return 'Kiongozi';
+      return t('grp.role.leader');
     case 'mwenyekiti':
-      return 'Mwenyekiti';
+      return t('grp.role.chairman');
     case 'katibu':
-      return 'Katibu';
+      return t('grp.role.secretary');
     case 'mwekahazina':
-      return 'MwekaHazina';
+      return t('grp.role.treasurer');
     case 'member':
     default:
-      return 'Mwanachama';
+      return t('grp.role.member');
   }
 }
 
@@ -155,6 +156,7 @@ export default function MemberGroupDetailsPage() {
   const routeParams = useParams<{ id?: string | string[] }>();
   const groupId = Array.isArray(routeParams?.id) ? routeParams?.id[0] : routeParams?.id;
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<Group | null>(null);
@@ -354,7 +356,7 @@ export default function MemberGroupDetailsPage() {
     if (!payModal || !groupId) return;
     const amount = parseInt(payAmount);
     if (!amount || amount <= 0) { setPayError('Ingiza kiasi sahihi (TZS)'); return; }
-    if (!payPhone || payPhone.length < 9) { setPayError('Ingiza nambari sahihi ya simu'); return; }
+    if (!payPhone || payPhone.length < 9) { setPayError(t('grp.invalidPhone')); return; }
     setPayLoading(true);
     setPayError('');
     try {
@@ -474,11 +476,11 @@ export default function MemberGroupDetailsPage() {
   }
 
   const tabs: { id: typeof activeTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview',   label: 'Muhtasari',  icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-    { id: 'members',    label: 'Wanachama', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-    { id: 'leadership', label: 'Uongozi',   icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
-    { id: 'fedha',      label: 'Fedha',     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
-    { id: 'decisions',  label: 'Maamuzi',   icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
+    { id: 'overview',   label: t('grp.tab.overview'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+    { id: 'members',    label: t('grp.tab.members'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { id: 'leadership', label: t('grp.tab.leadership'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
+    { id: 'fedha',      label: t('grp.tab.fedha'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
+    { id: 'decisions',  label: t('grp.tab.decisions'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
   ];
 
   return (
@@ -512,10 +514,10 @@ export default function MemberGroupDetailsPage() {
                   </span>
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{group?.name || 'Kundi'}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{group?.name || t('grp.groupWord')}</h1>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
                     <span className="px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/15 text-[#e4a233] border border-[#e4a233]/30">
-                      {roleLabel(membership?.role)}
+                      {roleLabel(membership?.role, t)}
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-xs ${
                       group?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-muted-foreground'
@@ -524,7 +526,7 @@ export default function MemberGroupDetailsPage() {
                     </span>
                     {group?.founded_date && (
                       <span className="text-xs text-muted-foreground">
-                        Ilianzishwa {new Date(group.founded_date).getFullYear()}
+                        {t('grp.founded')} {new Date(group.founded_date).getFullYear()}
                       </span>
                     )}
                   </div>
@@ -548,7 +550,7 @@ export default function MemberGroupDetailsPage() {
                         }
                       </svg>
                       <span className="text-xs text-muted-foreground group-hover/code:text-muted-foreground transition-colors">
-                        {codeCopied ? 'Imenakiliwa!' : 'Nakili'}
+                        {codeCopied ? t('grp.copied') : t('grp.copy')}
                       </span>
                     </button>
                   )}
@@ -558,29 +560,27 @@ export default function MemberGroupDetailsPage() {
                 <button
                   onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
                   className="shrink-0 self-start sm:self-auto px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
-                >
-                  + Pendekezo
-                </button>
+                >{t('grp.newProposal')}</button>
               )}
             </div>
 
             {/* Treasury balance — prominent, at the top */}
             <div className="mt-5 pt-5 border-t border-border">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Salio la Hazina</p>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{t('grp.treasury.balance')}</p>
               <p className="mt-1 font-display text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums text-foreground">
                 <span className="text-xl sm:text-2xl align-top text-muted-foreground mr-1">TSh</span>
                 {(treasurySummary?.balanceTzs ?? 0).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Fedha za kundi zinazodhibitiwa na mapendekezo yaliyoidhinishwa</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('grp.treasury.balanceDesc')}</p>
             </div>
 
             {/* hero stat row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
               {[
-                { label: 'Wanachama', value: animMembers.toLocaleString(), unit: '' },
-                { label: 'Mchango/Mwezi', value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
-                { label: 'Jumla Iliyokusanywa', value: `TSh ${animTotal.toLocaleString()}`, unit: '' },
-                { label: 'Waliolipa Mwezi Huu', value: String(animPayers), unit: `/ ${group?.member_count ?? members.length}` },
+                { label: t('grp.stat.members'), value: animMembers.toLocaleString(), unit: '' },
+                { label: t('grp.stat.monthly'), value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
+                { label: t('grp.stat.collected'), value: `TSh ${animTotal.toLocaleString()}`, unit: '' },
+                { label: t('grp.stat.paidThisMonth'), value: String(animPayers), unit: `/ ${group?.member_count ?? members.length}` },
               ].map((s, i) => (
                 <div key={i}>
                   <p className="text-xs text-muted-foreground mb-0.5">{s.label}</p>
@@ -622,9 +622,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
                 className="mt-3 w-full px-3 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
-              >
-                + Pendekezo
-              </button>
+              >{t('grp.newProposal')}</button>
             )}
           </aside>
 
@@ -636,17 +634,17 @@ export default function MemberGroupDetailsPage() {
               {/* Group stat cards */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Mchango/Mwezi</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t('grp.stat.monthly')}</p>
                   <p className="text-base font-semibold text-[#e4a233]">
                     TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Wanachama</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t('grp.stat.members')}</p>
                   <p className="text-base font-semibold text-foreground">{group?.member_count ?? members.length}</p>
                 </div>
                 <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Kiongozi</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t('grp.role.leader')}</p>
                   <p className="text-base font-semibold text-foreground truncate">{group?.leader_name || '—'}</p>
                 </div>
               </div>
@@ -654,10 +652,10 @@ export default function MemberGroupDetailsPage() {
               {/* Financial summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
-                  { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
-                  { label: 'Waliolipa Mwezi Huu',  value: String(paymentSummary.this_month_payers), accent: 'text-[#e4a233]' },
-                  { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
+                  { label: t('grp.stat.collected'), value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
+                  { label: t('grp.stat.thisMonth'), value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
+                  { label: t('grp.stat.paidThisMonth'), value: String(paymentSummary.this_month_payers), accent: 'text-[#e4a233]' },
+                  { label: t('grp.stat.disbursed'), value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
                   <div key={i} className="rounded-xl bg-card border border-border p-3">
                     <p className="text-xs text-muted-foreground mb-1">{c.label}</p>
@@ -670,8 +668,8 @@ export default function MemberGroupDetailsPage() {
               <div className="rounded-xl bg-card border border-border p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Hazina ya Kundi</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Fedha za kundi zinazodhibitiwa na mapendekezo.</p>
+                    <p className="text-sm font-semibold text-foreground">{t('grp.treasury.title')}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('grp.treasury.subtitle')}</p>
                   </div>
                   <div className="flex gap-2">
                     {treasurySummary?.treasury === null && canCreateProposal && (
@@ -722,9 +720,7 @@ export default function MemberGroupDetailsPage() {
                           finally { setTreasuryLoading(false); }
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-muted-foreground border border-border disabled:opacity-50 transition-colors"
-                      >
-                        Refresh
-                      </button>
+                      >{t('grp.refresh')}</button>
                     )}
                   </div>
                 </div>
@@ -735,7 +731,7 @@ export default function MemberGroupDetailsPage() {
 
                 {treasurySummary?.treasury && (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Shughuli za Hivi Karibuni</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('grp.recentActivity')}</p>
                     <div className="space-y-2">
                       {treasuryActivities.length === 0 ? (
                         <p className="text-xs text-muted-foreground py-3 text-center">— Hakuna shughuli bado —</p>
@@ -771,9 +767,8 @@ export default function MemberGroupDetailsPage() {
               {/* Recent proposals preview */}
               <div className="rounded-xl bg-card border border-border p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-foreground">Mapendekezo ya Hivi Karibuni</p>
-                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-[#e4a233] hover:text-[#f0b95a] transition-colors">
-                    Angalia yote →
+                  <p className="text-sm font-semibold text-foreground">{t('grp.recentProposals')}</p>
+                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-[#e4a233] hover:text-[#f0b95a] transition-colors">{t('grp.viewAll')} →
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -808,8 +803,8 @@ export default function MemberGroupDetailsPage() {
                   <div className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center mb-3">
                     <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground">Hakuna wanachama bado</p>
-                  <p className="text-xs text-muted-foreground mt-1">Wanachama wataonekana hapa baada ya kujiunga</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('grp.noMembers')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('grp.noMembersDesc')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-white/5">
@@ -833,7 +828,7 @@ export default function MemberGroupDetailsPage() {
                             m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-[#e4a233]/10 text-[#e4a233]'
                             : m.role === 'katibu' || m.role === 'mwekahazina' ? 'bg-blue-500/10 text-blue-400'
                             : 'bg-white/5 text-muted-foreground'
-                          }`}>{roleLabel(m.role)}</span>
+                          }`}>{roleLabel(m.role, t)}</span>
                           {isLeader && mp && (
                             <span className={`px-2 py-0.5 rounded-full text-xs ${
                               mp.paid_this_month ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
@@ -856,7 +851,7 @@ export default function MemberGroupDetailsPage() {
                   <div className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center mb-3">
                     <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground">Hakuna uongozi bado</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('grp.noLeadership')}</p>
                   <p className="text-xs text-muted-foreground mt-1">Viongozi watateuliwa na msimamizi</p>
                 </div>
               ) : leadership.map((l) => (
@@ -871,7 +866,7 @@ export default function MemberGroupDetailsPage() {
                     </div>
                   </div>
                   <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25">
-                    {roleLabel(l.role)}
+                    {roleLabel(l.role, t)}
                   </span>
                 </div>
               ))}
@@ -884,10 +879,10 @@ export default function MemberGroupDetailsPage() {
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Jumla Iliyokusanywa', value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
-                  { label: 'Mwezi Huu',            value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
+                  { label: t('grp.stat.collected'), value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
+                  { label: t('grp.stat.thisMonth'), value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
                   { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-[#e4a233]' },
-                  { label: 'Jumla Iliyotumwa',     value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
+                  { label: t('grp.stat.disbursed'), value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
                   <div key={i} className="rounded-xl bg-card border border-border p-3">
                     <p className="text-xs text-muted-foreground mb-1">{c.label}</p>
@@ -933,16 +928,16 @@ export default function MemberGroupDetailsPage() {
               {/* Disbursement form (leader only) */}
               {isLeader && (
                 <div className="rounded-xl bg-card border border-border p-5">
-                  <p className="text-sm font-semibold text-foreground mb-0.5">Tuma Fedha kwa Mwanachama</p>
-                  <p className="text-xs text-muted-foreground mb-4">Tuma pesa moja kwa moja kupitia mobile money.</p>
+                  <p className="text-sm font-semibold text-foreground mb-0.5">{t('grp.sendToMember')}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t('grp.sendDesc')}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-muted-foreground mb-1">Jina la Mpokeaji</label>
+                      <label className="block text-xs text-muted-foreground mb-1">{t('grp.recipientName')}</label>
                       <input value={disburseName} onChange={e => { setDisburseName(e.target.value); setDisburseError(''); }}
                         placeholder="e.g. John Doe" className={dkInput} />
                     </div>
                     <div>
-                      <label className="block text-xs text-muted-foreground mb-1">Nambari ya Simu</label>
+                      <label className="block text-xs text-muted-foreground mb-1">{t('grp.phone')}</label>
                       <input value={disbursePhone} onChange={e => { setDisbursePhone(e.target.value); setDisburseError(''); }}
                         placeholder="255712345678" className={dkInput} />
                     </div>
@@ -971,7 +966,7 @@ export default function MemberGroupDetailsPage() {
                   {disburseSuccess && <p className="text-xs text-emerald-400 mt-2">{disburseSuccess}</p>}
                   <button onClick={handleDisburse} disabled={disburseLoading}
                     className="mt-4 px-5 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors">
-                    {disburseLoading ? 'Inatuma...' : 'Tuma Fedha'}
+                    {disburseLoading ? t('grp.sending') : t('grp.send')}
                   </button>
                 </div>
               )}
@@ -986,7 +981,7 @@ export default function MemberGroupDetailsPage() {
                     <div className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center mb-3">
                       <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">Hakuna malipo bado</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('grp.noPayments')}</p>
                     <p className="text-xs text-muted-foreground mt-1">Malipo yataonekana hapa baada ya kukusanywa</p>
                   </div>
                 ) : (
@@ -1045,15 +1040,15 @@ export default function MemberGroupDetailsPage() {
                   <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center mb-4">
                     <svg className="w-7 h-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground">Hakuna mapendekezo bado</p>
-                  <p className="text-xs text-muted-foreground mt-1">{canCreateProposal ? 'Bonyeza "Pendekezo Jipya" kuanza' : 'Viongozi wanaweza kuunda mapendekezo'}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('grp.noProposals')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{canCreateProposal ? 'Bonyeza "Pendekezo Jipya" kuanza' : t('grp.leadersCanPropose')}</p>
                 </div>
               ) : proposals.map((p) => {
                 const pType = p.proposal_type ?? 'general';
                 const typeMeta: Record<string, { label: string; color: string; dot: string }> = {
-                  general:  { label: 'Jumla',     color: 'bg-white/5 text-muted-foreground border border-border',            dot: 'bg-white/20' },
-                  ask:      { label: 'Ombi',      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
-                  spend:    { label: 'Matumizi',  color: 'bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25', dot: 'bg-[#e4a233]' },
+                  general:  { label: t('grp.ptype.general'),     color: 'bg-white/5 text-muted-foreground border border-border',            dot: 'bg-white/20' },
+                  ask:      { label: t('grp.ptype.ask'),      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
+                  spend:    { label: t('grp.ptype.spend'),  color: 'bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25', dot: 'bg-[#e4a233]' },
                   prodcast:  { label: 'Prodcast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
                 };
                 const tm = typeMeta[pType] ?? typeMeta.general;
@@ -1127,7 +1122,7 @@ export default function MemberGroupDetailsPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
               <div>
-                <h3 className="text-base font-bold text-foreground">Pendekezo Jipya</h3>
+                <h3 className="text-base font-bold text-foreground">{t('grp.newProposalTitle')}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">{group?.name}</p>
               </div>
               <button
@@ -1243,7 +1238,7 @@ export default function MemberGroupDetailsPage() {
             >
               {/* Title — all types */}
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kichwa cha Pendekezo *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('grp.propTitle')} *</label>
                 <input
                   type="text" value={proposalTitle}
                   onChange={e => setProposalTitle(e.target.value)}
@@ -1274,7 +1269,7 @@ export default function MemberGroupDetailsPage() {
               {proposalType === 'spend' && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Simu ya Mpokeaji *</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('grp.recipientPhone')} *</label>
                     <input
                       type="tel" value={proposalPhone}
                       onChange={e => setProposalPhone(e.target.value)}
@@ -1282,7 +1277,7 @@ export default function MemberGroupDetailsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Jina la Muuzaji</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('grp.vendorName')}</label>
                     <input
                       type="text" value={proposalMeta.vendor_name || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, vendor_name: e.target.value }))}
@@ -1312,7 +1307,7 @@ export default function MemberGroupDetailsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Muda wa Mradi</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('grp.projectDuration')}</label>
                     <input
                       type="text" value={proposalMeta.timeline || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, timeline: e.target.value }))}
@@ -1338,7 +1333,7 @@ export default function MemberGroupDetailsPage() {
                     value={proposalDescription}
                     onChange={e => setProposalDescription(e.target.value)}
                     className={`${dkInput} resize-none`}
-                    placeholder="Eleza pendekezo lako kwa undani zaidi..."
+                    placeholder={t('grp.propDescPh')}
                     rows={3}
                   />
                 </div>
@@ -1347,7 +1342,7 @@ export default function MemberGroupDetailsPage() {
               {/* Prodcast description */}
               {proposalType === 'prodcast' && (
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Maelezo ya Mradi *</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('grp.projectDesc')} *</label>
                   <textarea
                     value={proposalMeta.project_description || ''}
                     onChange={e => setProposalMeta(m => ({ ...m, project_description: e.target.value }))}
@@ -1399,7 +1394,7 @@ export default function MemberGroupDetailsPage() {
                     'bg-[#d1622b] hover:bg-[#b9531f] shadow-[#d1622b]/25'
                   }`}
                 >
-                  {proposalSubmitting ? 'Inaunda...' : 'Unda Pendekezo'}
+                  {proposalSubmitting ? t('grp.creating') : t('grp.createProposal')}
                 </button>
               </div>
             </form>
@@ -1415,12 +1410,12 @@ export default function MemberGroupDetailsPage() {
             {payStatus === 'input' && (
               <>
                 <h3 className="text-base font-semibold text-foreground mb-1">
-                  {payModal.type === 'contribution' ? 'Lipa Mchango' : 'Weka Fedha Mfukoni'}
+                  {payModal.type === 'contribution' ? t('grp.payContribution') : t('grp.depositToWallet')}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">{group?.name}</p>
                 {payModal.type === 'contribution' && (
                   <p className="text-xs text-[#e4a233]/70 mb-4 px-3 py-2 rounded-lg bg-[#e4a233]/8 border border-[#e4a233]/15">
-                    Mchango wa kawaida: TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/mwezi
+                    {t('grp.regularContribution')}: TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/{t('grp.perMonth')}
                   </p>
                 )}
                 <div className="space-y-3 mb-4">
@@ -1431,14 +1426,14 @@ export default function MemberGroupDetailsPage() {
                       placeholder="e.g. 50000" className={dkInput} />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Nambari ya Simu</label>
+                    <label className="block text-xs text-muted-foreground mb-1">{t('grp.phone')}</label>
                     <input type="tel" value={payPhone}
                       onChange={e => { setPayPhone(e.target.value); setPayError(''); }}
                       placeholder="255712345678" className={dkInput} />
                   </div>
                 </div>
                 {payError && <p className="text-xs text-red-400 mb-3">{payError}</p>}
-                <p className="text-xs text-muted-foreground mb-5">Utapokea arifa ya USSD kwenye simu yako. Ingiza PIN kuthibitisha.</p>
+                <p className="text-xs text-muted-foreground mb-5">{t('grp.ussdHint')}</p>
                 <div className="flex gap-2">
                   <button onClick={handleClosePay} disabled={payLoading}
                     className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-white/5 disabled:opacity-50 transition-colors">
@@ -1459,7 +1454,7 @@ export default function MemberGroupDetailsPage() {
                 <p className="text-sm text-muted-foreground mb-1">Arifa imetumwa kwa <span className="text-foreground">{payPhone}</span></p>
                 <p className="text-xs text-muted-foreground mb-4">Ingiza PIN kwenye simu yako kuthibitisha TSh {parseInt(payAmount).toLocaleString()}</p>
                 <div className="px-4 py-3 rounded-xl bg-[#e4a233]/8 border border-[#e4a233]/15 mb-4">
-                  <p className="text-xs text-[#e4a233]/70">Usifunge ukurasa huu hadi malipo yakamilike.</p>
+                  <p className="text-xs text-[#e4a233]/70">{t('grp.dontClose')}</p>
                 </div>
                 <button onClick={handleClosePay} className="text-xs text-muted-foreground hover:text-muted-foreground underline transition-colors">Ghairi</button>
               </div>

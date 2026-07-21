@@ -687,7 +687,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {saving ? 'Inahifadhi...' : 'Hifadhi Mabadiliko'}
           </button>
@@ -996,7 +996,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? 'Inaunda...' : 'Unda Kundi'}
                 </button>
@@ -1033,7 +1033,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               <button
                 onClick={handleLookupCode}
                 disabled={joinLookupLoading || !joinCode.trim()}
-                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
+                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
               >
                 {joinLookupLoading ? '...' : 'Tafuta'}
               </button>
@@ -1081,7 +1081,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   onClick={handleJoinByCode}
                   disabled={joinLoading}
-                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {joinLoading ? 'Inajiunga...' : joinLookupResult.join_policy === 'open' ? 'Jiunga Sasa' : 'Tuma Ombi'}
                 </button>
@@ -1239,6 +1239,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
   memberProfile: any;
   loadMemberData: () => void;
 }) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState(memberProfile?.username || '');
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
   const [usernameError, setUsernameError] = useState('');
@@ -1318,7 +1319,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
         className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:bg-muted transition-all text-left"
       >
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-          <span className="text-lg font-bold text-foreground">
+          <span className="text-lg font-bold text-white">
             {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
           </span>
         </div>
@@ -1333,11 +1334,11 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
 
       {/* Username section */}
       <div className="rounded-2xl bg-card border border-border p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-1">Username ya Uhamisho Pesa</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-1">{t('set.username.title')}</h3>
         <p className="text-xs text-muted-foreground mb-4">
           {memberProfile?.username 
-            ? 'Wenzako wanaweza kukutumia pesa kwa kutumia username yako'
-            : 'Weka username yako ili wenzako waweze kukutumia pesa kwa urahisi'
+            ? t('set.username.hasDesc')
+            : t('set.username.noDesc')
           }
         </p>
         
@@ -1349,7 +1350,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
               </div>
               <div>
                 <p className="text-sm font-semibold text-emerald-400">@{memberProfile.username}</p>
-                <p className="text-xs text-muted-foreground">Username yako</p>
+                <p className="text-xs text-muted-foreground">{t('set.username.yours')}</p>
               </div>
             </div>
             <div className="text-emerald-400">
@@ -1373,21 +1374,21 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
                   minLength={3}
                   maxLength={30}
                 />
-                {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Inakagua...</span>}
-                {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">✓ Inapatikana</span>}
-                {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">✗ Imechukuliwa</span>}
+                {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{t('set.username.checking')}</span>}
+                {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">{t('set.username.available')}</span>}
+                {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">{t('set.username.taken')}</span>}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('set.username.hint')}</p>
               {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
-              {saveSuccess && <p className="text-xs text-emerald-400 mt-1">✓ Imehifadhiwa!</p>}
+              {saveSuccess && <p className="text-xs text-emerald-400 mt-1">{t('set.username.saved')}</p>}
             </div>
 
             <button
               onClick={saveUsername}
               disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
-              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
+              {saving ? t('set.username.saving') : t('set.username.save')}
             </button>
           </div>
         )}
@@ -1396,10 +1397,10 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       {/* Settings menu items */}
       <div className="rounded-2xl bg-card border border-border divide-y divide-white/[0.04]">
         {[
-          { label: 'Taarifa za Akaunti', desc: 'Jina, nambari ya simu, barua pepe', icon: UserIcon },
-          { label: 'Usalama', desc: 'Nywila na uthibitishaji', icon: CogIcon },
-          { label: 'Arifa', desc: 'Mipangilio ya arifa', icon: DocumentTextIcon },
-          { label: 'Lugha', desc: 'Kiswahili / English', icon: BookOpenIcon },
+          { label: t('set.menu.account'), desc: t('set.menu.account.desc'), icon: UserIcon },
+          { label: t('set.menu.security'), desc: t('set.menu.security.desc'), icon: CogIcon },
+          { label: t('set.menu.notifications'), desc: t('set.menu.notifications.desc'), icon: DocumentTextIcon },
+          { label: t('set.menu.language'), desc: 'Kiswahili / English', icon: BookOpenIcon },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-3 px-4 py-3.5 opacity-50">
             <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center shrink-0">
@@ -1409,7 +1410,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
               <p className="text-sm text-muted-foreground">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
-            <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">Hivi karibuni</span>
+            <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">{t('set.comingSoon')}</span>
           </div>
         ))}
       </div>

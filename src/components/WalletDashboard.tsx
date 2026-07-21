@@ -12,6 +12,7 @@ import {
   ClockIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WalletDashboardProps {
   userId: number;
@@ -87,6 +88,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 }
 
 export default function WalletDashboard({ userId, username }: WalletDashboardProps) {
+  const { t } = useLanguage();
   const [balance, setBalance] = useState<number>(0);
   const [provisioned, setProvisioned] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
@@ -334,7 +336,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       <div className="rounded-xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Salio la Wallet</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('wal.balance')}</p>
             <p className="text-3xl font-bold text-foreground">{formatTzs(balance)}</p>
             {username && (
               <p className="text-sm text-emerald-400 mt-2 font-medium">
@@ -352,21 +354,21 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4" />
-            Weka Pesa
+            {t('wal.deposit')}
           </button>
           <button
             onClick={() => { setModal('withdraw'); setFeedback(null); }}
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <ArrowUpTrayIcon className="h-4 w-4" />
-            Toa Pesa
+            {t('wal.withdraw')}
           </button>
           <button
             onClick={() => { setModal('transfer'); setFeedback(null); }}
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <ArrowsRightLeftIcon className="h-4 w-4" />
-            Hamisha
+            {t('wal.transfer')}
           </button>
         </div>
       </div>
@@ -374,11 +376,11 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       {/* Transaction History */}
       <div className="rounded-xl border border-border bg-card">
         <div className="px-6 py-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Historia ya Miamala</h3>
+          <h3 className="font-semibold text-foreground">{t('wal.history')}</h3>
         </div>
         {transactions.length === 0 ? (
           <div className="px-6 py-8 text-center text-muted-foreground">
-            Hakuna miamala bado
+            {t('wal.noTx')}
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -413,7 +415,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
           <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h3 className="font-semibold text-foreground">
-                {modal === 'deposit' ? 'Weka Pesa' : modal === 'withdraw' ? 'Toa Pesa' : 'Hamisha Pesa'}
+                {modal === 'deposit' ? t('wal.deposit') : modal === 'withdraw' ? t('wal.withdraw') : t('wal.transferFull')}
               </h3>
               <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground">
                 <XMarkIcon className="h-5 w-5" />
@@ -423,7 +425,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Amount */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Kiasi (TZS)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">{t('wal.amountTzs')}</label>
                 <input
                   type="number"
                   min="100"
@@ -438,7 +440,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
               {/* Phone (for deposit/withdraw) */}
               {(modal === 'deposit' || modal === 'withdraw') && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Namba ya Simu</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">{t('wal.phoneShort')}</label>
                   <input
                     type="tel"
                     required
@@ -454,30 +456,30 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
               {modal === 'transfer' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Aina</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t('wal.type')}</label>
                     <CustomDropdown
                       value={formData.purpose}
                       onChange={(val) => setFormData({ ...formData, purpose: val })}
                       options={[
-                        { value: 'contribution', label: 'Mchango kwa Kundi' },
-                        { value: 'p2p', label: 'Tuma kwa Mwanachama' },
+                        { value: 'contribution', label: t('wal.contribution') },
+                        { value: 'p2p', label: t('wal.p2p') },
                       ]}
                     />
                   </div>
 
                   {formData.purpose === 'contribution' && (
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Chagua Kundi</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">{t('wal.chooseGroup')}</label>
                       {loadingOptions ? (
-                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Inapakia...</div>
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">{t('wal.loading')}</div>
                       ) : myGroups.length === 0 ? (
-                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">Hujajiunga na kundi lolote</div>
+                        <div className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-muted-foreground text-sm">{t('wal.noGroups')}</div>
                       ) : (
                         <CustomDropdown
                           value={formData.groupId}
                           onChange={(val) => setFormData({ ...formData, groupId: val })}
                           options={myGroups.map(g => ({ value: String(g.id), label: g.name }))}
-                          placeholder="-- Chagua kundi --"
+                          placeholder={t('wal.chooseGroupPh')}
                         />
                       )}
                     </div>
@@ -485,7 +487,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
 
                   {formData.purpose === 'p2p' && (
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Username ya Mpokezi</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">{t('wal.recipientUsername')}</label>
                       <input
                         type="text"
                         required
@@ -497,7 +499,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
                         minLength={3}
                         maxLength={30}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Ingiza username ya mwanachama (herufi ndogo, nambari, na _ tu)</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('wal.usernameHint')}</p>
                     </div>
                   )}
                 </>
@@ -514,7 +516,7 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
                 disabled={submitting}
                 className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {submitting ? 'Inatuma...' : modal === 'deposit' ? 'Weka Pesa' : modal === 'withdraw' ? 'Toa Pesa' : 'Hamisha'}
+                {submitting ? t('wal.sending') : modal === 'deposit' ? t('wal.deposit') : modal === 'withdraw' ? t('wal.withdraw') : t('wal.transfer')}
               </button>
             </form>
           </div>
