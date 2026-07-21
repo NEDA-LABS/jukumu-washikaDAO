@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" role="img" aria-label="Washika DAU">
+  <defs>
+    <linearGradient id="wd-gold" x1="18" y1="8" x2="82" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6C048"/>
+      <stop offset="0.55" stop-color="#E4A233"/>
+      <stop offset="1" stop-color="#C97E22"/>
+    </linearGradient>
+    <linearGradient id="wd-light" x1="30" y1="40" x2="72" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9E2D4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Hexagon frame (flat top & bottom, points left & right) -->
+  <path d="M31 8 H69 L92 50 L69 92 H31 L8 50 Z"
+        stroke="url(#wd-gold)" stroke-width="6.5" stroke-linejoin="round" fill="none"/>
+
+  <!-- Two interlocking cupped-hand shapes forming a unity swirl.
+       Shape B is Shape A rotated 180° about the centre (50,50). -->
+  <!-- Gold hand (lobe upper-right, tail curling to centre) -->
+  <path d="M47 53
+           C42.5 44.5 47 33.5 58 31.5
+           C69 29.5 77.5 38.5 76 49
+           C74.8 57.5 67 62 58.5 60.5
+           C64 57.5 65.5 50 60 46.5
+           C53.5 42.5 46.5 47 47 53 Z"
+        fill="url(#wd-gold)"/>
+  <!-- Light hand — 180° mirror -->
+  <path d="M47 53
+           C42.5 44.5 47 33.5 58 31.5
+           C69 29.5 77.5 38.5 76 49
+           C74.8 57.5 67 62 58.5 60.5
+           C64 57.5 65.5 50 60 46.5
+           C53.5 42.5 46.5 47 47 53 Z"
+        transform="rotate(180 50 50)"
+        fill="url(#wd-light)"/>
+</svg>

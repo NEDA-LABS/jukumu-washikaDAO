@@ -14,9 +14,9 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
 
           {/* Logo */}
-          <div className="flex items-center">
+          <Link href="/" className="flex items-center transition-transform duration-200 hover:scale-[1.03]">
             <Logo className="h-9 w-auto" />
-          </div>
+          </Link>
 
           {/* Nav links */}
           <nav className="flex items-center gap-6 text-sm text-muted-foreground">

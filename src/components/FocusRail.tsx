@@ -120,14 +120,14 @@ export default function FocusRail({
             alt=""
             fill
             className="object-cover scale-110"
-            style={{ filter: 'blur(60px) saturate(1.6) brightness(0.25)' }}
+            style={{ filter: 'blur(64px) saturate(1.5) brightness(0.95)' }}
             priority
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-neutral-950/70 via-neutral-950/50 to-neutral-950/80" />
+      {/* Theme-aware overlay — tints the blurred photo with the page background */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background/90 via-background/72 to-background/92" />
 
       {/* Content — fills full height */}
       <div className="relative z-10 flex flex-col items-center justify-between flex-1 w-full py-16 px-4">
@@ -141,12 +141,12 @@ export default function FocusRail({
               </p>
             )}
             {heading && (
-              <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
+              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 leading-tight">
                 {heading}
               </h2>
             )}
             {subheading && (
-              <p className="text-base text-white/60 leading-relaxed">
+              <p className="text-base text-muted-foreground leading-relaxed">
                 {subheading}
               </p>
             )}
@@ -179,7 +179,7 @@ export default function FocusRail({
             return (
               <motion.div
                 key={item.id}
-                className="absolute rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 shadow-2xl"
+                className="absolute rounded-3xl overflow-hidden bg-card border border-border shadow-2xl"
                 style={{
                   width: CARD_WIDTH,
                   height: CARD_WIDTH * (4 / 3),
@@ -226,10 +226,10 @@ export default function FocusRail({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.45, ease: 'easeInOut' }}
                       >
-                        <h4 className="text-lg font-semibold text-white mb-2 leading-snug">
+                        <h4 className="text-lg font-semibold text-foreground mb-2 leading-snug">
                           {item.title}
                         </h4>
-                        <p className="text-sm text-white/60 leading-relaxed line-clamp-3">
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
                           {item.description}
                         </p>
                       </motion.div>
@@ -240,7 +240,7 @@ export default function FocusRail({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <h4 className="text-base font-medium text-white/40 leading-snug">
+                        <h4 className="text-base font-medium text-muted-foreground/60 leading-snug">
                           {item.title}
                         </h4>
                       </motion.div>
@@ -256,7 +256,7 @@ export default function FocusRail({
         <div className="mt-10 flex items-center gap-4">
           <button
             onClick={() => go(-1)}
-            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white transition-colors"
+            className="w-11 h-11 rounded-full bg-card/80 hover:bg-muted backdrop-blur-sm border border-border flex items-center justify-center text-foreground transition-colors"
             aria-label="Previous"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -277,8 +277,8 @@ export default function FocusRail({
                   width: idx === activeIndex ? 28 : 6,
                   height: 6,
                   background: idx === activeIndex
-                    ? 'var(--color-primary, #f97316)'
-                    : 'rgba(255,255,255,0.25)',
+                    ? 'var(--ds-primary, #f97316)'
+                    : 'var(--ds-border)',
                 }}
                 aria-label={`Go to step ${idx + 1}`}
               />
@@ -287,7 +287,7 @@ export default function FocusRail({
 
           <button
             onClick={() => go(1)}
-            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white transition-colors"
+            className="w-11 h-11 rounded-full bg-card/80 hover:bg-muted backdrop-blur-sm border border-border flex items-center justify-center text-foreground transition-colors"
             aria-label="Next"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

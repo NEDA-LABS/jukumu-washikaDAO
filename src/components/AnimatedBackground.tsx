@@ -11,6 +11,10 @@ interface Orb {
   opacity: number;
 }
 
+/**
+ * Theme-aware animated gradient field. Warm gold/terracotta orbs drift across a
+ * base that matches the active theme, so the hero looks distinct in light vs dark.
+ */
 export default function AnimatedBackground({ className = '' }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -24,50 +28,56 @@ export default function AnimatedBackground({ className = '' }: { className?: str
     let w = 0;
     let h = 0;
     let orbs: Orb[] = [];
+    const isDark = () => document.documentElement.classList.contains('dark');
 
     const resize = () => {
       w = canvas.offsetWidth;
       h = canvas.offsetHeight;
-      canvas.width = w;
-      canvas.height = h;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       init();
     };
 
     const init = () => {
-      orbs = Array.from({ length: 6 }, (_, i) => ({
+      orbs = Array.from({ length: 6 }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.min(w, h) * (0.25 + Math.random() * 0.2),
-        opacity: 0.18 + Math.random() * 0.14,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.min(w, h) * (0.28 + Math.random() * 0.22),
+        opacity: 0.16 + Math.random() * 0.14,
       }));
     };
 
+    // Warm brand palette (orange / gold / terracotta)
     const COLORS = [
-      [234, 88, 12],   // orange-600
-      [249, 115, 22],  // orange-500
-      [251, 146, 60],  // orange-400
-      [180, 60, 10],   // deep orange
-      [120, 40, 5],    // dark brown-orange
+      [228, 162, 51],  // gold
+      [209, 98, 43],   // terracotta
+      [246, 192, 72],  // light gold
+      [201, 126, 34],  // deep gold
+      [184, 83, 31],   // burnt orange
+      [124, 63, 20],   // brown
     ];
 
     const draw = () => {
-      // Skip frame if canvas has no dimensions (e.g. parent is display:none on mobile)
       if (w === 0 || h === 0) {
         raf = requestAnimationFrame(draw);
         return;
       }
+      const dark = isDark();
 
       ctx.clearRect(0, 0, w, h);
-
-      ctx.fillStyle = '#0d0d0d';
+      ctx.fillStyle = dark ? '#141210' : '#f5f1ea';
       ctx.fillRect(0, 0, w, h);
 
+      ctx.globalCompositeOperation = dark ? 'lighter' : 'multiply';
       orbs.forEach((orb, i) => {
         const [r, g, b] = COLORS[i % COLORS.length];
+        const op = dark ? orb.opacity : orb.opacity * 0.55;
         const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
-        grad.addColorStop(0, `rgba(${r},${g},${b},${orb.opacity})`);
+        grad.addColorStop(0, `rgba(${r},${g},${b},${op})`);
         grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
         ctx.beginPath();
         ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
@@ -81,9 +91,10 @@ export default function AnimatedBackground({ className = '' }: { className?: str
         if (orb.y < -orb.r) orb.y = h + orb.r;
         if (orb.y > h + orb.r) orb.y = -orb.r;
       });
+      ctx.globalCompositeOperation = 'source-over';
 
-      // Mesh grid lines
-      ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+      // Fine mesh grid
+      ctx.strokeStyle = dark ? 'rgba(255,255,255,0.028)' : 'rgba(31,27,22,0.045)';
       ctx.lineWidth = 1;
       const step = Math.round(Math.min(w, h) / 12);
       for (let x = 0; x <= w; x += step) {
@@ -94,9 +105,9 @@ export default function AnimatedBackground({ className = '' }: { className?: str
       }
 
       // Vignette
-      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.1, w / 2, h / 2, h * 0.85);
+      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.1, w / 2, h / 2, h * 0.9);
       vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+      vig.addColorStop(1, dark ? 'rgba(0,0,0,0.5)' : 'rgba(120,80,30,0.10)');
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, w, h);
 

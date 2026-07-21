@@ -1,62 +1,64 @@
 @import "tailwindcss";
 
-/* ── JUKUMU Design Tokens ── */
-/* Light theme (default) — clean finance look */
+/* ── WashikaDAO Design Tokens ── */
+/* Light theme (default) — warm "Claude"-style ivory */
 :root {
   color-scheme: light;
-  --ds-background: #f5f7fa;
-  --ds-foreground: #111827;
-  --ds-card: #ffffff;
-  --ds-card-foreground: #111827;
+  --ds-background: #f5f1ea;
+  --ds-foreground: #1f1b16;
+  --ds-card: #fdfbf7;
+  --ds-card-foreground: #1f1b16;
   --ds-overlay: #ffffff;
-  --ds-muted: #eef2f7;
-  --ds-muted-foreground: #6b7280;
-  --ds-border: #e2e8f0;
-  --ds-input: #e2e8f0;
-  --ds-primary: #ea580c;
+  --ds-muted: #ece5d8;
+  --ds-muted-foreground: #6d655a;
+  --ds-border: #e3dccd;
+  --ds-input: #e3dccd;
+  --ds-primary: #d1622b;
   --ds-primary-foreground: #ffffff;
-  --ds-secondary: #1c1917;
-  --ds-secondary-foreground: #ffffff;
-  --ds-accent: #fff7ed;
-  --ds-accent-foreground: #9a3412;
+  --ds-secondary: #1f1b16;
+  --ds-secondary-foreground: #f7f4ee;
+  --ds-accent: #f6ecdd;
+  --ds-accent-foreground: #8a4a1c;
+  --ds-gold: #e4a233;
   --ds-destructive: #dc2626;
   --ds-destructive-foreground: #ffffff;
   --ds-success: #16a34a;
   --ds-success-foreground: #ffffff;
   --ds-warning: #ca8a04;
   --ds-warning-foreground: #ffffff;
-  --ds-ring: #ea580c;
+  --ds-ring: #d1622b;
   --ds-radius-sm: 0.375rem;
   --ds-radius-md: 0.5rem;
   --ds-radius-lg: 0.75rem;
   --ds-radius-xl: 1rem;
 }
 
-/* Dark theme */
+/* Dark theme — warm charcoal */
 :root.dark {
   color-scheme: dark;
-  --ds-background: #0d0d0d;
-  --ds-foreground: #fafafa;
-  --ds-card: #141414;
-  --ds-card-foreground: #fafafa;
-  --ds-overlay: #1a1a1a;
-  --ds-muted: #1e1e1e;
-  --ds-muted-foreground: #a1a1aa;
-  --ds-border: #2a2a2a;
-  --ds-input: #2a2a2a;
-  --ds-primary: #f97316;
+  --ds-background: #141210;
+  --ds-foreground: #f7f4ee;
+  --ds-card: #1e1a15;
+  --ds-card-foreground: #f7f4ee;
+  --ds-overlay: #211d18;
+  --ds-muted: #2a251e;
+  --ds-muted-foreground: #a89f90;
+  --ds-border: #332d24;
+  --ds-input: #332d24;
+  --ds-primary: #e07a45;
   --ds-primary-foreground: #ffffff;
-  --ds-secondary: #fafaf9;
-  --ds-secondary-foreground: #1c1917;
-  --ds-accent: #431407;
-  --ds-accent-foreground: #fed7aa;
+  --ds-secondary: #f7f4ee;
+  --ds-secondary-foreground: #1f1b16;
+  --ds-accent: #3a2414;
+  --ds-accent-foreground: #f3c893;
+  --ds-gold: #e8ac42;
   --ds-destructive: #ef4444;
   --ds-destructive-foreground: #ffffff;
   --ds-success: #22c55e;
   --ds-success-foreground: #ffffff;
   --ds-warning: #eab308;
   --ds-warning-foreground: #000000;
-  --ds-ring: #f97316;
+  --ds-ring: #e07a45;
 }
 
 /* ── Map tokens to Tailwind v4 theme ── */
@@ -83,10 +85,12 @@
   --color-warning: var(--ds-warning);
   --color-warning-foreground: var(--ds-warning-foreground);
   --color-ring: var(--ds-ring);
+  --color-gold: var(--ds-gold);
 
   /* Typography */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 
   /* Radii */
   --radius-sm: var(--ds-radius-sm);
@@ -114,17 +118,98 @@
   }
 }
 
-html {
-  overflow-x: clip;
+/* Base styles live in @layer base so Tailwind utilities (e.g. h-10, font-bold)
+   always win over element selectors. */
+@layer base {
+  html {
+    /* Kill horizontal overflow / rubber-banding on mobile, keep layout stable */
+    overflow-x: hidden;
+    max-width: 100%;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--ds-background);
+    color: var(--ds-foreground);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ── Claude-style display headings ── */
+  h1, h2, h3 {
+    font-family: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+    font-weight: 560;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    font-optical-sizing: auto;
+  }
+
+  /* Images stay inside the viewport. NOTE: never set height:auto on svg —
+     it would override sizing utilities like h-10 and collapse inline icons. */
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+  svg { max-width: 100%; }
 }
 
-body {
-  background: var(--ds-background);
-  color: var(--ds-foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  min-height: 100dvh;
-  -webkit-overflow-scrolling: touch;
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
+
+/* Serif display utility (opt-in) */
+.font-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ds-primary) 26%, transparent);
+  color: var(--ds-foreground);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--ds-border);
+  border-radius: 9999px;
+  border: 2px solid var(--ds-background);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ds-muted-foreground); }
+
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Utility: constant-width page container that never overflows */
+.wd-container {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* Soft aurora float for hero blobs */
+@keyframes wd-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -24px, 0) scale(1.08); }
+}
+@keyframes wd-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wd-rise { animation: wd-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 input,
 textarea,

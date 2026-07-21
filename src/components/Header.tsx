@@ -3,13 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 
 export default function Header() {
   const { language, toggleLanguage, t } = useLanguage();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
@@ -36,12 +34,12 @@ export default function Header() {
   ];
 
   return (
-    <header className={`fixed w-full top-0 z-50 bg-card/80 backdrop-blur border-b border-border transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="flex w-full items-center justify-between py-5">
+    <header className={`fixed w-full top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/70 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <nav className="wd-container" aria-label="Top">
+        <div className="flex w-full items-center justify-between py-4">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <Logo className="h-11 w-auto" />
+            <Link href="/" className="flex items-center transition-transform duration-200 hover:scale-[1.03] active:scale-100">
+              <Logo className="h-10 w-auto" />
             </Link>
           </div>
 
@@ -76,39 +74,20 @@ export default function Header() {
             >
               {t('nav.login')}
             </Link>
-
-            {/* Mobile menu button */}
-            <div className="flex lg:hidden">
-              <button
-                type="button"
-                className="rounded-md bg-card p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <span className="sr-only">Open menu</span>
-                {isMenuOpen ? (
-                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-                )}
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Mobile menu */}
-        <div className={`${isMenuOpen ? 'block' : 'hidden'} lg:hidden`}>
-          <div className="space-y-1 px-2 pb-3 pt-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span>{item.name}</span>
-              </Link>
-            ))}
-          </div>
+        {/* Mobile nav — inline row directly under the bar (no dropdown) */}
+        <div className="lg:hidden flex items-center justify-center gap-1 pb-2.5 -mt-1 overflow-x-auto scrollbar-none">
+          {navigation.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-200"
+            >
+              {item.name}
+            </Link>
+          ))}
         </div>
       </nav>
     </header>

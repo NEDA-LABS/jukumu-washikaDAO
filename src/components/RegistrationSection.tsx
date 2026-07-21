@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import Logo from '@/components/Logo';
+import Header from '@/components/Header';
 
 export default function RegistrationSection({ title }: { title?: string }) {
   const { t } = useLanguage();
@@ -82,22 +84,22 @@ export default function RegistrationSection({ title }: { title?: string }) {
     }
   };
 
-  const fi = 'w-full px-4 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all';
-  const lbl = 'block text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5';
-  const sel = `${fi} text-white/70 [&>option]:bg-[#111] [&>option]:text-white`;
+  const fi = 'w-full px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all';
+  const lbl = 'block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5';
+  const sel = `${fi} text-muted-foreground [&>option]:bg-card [&>option]:text-foreground`;
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-sm text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
             <CheckCircleIcon className="h-10 w-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Umefanikiwa!</h2>
-          <p className="text-sm text-white/40 mb-8">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Umefanikiwa!</h2>
+          <p className="text-sm text-muted-foreground mb-8">
             Akaunti yako imeundwa. Unaweza sasa kuingia kwenye jukwaa.
           </p>
-          <Link href="/login" className="block w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors text-center shadow-lg shadow-orange-500/20">
+          <Link href="/login" className="block w-full py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors text-center shadow-lg shadow-primary/20">
             Ingia Sasa
           </Link>
           <button
@@ -105,7 +107,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
               setIsSubmitted(false);
               setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', location: '', businessType: '', idType: '', idNumber: '', gender: '', age: '' });
             }}
-            className="mt-3 text-xs text-white/30 hover:text-white/50 transition-colors"
+            className="mt-3 text-xs text-muted-foreground hover:text-muted-foreground transition-colors"
           >
             Sajili mtu mwingine
           </button>
@@ -115,27 +117,27 @@ export default function RegistrationSection({ title }: { title?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex">
+    <>
+    <Header />
+    <div className="min-h-screen bg-background flex pt-[68px]">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-[38%] xl:w-[35%] flex-col justify-between p-12 border-r border-white/[0.05] relative overflow-hidden shrink-0">
+      <div className="hidden lg:flex lg:w-[38%] xl:w-[35%] flex-col justify-between p-12 border-r border-border relative overflow-hidden shrink-0">
         <AnimatedBackground />
 
         <Link href="/" className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-            <span className="text-lg font-black text-white">W</span>
-          </div>
+          <Logo markOnly className="h-11 w-auto" />
           <div>
-            <p className="text-sm font-bold text-white leading-none">Washika DAU</p>
-            <p className="text-[10px] text-white/30 mt-0.5">Jukumu Platform</p>
+            <p className="text-sm font-bold text-foreground leading-none">Washika DAU</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Jukumu Platform</p>
           </div>
         </Link>
 
         <div className="relative z-10 space-y-6">
           <div>
-            <h2 className="text-3xl font-bold text-white leading-tight mb-3">
+            <h2 className="text-3xl font-bold text-foreground leading-tight mb-3">
               Jiunge na jamii<br />ya wajasiriamali
             </h2>
-            <p className="text-sm text-white/40 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Sajili leo na uanze safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.
             </p>
           </div>
@@ -146,34 +148,26 @@ export default function RegistrationSection({ title }: { title?: string }) {
               'Malipo ya M-Pesa yaliyosalimishwa',
               'Fuatilia ukuaji wa biashara yako',
             ].map((label, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-                <p className="text-xs text-white/55">{label}</p>
+              <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-muted border border-border">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <p className="text-xs text-muted-foreground">{label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-[10px] text-white/20 relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
+        <p className="text-[10px] text-muted-foreground relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
       </div>
 
       {/* Right — form */}
       <div className="flex-1 overflow-y-auto">
         <div className="min-h-full flex items-start justify-center px-6 py-12">
           <div className="w-full max-w-2xl">
-            {/* Mobile logo */}
-            <Link href="/" className="flex items-center gap-3 mb-8 lg:hidden">
-              <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                <span className="text-base font-black text-white">W</span>
-              </div>
-              <p className="text-sm font-bold text-white">Washika DAU</p>
-            </Link>
-
             <div className="mb-8">
-              <h1 className="text-2xl font-bold text-white mb-1">Unda Akaunti</h1>
-              <p className="text-sm text-white/40">
+              <h1 className="text-2xl font-bold text-foreground mb-1">Unda Akaunti</h1>
+              <p className="text-sm text-muted-foreground">
                 Una akaunti tayari?{' '}
-                <Link href="/login" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+                <Link href="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
                   Ingia hapa
                 </Link>
               </p>
@@ -188,8 +182,8 @@ export default function RegistrationSection({ title }: { title?: string }) {
               )}
 
               {/* Section: Personal */}
-              <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5 space-y-4">
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Taarifa za Kibinafsi</p>
+              <div className="rounded-2xl bg-muted border border-border p-5 space-y-4">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Taarifa za Kibinafsi</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="fullName" className={lbl}>Jina Kamili *</label>
@@ -200,7 +194,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                     <input type="tel" id="phone" name="phone" required value={formData.phone} onChange={handleChange} className={fi} placeholder="+255 7xx xxx xxx" />
                   </div>
                   <div>
-                    <label htmlFor="email" className={lbl}>Barua Pepe <span className="normal-case text-white/20">(si lazima)</span></label>
+                    <label htmlFor="email" className={lbl}>Barua Pepe <span className="normal-case text-muted-foreground">(si lazima)</span></label>
                     <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className={fi} placeholder="email@example.com" />
                   </div>
                   <div>
@@ -223,8 +217,8 @@ export default function RegistrationSection({ title }: { title?: string }) {
               </div>
 
               {/* Section: Business & ID */}
-              <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5 space-y-4">
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Biashara na Kitambulisho</p>
+              <div className="rounded-2xl bg-muted border border-border p-5 space-y-4">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Biashara na Kitambulisho</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="businessType" className={lbl}>Aina ya Biashara *</label>
@@ -256,8 +250,8 @@ export default function RegistrationSection({ title }: { title?: string }) {
               </div>
 
               {/* Section: Password */}
-              <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5 space-y-4">
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Unda Nywila</p>
+              <div className="rounded-2xl bg-muted border border-border p-5 space-y-4">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Unda Nywila</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="password" className={lbl}>Nywila *</label>
@@ -273,7 +267,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20"
+                className="w-full py-3.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-sm font-semibold transition-colors shadow-lg shadow-primary/20"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -283,7 +277,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
                 ) : 'Unda Akaunti →'}
               </button>
 
-              <p className="text-center text-xs text-white/20">
+              <p className="text-center text-xs text-muted-foreground">
                 Kwa kusajili, unakubali masharti na sera ya faragha ya Washika DAU.
               </p>
             </form>
@@ -291,5 +285,6 @@ export default function RegistrationSection({ title }: { title?: string }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

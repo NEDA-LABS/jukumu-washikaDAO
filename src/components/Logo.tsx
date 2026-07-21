@@ -4,86 +4,85 @@ import React from 'react';
 
 interface LogoProps {
   className?: string;
+  /** Render only the hexagon mark, without the wordmark. */
+  markOnly?: boolean;
 }
 
 /**
- * Inline SVG logo — responds to the document's `.dark` CSS class via internal
- * <style>, so it works with the JS-toggled theme without any React state or
- * hydration flash.
+ * WashikaDAO logo — inline SVG so it inherits the page font and adapts to the
+ * `.dark` theme class without any React state or hydration flash.
  *
- * Light mode:  "Washika" in dark navy (#1a1a2e), hexagon + "DAU" in amber (#f0a500)
- * Dark mode:   "Washika" in white (#ffffff), hexagon + "DAU" in amber (#f0a500)
+ *   • Hexagon + interlocking "unity hands" swirl (always gold/cream)
+ *   • Wordmark: "Washika" in the foreground colour, "DAU" in brand gold
  */
-export default function Logo({ className = '' }: LogoProps) {
+export default function Logo({ className = '', markOnly = false }: LogoProps) {
+  const viewBox = markOnly ? '0 0 100 100' : '0 0 372 104';
+  const uid = React.useId().replace(/:/g, '');
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 220 56"
+      viewBox={viewBox}
       fill="none"
       className={className}
       aria-label="Washika DAU"
       role="img"
     >
+      <defs>
+        <linearGradient id={`gold-${uid}`} x1="18" y1="8" x2="82" y2="92" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#F6C048" />
+          <stop offset="0.55" stopColor="#E4A233" />
+          <stop offset="1" stopColor="#C97E22" />
+        </linearGradient>
+        <linearGradient id={`light-${uid}`} x1="30" y1="40" x2="72" y2="82" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#E9E2D4" />
+        </linearGradient>
+      </defs>
+
       <style>{`
-        .logo-text   { fill: #1a1a2e; }
-        .logo-hand   { fill: #1a1a2e; }
-        .logo-accent { fill: #f0a500; stroke: #f0a500; }
-        .logo-hex    { stroke: #f0a500; }
-        :root.dark .logo-text  { fill: #ffffff; }
-        :root.dark .logo-hand  { fill: #ffffff; }
+        .wd-word { fill: #1a1712; }
+        :root.dark .wd-word { fill: #f7f4ee; }
       `}</style>
 
-      {/* Hexagon frame — always amber */}
-      <polygon
-        points="28,6 48,6 58,22 48,38 28,38 18,22"
-        className="logo-hex"
-        strokeWidth="2.5"
-        fill="none"
-        strokeLinejoin="round"
-      />
+      {/* ── Mark ── */}
+      <g>
+        <path
+          d="M31 8 H69 L92 50 L69 92 H31 L8 50 Z"
+          stroke={`url(#gold-${uid})`}
+          strokeWidth="6.5"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        <path
+          d="M47 53 C42.5 44.5 47 33.5 58 31.5 C69 29.5 77.5 38.5 76 49
+             C74.8 57.5 67 62 58.5 60.5 C64 57.5 65.5 50 60 46.5
+             C53.5 42.5 46.5 47 47 53 Z"
+          fill={`url(#gold-${uid})`}
+        />
+        <path
+          d="M47 53 C42.5 44.5 47 33.5 58 31.5 C69 29.5 77.5 38.5 76 49
+             C74.8 57.5 67 62 58.5 60.5 C64 57.5 65.5 50 60 46.5
+             C53.5 42.5 46.5 47 47 53 Z"
+          transform="rotate(180 50 50)"
+          fill={`url(#light-${uid})`}
+        />
+      </g>
 
-      {/* Amber hand (front) */}
-      <path
-        d="M25,29 C25,20 32,15 38,19 C44,23 44,30 38,32 C32,34 25,29 25,29Z"
-        className="logo-accent"
-        stroke="none"
-        opacity="0.9"
-      />
-
-      {/* Theme-adaptive hand (back) */}
-      <path
-        d="M50,17 C50,26 43,31 37,27 C31,23 31,16 37,14 C43,12 50,17 50,17Z"
-        className="logo-hand"
-        stroke="none"
-        opacity="0.85"
-      />
-
-      {/* "Washika" — dark in light mode, white in dark mode */}
-      <text
-        x="70"
-        y="25"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
-        fontWeight="700"
-        fontSize="16"
-        className="logo-text"
-        letterSpacing="0.3"
-      >
-        Washika
-      </text>
-
-      {/* "DAU" — always amber */}
-      <text
-        x="70"
-        y="43"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
-        fontWeight="700"
-        fontSize="14"
-        className="logo-accent"
-        stroke="none"
-        letterSpacing="2.5"
-      >
-        DAU
-      </text>
+      {/* ── Wordmark ── */}
+      {!markOnly && (
+        <text
+          x="112"
+          y="64"
+          fontFamily="var(--font-sans), ui-sans-serif, system-ui, sans-serif"
+          fontWeight="700"
+          fontSize="42"
+          letterSpacing="-0.5"
+        >
+          <tspan className="wd-word">Washika</tspan>
+          <tspan fill={`url(#gold-${uid})`}>DAU</tspan>
+        </text>
+      )}
     </svg>
   );
 }

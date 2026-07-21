@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import Logo from '@/components/Logo';
+import Header from '@/components/Header';
 
 export default function LoginPage() {
   const { } = useLanguage();
@@ -90,27 +92,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex">
+    <>
+    <Header />
+    <div className="min-h-screen bg-background flex pt-[68px]">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 border-r border-white/[0.05] relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col justify-between p-12 border-r border-border relative overflow-hidden">
         <AnimatedBackground />
 
         <Link href="/" className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-            <span className="text-lg font-black text-white">W</span>
-          </div>
+          <Logo markOnly className="h-11 w-auto" />
           <div>
-            <p className="text-sm font-bold text-white leading-none">Washika DAU</p>
-            <p className="text-[10px] text-white/30 mt-0.5">Jukumu Platform</p>
+            <p className="text-sm font-bold text-foreground leading-none">Washika DAU</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Jukumu Platform</p>
           </div>
         </Link>
 
         <div className="relative z-10 space-y-8">
           <div>
-            <h2 className="text-3xl font-bold text-white leading-tight mb-3">
+            <h2 className="text-3xl font-bold text-foreground leading-tight mb-3">
               Karibu tena<br />kwenye jamii yako
             </h2>
-            <p className="text-sm text-white/40 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Ingia kuendelea na safari yako ya biashara, mafunzo, na uwekezaji pamoja na wenzako.
             </p>
           </div>
@@ -121,33 +123,25 @@ export default function LoginPage() {
               { label: 'Endelea na masomo na vyeti' },
               { label: 'Shirikiana na kundi lako' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-                <p className="text-sm text-white/60">{item.label}</p>
+              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <p className="text-sm text-muted-foreground">{item.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-[10px] text-white/20 relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
+        <p className="text-[10px] text-muted-foreground relative z-10">© 2025 Washika DAU · Jukumu Platform</p>
       </div>
 
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <Link href="/" className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <span className="text-base font-black text-white">W</span>
-            </div>
-            <p className="text-sm font-bold text-white">Washika DAU</p>
-          </Link>
-
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white mb-1">Ingia</h1>
-            <p className="text-sm text-white/40">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Ingia</h1>
+            <p className="text-sm text-muted-foreground">
               Bado huna akaunti?{' '}
-              <Link href="/register" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+              <Link href="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
                 Jisajili hapa
               </Link>
             </p>
@@ -162,7 +156,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="identifier" className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+              <label htmlFor="identifier" className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                 Barua pepe au nambari ya simu
               </label>
               <input
@@ -172,7 +166,7 @@ export default function LoginPage() {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all"
                 placeholder="07xx xxx xxx au email@example.com"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -184,10 +178,10 @@ export default function LoginPage() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-xs font-medium text-white/40 uppercase tracking-wider">
+                <label htmlFor="password" className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Nywila
                 </label>
-                <a href="#" className="text-xs text-orange-400/70 hover:text-orange-400 transition-colors">
+                <a href="#" className="text-xs text-primary/70 hover:text-primary transition-colors">
                   Umesahau?
                 </a>
               </div>
@@ -199,7 +193,7 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all pr-11"
+                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all pr-11"
                   placeholder="Weka nywila yako"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -209,7 +203,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-white/25 hover:text-white/50 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-muted-foreground transition-colors"
                 >
                   {showPassword ? <EyeSlashIcon className="h-4.5 w-4.5" /> : <EyeIcon className="h-4.5 w-4.5" />}
                 </button>
@@ -221,15 +215,15 @@ export default function LoginPage() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="w-4 h-4 accent-orange-500 rounded"
+                className="w-4 h-4 accent-primary rounded"
               />
-              <label htmlFor="remember-me" className="text-xs text-white/40">Nikumbuke kwenye kifaa hiki</label>
+              <label htmlFor="remember-me" className="text-xs text-muted-foreground">Nikumbuke kwenye kifaa hiki</label>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20 mt-2"
+              className="w-full py-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-sm font-semibold transition-colors shadow-lg shadow-primary/20 mt-2"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -242,5 +236,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
