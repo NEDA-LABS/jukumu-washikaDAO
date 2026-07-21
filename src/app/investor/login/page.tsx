@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AnimatedBackground from '@/components/AnimatedBackground';
 import Header from '@/components/Header';
 
 export default function InvestorLoginPage() {
@@ -41,83 +42,61 @@ export default function InvestorLoginPage() {
     }
   };
 
+  const fi = 'w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all';
+
   return (
     <>
     <Header />
-    <div className="min-h-screen flex pt-[68px]" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-background flex pt-[68px]">
       {/* Left panel — brand */}
-      <div
-        className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0E0B07 0%, #1A1200 50%, #0B3D2E 100%)' }}
-      >
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: 'linear-gradient(#D4881E 1px, transparent 1px), linear-gradient(90deg, #D4881E 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
+      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 border-r border-border relative overflow-hidden">
+        <AnimatedBackground />
 
-        <div className="relative z-10">
-          <Link href="/investor" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#D4881E' }}>
-              <span className="text-black font-black text-sm">J</span>
-            </div>
-            <span style={{ color: '#E8D5B0', fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>JUKUMU</span>
-          </Link>
-        </div>
-
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-8 mt-auto">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#D4881E' }}>Investor Portal</p>
-            <h1 className="font-bold leading-tight" style={{ color: '#E8D5B0', fontSize: '2.2rem' }}>
-              Welcome<br />
-              <span style={{ color: '#D4881E' }}>Back</span>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3 text-primary">Investor Portal</p>
+            <h1 className="text-4xl text-foreground leading-tight">
+              Welcome<br /><span className="text-gold">Back</span>
             </h1>
-            <p className="mt-4 text-sm leading-relaxed" style={{ color: '#8A7560' }}>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Sign in to access your investor dashboard, view projects, and manage your nTZS wallet.
             </p>
           </div>
 
           <div className="space-y-3">
             {[
-              { icon: '◆', label: 'Projects approved by member vote' },
-              { icon: '◆', label: 'Transparent data — balance, contributions, growth' },
-              { icon: '◆', label: 'Match-funding via nTZS stablecoin' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xs" style={{ color: '#D4881E' }}>{item.icon}</span>
-                <span className="text-sm" style={{ color: '#8A7560' }}>{item.label}</span>
+              'Projects approved by member vote',
+              'Transparent data — balance, contributions, growth',
+              'Match-funding via nTZS stablecoin',
+            ].map((label, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <span className="text-sm text-muted-foreground">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative z-10">
-          <p className="text-xs" style={{ color: '#4A3D2A' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/investor/signup" className="underline" style={{ color: '#D4881E' }}>Sign up here</Link>
-          </p>
-        </div>
+        <p className="relative z-10 text-xs text-muted-foreground mt-auto">
+          Don&apos;t have an account?{' '}
+          <Link href="/investor/signup" className="text-primary hover:text-primary/80 font-medium">Sign up here</Link>
+        </p>
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: '#FAFAF7' }}>
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Sign In</h2>
-              <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Access your JUKUMU investor account</p>
+              <h2 className="text-2xl font-bold text-foreground">Sign In</h2>
+              <p className="text-sm mt-1 text-muted-foreground">Access your Washika DAU investor account</p>
             </div>
 
             <Field label="Email Address *">
               <input
                 type="email" value={form.email} onChange={e => set('email', e.target.value)}
                 placeholder="investor@example.com" required autoComplete="email"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                onFocus={e => e.target.style.borderColor = '#D4881E'}
-                onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                className={fi}
               />
             </Field>
 
@@ -125,34 +104,28 @@ export default function InvestorLoginPage() {
               <input
                 type="password" value={form.password} onChange={e => set('password', e.target.value)}
                 placeholder="Your password" required autoComplete="current-password"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                onFocus={e => e.target.style.borderColor = '#D4881E'}
-                onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                className={fi}
               />
             </Field>
 
-            {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+            {error && <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</p>}
 
             <button
               type="submit" disabled={loading}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
-              style={{ background: '#D4881E', color: '#fff' }}
-              onMouseOver={e => !loading && (e.currentTarget.style.background = '#B8740F')}
-              onMouseOut={e => (e.currentTarget.style.background = '#D4881E')}
+              className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
             >
               {loading ? 'Signing in...' : 'Sign In →'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs" style={{ color: '#8A7560' }}>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{' '}
-            <Link href="/investor/signup" className="font-semibold underline" style={{ color: '#D4881E' }}>Sign up</Link>
+            <Link href="/investor/signup" className="font-semibold text-primary hover:text-primary/80">Sign up</Link>
           </p>
 
-          <p className="mt-3 text-center text-xs" style={{ color: '#C4B89E' }}>
+          <p className="mt-3 text-center text-xs text-muted-foreground/70">
             VICOBA member?{' '}
-            <Link href="/login" className="underline" style={{ color: '#C4B89E' }}>Use the member login</Link>
+            <Link href="/login" className="underline hover:text-foreground">Use the member login</Link>
           </p>
         </div>
       </div>
@@ -164,7 +137,7 @@ export default function InvestorLoginPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>{label}</label>
+      <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );

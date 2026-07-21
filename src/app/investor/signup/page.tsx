@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AnimatedBackground from '@/components/AnimatedBackground';
 import Header from '@/components/Header';
 
 type InvestorType = 'individual' | 'institutional' | 'ngo' | 'fund';
@@ -70,86 +71,65 @@ export default function InvestorSignupPage() {
     }
   };
 
+  const fi = 'w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all';
+
   return (
     <>
     <Header />
-    <div className="min-h-screen flex pt-[68px]" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-background flex pt-[68px]">
       {/* Left panel — brand */}
-      <div
-        className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0E0B07 0%, #1A1200 50%, #0B3D2E 100%)' }}
-      >
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: 'linear-gradient(#D4881E 1px, transparent 1px), linear-gradient(90deg, #D4881E 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
+      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 border-r border-border relative overflow-hidden">
+        <AnimatedBackground />
 
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#D4881E' }}>
-              <span className="text-black font-black text-sm">J</span>
-            </div>
-            <span style={{ color: '#E8D5B0', fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>JUKUMU</span>
-          </Link>
-        </div>
-
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-8 mt-auto">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#D4881E' }}>Investor Portal</p>
-            <h1 className="font-bold leading-tight" style={{ color: '#E8D5B0', fontSize: '2.2rem' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3 text-primary">Investor Portal</p>
+            <h1 className="text-4xl text-foreground leading-tight">
               Invest in<br />
-              <span style={{ color: '#D4881E' }}>Communities</span><br />
+              <span className="text-gold">Communities</span><br />
               Making Change
             </h1>
-            <p className="mt-4 text-sm leading-relaxed" style={{ color: '#8A7560' }}>
-              Join verified VICOBA savings groups. View projects seeking funding and track progress in real time.
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Join verified savings groups. View projects seeking funding and track progress in real time.
             </p>
           </div>
 
           <div className="space-y-3">
             {[
-              { icon: '◆', label: 'Projects approved by member vote' },
-              { icon: '◆', label: 'Transparent data — balance, contributions, growth' },
-              { icon: '◆', label: 'Match-funding via nTZS stablecoin' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xs" style={{ color: '#D4881E' }}>{item.icon}</span>
-                <span className="text-sm" style={{ color: '#8A7560' }}>{item.label}</span>
+              'Projects approved by member vote',
+              'Transparent data — balance, contributions, growth',
+              'Match-funding via nTZS stablecoin',
+            ].map((label, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <span className="text-sm text-muted-foreground">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative z-10">
-          <p className="text-xs" style={{ color: '#4A3D2A' }}>
-            Already have an account?{' '}
-            <Link href="/investor/login" className="underline" style={{ color: '#D4881E' }}>Sign in here</Link>
-          </p>
-        </div>
+        <p className="relative z-10 text-xs text-muted-foreground mt-auto">
+          Already have an account?{' '}
+          <Link href="/investor/login" className="text-primary hover:text-primary/80 font-medium">Sign in here</Link>
+        </p>
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: '#FAFAF7' }}>
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Step indicator */}
           <div className="flex items-center gap-2 mb-8">
             {[1, 2].map(s => (
               <React.Fragment key={s}>
                 <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                  style={{
-                    background: step >= s ? '#D4881E' : '#E8E0D4',
-                    color: step >= s ? '#fff' : '#8A7560',
-                  }}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}
                 >
                   {step > s ? '✓' : s}
                 </div>
                 {s < 2 && (
-                  <div className="flex-1 h-px" style={{ background: step > s ? '#D4881E' : '#E8E0D4' }} />
+                  <div className={`flex-1 h-px transition-colors ${step > s ? 'bg-primary' : 'bg-border'}`} />
                 )}
               </React.Fragment>
             ))}
@@ -159,18 +139,15 @@ export default function InvestorSignupPage() {
           {step === 1 && (
             <form onSubmit={handleStep1} className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Create Account</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Sign up as a JUKUMU investor</p>
+                <h2 className="text-xl font-bold text-foreground">Create Account</h2>
+                <p className="text-sm mt-1 text-muted-foreground">Sign up as a Washika DAU investor</p>
               </div>
 
               <Field label="Full Name *">
                 <input
                   type="text" value={form.fullName} onChange={e => set('fullName', e.target.value)}
                   placeholder="Your full name" required
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
@@ -178,10 +155,7 @@ export default function InvestorSignupPage() {
                 <input
                   type="email" value={form.email} onChange={e => set('email', e.target.value)}
                   placeholder="investor@example.com" required
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
@@ -189,10 +163,7 @@ export default function InvestorSignupPage() {
                 <input
                   type="password" value={form.password} onChange={e => set('password', e.target.value)}
                   placeholder="At least 8 characters" required minLength={8}
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
@@ -200,21 +171,15 @@ export default function InvestorSignupPage() {
                 <input
                   type="password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)}
                   placeholder="Repeat password" required
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
-              {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+              {error && <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</p>}
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all"
-                style={{ background: '#D4881E', color: '#fff' }}
-                onMouseOver={e => (e.currentTarget.style.background = '#B8740F')}
-                onMouseOut={e => (e.currentTarget.style.background = '#D4881E')}
+                className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
               >
                 Continue →
               </button>
@@ -225,27 +190,27 @@ export default function InvestorSignupPage() {
           {step === 2 && (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <button type="button" onClick={() => setStep(1)} className="text-xs mb-3 flex items-center gap-1" style={{ color: '#8A7560' }}>
+                <button type="button" onClick={() => setStep(1)} className="text-xs mb-3 flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
                   ← Back
                 </button>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Investor Profile</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Tell us more about your investment interests</p>
+                <h2 className="text-xl font-bold text-foreground">Investor Profile</h2>
+                <p className="text-sm mt-1 text-muted-foreground">Tell us more about your investment interests</p>
               </div>
 
               <Field label="Investor Type *">
                 <div className="grid grid-cols-2 gap-2">
-                  {INVESTOR_TYPES.map(t => (
+                  {INVESTOR_TYPES.map(opt => (
                     <button
-                      key={t.value} type="button"
-                      onClick={() => set('investorType', t.value)}
-                      className="px-3 py-3 rounded-xl text-left transition-all"
-                      style={{
-                        background: form.investorType === t.value ? '#FEF3E2' : '#fff',
-                        border: `1.5px solid ${form.investorType === t.value ? '#D4881E' : '#E8E0D4'}`,
-                      }}
+                      key={opt.value} type="button"
+                      onClick={() => set('investorType', opt.value)}
+                      className={`px-3 py-3 rounded-xl text-left transition-all border ${
+                        form.investorType === opt.value
+                          ? 'bg-accent border-primary'
+                          : 'bg-card border-border hover:border-primary/40'
+                      }`}
                     >
-                      <p className="text-xs font-semibold" style={{ color: form.investorType === t.value ? '#D4881E' : '#1A1200' }}>{t.label}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: '#8A7560' }}>{t.desc}</p>
+                      <p className={`text-xs font-semibold ${form.investorType === opt.value ? 'text-primary' : 'text-foreground'}`}>{opt.label}</p>
+                      <p className="text-[10px] mt-0.5 text-muted-foreground">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -255,10 +220,7 @@ export default function InvestorSignupPage() {
                 <input
                   type="text" value={form.company} onChange={e => set('company', e.target.value)}
                   placeholder="Company or organization name"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
@@ -266,37 +228,31 @@ export default function InvestorSignupPage() {
                 <input
                   type="text" value={form.country} onChange={e => set('country', e.target.value)}
                   placeholder="Tanzania"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: '#fff', border: '1.5px solid #E8E0D4', color: '#1A1200' }}
-                  onFocus={e => e.target.style.borderColor = '#D4881E'}
-                  onBlur={e => e.target.style.borderColor = '#E8E0D4'}
+                  className={fi}
                 />
               </Field>
 
-              {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+              {error && <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</p>}
 
               <button
                 type="submit" disabled={loading}
-                className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
-                style={{ background: '#D4881E', color: '#fff' }}
-                onMouseOver={e => !loading && (e.currentTarget.style.background = '#B8740F')}
-                onMouseOut={e => (e.currentTarget.style.background = '#D4881E')}
+                className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
               >
                 {loading ? 'Creating account...' : 'Create Investor Account'}
               </button>
 
-              <p className="text-xs text-center" style={{ color: '#8A7560' }}>
+              <p className="text-xs text-center text-muted-foreground">
                 By signing up, you agree to our{' '}
-                <Link href="/investor" className="underline" style={{ color: '#D4881E' }}>
+                <Link href="/investor" className="text-primary hover:text-primary/80">
                   terms of use
                 </Link>
               </p>
             </form>
           )}
 
-          <p className="mt-6 text-center text-xs" style={{ color: '#8A7560' }}>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/investor/login" className="font-semibold underline" style={{ color: '#D4881E' }}>Sign in</Link>
+            <Link href="/investor/login" className="font-semibold text-primary hover:text-primary/80">Sign in</Link>
           </p>
         </div>
       </div>
@@ -308,7 +264,7 @@ export default function InvestorSignupPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>{label}</label>
+      <label className="block text-xs font-semibold mb-1.5 text-muted-foreground uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );
