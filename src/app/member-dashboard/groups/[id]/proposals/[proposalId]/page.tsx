@@ -178,19 +178,19 @@ export default function MemberGroupProposalDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0a09] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0a09]">
+    <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-8">
 
         <button
           onClick={() => router.push(`/member-dashboard/groups/${groupId}`)}
-          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mb-6"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-muted-foreground transition-colors mb-6"
         >
           ← Rudi Kwa Kundi
         </button>
@@ -203,55 +203,55 @@ export default function MemberGroupProposalDetailsPage() {
           <div className="space-y-4">
 
             {/* Header card */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-6">
+            <div className="rounded-2xl bg-card border border-border p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="min-w-0">
-                  <h1 className="text-lg font-bold text-white leading-snug">{proposal.title}</h1>
+                  <h1 className="text-lg font-bold text-foreground leading-snug">{proposal.title}</h1>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-white/30">na {proposal.created_by_name || '—'}</span>
+                    <span className="text-xs text-muted-foreground">na {proposal.created_by_name || '—'}</span>
                     {proposal.created_at && (
-                      <span className="text-xs text-white/20">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(proposal.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                     )}
                   </div>
                 </div>
                 <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  isOpen ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/30 border border-white/10'
+                  isOpen ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-muted-foreground border border-border'
                 }`}>
                   {isOpen ? 'Wazi' : 'Imefungwa'}
                 </span>
               </div>
 
               {proposal.description && (
-                <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
               )}
             </div>
 
             {/* Vote results */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
-              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Matokeo ya Kura</p>
+            <div className="rounded-2xl bg-card border border-border p-5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Matokeo ya Kura</p>
 
               <div className="space-y-3 mb-4">
                 {([
                   { key: 'yes' as const,     label: 'Ndio',    count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
                   { key: 'no' as const,      label: 'Hapana',  count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
-                  { key: 'abstain' as const, label: 'Jiepushe', count: voteSummary.abstain, bar: 'bg-white/20',   text: 'text-white/40'    },
+                  { key: 'abstain' as const, label: 'Jiepushe', count: voteSummary.abstain, bar: 'bg-white/20',   text: 'text-muted-foreground'    },
                 ]).map(row => (
                   <div key={row.key}>
                     <div className="flex items-center justify-between mb-1">
                       <span className={`text-xs font-medium ${row.text}`}>{row.label}</span>
                       <span className={`text-xs tabular-nums ${row.text}`}>{row.count} ({pct(row.count)}%)</span>
                     </div>
-                    <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                    <div className="h-2 rounded-full bg-card overflow-hidden">
                       <div className={`h-2 rounded-full ${row.bar} transition-all duration-500`} style={{ width: `${pct(row.count)}%` }} />
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-                <p className="text-xs text-white/25">Jumla: {voteSummary.total} kura{requiredYes > 0 ? ` · zinahitajika ${requiredYes} "Ndio"` : ''}</p>
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">Jumla: {voteSummary.total} kura{requiredYes > 0 ? ` · zinahitajika ${requiredYes} "Ndio"` : ''}</p>
                 {myVote && (
                   <p className="text-xs text-[#e4a233]">
                     Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? 'Ndio' : myVote === 'no' ? 'Hapana' : 'Jiepushe'}</span>
@@ -261,10 +261,10 @@ export default function MemberGroupProposalDetailsPage() {
             </div>
 
             {/* Vote action */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
+            <div className="rounded-2xl bg-card border border-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Piga Kura</p>
-                {!isOpen && <p className="text-xs text-white/25">Upigaji kura umefungwa</p>}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Piga Kura</p>
+                {!isOpen && <p className="text-xs text-muted-foreground">Upigaji kura umefungwa</p>}
               </div>
 
               {voteError && (
@@ -273,9 +273,9 @@ export default function MemberGroupProposalDetailsPage() {
 
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { key: 'yes' as const,     label: 'Ndio',     active: 'bg-emerald-500 hover:bg-emerald-600 text-white border-transparent', inactive: 'bg-white/[0.03] hover:bg-emerald-500/10 text-white/40 hover:text-emerald-400 border-white/[0.06]' },
-                  { key: 'no' as const,      label: 'Hapana',   active: 'bg-red-500 hover:bg-red-600 text-white border-transparent',         inactive: 'bg-white/[0.03] hover:bg-red-500/10 text-white/40 hover:text-red-400 border-white/[0.06]'       },
-                  { key: 'abstain' as const, label: 'Jiepushe', active: 'bg-white/20 hover:bg-white/30 text-white border-transparent',       inactive: 'bg-white/[0.03] hover:bg-white/10 text-white/40 border-white/[0.06]'                             },
+                  { key: 'yes' as const,     label: 'Ndio',     active: 'bg-emerald-500 hover:bg-emerald-600 text-foreground border-transparent', inactive: 'bg-card hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 border-border' },
+                  { key: 'no' as const,      label: 'Hapana',   active: 'bg-red-500 hover:bg-red-600 text-foreground border-transparent',         inactive: 'bg-card hover:bg-red-500/10 text-muted-foreground hover:text-red-400 border-border'       },
+                  { key: 'abstain' as const, label: 'Jiepushe', active: 'bg-white/20 hover:bg-white/30 text-foreground border-transparent',       inactive: 'bg-card hover:bg-white/10 text-muted-foreground border-border'                             },
                 ]).map(btn => (
                   <button
                     key={btn.key}
@@ -291,7 +291,7 @@ export default function MemberGroupProposalDetailsPage() {
               </div>
 
               {isOpen && (
-                <p className="text-xs text-white/20 mt-3 text-center">
+                <p className="text-xs text-muted-foreground mt-3 text-center">
                   {myVote ? 'Unaweza kubadilisha kura yako wakati wowote.' : 'Wanachama wote wa kundi wanaweza kupiga kura.'}
                 </p>
               )}
@@ -299,19 +299,19 @@ export default function MemberGroupProposalDetailsPage() {
 
             {/* Requested amount (visible to everyone, if any) */}
             {hasAmount && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
+              <div className="rounded-2xl bg-card border border-border p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/50">Kiasi kilichoombwa</span>
-                  <span className="text-sm font-semibold text-white tabular-nums">TZS {Number(proposal.payment_amount_tzs ?? 0).toLocaleString()}</span>
+                  <span className="text-sm text-muted-foreground">Kiasi kilichoombwa</span>
+                  <span className="text-sm font-semibold text-foreground tabular-nums">TZS {Number(proposal.payment_amount_tzs ?? 0).toLocaleString()}</span>
                 </div>
                 {proposal.recipient_name && (
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-white/50">Mpokeaji</span>
-                    <span className="text-sm text-white/70">{proposal.recipient_name}</span>
+                    <span className="text-sm text-muted-foreground">Mpokeaji</span>
+                    <span className="text-sm text-muted-foreground">{proposal.recipient_name}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm text-white/50">Hali ya malipo</span>
+                  <span className="text-sm text-muted-foreground">Hali ya malipo</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>
@@ -323,8 +323,8 @@ export default function MemberGroupProposalDetailsPage() {
 
             {/* Leadership actions on a closed proposal */}
             {isLeadership && !isOpen && (
-              <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
-                <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Kitendo cha Uongozi</p>
+              <div className="rounded-2xl bg-card border border-border p-5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Kitendo cha Uongozi</p>
 
                 {executeError && (
                   <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{executeError}</div>
@@ -335,52 +335,52 @@ export default function MemberGroupProposalDetailsPage() {
 
                 {isPaid ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-white/50">Hali</span>
+                    <span className="text-sm text-muted-foreground">Hali</span>
                     <span className="text-xs font-semibold text-emerald-400">✓ Imelipwa</span>
                   </div>
                 ) : passed ? (
                   <div className="space-y-3">
                     <p className="text-xs text-emerald-400">Pendekezo limepita kura ✓ — unaweza kulipa kutoka hazina ya kundi.</p>
                     <div>
-                      <label className="text-xs text-white/40">Kiasi (TZS)</label>
+                      <label className="text-xs text-muted-foreground">Kiasi (TZS)</label>
                       <input
                         type="number" inputMode="numeric" value={amountInput}
                         onChange={e => setAmountInput(e.target.value)}
                         placeholder="mf. 5000"
-                        className="mt-1 w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-orange-500/40"
+                        className="mt-1 w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder-white/20 focus:outline-none focus:border-orange-500/40"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-white/40">Mpokeaji</label>
+                      <label className="text-xs text-muted-foreground">Mpokeaji</label>
                       <select
                         value={recipientInput}
                         onChange={e => setRecipientInput(e.target.value)}
-                        className="mt-1 w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/40"
+                        className="mt-1 w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/40"
                       >
-                        <option value="" className="bg-white/[0.04]">— Chagua mwanachama —</option>
+                        <option value="" className="bg-card">— Chagua mwanachama —</option>
                         {members.map(mm => (
-                          <option key={mm.id} value={mm.id} className="bg-white/[0.04]">{mm.full_name}</option>
+                          <option key={mm.id} value={mm.id} className="bg-card">{mm.full_name}</option>
                         ))}
                       </select>
                     </div>
                     <button
                       onClick={handleExecute}
                       disabled={executing}
-                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {executing ? 'Inatekeleza...' : 'Tekeleza Malipo (Disburse)'}
                     </button>
-                    <p className="text-xs text-white/20 text-center">Itatolewa kwenye salio la hazina ya kundi.</p>
+                    <p className="text-xs text-muted-foreground text-center">Itatolewa kwenye salio la hazina ya kundi.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-muted-foreground">
                       Pendekezo halikupata kura za kutosha ({voteSummary.yes}/{requiredYes} &quot;Ndio&quot;). Unaweza kufungua kura tena au kutengeneza pendekezo jipya.
                     </p>
                     <button
                       onClick={handleReopen}
                       disabled={reopening}
-                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-white/[0.06] hover:bg-white/[0.1] text-white/70 border border-white/[0.08] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-card hover:bg-muted text-muted-foreground border border-border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {reopening ? '...' : 'Fungua Kura Tena (Re-open voting)'}
                     </button>

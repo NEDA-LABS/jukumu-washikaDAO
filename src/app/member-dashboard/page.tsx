@@ -21,6 +21,7 @@ import WalletDashboard from '@/components/WalletDashboard';
 import Logo from '@/components/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import QuickActionModal, { type ActionType } from '@/components/QuickActionModal';
 
 export default function MemberDashboard() {
   const { language, toggleLanguage } = useLanguage();
@@ -195,7 +196,7 @@ export default function MemberDashboard() {
   const initials = (user.fullName || user.email || 'U')[0].toUpperCase();
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0b0a09] text-white flex overflow-hidden">
+    <div className="relative min-h-[100dvh] bg-background text-foreground flex overflow-hidden">
 
       {/* ── Ambient warm gradient backdrop ── */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
@@ -212,21 +213,21 @@ export default function MemberDashboard() {
       {/* ── Sidebar ── */}
       <aside className={`
         fixed top-0 left-0 h-[100dvh] w-64 z-50 flex flex-col
-        bg-[#100d0b]/95 backdrop-blur-xl border-r border-white/[0.06]
+        bg-card/95 backdrop-blur-xl border-r border-border
         transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-20 lg:flex lg:shrink-0
       `}>
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="px-5 py-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <Logo markOnly className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white leading-none">Washika<span className="text-[#e4a233]">DAU</span></p>
-              <p className="text-[10px] text-white/40 truncate mt-1">{user.fullName || user.email}</p>
+              <p className="text-sm font-bold text-foreground leading-none">Washika<span className="text-[#e4a233]">DAU</span></p>
+              <p className="text-[10px] text-muted-foreground truncate mt-1">{user.fullName || user.email}</p>
             </div>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/40 hover:text-white">
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
@@ -242,7 +243,7 @@ export default function MemberDashboard() {
                 className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
                   active
                     ? 'bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white font-semibold shadow-lg shadow-[#d1622b]/25'
-                    : 'text-white/55 hover:text-white hover:bg-white/[0.06]'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
@@ -253,10 +254,10 @@ export default function MemberDashboard() {
         </nav>
 
         {/* Logout */}
-        <div className="px-3 py-4 border-t border-white/[0.06]">
+        <div className="px-3 py-4 border-t border-border">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/45 hover:text-red-300 hover:bg-red-500/10 transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-red-300 hover:bg-red-500/10 transition-all"
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5 shrink-0" />
             <span>Logout</span>
@@ -268,10 +269,10 @@ export default function MemberDashboard() {
       <div className="relative z-10 flex-1 flex flex-col min-w-0">
 
         {/* Sticky branded top header — visible throughout */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-white/[0.06] bg-[#0b0a09]/70 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-border bg-background/70 backdrop-blur-xl">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile: menu + logo */}
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-white/70 hover:text-white -ml-1 p-1">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground -ml-1 p-1">
               <Bars3Icon className="h-6 w-6" />
             </button>
             <div className="lg:hidden flex items-center gap-2">
@@ -279,7 +280,7 @@ export default function MemberDashboard() {
               <span className="text-sm font-bold">Washika<span className="text-[#e4a233]">DAU</span></span>
             </div>
             {/* Desktop: page title */}
-            <h1 className="hidden lg:block text-lg font-semibold text-white">{activeName}</h1>
+            <h1 className="hidden lg:block text-lg font-semibold text-foreground">{activeName}</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -289,18 +290,18 @@ export default function MemberDashboard() {
             </div>
             <button
               onClick={toggleLanguage}
-              className="rounded-full border border-white/[0.12] bg-white/[0.06] hover:bg-white/[0.12] px-2.5 py-1.5 text-xs font-semibold text-white/85 transition-colors"
+              className="rounded-full border border-border bg-card hover:bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors"
             >
               {language === 'sw' ? 'EN' : 'SW'}
             </button>
             <button
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-              className="rounded-full border border-white/[0.12] bg-white/[0.06] hover:bg-white/[0.12] p-2 text-white/85 transition-colors"
+              className="rounded-full border border-border bg-card hover:bg-muted p-2 text-muted-foreground transition-colors"
               aria-label={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
               {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
             </button>
-            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-white/10 hover:ring-[#e4a233]/40 transition-all">
+            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-border hover:ring-[#e4a233]/40 transition-all">
               <span className="text-xs font-bold text-white">{initials}</span>
             </button>
           </div>
@@ -320,7 +321,7 @@ export default function MemberDashboard() {
 
       {/* ── Mobile Bottom Nav ── */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#100d0b]/90 backdrop-blur-xl border-t border-white/[0.07]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/90 backdrop-blur-xl border-t border-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-end justify-around px-1 h-16">
@@ -331,8 +332,8 @@ export default function MemberDashboard() {
             const active = activeSection === t.id;
             return (
               <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-white/35'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-white/35'}`}>{t.label}</span>
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t.label}</span>
               </button>
             );
           })}
@@ -342,11 +343,11 @@ export default function MemberDashboard() {
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
               activeSection === 'group'
                 ? 'bg-gradient-to-br from-[#d1622b] to-[#e4a233] shadow-xl shadow-[#d1622b]/40 scale-105'
-                : 'bg-[#1e1a16] border border-[#e4a233]/25 shadow-lg shadow-[#d1622b]/10'
+                : 'bg-muted border border-[#e4a233]/25 shadow-lg shadow-[#d1622b]/10'
             }`}>
-              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-white/55'}`} />
+              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-muted-foreground'}`} />
             </div>
-            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-white/35'}`}>Kundi</span>
+            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>Kundi</span>
           </button>
 
           {[
@@ -356,8 +357,8 @@ export default function MemberDashboard() {
             const active = activeSection === t.id || activeSection === (t as { extra?: string }).extra;
             return (
               <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-white/35'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-white/35'}`}>{t.label}</span>
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t.label}</span>
               </button>
             );
           })}
@@ -370,8 +371,9 @@ export default function MemberDashboard() {
 function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void; userId: number }) {
   const [balanceTzs, setBalanceTzs] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
+  const [modal, setModal] = useState<ActionType | null>(null);
 
-  useEffect(() => {
+  const fetchBalance = React.useCallback(() => {
     if (!userId) return;
     fetch(`/api/wallet/balance?userId=${userId}`)
       .then(r => r.json())
@@ -379,6 +381,8 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       .catch(() => setBalanceTzs(0))
       .finally(() => setBalanceLoading(false));
   }, [userId]);
+
+  useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const expectedReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.expected_return || 0), 0);
@@ -395,20 +399,23 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
     ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString('sw-TZ') }))
     : [{ action: 'Umejiunga na Washika DAU', time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString('sw-TZ') : 'Leo' }];
 
-  const actions = [
-    { label: 'Weka Pesa', icon: 'M12 4v16m8-8H4', section: 'wallet' },
-    { label: 'Toa Pesa', icon: 'M20 12H4m8 8l-8-8 8-8', section: 'wallet' },
-    { label: 'Hamisha', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', section: 'wallet' },
+  const actions: { label: string; icon: string; action: ActionType }[] = [
+    { label: 'Weka Pesa', icon: 'M12 4v16m8-8H4', action: 'deposit' },
+    { label: 'Toa Pesa', icon: 'M20 12H4m8 8l-8-8 8-8', action: 'withdraw' },
+    { label: 'Hamisha', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', action: 'transfer' },
   ];
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
+      {modal && (
+        <QuickActionModal userId={userId} type={modal} onClose={() => setModal(null)} onSuccess={fetchBalance} />
+      )}
       {/* Greeting */}
       <div>
-        <h2 className="font-display text-3xl text-white">
+        <h2 className="font-display text-3xl text-foreground">
           Habari, {memberProfile?.full_name?.split(' ')[0] || 'Mwanachama'} 👋
         </h2>
-        <p className="text-sm text-white/45 mt-1">Hapa kuna muhtasari wa akaunti yako</p>
+        <p className="text-sm text-muted-foreground mt-1">Hapa kuna muhtasari wa akaunti yako</p>
       </div>
 
       {/* ── Balance hero card ── */}
@@ -437,12 +444,12 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
             </p>
           )}
 
-          {/* Quick actions */}
+          {/* Quick actions — open modal directly (no redirect) */}
           <div className="mt-6 grid grid-cols-3 gap-2.5">
             {actions.map((a) => (
               <button
                 key={a.label}
-                onClick={() => onNavigate(a.section)}
+                onClick={() => setModal(a.action)}
                 className="group flex flex-col items-center gap-2 rounded-2xl bg-white/12 hover:bg-white/20 backdrop-blur-sm border border-white/15 py-3 transition-all hover:-translate-y-0.5"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[#c25a24] group-hover:scale-110 transition-transform">
@@ -458,13 +465,13 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s, i) => (
-          <div key={i} className="group rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] p-4 flex flex-col gap-3 transition-all hover:-translate-y-1 hover:border-white/15">
+          <div key={i} className="group rounded-2xl bg-card hover:bg-muted border border-border p-4 flex flex-col gap-3 transition-all hover:-translate-y-1 hover:border-primary/30 shadow-sm">
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.from} ${s.to} flex items-center justify-center shadow-lg`}>
               <s.icon className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-[11px] text-white/45 mb-0.5">{s.name}</p>
-              <p className="text-sm font-bold text-white leading-tight">{s.value}</p>
+              <p className="text-[11px] text-muted-foreground mb-0.5">{s.name}</p>
+              <p className="text-sm font-bold text-foreground leading-tight">{s.value}</p>
             </div>
           </div>
         ))}
@@ -473,43 +480,43 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       {/* Governance teaser */}
       <button
         onClick={() => onNavigate('group')}
-        className="w-full text-left relative overflow-hidden rounded-2xl p-5 bg-gradient-to-r from-[#1a1512] to-[#14100d] border border-[#e4a233]/20 hover:border-[#e4a233]/40 transition-all group"
+        className="w-full text-left relative overflow-hidden rounded-2xl p-5 bg-gradient-to-r from-primary/10 to-gold/10 border border-primary/20 hover:border-primary/40 transition-all group"
       >
-        <div aria-hidden className="absolute -right-6 -bottom-8 h-32 w-32 rounded-full bg-[#e4a233]/10 blur-2xl" />
+        <div aria-hidden className="absolute -right-6 -bottom-8 h-32 w-32 rounded-full bg-gold/15 blur-2xl" />
         <div className="relative flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e4a233] to-[#d1622b] shadow-lg">
             <DocumentTextIcon className="h-6 w-6 text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-white">Maamuzi ya Kikundi</p>
-            <p className="text-xs text-white/50 mt-0.5">Shiriki katika kupiga kura na maazimio ya kundi lako</p>
+            <p className="text-sm font-bold text-foreground">Maamuzi ya Kikundi</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Shiriki katika kupiga kura na maazimio ya kundi lako</p>
           </div>
-          <span className="text-[#e4a233] group-hover:translate-x-1 transition-transform text-lg">→</span>
+          <span className="text-primary group-hover:translate-x-1 transition-transform text-lg">→</span>
         </div>
       </button>
 
       {/* Activity + nav shortcuts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent activity — timeline */}
-        <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
             Shughuli za Hivi Karibuni
           </h3>
-          <div className="relative space-y-4 pl-4 before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
+          <div className="relative space-y-4 pl-4 before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-px before:bg-border">
             {displayActivities.slice(0, 5).map((a, i) => (
               <div key={i} className="relative">
                 <span className="absolute -left-4 top-1 w-2 h-2 rounded-full bg-[#e4a233] ring-4 ring-[#e4a233]/15" />
-                <p className="text-sm text-white/85 leading-snug">{a.action}</p>
-                <p className="text-xs text-white/30 mt-0.5">{a.time}</p>
+                <p className="text-sm text-foreground/85 leading-snug">{a.action}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Nav shortcuts */}
-        <div className="rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5">
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
             Nenda Haraka
           </h3>
@@ -523,16 +530,16 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
               <button
                 key={item.section}
                 onClick={() => onNavigate(item.section)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.06] transition-colors text-left group"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-left group"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] group-hover:bg-[#e4a233]/15 transition-colors shrink-0">
-                  <item.icon className="h-4.5 w-4.5 text-white/50 group-hover:text-[#e4a233] transition-colors" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted group-hover:bg-primary/15 transition-colors shrink-0">
+                  <item.icon className="h-4.5 w-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm text-white/80 group-hover:text-white transition-colors">{item.label}</p>
-                  <p className="text-xs text-white/30">{item.sub}</p>
+                  <p className="text-sm text-foreground/90 group-hover:text-foreground transition-colors">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.sub}</p>
                 </div>
-                <span className="ml-auto text-white/20 group-hover:text-[#e4a233] transition-colors">→</span>
+                <span className="ml-auto text-muted-foreground group-hover:text-primary transition-colors">→</span>
               </button>
             ))}
           </div>
@@ -545,8 +552,8 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 const inputCls = (editing: boolean) =>
   `w-full px-3 py-2.5 rounded-lg text-sm border transition-colors focus:outline-none ${
     editing
-      ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-[#e4a233]/60'
-      : 'bg-white/[0.03] border-white/[0.07] text-white/50 cursor-default'
+      ? 'bg-white/5 border-border text-foreground placeholder:text-muted-foreground focus:border-[#e4a233]/60'
+      : 'bg-card border-border text-muted-foreground cursor-default'
   }`;
 
 function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile: any; user: any; loadMemberData: () => void }) {
@@ -596,7 +603,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
 
   const Field = ({ label, type = 'text', value, field, disabled = false }: { label: string; type?: string; value: string; field?: keyof typeof formData; disabled?: boolean }) => (
     <div>
-      <label className="block text-xs text-white/30 mb-1">{label}</label>
+      <label className="block text-xs text-muted-foreground mb-1">{label}</label>
       <input
         type={type}
         value={value}
@@ -610,13 +617,13 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
   return (
     <div className="space-y-4">
       {/* Profile header card */}
-      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5 flex items-center gap-4">
+      <div className="rounded-xl bg-card border border-border p-5 flex items-center gap-4">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0">
-          <span className="text-lg font-bold text-white">{initials}</span>
+          <span className="text-lg font-bold text-foreground">{initials}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-white truncate">{formData.fullName || 'Mwanachama'}</p>
-          <p className="text-xs text-white/40 mt-0.5 truncate">{memberProfile?.email || user?.email}</p>
+          <p className="text-base font-semibold text-foreground truncate">{formData.fullName || 'Mwanachama'}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{memberProfile?.email || user?.email}</p>
           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${
             memberProfile?.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-yellow-500/15 text-yellow-400'
           }`}>
@@ -628,8 +635,8 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           disabled={saving}
           className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
             isEditing
-              ? 'bg-[#d1622b] hover:bg-[#b9531f] text-white'
-              : 'bg-white/5 hover:bg-white/10 text-white/70'
+              ? 'bg-[#d1622b] hover:bg-[#b9531f] text-foreground'
+              : 'bg-white/5 hover:bg-white/10 text-muted-foreground'
           }`}
         >
           {saving ? 'Inahifadhi...' : isEditing ? 'Hifadhi' : 'Hariri'}
@@ -637,8 +644,8 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       </div>
 
       {/* Personal info */}
-      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
-        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
+      <div className="rounded-xl bg-card border border-border p-5">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Jina Kamili" value={formData.fullName} field="fullName" />
           <Field label="Barua Pepe" value={memberProfile?.email || user?.email || ''} disabled />
@@ -648,8 +655,8 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       </div>
 
       {/* Business info */}
-      <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
-        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Taarifa za Biashara</h3>
+      <div className="rounded-xl bg-card border border-border p-5">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Taarifa za Biashara</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Jina la Biashara" value={formData.businessName} field="businessName" />
           <Field label="Aina ya Biashara" value={formData.businessType} field="businessType" />
@@ -657,7 +664,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           <Field label="Idadi ya Wafanyakazi" type="number" value={formData.employeeCount} field="employeeCount" />
         </div>
         <div className="mt-3">
-          <label className="block text-xs text-white/30 mb-1">Maelezo ya Biashara</label>
+          <label className="block text-xs text-muted-foreground mb-1">Maelezo ya Biashara</label>
           <textarea
             value={formData.businessDescription}
             onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
@@ -672,14 +679,14 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
         <div className="flex gap-3 justify-end">
           <button
             onClick={() => setIsEditing(false)}
-            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+            className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
           >
             Ghairi
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {saving ? 'Inahifadhi...' : 'Hifadhi Mabadiliko'}
           </button>
@@ -821,12 +828,12 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Header with Create Group button */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-base font-semibold text-white">Makundi Yangu</p>
-          <p className="text-xs text-white/30 mt-0.5">Makundi unayoshiriki nayo</p>
+          <p className="text-base font-semibold text-foreground">Makundi Yangu</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Makundi unayoshiriki nayo</p>
         </div>
         <button
           onClick={() => { setShowCreateModal(true); setCreateError(''); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-xs font-medium transition-colors"
         >
           <span className="text-base leading-none">+</span> Unda Kundi
         </button>
@@ -839,17 +846,17 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               <div
                 key={g.id}
                 onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
-                className="rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
+                className="rounded-xl bg-card border border-border hover:border-orange-500/30 p-5 cursor-pointer transition-all group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-semibold text-white truncate">{g.name}</h3>
+                      <h3 className="text-base font-semibold text-foreground truncate">{g.name}</h3>
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
                         {g.member_role || 'mwanachama'}
                       </span>
                     </div>
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-muted-foreground">
                       Hali: {g.membership_status || g.status || 'active'}
                     </p>
                   </div>
@@ -857,14 +864,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <p className="text-sm font-semibold text-[#e4a233]">
                       TSh {parseInt(g.monthly_contribution || 0).toLocaleString()}
                     </p>
-                    <p className="text-xs text-white/30 mt-0.5">kwa mwezi</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">kwa mwezi</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between">
-                  <p className="text-xs text-white/30">Gusa kuangalia kundi →</p>
+                <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Gusa kuangalia kundi →</p>
                   <div className="flex items-center gap-1.5">
-                    <UserGroupIcon className="h-3.5 w-3.5 text-white/30" />
-                    <span className="text-xs text-white/30 group-hover:text-[#e4a233] transition-colors">Angalia →</span>
+                    <UserGroupIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground group-hover:text-[#e4a233] transition-colors">Angalia →</span>
                   </div>
                 </div>
               </div>
@@ -873,21 +880,21 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-4 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-orange-500/30 transition-all"
+            className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-orange-500/30 transition-all"
           >
             + Jiunge na Kundi Jingine
           </button>
         </>
       ) : (
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-10 text-center">
+        <div className="rounded-xl bg-card border border-border p-10 text-center">
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <UserGroupIcon className="h-6 w-6 text-white/30" />
+            <UserGroupIcon className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-white/50 mb-1 text-sm">Bado hujajiunga na kundi lolote.</p>
-          <p className="text-xs text-white/25 mb-5">Pata nambari ya kundi (mfano: JKM-A3F9K2) kutoka kwa kiongozi.</p>
+          <p className="text-muted-foreground mb-1 text-sm">Bado hujajiunga na kundi lolote.</p>
+          <p className="text-xs text-muted-foreground mb-5">Pata nambari ya kundi (mfano: JKM-A3F9K2) kutoka kwa kiongozi.</p>
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-5 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors"
+            className="px-5 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium transition-colors"
           >
             Jiunge na Kundi
           </button>
@@ -896,18 +903,18 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
       {/* Pending join requests */}
       {joinRequests.length > 0 && (
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-5">
-          <h3 className="text-sm font-semibold text-white mb-3">Maombi Yangu</h3>
+        <div className="rounded-xl bg-card border border-border p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Maombi Yangu</h3>
           <div className="space-y-2">
             {joinRequests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/[0.07] last:border-0">
+              <div key={r.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div>
-                  <p className="text-sm text-white">{r.group_name}</p>
-                  <p className="text-xs text-white/30 mt-0.5">
+                  <p className="text-sm text-foreground">{r.group_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     TSh {parseInt(r.monthly_contribution).toLocaleString()}/mwezi · {new Date(r.created_at).toLocaleDateString('sw-TZ')}
                   </p>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${(statusConfig[r.status] || { cls: 'bg-white/5 text-white/40' }).cls}`}>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${(statusConfig[r.status] || { cls: 'bg-white/5 text-muted-foreground' }).cls}`}>
                   {(statusConfig[r.status] || { label: r.status }).label}
                 </span>
               </div>
@@ -919,56 +926,56 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Create Group modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-base font-semibold text-white mb-1">Unda Kundi Jipya</h3>
-            <p className="text-xs text-white/40 mb-5">Utakuwa kiongozi wa kundi hili moja kwa moja.</p>
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-base font-semibold text-foreground mb-1">Unda Kundi Jipya</h3>
+            <p className="text-xs text-muted-foreground mb-5">Utakuwa kiongozi wa kundi hili moja kwa moja.</p>
 
             <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
-                <label className="block text-xs text-white/40 mb-1">Jina la Kundi *</label>
+                <label className="block text-xs text-muted-foreground mb-1">Jina la Kundi *</label>
                 <input
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Mfano: Vikundi vya Maendeleo"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-white/40 mb-1">Mchango wa Kila Mwezi (TSh) *</label>
+                <label className="block text-xs text-muted-foreground mb-1">Mchango wa Kila Mwezi (TSh) *</label>
                 <input
                   type="number"
                   value={createForm.monthlyContribution}
                   onChange={e => setCreateForm(f => ({ ...f, monthlyContribution: e.target.value }))}
                   placeholder="Mfano: 50000"
                   min="1"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-white/40 mb-1">Kiwango cha Kupiga Kura</label>
+                <label className="block text-xs text-muted-foreground mb-1">Kiwango cha Kupiga Kura</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     value={createForm.votingNumerator}
                     onChange={e => setCreateForm(f => ({ ...f, votingNumerator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-[#e4a233]/60"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
-                  <span className="text-white/30 text-sm">kati ya</span>
+                  <span className="text-muted-foreground text-sm">kati ya</span>
                   <input
                     type="number"
                     value={createForm.votingDenominator}
                     onChange={e => setCreateForm(f => ({ ...f, votingDenominator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white text-center focus:outline-none focus:border-[#e4a233]/60"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
-                  <span className="text-xs text-white/30">kura kupita</span>
+                  <span className="text-xs text-muted-foreground">kura kupita</span>
                 </div>
-                <p className="text-xs text-white/20 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Sasa hivi: {createForm.votingNumerator}/{createForm.votingDenominator} kura zinahitajika kupitisha pendekezo
                 </p>
               </div>
@@ -981,14 +988,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setCreateError(''); }}
-                  className="flex-1 py-2.5 rounded-lg border border-white/10 text-sm text-white/50 hover:text-white hover:border-white/20 transition-all"
+                  className="flex-1 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
                 >
                   Ghairi
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? 'Inaunda...' : 'Unda Kundi'}
                 </button>
@@ -1001,16 +1008,16 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Join by Code modal */}
       {showJoinModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-semibold text-white">Jiunge na Kundi</h3>
-              <button onClick={resetJoinModal} className="text-white/30 hover:text-white/70 transition-colors">
+              <h3 className="text-base font-semibold text-foreground">Jiunge na Kundi</h3>
+              <button onClick={resetJoinModal} className="text-muted-foreground hover:text-muted-foreground transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-white/30 mb-5">Ingiza nambari ya kundi uliyopewa na kiongozi.</p>
+            <p className="text-xs text-muted-foreground mb-5">Ingiza nambari ya kundi uliyopewa na kiongozi.</p>
 
             {/* Code input + search */}
             <div className="flex gap-2 mb-4">
@@ -1020,12 +1027,12 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 onKeyDown={e => { if (e.key === 'Enter') handleLookupCode(); }}
                 placeholder="Mfano: JKM-A3F9K2"
                 maxLength={12}
-                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60 uppercase tracking-wider"
+                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground font-mono placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 uppercase tracking-wider"
               />
               <button
                 onClick={handleLookupCode}
                 disabled={joinLookupLoading || !joinCode.trim()}
-                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
+                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
               >
                 {joinLookupLoading ? '...' : 'Tafuta'}
               </button>
@@ -1038,18 +1045,18 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
             {/* Group preview */}
             {joinLookupResult && !joinFeedback && (
-              <div className="mb-4 rounded-xl bg-white/[0.03] border border-white/10 p-4 space-y-3">
+              <div className="mb-4 rounded-xl bg-card border border-border p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{joinLookupResult.name}</p>
-                    <p className="text-xs text-white/40 mt-0.5">Kiongozi: {joinLookupResult.leader_name || 'Hajapewa'}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{joinLookupResult.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Kiongozi: {joinLookupResult.leader_name || 'Hajapewa'}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-[#e4a233]">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
-                    <p className="text-xs text-white/30">kwa mwezi</p>
+                    <p className="text-xs text-muted-foreground">kwa mwezi</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-white/30 pt-1 border-t border-white/[0.07]">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t border-border">
                   <span>{joinLookupResult.member_count} wanachama</span>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <span className={joinLookupResult.join_policy === 'open' ? 'text-emerald-400' : 'text-yellow-400'}>
@@ -1059,12 +1066,12 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
                 {joinLookupResult.join_policy !== 'open' && (
                   <div>
-                    <label className="block text-xs text-white/40 mb-1">Ujumbe kwa kiongozi (si lazima)</label>
+                    <label className="block text-xs text-muted-foreground mb-1">Ujumbe kwa kiongozi (si lazima)</label>
                     <textarea
                       value={joinMessage}
                       onChange={e => setJoinMessage(e.target.value)}
                       placeholder="Eleza kwa nini ungependa kujiunga..."
-                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60 resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 resize-none"
                       rows={2}
                     />
                   </div>
@@ -1073,7 +1080,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   onClick={handleJoinByCode}
                   disabled={joinLoading}
-                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {joinLoading ? 'Inajiunga...' : joinLookupResult.join_policy === 'open' ? 'Jiunga Sasa' : 'Tuma Ombi'}
                 </button>
@@ -1109,8 +1116,8 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {summaryCards.map((c, i) => (
-          <div key={i} className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4">
-            <p className="text-xs text-white/40 mb-1">{c.label}</p>
+          <div key={i} className="rounded-xl bg-card border border-border p-4">
+            <p className="text-xs text-muted-foreground mb-1">{c.label}</p>
             <p className={`text-lg font-semibold ${c.accent}`}>{c.value}</p>
           </div>
         ))}
@@ -1118,13 +1125,13 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
 
       {/* List */}
       {memberInvestments.length > 0 ? (
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] overflow-hidden">
+        <div className="rounded-xl bg-card border border-border overflow-hidden">
           {memberInvestments.map((inv, i) => (
-            <div key={i} className="p-5 border-b border-white/[0.07] last:border-0">
+            <div key={i} className="p-5 border-b border-border last:border-0">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">{inv.group_name}</h3>
-                  <p className="text-xs text-white/30 mt-0.5">
+                  <h3 className="text-sm font-semibold text-foreground">{inv.group_name}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {new Date(inv.investment_date).toLocaleDateString('sw-TZ')}
                   </p>
                 </div>
@@ -1141,9 +1148,9 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
                   { label: 'Faida Inayotarajiwa', value: `TSh ${parseFloat(inv.expected_return || 0).toLocaleString()}` },
                   { label: 'Faida Halisi', value: `TSh ${parseFloat(inv.actual_return || 0).toLocaleString()}` },
                 ].map((item, j) => (
-                  <div key={j} className="rounded-lg bg-white/[0.03] p-2.5">
-                    <p className="text-xs text-white/30 mb-0.5">{item.label}</p>
-                    <p className="text-sm font-medium text-white">{item.value}</p>
+                  <div key={j} className="rounded-lg bg-card p-2.5">
+                    <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
+                    <p className="text-sm font-medium text-foreground">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -1151,11 +1158,11 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
           ))}
         </div>
       ) : (
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-12 text-center">
+        <div className="rounded-xl bg-card border border-border p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <CurrencyDollarIcon className="h-6 w-6 text-white/30" />
+            <CurrencyDollarIcon className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-sm text-white/40">Bado huna uwekezaji wowote.</p>
+          <p className="text-sm text-muted-foreground">Bado huna uwekezaji wowote.</p>
         </div>
       )}
     </div>
@@ -1187,21 +1194,21 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
   return (
     <div className="space-y-4">
       {/* Summary card */}
-      <div className="rounded-2xl bg-[#141414] border border-white/[0.06] p-6">
+      <div className="rounded-2xl bg-[#141414] border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-[#e4a233]/10 border border-[#e4a233]/20 flex items-center justify-center">
             <BookOpenIcon className="h-5 w-5 text-[#e4a233]" />
           </div>
-          <h3 className="text-base font-bold text-white">Masomo</h3>
+          <h3 className="text-base font-bold text-foreground">Masomo</h3>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Kozi Zinaendelea</p>
+          <div className="rounded-xl bg-card border border-border p-4">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Kozi Zinaendelea</p>
             <p className="text-2xl font-bold text-[#e4a233]">{coursesInProgress}</p>
           </div>
-          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Vyeti Vilivyopatikana</p>
+          <div className="rounded-xl bg-card border border-border p-4">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Vyeti Vilivyopatikana</p>
             <p className="text-2xl font-bold text-emerald-400">{certificatesCount}</p>
           </div>
         </div>
@@ -1209,13 +1216,13 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/jifunze')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-foreground transition-colors"
           >
             Endelea Kujifunza
           </button>
           <button
             onClick={() => router.push('/jifunze/vyeti')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground border border-border transition-colors"
           >
             Vyeti Vyangu
           </button>
@@ -1307,26 +1314,26 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       {/* Profile card */}
       <button
         onClick={() => onNavigate('profile')}
-        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
+        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-orange-500/30 hover:bg-[#1f1f1f] transition-all text-left"
       >
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20">
-          <span className="text-lg font-bold text-white">
+          <span className="text-lg font-bold text-foreground">
             {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>
-          <p className="text-xs text-white/40 truncate">{memberProfile?.username ? `@${memberProfile.username}` : memberProfile?.email || user?.email}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>
+          <p className="text-xs text-muted-foreground truncate">{memberProfile?.username ? `@${memberProfile.username}` : memberProfile?.email || user?.email}</p>
         </div>
-        <svg className="w-4 h-4 text-white/20 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       {/* Username section */}
-      <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-5">
-        <h3 className="text-sm font-semibold text-white mb-1">Username ya Uhamisho Pesa</h3>
-        <p className="text-xs text-white/40 mb-4">
+      <div className="rounded-2xl bg-card border border-border p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-1">Username ya Uhamisho Pesa</h3>
+        <p className="text-xs text-muted-foreground mb-4">
           {memberProfile?.username 
             ? 'Wenzako wanaweza kukutumia pesa kwa kutumia username yako'
             : 'Weka username yako ili wenzako waweze kukutumia pesa kwa urahisi'
@@ -1341,7 +1348,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
               </div>
               <div>
                 <p className="text-sm font-semibold text-emerald-400">@{memberProfile.username}</p>
-                <p className="text-xs text-white/40">Username yako</p>
+                <p className="text-xs text-muted-foreground">Username yako</p>
               </div>
             </div>
             <div className="text-emerald-400">
@@ -1354,22 +1361,22 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
           <div className="space-y-3">
             <div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">@</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   placeholder="juma_ally"
-                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
                   pattern="[a-z0-9_]{3,30}"
                   minLength={3}
                   maxLength={30}
                 />
-                {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">Inakagua...</span>}
+                {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Inakagua...</span>}
                 {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400">✓ Inapatikana</span>}
                 {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">✗ Imechukuliwa</span>}
               </div>
-              <p className="text-xs text-white/30 mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
+              <p className="text-xs text-muted-foreground mt-1">Herufi ndogo, nambari, na _ tu (3-30 vibambo)</p>
               {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
               {saveSuccess && <p className="text-xs text-emerald-400 mt-1">✓ Imehifadhiwa!</p>}
             </div>
@@ -1377,7 +1384,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
             <button
               onClick={saveUsername}
               disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
-              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Inahifadhi...' : 'Hifadhi Username'}
             </button>
@@ -1386,7 +1393,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
       </div>
 
       {/* Settings menu items */}
-      <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] divide-y divide-white/[0.04]">
+      <div className="rounded-2xl bg-card border border-border divide-y divide-white/[0.04]">
         {[
           { label: 'Taarifa za Akaunti', desc: 'Jina, nambari ya simu, barua pepe', icon: UserIcon },
           { label: 'Usalama', desc: 'Nywila na uthibitishaji', icon: CogIcon },
@@ -1394,14 +1401,14 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
           { label: 'Lugha', desc: 'Kiswahili / English', icon: BookOpenIcon },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-3 px-4 py-3.5 opacity-50">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center shrink-0">
-              <item.icon className="h-4 w-4 text-white/50" />
+            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center shrink-0">
+              <item.icon className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white/70">{item.label}</p>
-              <p className="text-xs text-white/30">{item.desc}</p>
+              <p className="text-sm text-muted-foreground">{item.label}</p>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
-            <span className="text-[10px] text-white/20 bg-white/5 px-2 py-0.5 rounded-full">Hivi karibuni</span>
+            <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">Hivi karibuni</span>
           </div>
         ))}
       </div>

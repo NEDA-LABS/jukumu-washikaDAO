@@ -18,10 +18,10 @@ export default function DashTopBar({ back, homeHref = '/member-dashboard' }: { b
   const { language, toggleLanguage } = useLanguage();
   const { resolvedTheme, setTheme } = useTheme();
 
-  const pill = 'rounded-full border border-white/[0.12] bg-white/[0.06] hover:bg-white/[0.12] text-white/85 transition-colors';
+  const pill = 'rounded-full border border-border bg-muted hover:bg-border text-foreground transition-colors';
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-4 lg:px-6 h-16 border-b border-white/[0.07] bg-[#0b0a09]/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-4 lg:px-6 h-16 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="flex items-center gap-2.5 min-w-0">
         {back && (
           <button
@@ -34,7 +34,7 @@ export default function DashTopBar({ back, homeHref = '/member-dashboard' }: { b
         )}
         <Link href={homeHref} className="flex items-center gap-2 min-w-0">
           <Logo markOnly className="h-7 w-auto shrink-0" />
-          <span className="text-sm font-bold text-white truncate">Washika<span className="text-[#e4a233]">DAU</span></span>
+          <span className="text-sm font-bold text-foreground truncate">Washika<span className="text-[#e4a233]">DAU</span></span>
         </Link>
       </div>
 
