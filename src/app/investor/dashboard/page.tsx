@@ -165,7 +165,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
   );
 }
 
-function ProjectCard({ p, onContact, onFund }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void }) {
+function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void; onOpen: (p: Project) => void }) {
   const goal = p.metadata?.funding_goal_tzs ?? 0;
   const funded = Number(p.total_investment ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
@@ -173,7 +173,11 @@ function ProjectCard({ p, onContact, onFund }: { p: Project; onContact: (p: Proj
 
   return (
     <div
-      className="rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-lg"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(p)}
+      onKeyDown={(e) => { if (e.key === 'Enter') onOpen(p); }}
+      className="rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
       style={{
         background: '#fff',
         border: `1px solid ${isApproved ? '#EDE8E0' : '#E0EBF5'}`,
@@ -279,7 +283,7 @@ function ProjectCard({ p, onContact, onFund }: { p: Project; onContact: (p: Proj
       {isApproved ? (
         <div className="flex gap-2">
           <button
-            onClick={() => onFund(p)}
+            onClick={(e) => { e.stopPropagation(); onFund(p); }}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
             style={{ background: '#e4a233', color: '#fff' }}
             onMouseOver={e => { e.currentTarget.style.background = '#c97e22'; }}
@@ -288,7 +292,7 @@ function ProjectCard({ p, onContact, onFund }: { p: Project; onContact: (p: Proj
             Fund →
           </button>
           <button
-            onClick={() => onContact(p)}
+            onClick={(e) => { e.stopPropagation(); onContact(p); }}
             className="py-2.5 px-4 rounded-xl text-xs font-semibold transition-all"
             style={{ background: '#F5F0E8', color: '#6B5C3E' }}
             onMouseOver={e => { e.currentTarget.style.background = '#EDE8E0'; }}
@@ -321,6 +325,7 @@ export default function InvestorDashboard() {
   const [section, setSection] = useState<Section>('overview');
   const [loading, setLoading] = useState(true);
   const [contactTarget, setContactTarget] = useState<Project | null>(null);
+  const [detailTarget, setDetailTarget] = useState<Project | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [groupDetailId, setGroupDetailId] = useState<number | null>(null);
   const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
@@ -763,7 +768,7 @@ export default function InvestorDashboard() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projects.slice(0, 3).map(p => (
-                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} />
+                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} />
                     ))}
                   </div>
                 </div>
@@ -860,7 +865,7 @@ export default function InvestorDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {projects.map(p => (
-                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} />
+                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} />
                   ))}
                 </div>
               )}
@@ -1443,6 +1448,67 @@ export default function InvestorDashboard() {
       )}
 
       {/* ── Contact Modal ─────────────────────────────── */}
+      {/* Project / proposal detail modal */}
+      {detailTarget && (() => {
+        const d = detailTarget;
+        const dApproved = !!d.funded_at;
+        const dGoal = d.metadata?.funding_goal_tzs ?? 0;
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setDetailTarget(null)}>
+            <div
+              className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+              style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={dApproved ? { background: '#FEF3E2', color: '#e4a233' } : { background: '#EFF6FF', color: '#3B82F6' }}>
+                    {dApproved ? 'Community Approved' : 'Seeking Vote'}
+                  </span>
+                  <h3 className="text-lg font-bold mt-2 leading-snug" style={{ color: '#1A1200' }}>{d.title}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: '#8A7560' }}>{d.group_name} · {d.member_count} members</p>
+                </div>
+                <button onClick={() => setDetailTarget(null)} className="p-1 shrink-0" style={{ color: '#A8997E' }}>✕</button>
+              </div>
+
+              {(d.metadata?.project_description || d.description) && (
+                <p className="text-sm leading-relaxed" style={{ color: '#6B5C3E' }}>{d.metadata?.project_description || d.description}</p>
+              )}
+
+              {dGoal > 0 && (
+                <div className="rounded-xl p-3" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
+                  <p className="text-xs" style={{ color: '#92400E' }}>Funding goal: <span className="font-black font-mono">{fmt(dGoal)}</span></p>
+                </div>
+              )}
+
+              {!dApproved && (d.yes_votes > 0 || d.total_votes > 0) && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[11px]" style={{ color: '#A8997E' }}>
+                    <span>Community vote</span><span>{d.yes_votes} yes / {d.total_votes} cast</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
+                    <div className="h-full rounded-full" style={{ width: d.total_votes > 0 ? `${Math.round((d.yes_votes / d.total_votes) * 100)}%` : '0%', background: '#3B82F6' }} />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 flex-wrap text-[11px]" style={{ color: '#A8997E' }}>
+                {d.metadata?.timeline && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>◷ {d.metadata.timeline}</span>}
+                {d.metadata?.expected_impact && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>↑ {d.metadata.expected_impact}</span>}
+                {d.monthly_contribution && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>Contribution: {fmtShort(Number(d.monthly_contribution))}/mo</span>}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                {dApproved && (
+                  <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: '#e4a233', color: '#fff' }}>Fund →</button>
+                )}
+                <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: '#F5F0E8', color: '#6B5C3E' }}>Contact</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {contactTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
