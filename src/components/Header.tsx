@@ -34,7 +34,7 @@ export default function Header() {
   ];
 
   return (
-    <header className={`fixed w-full top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/70 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header className={`fixed w-full top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/70 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <nav className="wd-container" aria-label="Top">
         <div className="flex w-full items-center justify-between py-4">
           <div className="flex items-center">

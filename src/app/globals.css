@@ -200,6 +200,16 @@
   padding-inline: clamp(1rem, 4vw, 2rem);
 }
 
+/* ── PWA safe-area helpers (notch / status bar in standalone mode) ── */
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+/* Fixed/sticky top bars: reserve the status-bar height above their content. */
+.top-safe { top: env(safe-area-inset-top); }
+/* Push the whole standalone app content below the status bar. */
+@media (display-mode: standalone) {
+  .app-safe-top { padding-top: env(safe-area-inset-top); }
+}
+
 /* Soft aurora float for hero blobs */
 @keyframes wd-float {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }

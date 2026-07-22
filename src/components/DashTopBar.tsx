@@ -21,7 +21,7 @@ export default function DashTopBar({ back, homeHref = '/member-dashboard' }: { b
   const pill = 'rounded-full border border-border bg-muted hover:bg-border text-foreground transition-colors';
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-4 lg:px-6 h-16 border-b border-border bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-4 lg:px-6 h-16 border-b border-border bg-background/80 backdrop-blur-xl" style={{ height: 'calc(4rem + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="flex items-center gap-2.5 min-w-0">
         {back && (
           <button

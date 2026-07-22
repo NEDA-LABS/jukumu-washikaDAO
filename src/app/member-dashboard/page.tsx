@@ -240,7 +240,7 @@ export default function MemberDashboard() {
         lg:translate-x-0 lg:static lg:z-20 lg:flex lg:shrink-0
       `}>
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-border flex items-center justify-between">
+        <div className="px-5 py-5 border-b border-border flex items-center justify-between" style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}>
           <div className="flex items-center gap-2.5 min-w-0">
             <Logo markOnly className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
@@ -290,7 +290,7 @@ export default function MemberDashboard() {
       <div className="relative z-10 flex-1 flex flex-col min-w-0">
 
         {/* Sticky branded top header — visible throughout */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-border bg-background/70 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-border bg-background/70 backdrop-blur-xl" style={{ height: 'calc(4rem + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile: menu + logo */}
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground -ml-1 p-1">

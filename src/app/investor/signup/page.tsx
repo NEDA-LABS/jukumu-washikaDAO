@@ -76,7 +76,7 @@ export default function InvestorSignupPage() {
   return (
     <>
     <Header />
-    <div className="min-h-screen bg-background flex pt-[68px]">
+    <div className="min-h-screen bg-background flex pt-[calc(68px_+_env(safe-area-inset-top))]">
       {/* Left panel — brand */}
       <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 border-r border-border relative overflow-hidden">
         <AnimatedBackground />

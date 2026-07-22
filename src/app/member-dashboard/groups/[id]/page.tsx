@@ -1098,7 +1098,7 @@ export default function MemberGroupDetailsPage() {
       </div>
 
       {/* ── Mobile bottom nav ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border flex">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border flex pb-safe">
         {tabs.map(t => (
           <button
             key={t.id}
