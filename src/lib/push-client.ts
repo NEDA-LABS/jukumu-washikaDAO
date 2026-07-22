@@ -40,7 +40,7 @@ export async function subscribeToPush(userId: number): Promise<{ ok: boolean; re
     await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(key),
+      applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
     });
     const res = await fetch('/api/push/subscribe', {
       method: 'POST',
