@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
+import ShareGroupModal from '@/components/ShareGroupModal';
+import { ShareIcon } from '@heroicons/react/24/outline';
 
 function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0);
@@ -162,6 +164,7 @@ export default function MemberGroupDetailsPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [membership, setMembership] = useState<Membership | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
@@ -552,6 +555,15 @@ export default function MemberGroupDetailsPage() {
                       <span className="text-xs text-muted-foreground group-hover/code:text-muted-foreground transition-colors">
                         {codeCopied ? t('grp.copied') : t('grp.copy')}
                       </span>
+                    </button>
+                  )}
+                  {group?.group_code && (
+                    <button
+                      onClick={() => setShareOpen(true)}
+                      className="mt-2.5 ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e4a233]/15 hover:bg-[#e4a233]/25 border border-[#e4a233]/30 text-[#e4a233] text-xs font-semibold transition-all"
+                    >
+                      <ShareIcon className="h-3.5 w-3.5" />
+                      {t('share.button')}
                     </button>
                   )}
                 </div>
@@ -1114,6 +1126,11 @@ export default function MemberGroupDetailsPage() {
       </div>
       {/* spacer so content isn't hidden behind mobile nav */}
       <div className="md:hidden h-16" />
+
+      {/* ── Share Group Modal ── */}
+      {shareOpen && group && (
+        <ShareGroupModal groupName={group.name || 'Kundi'} groupCode={group.group_code || ''} onClose={() => setShareOpen(false)} />
+      )}
 
       {/* ── Create Proposal Modal ── */}
       {showCreateProposal && (

@@ -370,6 +370,17 @@ const translations = {
     'prop.reopenSuccess': 'Kura zimefunguliwa tena. Wanachama wanaweza kupiga kura.',
     'prop.chooseRecipient': 'Chagua mpokeaji.',
     'prop.paid': 'Malipo yamekamilika! (Funds disbursed)',
+
+    // Share group
+    'share.button': 'Shiriki',
+    'share.title': 'Shiriki Kundi',
+    'share.desc': 'Waalike wenzako wajiunge na kundi lako',
+    'share.copy': 'Nakili Kiungo',
+    'share.copied': 'Imenakiliwa!',
+    'share.more': 'Zaidi',
+    'share.msgJoin': 'Jiunge na kundi',
+    'share.msgCode': 'Tumia namba ya kundi',
+    'share.msgOn': 'kwenye WashikaDAU',
   },
   en: {
     // Header
@@ -730,6 +741,17 @@ const translations = {
     'prop.reopenSuccess': 'Voting re-opened. Members can now vote.',
     'prop.chooseRecipient': 'Choose a recipient.',
     'prop.paid': 'Payment complete! (Funds disbursed)',
+
+    // Share group
+    'share.button': 'Share',
+    'share.title': 'Share Group',
+    'share.desc': 'Invite others to join your group',
+    'share.copy': 'Copy Link',
+    'share.copied': 'Copied!',
+    'share.more': 'More',
+    'share.msgJoin': 'Join the group',
+    'share.msgCode': 'Use group code',
+    'share.msgOn': 'on WashikaDAU',
   },
 };
 
