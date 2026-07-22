@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { notifyGroupMembers } from '@/lib/notify';
 
 const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina']);
 const VALID_TYPES = ['general', 'ask', 'spend', 'prodcast'] as const;
@@ -245,6 +246,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         LIMIT 1`,
       [proposalId]
     );
+
+    // Notify all group members of the new proposal.
+    try {
+      const creatorName = (proposalRes.rows[0] as { created_by_name?: string } | undefined)?.created_by_name || 'Kiongozi';
+      await notifyGroupMembers(client, groupId, {
+        title: 'Pendekezo Jipya',
+        message: `${creatorName} ameunda pendekezo: "${title}". Piga kura sasa.`,
+        titleEn: 'New Proposal',
+        messageEn: `${creatorName} created a proposal: "${title}". Cast your vote now.`,
+        type: 'info', category: 'proposal',
+        actionUrl: `/member-dashboard/groups/${groupId}/proposals/${proposalId}`,
+        actionText: 'Piga Kura',
+        metadata: { proposalId, groupId, kind: 'proposal' },
+      }, auth.userId);
+    } catch (e) { console.error('[proposals] notify failed:', e); }
 
     return NextResponse.json({ success: true, proposal: proposalRes.rows[0] || null });
   } catch (error) {

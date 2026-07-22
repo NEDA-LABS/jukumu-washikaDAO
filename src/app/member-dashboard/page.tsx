@@ -16,12 +16,14 @@ import {
   WalletIcon,
   Bars3Icon,
   XMarkIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import WalletDashboard from '@/components/WalletDashboard';
 import Logo from '@/components/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import QuickActionModal, { type ActionType } from '@/components/QuickActionModal';
+import NotificationsSection from '@/components/NotificationsSection';
 
 export default function MemberDashboard() {
   const { language, toggleLanguage, t } = useLanguage();
@@ -37,6 +39,7 @@ export default function MemberDashboard() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Check authentication and load member data
   useEffect(() => {
@@ -65,6 +68,21 @@ export default function MemberDashboard() {
       router.push('/login');
     }
   }, [router]);
+
+  // Poll unread notification count for the header bell.
+  useEffect(() => {
+    if (!user?.id) return;
+    let alive = true;
+    const fetchUnread = () => {
+      fetch(`/api/notifications?userId=${user.id}&unreadOnly=true&limit=1`)
+        .then((r) => r.json())
+        .then((d) => { if (alive) setUnreadCount(d.unreadCount ?? 0); })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const id = setInterval(fetchUnread, 30000);
+    return () => { alive = false; clearInterval(id); };
+  }, [user?.id, activeSection]);
 
   const verifyUserMemberMapping = async (userId: number) => {
     try {
@@ -167,6 +185,7 @@ export default function MemberDashboard() {
     { id: 'group', name: t('dash.nav.group'), icon: UserGroupIcon },
     { id: 'investments', name: t('dash.nav.investments'), icon: CurrencyDollarIcon },
     { id: 'learning', name: t('dash.nav.training'), icon: AcademicCapIcon },
+    { id: 'notifications', name: t('notif.title'), icon: BellIcon },
     { id: 'settings', name: t('dash.nav.settings'), icon: CogIcon },
   ];
 
@@ -184,6 +203,8 @@ export default function MemberDashboard() {
         return <MyInvestmentsSection memberInvestments={memberInvestments} />;
       case 'learning':
         return <LearningSection memberTraining={memberTraining} user={user} />;
+      case 'notifications':
+        return <NotificationsSection userId={user?.id || 0} />;
       case 'settings':
         return <MemberSettingsSection onNavigate={setActiveSection} user={user} memberProfile={memberProfile} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       default:
@@ -288,6 +309,23 @@ export default function MemberDashboard() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] font-medium text-emerald-300">nTZS live</span>
             </div>
+            {/* Notification bell */}
+            <button
+              onClick={() => setActiveSection('notifications')}
+              aria-label={t('notif.title')}
+              className={`relative rounded-full border p-2 transition-colors ${
+                activeSection === 'notifications'
+                  ? 'border-[#e4a233]/40 bg-[#e4a233]/15 text-[#e4a233]'
+                  : 'border-white/[0.12] bg-white/[0.06] text-white/85 hover:bg-white/[0.12]'
+              }`}
+            >
+              <BellIcon className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#d1622b] text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-background">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
             <button
               onClick={toggleLanguage}
               className="rounded-full border border-border bg-card hover:bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors"

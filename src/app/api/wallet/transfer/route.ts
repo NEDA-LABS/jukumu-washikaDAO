@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { internalTransfer, LedgerError } from '@/lib/wallet/ledger';
+import { notify, notifyGroupMembers } from '@/lib/notify';
 
 /**
  * Internal ledger transfer between database accounts. Pure DB, atomic — no
@@ -121,6 +122,36 @@ export async function POST(request: NextRequest) {
     });
     await client.query('COMMIT');
     inTx = false;
+
+    // ── Notifications (best-effort, post-commit) ──
+    try {
+      const amt = result.amountTzs.toLocaleString();
+      if (purpose === 'contribution' && groupId) {
+        await notifyGroupMembers(client, Number(groupId), {
+          title: 'Mchango Umepokelewa',
+          message: `${sender.full_name} amechangia TSh ${amt} kwenye kundi.`,
+          titleEn: 'Contribution Received',
+          messageEn: `${sender.full_name} contributed TSh ${amt} to the group.`,
+          type: 'success', category: 'group',
+          actionUrl: `/member-dashboard/groups/${groupId}`, actionText: 'Angalia',
+          metadata: { amountTzs: result.amountTzs, kind: 'contribution' },
+        }, userId);
+      } else if (to.ownerType === 'member') {
+        const ru = await client.query<{ user_id: number }>(`SELECT user_id FROM members WHERE id = $1`, [to.ownerId]);
+        const recipientUserId = ru.rows[0]?.user_id;
+        if (recipientUserId) {
+          await notify(client, recipientUserId, {
+            title: 'Umepokea Pesa',
+            message: `Umepokea TSh ${amt} kutoka kwa ${sender.full_name}.`,
+            titleEn: 'Money Received',
+            messageEn: `You received TSh ${amt} from ${sender.full_name}.`,
+            type: 'success', category: 'wallet',
+            actionUrl: '/member-dashboard?section=wallet', actionText: 'Pochi',
+            metadata: { amountTzs: result.amountTzs, kind: purpose },
+          });
+        }
+      }
+    } catch (e) { console.error('[transfer] notify failed:', e); }
 
     return NextResponse.json({
       transferId: result.journalId,

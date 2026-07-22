@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
+import { notify } from '@/lib/notify';
 
 /**
  * Polls nTZS for any pending deposit/withdrawal and settles status changes
@@ -73,6 +74,21 @@ export async function POST(request: NextRequest) {
           const r = await settleExternalTransaction(client, row.ntzs_id, newStatus, txHash);
           await client.query('COMMIT');
           if (r.applied || newStatus !== row.status) synced++;
+
+          // Notify the member when a deposit is newly credited to their balance.
+          if (r.applied && r.type === 'deposit') {
+            try {
+              await notify(client, Number(userId), {
+                title: 'Amana Imethibitishwa',
+                message: 'Amana yako imethibitishwa na kuongezwa kwenye salio lako.',
+                titleEn: 'Deposit Confirmed',
+                messageEn: 'Your deposit has been confirmed and added to your balance.',
+                type: 'success', category: 'wallet',
+                actionUrl: '/member-dashboard?section=wallet', actionText: 'Pochi',
+                metadata: { kind: 'deposit' },
+              });
+            } catch (e) { console.error('[sync] deposit notify failed:', e); }
+          }
         }
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});

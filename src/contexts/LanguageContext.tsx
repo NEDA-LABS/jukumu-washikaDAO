@@ -327,6 +327,22 @@ const translations = {
     'set.menu.notifications.desc': 'Mipangilio ya arifa',
     'set.menu.language': 'Lugha',
     'set.comingSoon': 'Hivi karibuni',
+
+    // Notifications
+    'notif.title': 'Arifa',
+    'notif.markAllRead': 'Soma zote',
+    'notif.empty': 'Hakuna arifa bado',
+    'notif.emptyDesc': 'Arifa za miamala, vikundi na mapendekezo zitaonekana hapa.',
+    'notif.all': 'Zote',
+    'notif.unread': 'Hazijasomwa',
+    'notif.enablePush': 'Washa arifa za simu',
+    'notif.pushEnabled': 'Arifa za simu zimewashwa',
+    'notif.pushDenied': 'Umezuia arifa. Ruhusu kwenye mipangilio ya kivinjari.',
+    'notif.pushUnsupported': 'Kifaa hiki hakiungi mkono arifa za simu.',
+    'notif.justNow': 'Sasa hivi',
+    'notif.minAgo': 'dakika',
+    'notif.hourAgo': 'saa',
+    'notif.dayAgo': 'siku',
   },
   en: {
     // Header
@@ -644,6 +660,22 @@ const translations = {
     'set.menu.notifications.desc': 'Notification settings',
     'set.menu.language': 'Language',
     'set.comingSoon': 'Coming soon',
+
+    // Notifications
+    'notif.title': 'Notifications',
+    'notif.markAllRead': 'Mark all read',
+    'notif.empty': 'No notifications yet',
+    'notif.emptyDesc': 'Alerts for transactions, groups and proposals will appear here.',
+    'notif.all': 'All',
+    'notif.unread': 'Unread',
+    'notif.enablePush': 'Enable push notifications',
+    'notif.pushEnabled': 'Push notifications enabled',
+    'notif.pushDenied': 'Notifications blocked. Allow them in your browser settings.',
+    'notif.pushUnsupported': 'This device does not support push notifications.',
+    'notif.justNow': 'Just now',
+    'notif.minAgo': 'min',
+    'notif.hourAgo': 'h',
+    'notif.dayAgo': 'd',
   },
 };
 

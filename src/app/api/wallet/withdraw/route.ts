@@ -4,6 +4,7 @@ import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
 import { getMasterNtzsUserId, debit, credit, LedgerError } from '@/lib/wallet/ledger';
 import { withdrawalFeeTzs } from '@/lib/wallet/fees';
+import { notify } from '@/lib/notify';
 
 /**
  * Off-ramp: member balance → mobile money.
@@ -118,6 +119,19 @@ export async function POST(request: NextRequest) {
     } catch (finErr) {
       console.error('Withdrawal sent but finalize failed; reconcile intent', intentId, withdrawal.id, finErr);
     }
+
+    try {
+      const amt = amount.toLocaleString();
+      await notify(client, Number(userId), {
+        title: 'Umetoa Pesa',
+        message: `Ombi la kutoa TSh ${amt} limeanzishwa. Utapokea kupitia mobile money.`,
+        titleEn: 'Withdrawal Started',
+        messageEn: `Your withdrawal of TSh ${amt} has been initiated to your mobile money.`,
+        type: 'success', category: 'wallet',
+        actionUrl: '/member-dashboard?section=wallet', actionText: 'Pochi',
+        metadata: { amountTzs: amount, kind: 'withdrawal' },
+      });
+    } catch (e) { console.error('[withdraw] notify failed:', e); }
 
     return NextResponse.json({
       withdrawalId: withdrawal.id,
