@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type ProposalRow = {
   id: number;
@@ -27,6 +28,7 @@ type VoteSummary = { yes: number; no: number; abstain: number; total: number };
 type Member = { id: number; full_name: string };
 
 export default function MemberGroupProposalDetailsPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const routeParams = useParams<{ id?: string | string[]; proposalId?: string | string[] }>();
 
@@ -62,8 +64,8 @@ export default function MemberGroupProposalDetailsPage() {
         if (cancelled) return;
         if (res.status === 401) { router.push('/login'); return; }
         const json = await res.json().catch(() => null);
-        if (res.status === 403) { setError('Huruhusiwi kuona pendekezo hili.'); return; }
-        if (!res.ok) { setError(json?.error || 'Imeshindikana kupakua pendekezo.'); return; }
+        if (res.status === 403) { setError(t('prop.err.notAllowed')); return; }
+        if (!res.ok) { setError(json?.error || t('prop.err.loadFailed')); return; }
         const p = (json?.proposal as ProposalRow) || null;
         setProposal(p);
         setVoteSummary((json?.voteSummary as VoteSummary) || { yes: 0, no: 0, abstain: 0, total: 0 });
@@ -80,7 +82,7 @@ export default function MemberGroupProposalDetailsPage() {
         }
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Imeshindikana kupakua pendekezo.');
+        setError(e instanceof Error ? e.message : t('prop.err.loadFailed'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -115,11 +117,11 @@ export default function MemberGroupProposalDetailsPage() {
       });
       if (res.status === 401) { router.push('/login'); return; }
       const json = await res.json().catch(() => null);
-      if (!res.ok) { setVoteError(json?.error || 'Imeshindikana kupiga kura.'); return; }
+      if (!res.ok) { setVoteError(json?.error || t('prop.err.voteFailed')); return; }
       setMyVote(vote);
       setVoteSummary((json?.voteSummary as VoteSummary) || voteSummary);
     } catch (err) {
-      setVoteError(err instanceof Error ? err.message : 'Imeshindikana kupiga kura.');
+      setVoteError(err instanceof Error ? err.message : t('prop.err.voteFailed'));
     } finally {
       setVoteSubmitting(false);
     }
@@ -128,8 +130,8 @@ export default function MemberGroupProposalDetailsPage() {
   const handleExecute = async () => {
     if (!groupId || !proposalId) return;
     const amt = Number(amountInput);
-    if (!amt || amt <= 0) { setExecuteError('Weka kiasi sahihi cha malipo.'); return; }
-    if (!recipientInput) { setExecuteError('Chagua mpokeaji.'); return; }
+    if (!amt || amt <= 0) { setExecuteError(t('prop.err.invalidAmount')); return; }
+    if (!recipientInput) { setExecuteError(t('prop.chooseRecipient')); return; }
     setExecuting(true); setExecuteError(''); setExecuteSuccess('');
     try {
       const res = await fetch(`/api/member/groups/${groupId}/proposals/${proposalId}/execute`, {
@@ -139,11 +141,11 @@ export default function MemberGroupProposalDetailsPage() {
       });
       if (res.status === 401) { router.push('/login'); return; }
       const json = await res.json().catch(() => null);
-      if (!res.ok) { setExecuteError(json?.error || json?.details || 'Imeshindikana kutekeleza malipo.'); return; }
-      setExecuteSuccess('Malipo yamekamilika! (Funds disbursed)');
+      if (!res.ok) { setExecuteError(json?.error || json?.details || t('prop.err.payFailed')); return; }
+      setExecuteSuccess(t('prop.paid'));
       setProposal(p => (p ? { ...p, payment_status: 'completed' } : p));
     } catch (e) {
-      setExecuteError(e instanceof Error ? e.message : 'Imeshindikana kutekeleza malipo.');
+      setExecuteError(e instanceof Error ? e.message : t('prop.err.payFailed'));
     } finally {
       setExecuting(false);
     }
@@ -160,11 +162,11 @@ export default function MemberGroupProposalDetailsPage() {
       });
       if (res.status === 401) { router.push('/login'); return; }
       const json = await res.json().catch(() => null);
-      if (!res.ok) { setExecuteError(json?.error || 'Imeshindikana kufungua kura.'); return; }
+      if (!res.ok) { setExecuteError(json?.error || t('prop.err.reopenFailed')); return; }
       setProposal(p => (p ? { ...p, status: 'open' } : p));
-      setExecuteSuccess('Kura zimefunguliwa tena. Wanachama wanaweza kupiga kura.');
+      setExecuteSuccess(t('prop.reopenSuccess'));
     } catch (e) {
-      setExecuteError(e instanceof Error ? e.message : 'Imeshindikana kufungua kura.');
+      setExecuteError(e instanceof Error ? e.message : t('prop.err.reopenFailed'));
     } finally {
       setReopening(false);
     }
@@ -230,12 +232,12 @@ export default function MemberGroupProposalDetailsPage() {
 
             {/* Vote results */}
             <div className="rounded-2xl bg-card border border-border p-5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Matokeo ya Kura</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t('prop.results')}</p>
 
               <div className="space-y-3 mb-4">
                 {([
-                  { key: 'yes' as const,     label: 'Ndio',    count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
-                  { key: 'no' as const,      label: 'Hapana',  count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
+                  { key: 'yes' as const,     label: t('prop.yes'),    count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
+                  { key: 'no' as const,      label: t('prop.no'),  count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
                   { key: 'abstain' as const, label: 'Jiepushe', count: voteSummary.abstain, bar: 'bg-white/20',   text: 'text-muted-foreground'    },
                 ]).map(row => (
                   <div key={row.key}>
@@ -254,7 +256,7 @@ export default function MemberGroupProposalDetailsPage() {
                 <p className="text-xs text-muted-foreground">Jumla: {voteSummary.total} kura{requiredYes > 0 ? ` · zinahitajika ${requiredYes} "Ndio"` : ''}</p>
                 {myVote && (
                   <p className="text-xs text-[#e4a233]">
-                    Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? 'Ndio' : myVote === 'no' ? 'Hapana' : 'Jiepushe'}</span>
+                    Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? t('prop.yes') : myVote === 'no' ? t('prop.no') : 'Jiepushe'}</span>
                   </p>
                 )}
               </div>
@@ -263,8 +265,8 @@ export default function MemberGroupProposalDetailsPage() {
             {/* Vote action */}
             <div className="rounded-2xl bg-card border border-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Piga Kura</p>
-                {!isOpen && <p className="text-xs text-muted-foreground">Upigaji kura umefungwa</p>}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('prop.vote')}</p>
+                {!isOpen && <p className="text-xs text-muted-foreground">{t('prop.votingClosed')}</p>}
               </div>
 
               {voteError && (
@@ -273,8 +275,8 @@ export default function MemberGroupProposalDetailsPage() {
 
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { key: 'yes' as const,     label: 'Ndio',     active: 'bg-emerald-500 hover:bg-emerald-600 text-foreground border-transparent', inactive: 'bg-card hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 border-border' },
-                  { key: 'no' as const,      label: 'Hapana',   active: 'bg-red-500 hover:bg-red-600 text-foreground border-transparent',         inactive: 'bg-card hover:bg-red-500/10 text-muted-foreground hover:text-red-400 border-border'       },
+                  { key: 'yes' as const,     label: t('prop.yes'),     active: 'bg-emerald-500 hover:bg-emerald-600 text-foreground border-transparent', inactive: 'bg-card hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 border-border' },
+                  { key: 'no' as const,      label: t('prop.no'),   active: 'bg-red-500 hover:bg-red-600 text-foreground border-transparent',         inactive: 'bg-card hover:bg-red-500/10 text-muted-foreground hover:text-red-400 border-border'       },
                   { key: 'abstain' as const, label: 'Jiepushe', active: 'bg-white/20 hover:bg-white/30 text-foreground border-transparent',       inactive: 'bg-card hover:bg-white/10 text-muted-foreground border-border'                             },
                 ]).map(btn => (
                   <button
@@ -292,7 +294,7 @@ export default function MemberGroupProposalDetailsPage() {
 
               {isOpen && (
                 <p className="text-xs text-muted-foreground mt-3 text-center">
-                  {myVote ? 'Unaweza kubadilisha kura yako wakati wowote.' : 'Wanachama wote wa kundi wanaweza kupiga kura.'}
+                  {myVote ? t('prop.canChange') : t('prop.allCanVote')}
                 </p>
               )}
             </div>
@@ -301,7 +303,7 @@ export default function MemberGroupProposalDetailsPage() {
             {hasAmount && (
               <div className="rounded-2xl bg-card border border-border p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Kiasi kilichoombwa</span>
+                  <span className="text-sm text-muted-foreground">{t('prop.amountRequested')}</span>
                   <span className="text-sm font-semibold text-foreground tabular-nums">TZS {Number(proposal.payment_amount_tzs ?? 0).toLocaleString()}</span>
                 </div>
                 {proposal.recipient_name && (
@@ -311,7 +313,7 @@ export default function MemberGroupProposalDetailsPage() {
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm text-muted-foreground">Hali ya malipo</span>
+                  <span className="text-sm text-muted-foreground">{t('prop.paymentStatus')}</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>
@@ -340,9 +342,9 @@ export default function MemberGroupProposalDetailsPage() {
                   </div>
                 ) : passed ? (
                   <div className="space-y-3">
-                    <p className="text-xs text-emerald-400">Pendekezo limepita kura ✓ — unaweza kulipa kutoka hazina ya kundi.</p>
+                    <p className="text-xs text-emerald-400">{t('prop.passed')}</p>
                     <div>
-                      <label className="text-xs text-muted-foreground">Kiasi (TZS)</label>
+                      <label className="text-xs text-muted-foreground">{t('prop.amountTzs')}</label>
                       <input
                         type="number" inputMode="numeric" value={amountInput}
                         onChange={e => setAmountInput(e.target.value)}
@@ -368,9 +370,9 @@ export default function MemberGroupProposalDetailsPage() {
                       disabled={executing}
                       className="w-full py-2.5 rounded-xl text-sm font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {executing ? 'Inatekeleza...' : 'Tekeleza Malipo (Disburse)'}
+                      {executing ? t('prop.executing') : t('prop.disburse')}
                     </button>
-                    <p className="text-xs text-muted-foreground text-center">Itatolewa kwenye salio la hazina ya kundi.</p>
+                    <p className="text-xs text-muted-foreground text-center">{t('prop.fromTreasury')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -382,7 +384,7 @@ export default function MemberGroupProposalDetailsPage() {
                       disabled={reopening}
                       className="w-full py-2.5 rounded-xl text-sm font-semibold bg-card hover:bg-muted text-muted-foreground border border-border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {reopening ? '...' : 'Fungua Kura Tena (Re-open voting)'}
+                      {reopening ? '...' : t('prop.reopenVoting')}
                     </button>
                   </div>
                 )}
