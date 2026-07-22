@@ -316,7 +316,7 @@ export default function MemberDashboard() {
               className={`relative rounded-full border p-2 transition-colors ${
                 activeSection === 'notifications'
                   ? 'border-[#e4a233]/40 bg-[#e4a233]/15 text-[#e4a233]'
-                  : 'border-white/[0.12] bg-white/[0.06] text-white/85 hover:bg-white/[0.12]'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <BellIcon className="h-4 w-4" />
@@ -407,7 +407,19 @@ export default function MemberDashboard() {
 }
 
 function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void; userId: number }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Activity text is stored in Swahili in the DB — translate the common
+  // patterns client-side when the UI language is English.
+  const translateActivity = (text: string): string => {
+    if (language !== 'en' || !text) return text;
+    return text
+      .replace(/^Umejiung[ae] na kundi la /, 'You joined the group ')
+      .replace(/^Umejiung[ae] na /, 'You joined ')
+      .replace(/^Umechangia /, 'You contributed ')
+      .replace(/^Umepokea /, 'You received ')
+      .replace(/^Umetoa /, 'You withdrew ');
+  };
   const [balanceTzs, setBalanceTzs] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [modal, setModal] = useState<ActionType | null>(null);
@@ -435,7 +447,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
   ];
 
   const displayActivities = recentActivities.length > 0
-    ? recentActivities.map(a => ({ action: a.action_text, time: new Date(a.activity_date).toLocaleDateString() }))
+    ? recentActivities.map(a => ({ action: translateActivity(a.action_text), time: new Date(a.activity_date).toLocaleDateString() }))
     : [{ action: t('dash.joined'), time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString() : '' }];
 
   const actions: { label: string; icon: string; action: ActionType }[] = [
