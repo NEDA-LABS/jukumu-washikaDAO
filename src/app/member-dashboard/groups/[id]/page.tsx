@@ -6,7 +6,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
 import ShareGroupModal from '@/components/ShareGroupModal';
-import { ShareIcon } from '@heroicons/react/24/outline';
+import { ShareIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0);
@@ -38,6 +38,7 @@ type Group = {
   founded_date: string | null;
   total_investment: string | number | null;
   monthly_contribution: string | number | null;
+  contribution_frequency?: 'monthly' | 'weekly' | string | null;
   status: string;
   created_at?: string;
   leader_name?: string | null;
@@ -165,6 +166,12 @@ export default function MemberGroupDetailsPage() {
   const [membership, setMembership] = useState<Membership | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsAmount, setSettingsAmount] = useState('');
+  const [settingsFreq, setSettingsFreq] = useState<'monthly' | 'weekly'>('monthly');
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsSuccess, setSettingsSuccess] = useState('');
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
@@ -461,6 +468,30 @@ export default function MemberGroupDetailsPage() {
     }
   };
 
+  const handleSaveSettings = async () => {
+    if (!groupId) return;
+    const amt = Number(settingsAmount);
+    if (!amt || amt <= 0) { setSettingsError(t('prop.err.invalidAmount')); return; }
+    setSettingsSaving(true); setSettingsError(''); setSettingsSuccess('');
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthlyContribution: amt, contributionFrequency: settingsFreq }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) { setSettingsError(data?.error || t('grp.settings.leadershipOnly')); return; }
+      setGroup((g) => (g ? { ...g, monthly_contribution: amt, contribution_frequency: settingsFreq } : g));
+      setSettingsSuccess(t('grp.settings.saved'));
+      showToast(t('grp.settings.saved'), 'success');
+      setTimeout(() => setShowSettings(false), 1200);
+    } catch {
+      setSettingsError(t('grp.err.loadFailed'));
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   // ── shared dark input style ──
   const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60';
 
@@ -569,10 +600,24 @@ export default function MemberGroupDetailsPage() {
                 </div>
               </div>
               {canCreateProposal && (
-                <button
-                  onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-                  className="shrink-0 self-start sm:self-auto px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
-                >{t('grp.newProposal')}</button>
+                <div className="shrink-0 self-start sm:self-auto flex items-center gap-2">
+                  <button
+                    onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
+                    className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
+                  >{t('grp.newProposal')}</button>
+                  <button
+                    onClick={() => {
+                      setSettingsAmount(String(Number.parseFloat(String(group?.monthly_contribution || 0)) || ''));
+                      setSettingsFreq(group?.contribution_frequency === 'weekly' ? 'weekly' : 'monthly');
+                      setSettingsError(''); setSettingsSuccess('');
+                      setShowSettings(true);
+                    }}
+                    aria-label={t('grp.settings.title')}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Cog6ToothIcon className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
 
@@ -590,7 +635,7 @@ export default function MemberGroupDetailsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
               {[
                 { label: t('grp.stat.members'), value: animMembers.toLocaleString(), unit: '' },
-                { label: t('grp.stat.monthly'), value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
+                { label: group?.contribution_frequency === 'weekly' ? t('grp.freq.weekly') : t('grp.stat.monthly'), value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
                 { label: t('grp.stat.collected'), value: `TSh ${animTotal.toLocaleString()}`, unit: '' },
                 { label: t('grp.stat.paidThisMonth'), value: String(animPayers), unit: `/ ${group?.member_count ?? members.length}` },
               ].map((s, i) => (
@@ -1130,6 +1175,60 @@ export default function MemberGroupDetailsPage() {
       {/* ── Share Group Modal ── */}
       {shareOpen && group && (
         <ShareGroupModal groupName={group.name || 'Kundi'} groupCode={group.group_code || ''} onClose={() => setShareOpen(false)} />
+      )}
+
+      {/* ── Group Settings Modal ── */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4" onClick={() => setShowSettings(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+              <h3 className="font-display text-lg text-foreground">{t('grp.settings.title')}</h3>
+              <button onClick={() => setShowSettings(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">
+                  {t('grp.freq.contribAmount')} ({settingsFreq === 'weekly' ? t('grp.freq.weekly') : t('grp.freq.monthly')}) (TSh)
+                </label>
+                <input
+                  type="number"
+                  value={settingsAmount}
+                  onChange={(e) => setSettingsAmount(e.target.value)}
+                  min="1"
+                  className={dkInput}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">{t('grp.freq.label')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['monthly', 'weekly'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setSettingsFreq(f)}
+                      className={`py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                        settingsFreq === f
+                          ? 'bg-[#e4a233]/15 border-[#e4a233]/50 text-[#e4a233]'
+                          : 'bg-white/5 border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {f === 'monthly' ? t('grp.freq.monthly') : t('grp.freq.weekly')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {settingsError && <p className="text-sm text-red-400">{settingsError}</p>}
+              {settingsSuccess && <p className="text-sm text-emerald-400">{settingsSuccess}</p>}
+              <button
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+                className="w-full py-3 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+              >
+                {settingsSaving ? t('grp.settings.saving') : t('grp.settings.save')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Create Proposal Modal ── */}

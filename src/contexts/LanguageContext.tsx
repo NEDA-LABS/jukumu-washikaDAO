@@ -381,6 +381,17 @@ const translations = {
     'share.msgJoin': 'Jiunge na kundi',
     'share.msgCode': 'Tumia namba ya kundi',
     'share.msgOn': 'kwenye WashikaDAU',
+
+    // Contribution frequency
+    'grp.freq.label': 'Mzunguko wa Mchango',
+    'grp.freq.monthly': 'Kila Mwezi',
+    'grp.freq.weekly': 'Kila Wiki',
+    'grp.freq.contribAmount': 'Mchango',
+    'grp.settings.title': 'Mipangilio ya Kundi',
+    'grp.settings.save': 'Hifadhi Mabadiliko',
+    'grp.settings.saving': 'Inahifadhi...',
+    'grp.settings.saved': 'Mipangilio yamehifadhiwa!',
+    'grp.settings.leadershipOnly': 'Uongozi pekee unaweza kubadilisha mipangilio.',
   },
   en: {
     // Header
@@ -752,6 +763,17 @@ const translations = {
     'share.msgJoin': 'Join the group',
     'share.msgCode': 'Use group code',
     'share.msgOn': 'on WashikaDAU',
+
+    // Contribution frequency
+    'grp.freq.label': 'Contribution Frequency',
+    'grp.freq.monthly': 'Monthly',
+    'grp.freq.weekly': 'Weekly',
+    'grp.freq.contribAmount': 'Contribution',
+    'grp.settings.title': 'Group Settings',
+    'grp.settings.save': 'Save Changes',
+    'grp.settings.saving': 'Saving...',
+    'grp.settings.saved': 'Settings saved!',
+    'grp.settings.leadershipOnly': 'Only leadership can change settings.',
   },
 };
 

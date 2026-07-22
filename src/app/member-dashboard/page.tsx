@@ -748,11 +748,12 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
 }
 
 function MyGroupSection({ memberProfile }: { memberProfile: any }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [myGroups, setMyGroups] = useState<any[]>([]);
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5' });
+  const [createForm, setCreateForm] = useState({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5', contributionFrequency: 'monthly' as 'monthly' | 'weekly' });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -852,12 +853,13 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           monthlyContribution: Number(createForm.monthlyContribution),
           votingNumerator: Number(createForm.votingNumerator),
           votingDenominator: Number(createForm.votingDenominator),
+          contributionFrequency: createForm.contributionFrequency,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setShowCreateModal(false);
-        setCreateForm({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5' });
+        setCreateForm({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5', contributionFrequency: 'monthly' });
         await loadMyGroups();
         if (data.group?.id) router.push(`/member-dashboard/groups/${data.group.id}`);
       } else {
@@ -994,7 +996,9 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               </div>
 
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Mchango wa Kila Mwezi (TSh) *</label>
+                <label className="block text-xs text-muted-foreground mb-1">
+                  {t('grp.freq.contribAmount')} ({createForm.contributionFrequency === 'weekly' ? t('grp.freq.weekly') : t('grp.freq.monthly')}) (TSh) *
+                </label>
                 <input
                   type="number"
                   value={createForm.monthlyContribution}
@@ -1004,6 +1008,26 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">{t('grp.freq.label')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['monthly', 'weekly'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setCreateForm(prev => ({ ...prev, contributionFrequency: f }))}
+                      className={`py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                        createForm.contributionFrequency === f
+                          ? 'bg-[#e4a233]/15 border-[#e4a233]/50 text-[#e4a233]'
+                          : 'bg-white/5 border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {f === 'monthly' ? t('grp.freq.monthly') : t('grp.freq.weekly')}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>

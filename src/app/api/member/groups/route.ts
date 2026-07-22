@@ -15,10 +15,13 @@ export async function POST(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => null);
-  const { name, monthlyContribution, votingNumerator = 3, votingDenominator = 5 } = body || {};
+  const { name, monthlyContribution, votingNumerator = 3, votingDenominator = 5, contributionFrequency = 'monthly' } = body || {};
 
   if (!name || !monthlyContribution) {
     return NextResponse.json({ error: 'Jina la kundi na mchango wa kila mwezi vinahitajika.' }, { status: 400 });
+  }
+  if (!['monthly', 'weekly'].includes(contributionFrequency)) {
+    return NextResponse.json({ error: 'contributionFrequency lazima iwe monthly au weekly.' }, { status: 400 });
   }
 
   const contribution = Number(monthlyContribution);
@@ -52,16 +55,17 @@ export async function POST(request: NextRequest) {
     // Ensure group_code column exists (idempotent)
     await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
     await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
+    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS contribution_frequency VARCHAR(10) NOT NULL DEFAULT 'monthly'`);
 
     const groupCode = await generateUniqueGroupCode(client);
 
     // Create the group — leader_id references users table
     const groupRes = await client.query(
       `INSERT INTO groups (name, leader_id, founded_date, monthly_contribution, status,
-        voting_threshold_numerator, voting_threshold_denominator, group_code, join_policy)
-       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5, $6, 'invite_only')
+        voting_threshold_numerator, voting_threshold_denominator, group_code, join_policy, contribution_frequency)
+       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5, $6, 'invite_only', $7)
        RETURNING *`,
-      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator, groupCode]
+      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator, groupCode, contributionFrequency]
     );
     const group = groupRes.rows[0] as { id: number; name: string };
 
