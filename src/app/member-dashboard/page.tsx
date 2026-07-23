@@ -192,7 +192,7 @@ export default function MemberDashboard() {
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
+        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} onNavigate={setActiveSection} userId={user?.id || 0} />;
       case 'wallet':
         return <WalletDashboard userId={user?.id || 0} username={memberProfile?.username} />;
       case 'profile':
@@ -208,7 +208,7 @@ export default function MemberDashboard() {
       case 'settings':
         return <MemberSettingsSection onNavigate={setActiveSection} user={user} memberProfile={memberProfile} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       default:
-        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} recentActivities={recentActivities} onNavigate={setActiveSection} userId={user?.id || 0} />;
+        return <MemberOverviewSection memberProfile={memberProfile} memberInvestments={memberInvestments} onNavigate={setActiveSection} userId={user?.id || 0} />;
     }
   };
 
@@ -406,23 +406,25 @@ export default function MemberDashboard() {
   );
 }
 
-function MemberOverviewSection({ memberProfile, memberInvestments, recentActivities, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; recentActivities: any[]; onNavigate: (section: string) => void; userId: number }) {
-  const { t, language } = useLanguage();
+type FeedItem = {
+  key: string;
+  kind: 'join' | 'deposit' | 'withdraw' | 'contribution' | 'received' | 'transfer' | 'proposal';
+  date: string;
+  title_sw: string;
+  title_en: string;
+  subtitle: string | null;
+  href: string;
+};
 
-  // Activity text is stored in Swahili in the DB — translate the common
-  // patterns client-side when the UI language is English.
-  const translateActivity = (text: string): string => {
-    if (language !== 'en' || !text) return text;
-    return text
-      .replace(/^Umejiung[ae] na kundi la /, 'You joined the group ')
-      .replace(/^Umejiung[ae] na /, 'You joined ')
-      .replace(/^Umechangia /, 'You contributed ')
-      .replace(/^Umepokea /, 'You received ')
-      .replace(/^Umetoa /, 'You withdrew ');
-  };
+function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, userId }: { memberProfile: any; memberInvestments: any[]; onNavigate: (section: string) => void; userId: number }) {
+  const { t, language } = useLanguage();
+  const router = useRouter();
+
   const [balanceTzs, setBalanceTzs] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [modal, setModal] = useState<ActionType | null>(null);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string }>>([]);
 
   const fetchBalance = React.useCallback(() => {
     if (!userId) return;
@@ -433,7 +435,22 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       .finally(() => setBalanceLoading(false));
   }, [userId]);
 
-  useEffect(() => { fetchBalance(); }, [fetchBalance]);
+  const fetchFeed = React.useCallback(() => {
+    if (!userId) return;
+    fetch(`/api/members/feed?userId=${userId}&limit=8`)
+      .then(r => r.json())
+      .then(d => setFeed(Array.isArray(d.items) ? d.items : []))
+      .catch(() => setFeed([]));
+  }, [userId]);
+
+  useEffect(() => { fetchBalance(); fetchFeed(); }, [fetchBalance, fetchFeed]);
+
+  useEffect(() => {
+    fetch('/api/member/groups')
+      .then(r => r.ok ? r.json() : { groups: [] })
+      .then(d => setMyGroups((d.groups || []).map((g: any) => ({ id: g.id, name: g.name }))))
+      .catch(() => setMyGroups([]));
+  }, []);
 
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const expectedReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.expected_return || 0), 0);
@@ -441,14 +458,32 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 
   const stats = [
     { name: t('dash.stat.membership'), value: isActive ? t('dash.stat.active') : t('dash.stat.pending'), icon: UserIcon, from: isActive ? 'from-emerald-400' : 'from-yellow-400', to: isActive ? 'to-teal-500' : 'to-amber-500' },
-    { name: t('dash.stat.mygroup'), value: memberProfile?.group_name || t('dash.stat.nogroup'), icon: UserGroupIcon, from: 'from-sky-400', to: 'to-blue-600' },
     { name: t('dash.stat.investment'), value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-[#e4a233]', to: 'to-[#d1622b]' },
     { name: t('dash.stat.returns'), value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, from: 'from-fuchsia-400', to: 'to-purple-600' },
   ];
 
-  const displayActivities = recentActivities.length > 0
-    ? recentActivities.map(a => ({ action: translateActivity(a.action_text), time: new Date(a.activity_date).toLocaleDateString() }))
-    : [{ action: t('dash.joined'), time: memberProfile?.created_at ? new Date(memberProfile.created_at).toLocaleDateString() : '' }];
+  const kindIcon: Record<FeedItem['kind'], string> = {
+    join: '◉', deposit: '↓', withdraw: '↑', contribution: '⇢', received: '↙', transfer: '⇄', proposal: '✎',
+  };
+  const kindColor: Record<FeedItem['kind'], string> = {
+    join: 'bg-blue-500/15 text-blue-500',
+    deposit: 'bg-emerald-500/15 text-emerald-500',
+    withdraw: 'bg-amber-500/15 text-amber-500',
+    contribution: 'bg-primary/15 text-primary',
+    received: 'bg-emerald-500/15 text-emerald-500',
+    transfer: 'bg-sky-500/15 text-sky-500',
+    proposal: 'bg-violet-500/15 text-violet-500',
+  };
+  const displayFeed = feed.length > 0
+    ? feed.map(f => ({ ...f, label: language === 'en' ? f.title_en : f.title_sw }))
+    : [{
+        key: 'first',
+        kind: 'join' as const,
+        date: memberProfile?.created_at ?? '',
+        title_sw: t('dash.joined'), title_en: t('dash.joined'),
+        subtitle: null, href: '',
+        label: t('dash.joined'),
+      }];
 
   const actions: { label: string; icon: string; action: ActionType }[] = [
     { label: t('dash.action.deposit'), icon: 'M12 4v16m8-8H4', action: 'deposit' },
@@ -514,7 +549,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {stats.map((s, i) => (
           <div key={i} className="group rounded-2xl bg-card hover:bg-muted border border-border p-4 flex flex-col gap-3 transition-all hover:-translate-y-1 hover:border-primary/30 shadow-sm">
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.from} ${s.to} flex items-center justify-center shadow-lg`}>
@@ -526,6 +561,45 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
             </div>
           </div>
         ))}
+      </div>
+
+      {/* My Groups — clickable list */}
+      <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-sky-400 to-blue-600" />
+            {t('dash.stat.mygroup')}
+          </h3>
+          {myGroups.length > 0 && (
+            <button
+              onClick={() => onNavigate('group')}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              {t('inv.viewAll')} →
+            </button>
+          )}
+        </div>
+        {myGroups.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t('dash.stat.nogroup')}</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {myGroups.map(g => (
+              <button
+                key={g.id}
+                onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
+                className="flex items-center gap-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-muted transition-all px-3 py-2.5 text-left group"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-bold text-sm">
+                  {g.name.charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground truncate">{g.name}</p>
+                </div>
+                <span className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all">→</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Governance teaser */}
@@ -548,20 +622,43 @@ function MemberOverviewSection({ memberProfile, memberInvestments, recentActivit
 
       {/* Activity + nav shortcuts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent activity — timeline */}
+        {/* Recent activity — clickable feed */}
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
             {t('dash.activity.title')}
           </h3>
-          <div className="relative space-y-4 pl-4 before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-px before:bg-border">
-            {displayActivities.slice(0, 5).map((a, i) => (
-              <div key={i} className="relative">
-                <span className="absolute -left-4 top-1 w-2 h-2 rounded-full bg-[#e4a233] ring-4 ring-[#e4a233]/15" />
-                <p className="text-sm text-foreground/85 leading-snug">{a.action}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
-              </div>
-            ))}
+          <div className="space-y-1.5">
+            {displayFeed.slice(0, 6).map((f) => {
+              const clickable = !!f.href;
+              const content = (
+                <>
+                  <span className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-xl ${kindColor[f.kind]} font-bold text-sm`}>
+                    {kindIcon[f.kind]}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground/90 leading-snug truncate">{f.label}</p>
+                    {f.date && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(f.date).toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-GB')}</p>
+                    )}
+                  </div>
+                  {clickable && <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>}
+                </>
+              );
+              return clickable ? (
+                <button
+                  key={f.key}
+                  onClick={() => router.push(f.href)}
+                  className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted transition-colors text-left group"
+                >
+                  {content}
+                </button>
+              ) : (
+                <div key={f.key} className="w-full flex items-center gap-3 px-2 py-2">
+                  {content}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -978,8 +1075,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
       {/* Create Group modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div
+            className="bg-card border border-border rounded-t-3xl sm:rounded-2xl p-6 w-full max-w-md overflow-y-auto"
+            style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+          >
             <h3 className="text-base font-semibold text-foreground mb-1">{t('mg.createNew.title')}</h3>
             <p className="text-xs text-muted-foreground mb-5">{t('mg.createNew.desc')}</p>
 
@@ -1082,8 +1185,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 
       {/* Join by Code modal */}
       {showJoinModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div
+            className="bg-card border border-border rounded-t-3xl sm:rounded-2xl p-6 w-full max-w-md overflow-y-auto"
+            style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+          >
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-semibold text-foreground">{t('mg.joinModal.title')}</h3>
               <button onClick={resetJoinModal} className="text-muted-foreground hover:text-muted-foreground transition-colors">

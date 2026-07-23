@@ -1233,8 +1233,14 @@ export default function MemberGroupDetailsPage() {
 
       {/* ── Create Proposal Modal ── */}
       {showCreateProposal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-card border border-border overflow-hidden max-h-[90vh] flex flex-col">
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-card border border-border overflow-hidden flex flex-col"
+            style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
               <div>

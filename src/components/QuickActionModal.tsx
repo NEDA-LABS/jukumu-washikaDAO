@@ -117,12 +117,15 @@ export default function QuickActionModal({
   const label = 'block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5';
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       <div
         className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
-        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px))' }}
+        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
       >
         {/* grab handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-3 shrink-0"><span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" /></div>
@@ -160,7 +163,7 @@ export default function QuickActionModal({
                       key={p}
                       type="button"
                       onClick={() => setPurpose(p)}
-                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                      className={`px-2 py-2.5 rounded-xl text-xs font-semibold border transition-all leading-tight text-center ${
                         purpose === p
                           ? 'bg-primary/10 border-primary/60 text-primary'
                           : 'bg-background border-border text-muted-foreground hover:text-foreground'
