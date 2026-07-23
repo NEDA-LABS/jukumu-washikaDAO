@@ -3,6 +3,53 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+
+// ─── Theme-reactive color map for the main content area ──────────────────────
+// The sidebar is a permanently-dark surface (unrelated to the site theme,
+// matches the brand look from the very first design); only the light main
+// content canvas (cards, text, chips) needs a dark-mode variant.
+export type Ink = {
+  bg: string;
+  card: string;
+  cardBorder: string;
+  heading: string;
+  body: string;
+  muted: string;
+  mutedLight: string;
+  chip: string;
+  divider: string;
+};
+
+const INK_LIGHT: Ink = {
+  bg: '#FAFAF7',
+  card: '#fff',
+  cardBorder: '#EDE8E0',
+  heading: '#1A1200',
+  body: '#6B5C3E',
+  muted: '#8A7560',
+  mutedLight: '#A8997E',
+  chip: '#F5F0E8',
+  divider: '#F5F0E8',
+};
+
+const INK_DARK: Ink = {
+  bg: '#141210',
+  card: '#1e1a15',
+  cardBorder: '#332d24',
+  heading: '#f7f4ee',
+  body: '#c9bfae',
+  muted: '#a89f90',
+  mutedLight: '#8f8676',
+  chip: '#2a2019',
+  divider: '#2a2019',
+};
+
+function getInk(theme: string | undefined): Ink {
+  return theme === 'dark' ? INK_DARK : INK_LIGHT;
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -139,33 +186,33 @@ const ago = (s: string) => {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+function StatCard({ label, value, sub, accent, ink }: { label: string; value: string; sub?: string; accent?: boolean; ink: Ink }) {
   return (
     <div
       className="rounded-2xl p-5 flex flex-col gap-2"
       style={{
-        background: accent ? 'linear-gradient(135deg, #e4a233 0%, #c97e22 100%)' : '#fff',
-        border: `1px solid ${accent ? 'transparent' : '#EDE8E0'}`,
+        background: accent ? 'linear-gradient(135deg, #e4a233 0%, #c97e22 100%)' : ink.card,
+        border: `1px solid ${accent ? 'transparent' : ink.cardBorder}`,
         boxShadow: accent ? '0 4px 24px rgba(212,136,30,0.25)' : '0 1px 4px rgba(0,0,0,0.04)',
       }}
     >
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent ? 'rgba(255,255,255,0.7)' : '#8A7560' }}>{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent ? 'rgba(255,255,255,0.7)' : ink.muted }}>{label}</p>
       <p
         className="text-2xl font-bold leading-none"
         style={{
-          color: accent ? '#fff' : '#1A1200',
+          color: accent ? '#fff' : ink.heading,
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
           letterSpacing: '-0.02em',
         }}
       >
         {value}
       </p>
-      {sub && <p className="text-xs" style={{ color: accent ? 'rgba(255,255,255,0.6)' : '#A8997E' }}>{sub}</p>}
+      {sub && <p className="text-xs" style={{ color: accent ? 'rgba(255,255,255,0.6)' : ink.mutedLight }}>{sub}</p>}
     </div>
   );
 }
 
-function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void; onOpen: (p: Project) => void }) {
+function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void; onOpen: (p: Project) => void; ink: Ink }) {
   const goal = p.metadata?.funding_goal_tzs ?? 0;
   const funded = Number(p.total_investment ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
@@ -179,8 +226,8 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(p); }}
       className="rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
       style={{
-        background: '#fff',
-        border: `1px solid ${isApproved ? '#EDE8E0' : '#E0EBF5'}`,
+        background: ink.card,
+        border: `1px solid ${isApproved ? ink.cardBorder : '#E0EBF5'}`,
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
       }}
     >
@@ -202,12 +249,12 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
                 Seeking Vote
               </span>
             )}
-            <span className="text-[10px]" style={{ color: '#A8997E' }}>
+            <span className="text-[10px]" style={{ color: ink.mutedLight }}>
               {isApproved ? ago(p.funded_at) : ago(p.created_at)}
             </span>
           </div>
-          <h3 className="text-sm font-bold leading-snug" style={{ color: '#1A1200' }}>{p.title}</h3>
-          <p className="text-xs mt-0.5" style={{ color: '#8A7560' }}>{p.group_name}</p>
+          <h3 className="text-sm font-bold leading-snug" style={{ color: ink.heading }}>{p.title}</h3>
+          <p className="text-xs mt-0.5" style={{ color: ink.muted }}>{p.group_name}</p>
         </div>
         <div
           className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black"
@@ -218,7 +265,7 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
       </div>
 
       {(p.metadata?.project_description || p.description) && (
-        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: '#6B5C3E' }}>
+        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: ink.body }}>
           {p.metadata?.project_description || p.description}
         </p>
       )}
@@ -226,11 +273,11 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
       {/* Vote progress (only for open proposals) */}
       {!isApproved && (p.yes_votes > 0 || p.total_votes > 0) && (
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[10px]" style={{ color: '#A8997E' }}>
+          <div className="flex justify-between text-[10px]" style={{ color: ink.mutedLight }}>
             <span>Community vote</span>
             <span>{p.yes_votes} yes / {p.total_votes} cast</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
             <div
               className="h-full rounded-full"
               style={{
@@ -245,11 +292,11 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
       {/* Funding goal + bar (approved proposals) */}
       {isApproved && goal > 0 && (
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[10px]" style={{ color: '#A8997E' }}>
-            <span>Goal: <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
+          <div className="flex justify-between text-[10px]" style={{ color: ink.mutedLight }}>
+            <span>Goal: <span style={{ color: ink.heading, fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
             <span>{pct}% funded</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${pct}%`, background: pct >= 80 ? '#0B3D2E' : '#e4a233' }}
@@ -266,15 +313,15 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
         </div>
       )}
 
-      <div className="flex gap-2 flex-wrap text-[10px]" style={{ color: '#A8997E' }}>
+      <div className="flex gap-2 flex-wrap text-[10px]" style={{ color: ink.mutedLight }}>
         {p.metadata?.timeline && (
-          <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>◷ {p.metadata.timeline}</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>◷ {p.metadata.timeline}</span>
         )}
         {p.metadata?.expected_impact && (
-          <span className="px-2 py-1 rounded-lg line-clamp-1" style={{ background: '#F5F0E8' }}>↑ {p.metadata.expected_impact}</span>
+          <span className="px-2 py-1 rounded-lg line-clamp-1" style={{ background: ink.chip }}>↑ {p.metadata.expected_impact}</span>
         )}
         {p.monthly_contribution && (
-          <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>
+          <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>
             Contribution: {fmtShort(Number(p.monthly_contribution))}/mo
           </span>
         )}
@@ -294,9 +341,9 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
           <button
             onClick={(e) => { e.stopPropagation(); onContact(p); }}
             className="py-2.5 px-4 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: '#F5F0E8', color: '#6B5C3E' }}
-            onMouseOver={e => { e.currentTarget.style.background = '#EDE8E0'; }}
-            onMouseOut={e => { e.currentTarget.style.background = '#F5F0E8'; }}
+            style={{ background: ink.chip, color: ink.body }}
+            onMouseOver={e => { e.currentTarget.style.background = ink.cardBorder; }}
+            onMouseOut={e => { e.currentTarget.style.background = ink.chip; }}
           >
             Contact
           </button>
@@ -317,6 +364,9 @@ function ProjectCard({ p, onContact, onFund, onOpen }: { p: Project; onContact: 
 
 export default function InvestorDashboard() {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
+  const { language, toggleLanguage } = useLanguage();
+  const ink = getInk(resolvedTheme);
   const [user, setUser] = useState<{ id: number; email: string; fullName: string; role: string } | null>(null);
   const [profile, setProfile] = useState<InvestorProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -566,7 +616,7 @@ export default function InvestorDashboard() {
   const totalFundingSought = projects.reduce((sum, p) => sum + (p.metadata?.funding_goal_tzs ?? 0), 0);
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#FAFAF7', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen flex" style={{ background: ink.bg, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
       {/* ── Sidebar ─────────────────────────────────────── */}
       <>
@@ -674,23 +724,23 @@ export default function InvestorDashboard() {
         {/* Top bar */}
         <header
           className="sticky top-0 z-20 flex items-center justify-between px-6 py-4"
-          style={{ background: 'rgba(250,250,247,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #EDE8E0' }}
+          style={{ background: resolvedTheme === 'dark' ? 'rgba(20,18,16,0.9)' : 'rgba(250,250,247,0.9)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${ink.cardBorder}` }}
         >
           <div className="flex items-center gap-3">
             <button
               className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: '#F0EBE0' }}
+              style={{ background: ink.chip }}
               onClick={() => setSidebarOpen(true)}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#1A1200' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: ink.heading }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <div>
-              <h1 className="text-sm font-bold" style={{ color: '#1A1200', letterSpacing: '-0.01em' }}>
+              <h1 className="text-sm font-bold" style={{ color: ink.heading, letterSpacing: '-0.01em' }}>
                 {navItems.find(n => n.id === section)?.label}
               </h1>
-              <p className="text-[10px]" style={{ color: '#A8997E' }}>
+              <p className="text-[10px]" style={{ color: ink.mutedLight }}>
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </div>
@@ -702,6 +752,21 @@ export default function InvestorDashboard() {
                 {saveMsg}
               </span>
             )}
+            <button
+              onClick={toggleLanguage}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={{ background: ink.chip, color: ink.body, border: `1px solid ${ink.cardBorder}` }}
+            >
+              {language === 'sw' ? 'EN' : 'SW'}
+            </button>
+            <button
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              aria-label={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+              className="rounded-full p-2 transition-colors"
+              style={{ background: ink.chip, color: ink.body, border: `1px solid ${ink.cardBorder}` }}
+            >
+              {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+            </button>
             <a
               href="mailto:invest@jukumufund.co.tz"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -720,10 +785,10 @@ export default function InvestorDashboard() {
             <div className="space-y-8">
               {/* Greeting */}
               <div>
-                <h2 className="text-2xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>
+                <h2 className="text-2xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>
                   Welcome, {profile?.full_name?.split(' ')[0] || 'Investor'}
                 </h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
+                <p className="text-sm mt-1" style={{ color: ink.muted }}>
                   Here is an overview of investment opportunities across the WashikaDAU network.
                 </p>
               </div>
@@ -735,21 +800,25 @@ export default function InvestorDashboard() {
                   value={String(projects.length)}
                   sub="Approved Prodcasts"
                   accent
+                  ink={ink}
                 />
                 <StatCard
                   label="Funding Sought"
                   value={fmtShort(totalFundingSought)}
                   sub="Total requested"
+                  ink={ink}
                 />
                 <StatCard
                   label="Groups"
                   value={String(stats?.totalGroups ?? groups.length)}
                   sub="Active"
+                  ink={ink}
                 />
                 <StatCard
                   label="Members"
                   value={String(stats?.totalMembers ?? '—')}
                   sub={`${stats?.activeRegions ?? '—'} regions`}
+                  ink={ink}
                 />
               </div>
 
@@ -757,7 +826,7 @@ export default function InvestorDashboard() {
               {projects.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Recently Voted Projects</h3>
+                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>Recently Voted Projects</h3>
                     <button
                       onClick={() => setSection('projects')}
                       className="text-xs font-semibold"
@@ -768,7 +837,7 @@ export default function InvestorDashboard() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projects.slice(0, 3).map(p => (
-                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} />
+                      <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} ink={ink} />
                     ))}
                   </div>
                 </div>
@@ -778,7 +847,7 @@ export default function InvestorDashboard() {
               {groups.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: '#1A1200' }}>Active Groups</h3>
+                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>Active Groups</h3>
                     <button
                       onClick={() => setSection('groups')}
                       className="text-xs font-semibold"
@@ -789,13 +858,13 @@ export default function InvestorDashboard() {
                   </div>
                   <div
                     className="rounded-2xl overflow-hidden"
-                    style={{ border: '1px solid #EDE8E0', background: '#fff' }}
+                    style={{ border: '1px solid #EDE8E0', background: ink.card }}
                   >
                     <table className="w-full text-xs">
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #EDE8E0', background: '#FAFAF7' }}>
+                        <tr style={{ borderBottom: '1px solid #EDE8E0', background: ink.bg }}>
                           {['Group', 'Members', 'Monthly Contribution', 'Projects'].map(h => (
-                            <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider" style={{ color: '#8A7560', fontSize: '10px' }}>{h}</th>
+                            <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider" style={{ color: ink.muted, fontSize: '10px' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -808,11 +877,11 @@ export default function InvestorDashboard() {
                             style={{ borderBottom: i < 4 ? '1px solid #F5F0E8' : 'none' }}
                           >
                             <td className="px-4 py-3">
-                              <p className="font-semibold" style={{ color: '#1A1200' }}>{g.name}</p>
-                              {g.leader_name && <p style={{ color: '#A8997E' }}>{g.leader_name}</p>}
+                              <p className="font-semibold" style={{ color: ink.heading }}>{g.name}</p>
+                              {g.leader_name && <p style={{ color: ink.mutedLight }}>{g.leader_name}</p>}
                             </td>
-                            <td className="px-4 py-3 font-mono font-bold" style={{ color: '#1A1200' }}>{g.member_count}</td>
-                            <td className="px-4 py-3 font-mono" style={{ color: '#1A1200' }}>{fmtShort(Number(g.monthly_contribution))}</td>
+                            <td className="px-4 py-3 font-mono font-bold" style={{ color: ink.heading }}>{g.member_count}</td>
+                            <td className="px-4 py-3 font-mono" style={{ color: ink.heading }}>{fmtShort(Number(g.monthly_contribution))}</td>
                             <td className="px-4 py-3">
                               {Number(g.prodcast_count) > 0 ? (
                                 <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3E2', color: '#e4a233' }}>
@@ -832,7 +901,7 @@ export default function InvestorDashboard() {
               {projects.length === 0 && groups.length === 0 && (
                 <div
                   className="rounded-2xl p-16 text-center"
-                  style={{ background: '#fff', border: '1px solid #EDE8E0' }}
+                  style={{ background: ink.card, border: '1px solid #EDE8E0' }}
                 >
                   <div
                     className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl"
@@ -840,8 +909,8 @@ export default function InvestorDashboard() {
                   >
                     ◆
                   </div>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>No data yet</p>
-                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Prodcast projects will appear here once approved by groups</p>
+                  <p className="font-semibold" style={{ color: ink.heading }}>No data yet</p>
+                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>Prodcast projects will appear here once approved by groups</p>
                 </div>
               )}
             </div>
@@ -851,21 +920,21 @@ export default function InvestorDashboard() {
           {section === 'projects' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Investment Projects</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
+                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>Investment Projects</h2>
+                <p className="text-sm mt-1" style={{ color: ink.muted }}>
                   {projects.length} {projects.length === 1 ? 'project' : 'projects'} approved by member vote
                 </p>
               </div>
 
               {projects.length === 0 ? (
-                <div className="rounded-2xl p-16 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>No projects yet</p>
-                  <p className="text-xs mt-1" style={{ color: '#A8997E' }}>Groups will submit projects here through the voting process</p>
+                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                  <p className="font-semibold" style={{ color: ink.heading }}>No projects yet</p>
+                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>Groups will submit projects here through the voting process</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {projects.map(p => (
-                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} />
+                    <ProjectCard key={p.id} p={p} onContact={setContactTarget} onFund={setFundTarget} onOpen={setDetailTarget} ink={ink} />
                   ))}
                 </div>
               )}
@@ -876,15 +945,15 @@ export default function InvestorDashboard() {
           {section === 'groups' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>VICOBA Groups</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>
+                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>VICOBA Groups</h2>
+                <p className="text-sm mt-1" style={{ color: ink.muted }}>
                   {groups.length} {groups.length === 1 ? 'group' : 'groups'} active — with full financial transparency
                 </p>
               </div>
 
               {groups.length === 0 ? (
-                <div className="rounded-2xl p-16 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                  <p className="font-semibold" style={{ color: '#1A1200' }}>No groups yet</p>
+                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                  <p className="font-semibold" style={{ color: ink.heading }}>No groups yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -896,7 +965,7 @@ export default function InvestorDashboard() {
                       onClick={() => openGroupDetail(g.id)}
                       onKeyDown={e => e.key === 'Enter' && openGroupDetail(g.id)}
                       className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all hover:shadow-md cursor-pointer"
-                      style={{ background: '#fff', border: '1px solid #EDE8E0' }}
+                      style={{ background: ink.card, border: '1px solid #EDE8E0' }}
                     >
                       {/* Avatar + name */}
                       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -907,8 +976,8 @@ export default function InvestorDashboard() {
                           {g.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-sm truncate" style={{ color: '#1A1200' }}>{g.name}</p>
-                          <p className="text-xs" style={{ color: '#A8997E' }}>
+                          <p className="font-bold text-sm truncate" style={{ color: ink.heading }}>{g.name}</p>
+                          <p className="text-xs" style={{ color: ink.mutedLight }}>
                             {g.leader_name ? `Leader: ${g.leader_name}` : '—'}
                             {g.founded_date && ` · ${new Date(g.founded_date).getFullYear()}`}
                           </p>
@@ -918,20 +987,20 @@ export default function InvestorDashboard() {
                       {/* Stats */}
                       <div className="flex gap-6 shrink-0 flex-wrap">
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Members</p>
-                          <p className="text-base font-black font-mono" style={{ color: '#1A1200' }}>{g.member_count}</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: ink.mutedLight }}>Members</p>
+                          <p className="text-base font-black font-mono" style={{ color: ink.heading }}>{g.member_count}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Monthly</p>
-                          <p className="text-sm font-bold font-mono" style={{ color: '#1A1200' }}>{fmtShort(Number(g.monthly_contribution))}</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: ink.mutedLight }}>Monthly</p>
+                          <p className="text-sm font-bold font-mono" style={{ color: ink.heading }}>{fmtShort(Number(g.monthly_contribution))}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Investment</p>
+                          <p className="text-[10px] font-semibold uppercase" style={{ color: ink.mutedLight }}>Investment</p>
                           <p className="text-sm font-bold font-mono" style={{ color: '#0B3D2E' }}>{fmtShort(Number(g.total_investment))}</p>
                         </div>
                         {Number(g.prodcast_count) > 0 && (
                           <div className="text-center">
-                            <p className="text-[10px] font-semibold uppercase" style={{ color: '#A8997E' }}>Projects</p>
+                            <p className="text-[10px] font-semibold uppercase" style={{ color: ink.mutedLight }}>Projects</p>
                             <p
                               className="text-sm font-bold px-2 py-0.5 rounded-full inline-block"
                               style={{ background: '#FEF3E2', color: '#e4a233' }}
@@ -952,8 +1021,8 @@ export default function InvestorDashboard() {
           {section === 'wallet' && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>nTZS Wallet</h2>
-                <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Deposit, withdraw, or transfer funds via the Base network</p>
+                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>nTZS Wallet</h2>
+                <p className="text-sm mt-1" style={{ color: ink.muted }}>Deposit, withdraw, or transfer funds via the Base network</p>
               </div>
 
               {/* Balance hero card */}
@@ -1020,11 +1089,11 @@ export default function InvestorDashboard() {
                 /* Not provisioned */
                 <div
                   className="rounded-2xl p-8 text-center"
-                  style={{ background: '#fff', border: '2px dashed #EDE8E0' }}
+                  style={{ background: ink.card, border: '2px dashed #EDE8E0' }}
                 >
                   <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-2xl" style={{ background: '#FEF3E2' }}>◇</div>
-                  <p className="font-bold mb-1" style={{ color: '#1A1200' }}>Wallet Not Set Up</p>
-                  <p className="text-xs mb-5" style={{ color: '#A8997E' }}>Click below to create your nTZS wallet on the Base network</p>
+                  <p className="font-bold mb-1" style={{ color: ink.heading }}>Wallet Not Set Up</p>
+                  <p className="text-xs mb-5" style={{ color: ink.mutedLight }}>Click below to create your nTZS wallet on the Base network</p>
                   <button
                     onClick={handleProvisionWallet}
                     disabled={provisioningWallet}
@@ -1038,13 +1107,13 @@ export default function InvestorDashboard() {
 
               {/* Transaction history */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>Recent Transactions</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>Recent Transactions</p>
                 {transactions.length === 0 ? (
-                  <div className="rounded-2xl p-8 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
+                  <div className="rounded-2xl p-8 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
                     <p className="text-sm" style={{ color: '#C4B89E' }}>No transactions yet</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
+                  <div className="rounded-2xl overflow-hidden" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
                     {transactions.map((tx, i) => {
                       const isCredit = tx.type === 'deposit';
                       const isDebit = tx.type === 'withdrawal';
@@ -1067,11 +1136,11 @@ export default function InvestorDashboard() {
                             {isCredit ? '↓' : isDebit ? '↑' : '↔'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold capitalize" style={{ color: '#1A1200' }}>
+                            <p className="text-xs font-semibold capitalize" style={{ color: ink.heading }}>
                               {tx.type === 'deposit' ? 'Deposit' : tx.type === 'withdrawal' ? 'Withdrawal' : 'Transfer'}
                               {tx.note ? ` — ${tx.note}` : ''}
                             </p>
-                            <p className="text-[10px]" style={{ color: '#A8997E' }}>
+                            <p className="text-[10px]" style={{ color: ink.mutedLight }}>
                               {new Date(tx.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                               {tx.from_group_name ? ` · ${tx.from_group_name}` : ''}
                               {tx.to_group_name ? ` → ${tx.to_group_name}` : ''}
@@ -1080,7 +1149,7 @@ export default function InvestorDashboard() {
                           <div className="text-right shrink-0">
                             <p
                               className="text-sm font-black font-mono"
-                              style={{ color: isCredit ? '#059669' : isDebit ? '#DC2626' : '#1A1200' }}
+                              style={{ color: isCredit ? '#059669' : isDebit ? '#DC2626' : ink.heading }}
                             >
                               {isCredit ? '+' : isDebit ? '-' : ''}{`TSH ${Number(tx.net_tzs ?? tx.amount_tzs).toLocaleString('en-TZ')}`}
                             </p>
@@ -1100,14 +1169,14 @@ export default function InvestorDashboard() {
             <div className="space-y-6 max-w-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: '#1A1200', letterSpacing: '-0.02em' }}>Your Profile</h2>
-                  <p className="text-sm mt-1" style={{ color: '#8A7560' }}>Your investor information</p>
+                  <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>Your Profile</h2>
+                  <p className="text-sm mt-1" style={{ color: ink.muted }}>Your investor information</p>
                 </div>
                 {!editMode && (
                   <button
                     onClick={() => setEditMode(true)}
                     className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-                    style={{ background: '#1A1200', color: '#e4a233' }}
+                    style={{ background: ink.heading, color: '#e4a233' }}
                   >
                     Edit
                   </button>
@@ -1156,9 +1225,9 @@ export default function InvestorDashboard() {
                         value={(editForm[f.key as keyof InvestorProfile] as string) || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
-                        onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                        onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       />
                     </div>
                   ))}
@@ -1170,9 +1239,9 @@ export default function InvestorDashboard() {
                       onChange={e => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
                       rows={3}
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-                      style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
-                      onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                      onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       placeholder="Describe your investment interests..."
                     />
                   </div>
@@ -1185,9 +1254,9 @@ export default function InvestorDashboard() {
                         value={editForm.min_investment_tzs || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, min_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
-                        onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                        onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 500000"
                       />
                     </div>
@@ -1198,9 +1267,9 @@ export default function InvestorDashboard() {
                         value={editForm.max_investment_tzs || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, max_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
-                        onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                        onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 10000000"
                       />
                     </div>
@@ -1211,7 +1280,7 @@ export default function InvestorDashboard() {
                       type="button"
                       onClick={() => { setEditMode(false); setEditForm(profile ?? {}); }}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                      style={{ border: '1.5px solid #EDE8E0', color: '#8A7560', background: 'transparent' }}
+                      style={{ border: '1.5px solid #EDE8E0', color: ink.muted, background: 'transparent' }}
                     >
                       Cancel
                     </button>
@@ -1225,7 +1294,7 @@ export default function InvestorDashboard() {
                   </div>
                 </form>
               ) : (
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
                   {[
                     { label: 'Full Name', value: profile?.full_name },
                     { label: 'Email', value: profile?.email },
@@ -1242,8 +1311,8 @@ export default function InvestorDashboard() {
                       className="flex items-start gap-4 px-5 py-4"
                       style={{ borderBottom: i < arr.length - 1 ? '1px solid #F5F0E8' : 'none' }}
                     >
-                      <p className="text-xs font-semibold w-32 shrink-0 pt-0.5" style={{ color: '#A8997E' }}>{row.label}</p>
-                      <p className="text-sm font-medium flex-1" style={{ color: '#1A1200' }}>
+                      <p className="text-xs font-semibold w-32 shrink-0 pt-0.5" style={{ color: ink.mutedLight }}>{row.label}</p>
+                      <p className="text-sm font-medium flex-1" style={{ color: ink.heading }}>
                         {(row.label === 'Website' || row.label === 'LinkedIn') && row.value
                           ? <a href={row.value} target="_blank" rel="noopener noreferrer" style={{ color: '#e4a233' }} className="underline">{row.value}</a>
                           : row.value}
@@ -1252,8 +1321,8 @@ export default function InvestorDashboard() {
                   ))}
                   {profile?.bio && (
                     <div className="px-5 py-4" style={{ borderTop: '1px solid #F5F0E8' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: '#A8997E' }}>Bio</p>
-                      <p className="text-sm" style={{ color: '#1A1200' }}>{profile.bio}</p>
+                      <p className="text-xs font-semibold mb-1" style={{ color: ink.mutedLight }}>Bio</p>
+                      <p className="text-sm" style={{ color: ink.heading }}>{profile.bio}</p>
                     </div>
                   )}
                 </div>
@@ -1273,7 +1342,7 @@ export default function InvestorDashboard() {
           />
           <aside
             className="fixed right-0 top-0 h-full z-50 w-full max-w-lg flex flex-col shadow-2xl overflow-hidden"
-            style={{ background: '#FAFAF7', borderLeft: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, borderLeft: '1px solid #EDE8E0' }}
           >
             {/* Drawer header */}
             <div
@@ -1286,19 +1355,19 @@ export default function InvestorDashboard() {
                   {groupDetailLoading ? 'Loading...' : groupDetail?.name ?? '...'}
                 </h2>
                 {groupDetail?.leader_name && (
-                  <p className="text-xs mt-0.5" style={{ color: '#6B5C3E' }}>Leader: {groupDetail.leader_name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: ink.body }}>Leader: {groupDetail.leader_name}</p>
                 )}
               </div>
               <button
                 onClick={() => { setGroupDetailId(null); setGroupDetail(null); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ml-4"
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#6B5C3E' }}
+                style={{ background: 'rgba(255,255,255,0.06)', color: ink.body }}
               >✕</button>
             </div>
 
             {groupDetailLoading && (
               <div className="flex-1 flex items-center justify-center">
-                <div className="w-8 h-8 rounded-xl animate-pulse" style={{ background: '#EDE8E0' }} />
+                <div className="w-8 h-8 rounded-xl animate-pulse" style={{ background: ink.cardBorder }} />
               </div>
             )}
 
@@ -1313,19 +1382,19 @@ export default function InvestorDashboard() {
                     { label: 'Passed', value: `${groupDetail.passed_proposals}/${groupDetail.total_proposals}` },
                     { label: 'Executed', value: String(groupDetail.executed_proposals) },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
-                      <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: '#A8997E' }}>{s.label}</p>
-                      <p className="text-sm font-black" style={{ color: '#1A1200', fontFamily: 'monospace' }}>{s.value}</p>
+                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                      <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: ink.mutedLight }}>{s.label}</p>
+                      <p className="text-sm font-black" style={{ color: ink.heading, fontFamily: 'monospace' }}>{s.value}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Financial Health */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
-                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◆ Financial Health</p>
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◆ Financial Health</p>
                   </div>
-                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                  <div className="divide-y" style={{ borderColor: ink.chip }}>
                     {[
                       { label: 'Monthly Contribution', value: fmtShort(Number(groupDetail.monthly_contribution)) },
                       { label: 'Monthly Pool (members × contribution)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
@@ -1334,19 +1403,19 @@ export default function InvestorDashboard() {
                       { label: 'Volume (90d)', value: fmtShort(Number(groupDetail.volume_90d_tzs)) },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
-                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
-                        <p className="text-xs font-bold font-mono" style={{ color: '#1A1200' }}>{r.value}</p>
+                        <p className="text-xs" style={{ color: ink.muted }}>{r.label}</p>
+                        <p className="text-xs font-bold font-mono" style={{ color: ink.heading }}>{r.value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Governance */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
-                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◈ Governance</p>
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◈ Governance</p>
                   </div>
-                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                  <div className="divide-y" style={{ borderColor: ink.chip }}>
                     {[
                       {
                         label: 'Voting Threshold',
@@ -1357,27 +1426,27 @@ export default function InvestorDashboard() {
                       { label: 'Open Proposals', value: `${groupDetail.open_proposals} active` },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
-                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
-                        <p className="text-xs font-bold" style={{ color: '#1A1200' }}>{r.value}</p>
+                        <p className="text-xs" style={{ color: ink.muted }}>{r.label}</p>
+                        <p className="text-xs font-bold" style={{ color: ink.heading }}>{r.value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Activity */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
-                  <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◉ Recent Activity</p>
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◉ Recent Activity</p>
                   </div>
-                  <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                  <div className="divide-y" style={{ borderColor: ink.chip }}>
                     {[
                       { label: 'Last Activity', value: groupDetail.last_activity ? ago(groupDetail.last_activity) : 'Unknown' },
                       { label: '90-Day Transactions', value: `${groupDetail.transactions_90d} transactions` },
                       { label: 'Founded', value: groupDetail.founded_date ? new Date(groupDetail.founded_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—' },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
-                        <p className="text-xs" style={{ color: '#8A7560' }}>{r.label}</p>
-                        <p className="text-xs font-bold" style={{ color: '#1A1200' }}>{r.value}</p>
+                        <p className="text-xs" style={{ color: ink.muted }}>{r.label}</p>
+                        <p className="text-xs font-bold" style={{ color: ink.heading }}>{r.value}</p>
                       </div>
                     ))}
                   </div>
@@ -1385,15 +1454,15 @@ export default function InvestorDashboard() {
 
                 {/* Leadership */}
                 {groupDetail.leadership.length > 0 && (
-                  <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: '#fff' }}>
-                    <div className="px-4 py-3" style={{ background: '#F5F0E8', borderBottom: '1px solid #EDE8E0' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8A7560' }}>◎ Leadership</p>
+                  <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
+                    <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◎ Leadership</p>
                     </div>
-                    <div className="divide-y" style={{ borderColor: '#F5F0E8' }}>
+                    <div className="divide-y" style={{ borderColor: ink.chip }}>
                       {groupDetail.leadership.map(l => (
                         <div key={l.full_name} className="flex items-center justify-between px-4 py-3">
-                          <p className="text-xs font-semibold" style={{ color: '#1A1200' }}>{l.full_name}</p>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full capitalize" style={{ background: '#F5F0E8', color: '#8A7560' }}>{l.role}</span>
+                          <p className="text-xs font-semibold" style={{ color: ink.heading }}>{l.full_name}</p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full capitalize" style={{ background: ink.chip, color: ink.muted }}>{l.role}</span>
                         </div>
                       ))}
                     </div>
@@ -1403,14 +1472,14 @@ export default function InvestorDashboard() {
                 {/* Prodcast Projects */}
                 {groupDetail.projects.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: '#8A7560' }}>◆ Prodcast Projects</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>◆ Prodcast Projects</p>
                     <div className="space-y-3">
                       {groupDetail.projects.map(p => {
                         const goal = Number((p.metadata as { funding_goal_tzs?: number })?.funding_goal_tzs ?? 0);
                         return (
-                          <div key={p.id} className="rounded-xl p-4" style={{ background: '#fff', border: '1px solid #EDE8E0' }}>
+                          <div key={p.id} className="rounded-xl p-4" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
                             <div className="flex items-start justify-between gap-2 mb-2">
-                              <p className="text-sm font-bold" style={{ color: '#1A1200' }}>{p.title}</p>
+                              <p className="text-sm font-bold" style={{ color: ink.heading }}>{p.title}</p>
                               <span
                                 className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
                                 style={{ background: p.funded_at ? '#ECFDF5' : '#FEF3E2', color: p.funded_at ? '#059669' : '#e4a233' }}
@@ -1418,7 +1487,7 @@ export default function InvestorDashboard() {
                                 {p.funded_at ? 'Funded' : 'Pending'}
                               </span>
                             </div>
-                            {p.description && <p className="text-xs line-clamp-2" style={{ color: '#8A7560' }}>{p.description}</p>}
+                            {p.description && <p className="text-xs line-clamp-2" style={{ color: ink.muted }}>{p.description}</p>}
                             {goal > 0 && (
                               <p className="text-xs font-bold font-mono mt-2" style={{ color: '#e4a233' }}>
                                 Goal: {fmtShort(goal)}
@@ -1435,9 +1504,9 @@ export default function InvestorDashboard() {
                 <a
                   href={`mailto:invest@jukumufund.co.tz?subject=Interest in Group: ${encodeURIComponent(groupDetail.name)}&body=Hello,%0A%0AI would like to learn more about the group "${groupDetail.name}".%0A%0AMy name: ${encodeURIComponent(profile?.full_name ?? '')}%0ACompany: ${encodeURIComponent(profile?.company ?? 'N/A')}%0A%0AThank you.`}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-bold transition-all"
-                  style={{ background: '#1A1200', color: '#e4a233' }}
+                  style={{ background: ink.heading, color: '#e4a233' }}
                   onMouseOver={e => { e.currentTarget.style.background = '#e4a233'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = '#1A1200'; e.currentTarget.style.color = '#e4a233'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = ink.heading; e.currentTarget.style.color = '#e4a233'; }}
                 >
                   Contact Us About This Group →
                 </a>
@@ -1457,7 +1526,7 @@ export default function InvestorDashboard() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setDetailTarget(null)}>
             <div
               className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-              style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}
+              style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-4">
@@ -1465,14 +1534,14 @@ export default function InvestorDashboard() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={dApproved ? { background: '#FEF3E2', color: '#e4a233' } : { background: '#EFF6FF', color: '#3B82F6' }}>
                     {dApproved ? 'Community Approved' : 'Seeking Vote'}
                   </span>
-                  <h3 className="text-lg font-bold mt-2 leading-snug" style={{ color: '#1A1200' }}>{d.title}</h3>
-                  <p className="text-xs mt-0.5" style={{ color: '#8A7560' }}>{d.group_name} · {d.member_count} members</p>
+                  <h3 className="text-lg font-bold mt-2 leading-snug" style={{ color: ink.heading }}>{d.title}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: ink.muted }}>{d.group_name} · {d.member_count} members</p>
                 </div>
-                <button onClick={() => setDetailTarget(null)} className="p-1 shrink-0" style={{ color: '#A8997E' }}>✕</button>
+                <button onClick={() => setDetailTarget(null)} className="p-1 shrink-0" style={{ color: ink.mutedLight }}>✕</button>
               </div>
 
               {(d.metadata?.project_description || d.description) && (
-                <p className="text-sm leading-relaxed" style={{ color: '#6B5C3E' }}>{d.metadata?.project_description || d.description}</p>
+                <p className="text-sm leading-relaxed" style={{ color: ink.body }}>{d.metadata?.project_description || d.description}</p>
               )}
 
               {dGoal > 0 && (
@@ -1483,26 +1552,26 @@ export default function InvestorDashboard() {
 
               {!dApproved && (d.yes_votes > 0 || d.total_votes > 0) && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[11px]" style={{ color: '#A8997E' }}>
+                  <div className="flex justify-between text-[11px]" style={{ color: ink.mutedLight }}>
                     <span>Community vote</span><span>{d.yes_votes} yes / {d.total_votes} cast</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: '#EDE8E0' }}>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
                     <div className="h-full rounded-full" style={{ width: d.total_votes > 0 ? `${Math.round((d.yes_votes / d.total_votes) * 100)}%` : '0%', background: '#3B82F6' }} />
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-2 flex-wrap text-[11px]" style={{ color: '#A8997E' }}>
-                {d.metadata?.timeline && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>◷ {d.metadata.timeline}</span>}
-                {d.metadata?.expected_impact && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>↑ {d.metadata.expected_impact}</span>}
-                {d.monthly_contribution && <span className="px-2 py-1 rounded-lg" style={{ background: '#F5F0E8' }}>Contribution: {fmtShort(Number(d.monthly_contribution))}/mo</span>}
+              <div className="flex gap-2 flex-wrap text-[11px]" style={{ color: ink.mutedLight }}>
+                {d.metadata?.timeline && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>◷ {d.metadata.timeline}</span>}
+                {d.metadata?.expected_impact && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>↑ {d.metadata.expected_impact}</span>}
+                {d.monthly_contribution && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>Contribution: {fmtShort(Number(d.monthly_contribution))}/mo</span>}
               </div>
 
               <div className="flex gap-2 pt-1">
                 {dApproved && (
                   <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: '#e4a233', color: '#fff' }}>Fund →</button>
                 )}
-                <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: '#F5F0E8', color: '#6B5C3E' }}>Contact</button>
+                <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: ink.chip, color: ink.body }}>Contact</button>
               </div>
             </div>
           </div>
@@ -1513,15 +1582,15 @@ export default function InvestorDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
             className="w-full max-w-md rounded-2xl p-6 space-y-4"
-            style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#e4a233' }}>Contact Request</p>
-                <h3 className="text-base font-bold mt-1" style={{ color: '#1A1200' }}>{contactTarget.title}</h3>
-                <p className="text-xs" style={{ color: '#8A7560' }}>{contactTarget.group_name}</p>
+                <h3 className="text-base font-bold mt-1" style={{ color: ink.heading }}>{contactTarget.title}</h3>
+                <p className="text-xs" style={{ color: ink.muted }}>{contactTarget.group_name}</p>
               </div>
-              <button onClick={() => setContactTarget(null)} className="p-1" style={{ color: '#A8997E' }}>✕</button>
+              <button onClick={() => setContactTarget(null)} className="p-1" style={{ color: ink.mutedLight }}>✕</button>
             </div>
 
             {contactTarget.metadata?.funding_goal_tzs && (
@@ -1532,9 +1601,9 @@ export default function InvestorDashboard() {
               </div>
             )}
 
-            <p className="text-sm" style={{ color: '#6B5C3E' }}>
+            <p className="text-sm" style={{ color: ink.body }}>
               Our team will help you connect with{' '}
-              <span className="font-semibold" style={{ color: '#1A1200' }}>{contactTarget.group_name}</span>{' '}
+              <span className="font-semibold" style={{ color: ink.heading }}>{contactTarget.group_name}</span>{' '}
               through our due diligence and onboarding process.
             </p>
 
@@ -1549,7 +1618,7 @@ export default function InvestorDashboard() {
             <button
               onClick={() => setContactTarget(null)}
               className="w-full py-2.5 rounded-xl text-sm"
-              style={{ color: '#8A7560', border: '1px solid #EDE8E0' }}
+              style={{ color: ink.muted, border: '1px solid #EDE8E0' }}
             >
               Close
             </button>
@@ -1560,7 +1629,7 @@ export default function InvestorDashboard() {
       {/* ── Fund Project Modal ───────────────────────── */}
       {fundTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: ink.bg, border: '1px solid #EDE8E0' }}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5" style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}>
               <div>
@@ -1570,25 +1639,25 @@ export default function InvestorDashboard() {
               <button
                 onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#6B5C3E' }}
+                style={{ background: 'rgba(255,255,255,0.05)', color: ink.body }}
               >✕</button>
             </div>
 
             <form onSubmit={handleFundProject} className="p-6 space-y-4">
               {/* Recipient */}
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0" style={{ background: '#0B3D2E', color: '#4ADE80' }}>
                   {fundTarget.group_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold truncate" style={{ color: '#1A1200' }}>{fundTarget.group_name}</p>
-                  <p className="text-[10px]" style={{ color: '#A8997E' }}>{fundTarget.member_count} members</p>
+                  <p className="text-xs font-semibold truncate" style={{ color: ink.heading }}>{fundTarget.group_name}</p>
+                  <p className="text-[10px]" style={{ color: ink.mutedLight }}>{fundTarget.member_count} members</p>
                 </div>
               </div>
 
               {/* Balance */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
-                <span className="text-xs" style={{ color: '#8A7560' }}>Your balance</span>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
+                <span className="text-xs" style={{ color: ink.muted }}>Your balance</span>
                 <span className="text-sm font-black font-mono" style={{ color: wallet.balanceTzs > 0 ? '#059669' : '#DC2626' }}>
                   TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
                 </span>
@@ -1603,14 +1672,14 @@ export default function InvestorDashboard() {
                   onChange={e => setFundAmount(e.target.value)}
                   placeholder="e.g. 100000"
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200', fontFamily: 'monospace' }}
+                  style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading, fontFamily: 'monospace' }}
                   onFocus={e => e.target.style.borderColor = '#e4a233'}
-                  onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                  onBlur={e => e.target.style.borderColor = ink.cardBorder}
                   required
                 />
                 {fundTarget.metadata?.funding_goal_tzs && (
-                  <p className="text-[10px] mt-1.5" style={{ color: '#A8997E' }}>
-                    Funding goal: <span style={{ fontFamily: 'monospace', color: '#1A1200' }}>TSH {Number(fundTarget.metadata.funding_goal_tzs).toLocaleString()}</span>
+                  <p className="text-[10px] mt-1.5" style={{ color: ink.mutedLight }}>
+                    Funding goal: <span style={{ fontFamily: 'monospace', color: ink.heading }}>TSH {Number(fundTarget.metadata.funding_goal_tzs).toLocaleString()}</span>
                   </p>
                 )}
               </div>
@@ -1633,7 +1702,7 @@ export default function InvestorDashboard() {
                   type="button"
                   onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                  style={{ border: '1.5px solid #EDE8E0', color: '#8A7560', background: 'transparent' }}
+                  style={{ border: '1.5px solid #EDE8E0', color: ink.muted, background: 'transparent' }}
                 >
                   Cancel
                 </button>
@@ -1662,7 +1731,7 @@ export default function InvestorDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
             className="w-full max-w-sm rounded-2xl overflow-hidden"
-            style={{ background: '#FAFAF7', border: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
           >
             {/* Modal header */}
             <div
@@ -1680,13 +1749,13 @@ export default function InvestorDashboard() {
               <button
                 onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#6B5C3E' }}
+                style={{ background: 'rgba(255,255,255,0.05)', color: ink.body }}
               >✕</button>
             </div>
 
             {/* Deposit method tabs — only shown for deposit */}
             {walletModal === 'deposit' && (
-              <div className="grid grid-cols-3 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: '#fff' }}>
+              <div className="grid grid-cols-3 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: ink.card }}>
                 {([
                   { key: 'mobile', icon: '◌', label: 'M-Pesa', live: true },
                   { key: 'bank',   icon: '▦', label: 'Bank', live: false },
@@ -1699,7 +1768,7 @@ export default function InvestorDashboard() {
                     className="flex flex-col items-center gap-1 py-3 text-center transition-all relative"
                     style={{
                       borderBottom: depositMethod === m.key ? '2px solid #e4a233' : '2px solid transparent',
-                      color: depositMethod === m.key ? '#e4a233' : m.live ? '#8A7560' : '#C4B89E',
+                      color: depositMethod === m.key ? '#e4a233' : m.live ? ink.muted : '#C4B89E',
                       cursor: m.live ? 'pointer' : 'default',
                     }}
                   >
@@ -1708,7 +1777,7 @@ export default function InvestorDashboard() {
                     {!m.live && (
                       <span
                         className="absolute top-1.5 right-1 text-[7px] font-bold px-1 rounded"
-                        style={{ background: '#F5F0E8', color: '#A8997E' }}
+                        style={{ background: ink.chip, color: ink.mutedLight }}
                       >SOON</span>
                     )}
                   </button>
@@ -1718,9 +1787,9 @@ export default function InvestorDashboard() {
 
             <div className="p-6 space-y-4">
               {/* Balance pill */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F5F0E8' }}>
-                <span className="text-xs" style={{ color: '#8A7560' }}>Current balance</span>
-                <span className="text-sm font-black font-mono" style={{ color: '#1A1200' }}>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
+                <span className="text-xs" style={{ color: ink.muted }}>Current balance</span>
+                <span className="text-sm font-black font-mono" style={{ color: ink.heading }}>
                   TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
                 </span>
               </div>
@@ -1728,16 +1797,16 @@ export default function InvestorDashboard() {
               {/* ── COMING SOON (bank / card) ── */}
               {walletModal === 'deposit' && (depositMethod === 'bank' || depositMethod === 'card') && (
                 <div className="text-center py-6 space-y-3">
-                  <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{ background: '#F5F0E8' }}>
+                  <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{ background: ink.chip }}>
                     {depositMethod === 'bank' ? '▦' : '▭'}
                   </div>
-                  <p className="font-bold text-sm" style={{ color: '#1A1200' }}>
+                  <p className="font-bold text-sm" style={{ color: ink.heading }}>
                     {depositMethod === 'bank' ? 'Bank Deposit' : 'Card Deposit'}
                   </p>
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold" style={{ background: '#F5F0E8', color: '#8A7560' }}>
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold" style={{ background: ink.chip, color: ink.muted }}>
                     Coming Soon
                   </span>
-                  <p className="text-xs" style={{ color: '#A8997E' }}>
+                  <p className="text-xs" style={{ color: ink.mutedLight }}>
                     {depositMethod === 'bank'
                       ? 'Bank transfers will be available soon'
                       : 'Credit / debit card payments are coming soon'}
@@ -1756,9 +1825,9 @@ export default function InvestorDashboard() {
                       onChange={e => setWalletAmount(e.target.value)}
                       placeholder="e.g. 50000"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200', fontFamily: 'monospace' }}
+                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading, fontFamily: 'monospace' }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
-                      onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                      onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
                     />
                   </div>
@@ -1770,9 +1839,9 @@ export default function InvestorDashboard() {
                       onChange={e => setWalletPhone(e.target.value)}
                       placeholder="e.g. 0712345678"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ background: '#fff', border: '1.5px solid #EDE8E0', color: '#1A1200' }}
+                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
-                      onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                      onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
                     />
                   </div>
@@ -1795,7 +1864,7 @@ export default function InvestorDashboard() {
                       type="button"
                       onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
                       className="flex-1 py-3 rounded-xl text-sm"
-                      style={{ border: '1.5px solid #EDE8E0', color: '#8A7560' }}
+                      style={{ border: '1.5px solid #EDE8E0', color: ink.muted }}
                     >Cancel</button>
                     <button
                       type="submit" disabled={walletSubmitting}
