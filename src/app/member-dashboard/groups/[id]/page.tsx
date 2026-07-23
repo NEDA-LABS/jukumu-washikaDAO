@@ -105,6 +105,17 @@ type TreasuryActivity = {
   to_member_name?: string;
 };
 
+type GroupFeedItem = {
+  key: string;
+  kind: 'contribution' | 'disbursement' | 'transfer_in' | 'transfer_out' | 'proposal_created' | 'proposal_funded';
+  date: string;
+  status: string | null;
+  amount_tzs: number | null;
+  title_sw: string;
+  title_en: string;
+  href: string | null;
+};
+
 type WalletTransferRow = {
   id: number;
   to_address: string;
@@ -182,6 +193,7 @@ export default function MemberGroupDetailsPage() {
   const [treasuryLoading, setTreasuryLoading] = useState(false);
   const [treasuryError, setTreasuryError] = useState<string>('');
   const [treasuryActivities, setTreasuryActivities] = useState<TreasuryActivity[]>([]);
+  const [feed, setFeed] = useState<GroupFeedItem[]>([]);
 
   const [walletTransfers, setWalletTransfers] = useState<WalletTransferRow[]>([]);
   const [walletTransfersLoading, setWalletTransfersLoading] = useState(false);
@@ -331,6 +343,18 @@ export default function MemberGroupDetailsPage() {
       cancelled = true;
     };
   }, [groupId, router]);
+
+  const loadFeed = React.useCallback(async () => {
+    if (!groupId) return;
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/feed?limit=12`);
+      if (!res.ok) { setFeed([]); return; }
+      const json = await res.json();
+      setFeed(Array.isArray(json?.items) ? json.items : []);
+    } catch { setFeed([]); }
+  }, [groupId]);
+
+  useEffect(() => { loadFeed(); }, [loadFeed]);
 
   const loadGroupPayments = async () => {
     if (!groupId) return;
@@ -786,38 +810,63 @@ export default function MemberGroupDetailsPage() {
                   <div className="mb-4 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{treasuryError}</div>
                 )}
 
-                {treasurySummary?.treasury && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('grp.recentActivity')}</p>
-                    <div className="space-y-2">
-                      {treasuryActivities.length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">— Hakuna shughuli bado —</p>
-                      ) : treasuryActivities.map((activity) => (
-                        <div key={activity.id} className="flex items-center justify-between rounded-lg bg-card border border-border px-3 py-2.5">
-                          <div>
-                            <p className="text-xs font-medium text-foreground">
-                              {activity.type === 'deposit' && '↓ Mchango'}
-                              {activity.type === 'transfer' && activity.from_member_id ? '→ Malipo' : '→ Uhamishaji'}
-                              {activity.type === 'withdrawal' && '↑ Utoa'}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('grp.recentActivity')}</p>
+                  <div className="space-y-1.5">
+                    {feed.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-3 text-center">— {t('grp.noActivity')} —</p>
+                    ) : feed.slice(0, 8).map((f) => {
+                      const label = language === 'en' ? f.title_en : f.title_sw;
+                      const iconMap: Record<GroupFeedItem['kind'], string> = {
+                        contribution: '↓', disbursement: '↑', transfer_in: '↙', transfer_out: '↗',
+                        proposal_created: '✎', proposal_funded: '✓',
+                      };
+                      const colorMap: Record<GroupFeedItem['kind'], string> = {
+                        contribution: 'bg-emerald-500/15 text-emerald-400',
+                        disbursement: 'bg-amber-500/15 text-amber-400',
+                        transfer_in: 'bg-sky-500/15 text-sky-400',
+                        transfer_out: 'bg-primary/15 text-primary',
+                        proposal_created: 'bg-violet-500/15 text-violet-400',
+                        proposal_funded: 'bg-emerald-500/15 text-emerald-400',
+                      };
+                      const content = (
+                        <>
+                          <span className={`shrink-0 flex h-8 w-8 items-center justify-center rounded-lg ${colorMap[f.kind]} font-bold text-xs`}>
+                            {iconMap[f.kind]}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-foreground truncate">{label}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              {new Date(f.date).toLocaleDateString(language === 'en' ? 'en-GB' : 'sw-TZ', { day: '2-digit', month: 'short' })}
+                              {f.amount_tzs != null && ` · TSh ${f.amount_tzs.toLocaleString()}`}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {activity.from_member_name && `Kutoka: ${activity.from_member_name}`}
-                              {activity.to_member_name && ` → ${activity.to_member_name}`}
-                            </p>
-                            <p className="text-xs text-muted-foreground">TSh {activity.amount_tzs.toLocaleString()}</p>
-                            {activity.note && <p className="text-xs text-muted-foreground mt-0.5">{activity.note}</p>}
                           </div>
-                          <span className={`px-2 py-0.5 rounded-full text-xs ${
-                            activity.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-muted-foreground'
-                          }`}>{activity.status}</span>
+                          {f.status && (
+                            <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] ${
+                              f.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-muted-foreground'
+                            }`}>{f.status}</span>
+                          )}
+                        </>
+                      );
+                      return f.href ? (
+                        <button
+                          key={f.key}
+                          onClick={() => router.push(f.href!)}
+                          className="w-full flex items-center gap-3 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted px-3 py-2 text-left transition-all"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div key={f.key} className="w-full flex items-center gap-3 rounded-lg bg-card border border-border px-3 py-2">
+                          {content}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
 
                 {treasurySummary?.treasury === null && !treasuryLoading && !treasuryError && (
-                  <p className="text-xs text-muted-foreground mt-3 text-center">— Hazina haijafunguliwa bado —</p>
+                  <p className="text-xs text-muted-foreground mt-3 text-center">— {t('grp.treasuryNotOpen')} —</p>
                 )}
               </div>
 
@@ -830,7 +879,7 @@ export default function MemberGroupDetailsPage() {
                 </div>
                 <div className="space-y-2">
                   {recentProposals.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-3 text-center">— Hakuna mapendekezo bado —</p>
+                    <p className="text-xs text-muted-foreground py-3 text-center">— {t('grp.noProposals')} —</p>
                   ) : recentProposals.map((p) => (
                     <button key={p.id}
                       onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
@@ -1263,10 +1312,10 @@ export default function MemberGroupDetailsPage() {
             {/* Type selector tabs */}
             <div className="flex gap-1 px-6 pt-4 pb-2 shrink-0">
               {([
-                { value: 'general', label: 'Jumla', color: 'text-muted-foreground' },
-                { value: 'ask', label: 'Ombi', color: 'text-blue-400' },
-                { value: 'spend', label: 'Matumizi', color: 'text-[#e4a233]' },
-                { value: 'prodcast', label: 'Prodcast', color: 'text-purple-400' },
+                { value: 'general', label: t('prop.type.general'), color: 'text-muted-foreground' },
+                { value: 'ask', label: t('prop.type.ask'), color: 'text-blue-400' },
+                { value: 'spend', label: t('prop.type.spend'), color: 'text-[#e4a233]' },
+                { value: 'prodcast', label: t('prop.type.prodcast'), color: 'text-purple-400' },
               ] as { value: ProposalType; label: string; color: string }[]).map(tab => (
                 <button
                   key={tab.value}
@@ -1286,10 +1335,7 @@ export default function MemberGroupDetailsPage() {
             {/* Type description */}
             <div className="px-6 pb-2 shrink-0">
               <p className="text-[10px] text-muted-foreground">
-                {proposalType === 'general' && 'Majadiliano na upigaji kura wa kawaida — bila malipo.'}
-                {proposalType === 'ask' && 'Ombi la fedha kutoka hazina ya kundi kwa ajili ya biashara yako.'}
-                {proposalType === 'spend' && 'Matumizi ya pamoja ya kundi — kwa muuzaji au huduma.'}
-                {proposalType === 'prodcast' && 'Tangaza mradi kwa wawekezaji kupitia portal ya uwekezaji.'}
+                {t(`prop.type.${proposalType}.desc`)}
               </p>
             </div>
 
@@ -1299,23 +1345,23 @@ export default function MemberGroupDetailsPage() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!groupId || !canCreateProposal) return;
-                const t = proposalTitle.trim();
+                const title = proposalTitle.trim();
                 const d = proposalDescription.trim();
-                if (!t) { showToast('Kichwa cha pendekezo kinahitajika.', 'error'); return; }
+                if (!title) { showToast(t('prop.err.titleRequired'), 'error'); return; }
 
                 // Build type-specific payload
-                const payload: Record<string, unknown> = { title: t, description: d, proposalType };
+                const payload: Record<string, unknown> = { title, description: d, proposalType };
 
                 if (proposalType === 'ask') {
                   const amt = Number(proposalAmount);
-                  if (!amt || amt <= 0) { showToast('Ingiza kiasi halali.', 'error'); return; }
+                  if (!amt || amt <= 0) { showToast(t('prop.err.amountInvalid'), 'error'); return; }
                   payload.paymentAmountTzs = amt;
                   payload.metadata = { business_purpose: d };
                 } else if (proposalType === 'spend') {
                   const amt = Number(proposalAmount);
-                  if (!amt || amt <= 0) { showToast('Ingiza kiasi halali.', 'error'); return; }
+                  if (!amt || amt <= 0) { showToast(t('prop.err.amountInvalid'), 'error'); return; }
                   if (!proposalPhone.trim() && !proposalMeta.vendor_name) {
-                    showToast('Ingiza nambari ya simu ya mpokeaji.', 'error'); return;
+                    showToast(t('prop.err.phoneRequired'), 'error'); return;
                   }
                   payload.paymentAmountTzs = amt;
                   payload.recipientPhone = proposalPhone.trim() || null;
@@ -1325,7 +1371,7 @@ export default function MemberGroupDetailsPage() {
                   };
                 } else if (proposalType === 'prodcast') {
                   const goal = Number(proposalMeta.funding_goal_tzs);
-                  if (!goal || goal <= 0) { showToast('Ingiza lengo la fedha.', 'error'); return; }
+                  if (!goal || goal <= 0) { showToast(t('prop.err.goalInvalid'), 'error'); return; }
                   payload.metadata = {
                     funding_goal_tzs: goal,
                     project_description: proposalMeta.project_description || d,
@@ -1342,17 +1388,17 @@ export default function MemberGroupDetailsPage() {
                   });
                   if (res.status === 401) { router.push('/login'); return; }
                   const json = await res.json().catch(() => null);
-                  if (!res.ok) { showToast(json?.error || 'Imeshindikana kuunda pendekezo.', 'error'); return; }
+                  if (!res.ok) { showToast(json?.error || t('prop.err.createFailed'), 'error'); return; }
                   const created = json?.proposal as ProposalRow | undefined;
                   if (created) setProposals(prev => [created, ...prev]);
-                  showToast('Pendekezo limeundwa!', 'success');
+                  showToast(t('prop.success.created'), 'success');
                   setProposalTitle(''); setProposalDescription('');
                   setProposalType('general'); setProposalAmount('');
                   setProposalPhone(''); setProposalMeta({});
                   setShowCreateProposal(false);
                   setActiveTab('decisions');
                 } catch (err) {
-                  showToast(err instanceof Error ? err.message : 'Imeshindikana.', 'error');
+                  showToast(err instanceof Error ? err.message : t('prop.err.genericFailed'), 'error');
                 } finally {
                   setProposalSubmitting(false);
                 }
@@ -1365,12 +1411,7 @@ export default function MemberGroupDetailsPage() {
                   type="text" value={proposalTitle}
                   onChange={e => setProposalTitle(e.target.value)}
                   className={dkInput}
-                  placeholder={
-                    proposalType === 'ask' ? 'e.g. Mkopo wa mtaji wa biashara' :
-                    proposalType === 'spend' ? 'e.g. Ada ya mkutano wa mafunzo' :
-                    proposalType === 'prodcast' ? 'e.g. Mradi wa kilimo cha umwagiliaji' :
-                    'e.g. Ongeza mchango wa kila mwezi'
-                  }
+                  placeholder={t(`prop.title.ph.${proposalType}`)}
                   autoFocus required
                 />
               </div>
@@ -1378,11 +1419,11 @@ export default function MemberGroupDetailsPage() {
               {/* Amount — ask & spend */}
               {(proposalType === 'ask' || proposalType === 'spend') && (
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kiasi (TSH) *</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('prop.amount')} *</label>
                   <input
                     type="number" value={proposalAmount}
                     onChange={e => setProposalAmount(e.target.value)}
-                    className={dkInput} placeholder="e.g. 500000" min="1" required
+                    className={dkInput} placeholder={t('prop.amount.ph')} min="1" required
                   />
                 </div>
               )}
@@ -1395,7 +1436,7 @@ export default function MemberGroupDetailsPage() {
                     <input
                       type="tel" value={proposalPhone}
                       onChange={e => setProposalPhone(e.target.value)}
-                      className={dkInput} placeholder="e.g. 0712345678"
+                      className={dkInput} placeholder={t('prop.recipientPhone.ph')}
                     />
                   </div>
                   <div>
@@ -1403,15 +1444,15 @@ export default function MemberGroupDetailsPage() {
                     <input
                       type="text" value={proposalMeta.vendor_name || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, vendor_name: e.target.value }))}
-                      className={dkInput} placeholder="e.g. Duka la vifaa"
+                      className={dkInput} placeholder={t('prop.vendorName.ph')}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Aina ya Matumizi</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('prop.expenseCategory')}</label>
                     <input
                       type="text" value={proposalMeta.expense_category || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, expense_category: e.target.value }))}
-                      className={dkInput} placeholder="e.g. Vifaa, Mafunzo, Tukio..."
+                      className={dkInput} placeholder={t('prop.expenseCategory.ph')}
                     />
                   </div>
                 </>
@@ -1421,11 +1462,11 @@ export default function MemberGroupDetailsPage() {
               {proposalType === 'prodcast' && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Lengo la Fedha (TSH) *</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('prop.fundingGoal')} *</label>
                     <input
                       type="number" value={proposalMeta.funding_goal_tzs || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, funding_goal_tzs: e.target.value }))}
-                      className={dkInput} placeholder="e.g. 5000000" min="1" required
+                      className={dkInput} placeholder={t('prop.fundingGoal.ph')} min="1" required
                     />
                   </div>
                   <div>
@@ -1433,15 +1474,15 @@ export default function MemberGroupDetailsPage() {
                     <input
                       type="text" value={proposalMeta.timeline || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, timeline: e.target.value }))}
-                      className={dkInput} placeholder="e.g. Miezi 6"
+                      className={dkInput} placeholder={t('prop.timeline.ph')}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Athari Inayotarajiwa</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('prop.impact')}</label>
                     <input
                       type="text" value={proposalMeta.expected_impact || ''}
                       onChange={e => setProposalMeta(m => ({ ...m, expected_impact: e.target.value }))}
-                      className={dkInput} placeholder="e.g. Kuongeza mapato kwa 30%"
+                      className={dkInput} placeholder={t('prop.impact.ph')}
                     />
                   </div>
                 </>
@@ -1450,7 +1491,7 @@ export default function MemberGroupDetailsPage() {
               {/* Description — general & ask; optional for others */}
               {(proposalType === 'general' || proposalType === 'ask') && (
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Maelezo {proposalType === 'general' ? '(si lazima)' : ''}</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('prop.desc.label')} {proposalType === 'general' ? t('prop.desc.optional') : ''}</label>
                   <textarea
                     value={proposalDescription}
                     onChange={e => setProposalDescription(e.target.value)}
@@ -1469,7 +1510,7 @@ export default function MemberGroupDetailsPage() {
                     value={proposalMeta.project_description || ''}
                     onChange={e => setProposalMeta(m => ({ ...m, project_description: e.target.value }))}
                     className={`${dkInput} resize-none`}
-                    placeholder="Eleza mradi wako kwa wawekezaji..."
+                    placeholder={t('prop.projectDesc.ph')}
                     rows={3} required
                   />
                 </div>
@@ -1486,11 +1527,7 @@ export default function MemberGroupDetailsPage() {
                   proposalType === 'ask' ? 'text-blue-400/70' :
                   'text-[#e4a233]/70'
                 }`}>
-                  {proposalType === 'prodcast'
-                    ? 'Baada ya kura kupita, mradi utaonekana kwa wawekezaji kwenye portal.'
-                    : proposalType === 'ask'
-                    ? 'Fedha zitahamishwa moja kwa moja kwenye pochi yako baada ya kura kupita.'
-                    : 'Wanachama wote wa kundi wataweza kupiga kura baada ya pendekezo kuundwa.'}
+                  {t(`prop.info.${proposalType}`)}
                 </p>
               </div>
 
@@ -1505,7 +1542,7 @@ export default function MemberGroupDetailsPage() {
                   }}
                   className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-white/5 transition-colors"
                 >
-                  Ghairi
+                  {t('prop.cancel')}
                 </button>
                 <button
                   type="submit"
