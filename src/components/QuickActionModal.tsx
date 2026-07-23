@@ -117,15 +117,11 @@ export default function QuickActionModal({
   const label = 'block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5';
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[70] sm:flex sm:items-center sm:justify-center sm:p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <div
-        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
-        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+        className="absolute inset-x-0 bottom-0 top-[env(safe-area-inset-top,0px)] sm:relative sm:inset-auto sm:top-auto sm:w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
       >
         {/* grab handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-3 shrink-0"><span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" /></div>
