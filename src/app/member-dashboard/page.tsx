@@ -35,7 +35,6 @@ export default function MemberDashboard() {
   const [memberProfile, setMemberProfile] = useState<any>(null);
   const [memberInvestments, setMemberInvestments] = useState<any[]>([]);
   const [memberTraining, setMemberTraining] = useState<any[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -116,55 +115,48 @@ export default function MemberDashboard() {
   };
 
   const loadMemberData = async (userId: number, memberId?: number) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Load member profile
-      const profileResponse = await fetch(`/api/members/profile?userId=${userId}`);
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        setMemberProfile(profileData);
-      }
-      
-      // Load member investments
-      const investmentsResponse = await fetch(`/api/members/investments?userId=${userId}`);
-      if (investmentsResponse.ok) {
-        const investmentsData = await investmentsResponse.json();
-        setMemberInvestments(investmentsData);
-      }
-      
-      // Load member training - use educational content instead
-      const trainingResponse = await fetch(`/api/educational-content`);
-      if (trainingResponse.ok) {
-        const trainingData = await trainingResponse.json();
-        // Transform educational content to match training format
-        const formattedTraining = trainingData.map((content: any) => ({
-          id: content.id,
-          title: content.title,
-          description: content.description,
-          duration_hours: parseFloat(content.duration?.replace(/[^0-9.]/g, '') || '1'),
-          category: content.category,
-          level: content.difficulty_level,
-          progress_status: 'not_started', // TODO: Add progress tracking
-          progress_percentage: 0,
-          started_at: null,
-          completed_at: null
-        }));
-        setMemberTraining(formattedTraining);
-      }
-      
-      // Load recent activities
-      const activitiesResponse = await fetch(`/api/members/activities?userId=${userId}`);
-      if (activitiesResponse.ok) {
-        const activitiesData = await activitiesResponse.json();
-        setRecentActivities(activitiesData);
-      }
+      // Fire everything the overview needs in parallel — sequential awaits were
+      // adding a round-trip per endpoint. The heavy educational-content call is
+      // deferred to the Learning tab (see loadTrainingIfNeeded).
+      const [profileRes, investmentsRes] = await Promise.all([
+        fetch(`/api/members/profile?userId=${userId}`).catch(() => null),
+        fetch(`/api/members/investments?userId=${userId}`).catch(() => null),
+      ]);
+      if (profileRes?.ok) setMemberProfile(await profileRes.json());
+      if (investmentsRes?.ok) setMemberInvestments(await investmentsRes.json());
     } catch (error) {
       console.error('Error loading member data:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadTrainingIfNeeded = React.useCallback(async () => {
+    if (memberTraining.length > 0) return;
+    try {
+      const res = await fetch(`/api/educational-content`);
+      if (!res.ok) return;
+      const trainingData = await res.json();
+      setMemberTraining(trainingData.map((content: any) => ({
+        id: content.id,
+        title: content.title,
+        description: content.description,
+        duration_hours: parseFloat(content.duration?.replace(/[^0-9.]/g, '') || '1'),
+        category: content.category,
+        level: content.difficulty_level,
+        progress_status: 'not_started',
+        progress_percentage: 0,
+        started_at: null,
+        completed_at: null,
+      })));
+    } catch {}
+  }, [memberTraining.length]);
+
+  useEffect(() => {
+    if (activeSection === 'learning') loadTrainingIfNeeded();
+  }, [activeSection, loadTrainingIfNeeded]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');

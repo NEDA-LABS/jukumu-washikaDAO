@@ -659,7 +659,7 @@ export default function MemberGroupDetailsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
               {[
                 { label: t('grp.stat.members'), value: animMembers.toLocaleString(), unit: '' },
-                { label: group?.contribution_frequency === 'weekly' ? t('grp.freq.weekly') : t('grp.stat.monthly'), value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
+                { label: group?.contribution_frequency === 'weekly' ? t('grp.freq.weekly') : t('grp.freq.monthly'), value: `TSh ${Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}`, unit: '' },
                 { label: t('grp.stat.collected'), value: `TSh ${animTotal.toLocaleString()}`, unit: '' },
                 { label: t('grp.stat.paidThisMonth'), value: String(animPayers), unit: `/ ${group?.member_count ?? members.length}` },
               ].map((s, i) => (
@@ -713,20 +713,20 @@ export default function MemberGroupDetailsPage() {
             <div className="space-y-4">
 
               {/* Group stat cards */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">{t('grp.stat.monthly')}</p>
-                  <p className="text-base font-semibold text-[#e4a233]">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-xl bg-card border border-border p-3 sm:p-4 min-w-0">
+                  <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{t('grp.stat.contribution')}</p>
+                  <p className="text-sm sm:text-base font-semibold text-[#e4a233] tabular-nums break-words">
                     TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">{t('grp.stat.members')}</p>
-                  <p className="text-base font-semibold text-foreground">{group?.member_count ?? members.length}</p>
+                <div className="rounded-xl bg-card border border-border p-3 sm:p-4 min-w-0">
+                  <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{t('grp.stat.members')}</p>
+                  <p className="text-sm sm:text-base font-semibold text-foreground">{group?.member_count ?? members.length}</p>
                 </div>
-                <div className="rounded-xl bg-card border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">{t('grp.role.leader')}</p>
-                  <p className="text-base font-semibold text-foreground truncate">{group?.leader_name || '—'}</p>
+                <div className="rounded-xl bg-card border border-border p-3 sm:p-4 min-w-0">
+                  <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{t('grp.role.leader')}</p>
+                  <p className="text-sm sm:text-base font-semibold text-foreground leading-tight break-words line-clamp-2">{group?.leader_name || '—'}</p>
                 </div>
               </div>
 
