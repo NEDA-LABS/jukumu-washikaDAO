@@ -4,6 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+type ProposalMetadata = {
+  funding_goal_tzs?: number | string;
+  timeline?: string;
+  expected_impact?: string;
+  project_description?: string;
+  vendor_name?: string;
+  expense_category?: string;
+  business_purpose?: string;
+} | null;
+
 type ProposalRow = {
   id: number;
   group_id: number;
@@ -19,7 +29,9 @@ type ProposalRow = {
   payment_status?: 'pending' | 'processing' | 'completed' | 'failed' | null;
   recipient_member_id?: number | null;
   recipient_name?: string | null;
+  recipient_phone?: string | null;
   executed_at?: string | null;
+  metadata?: ProposalMetadata;
 };
 
 const LEADERSHIP_ROLES = ['leader', 'mwenyekiti', 'katibu', 'mwekahazina'];
@@ -28,7 +40,7 @@ type VoteSummary = { yes: number; no: number; abstain: number; total: number };
 type Member = { id: number; full_name: string };
 
 export default function MemberGroupProposalDetailsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const routeParams = useParams<{ id?: string | string[]; proposalId?: string | string[] }>();
 
@@ -192,9 +204,9 @@ export default function MemberGroupProposalDetailsPage() {
 
         <button
           onClick={() => router.push(`/member-dashboard/groups/${groupId}`)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-muted-foreground transition-colors mb-6"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
-          ← Rudi Kwa Kundi
+          ← {t('prop.backToGroup')}
         </button>
 
         {error && (
@@ -208,12 +220,22 @@ export default function MemberGroupProposalDetailsPage() {
             <div className="rounded-2xl bg-card border border-border p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="min-w-0">
+                  {proposal.proposal_type && (
+                    <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2 ${
+                      proposal.proposal_type === 'prodcast' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/25' :
+                      proposal.proposal_type === 'ask' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/25' :
+                      proposal.proposal_type === 'spend' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' :
+                      'bg-white/5 text-muted-foreground border border-border'
+                    }`}>
+                      {t(`prop.type.pill${proposal.proposal_type.charAt(0).toUpperCase()}${proposal.proposal_type.slice(1)}` as any) || proposal.proposal_type}
+                    </span>
+                  )}
                   <h1 className="text-lg font-bold text-foreground leading-snug">{proposal.title}</h1>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-muted-foreground">na {proposal.created_by_name || '—'}</span>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground">{t('prop.by')} {proposal.created_by_name || '—'}</span>
                     {proposal.created_at && (
                       <span className="text-xs text-muted-foreground">
-                        {new Date(proposal.created_at).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(proposal.created_at).toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                     )}
                   </div>
@@ -221,14 +243,48 @@ export default function MemberGroupProposalDetailsPage() {
                 <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${
                   isOpen ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-muted-foreground border border-border'
                 }`}>
-                  {isOpen ? 'Wazi' : 'Imefungwa'}
+                  {isOpen ? t('prop.open') : t('prop.closed')}
                 </span>
               </div>
 
               {proposal.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
+                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
               )}
             </div>
+
+            {/* Proposal details — type-specific metadata */}
+            {(() => {
+              const m = proposal.metadata || {};
+              const rows: Array<{ label: string; value: React.ReactNode }> = [];
+
+              if (proposal.proposal_type === 'prodcast') {
+                if (m.funding_goal_tzs) rows.push({ label: t('prop.field.fundingGoal'), value: <span className="tabular-nums font-semibold text-foreground">TZS {Number(m.funding_goal_tzs).toLocaleString()}</span> });
+                if (m.timeline) rows.push({ label: t('prop.field.timeline'), value: m.timeline });
+                if (m.expected_impact) rows.push({ label: t('prop.field.impact'), value: m.expected_impact });
+                if (m.project_description) rows.push({ label: t('prop.field.projectDesc'), value: <span className="whitespace-pre-wrap">{m.project_description}</span> });
+              } else if (proposal.proposal_type === 'spend') {
+                if (m.vendor_name) rows.push({ label: t('prop.field.vendor'), value: m.vendor_name });
+                if (m.expense_category) rows.push({ label: t('prop.field.expenseCategory'), value: m.expense_category });
+                if (proposal.recipient_phone) rows.push({ label: t('prop.recipientPhone'), value: <span className="font-mono">{proposal.recipient_phone}</span> });
+              } else if (proposal.proposal_type === 'ask') {
+                if (m.business_purpose) rows.push({ label: t('prop.field.businessPurpose'), value: <span className="whitespace-pre-wrap">{m.business_purpose}</span> });
+              }
+
+              if (rows.length === 0) return null;
+              return (
+                <div className="rounded-2xl bg-card border border-border p-5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t('prop.detailsHeading')}</p>
+                  <dl className="space-y-3">
+                    {rows.map((r, i) => (
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                        <dt className="text-xs text-muted-foreground sm:shrink-0 sm:w-40">{r.label}</dt>
+                        <dd className="text-sm text-foreground sm:text-right sm:flex-1">{r.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              );
+            })()}
 
             {/* Vote results */}
             <div className="rounded-2xl bg-card border border-border p-5">
@@ -236,9 +292,9 @@ export default function MemberGroupProposalDetailsPage() {
 
               <div className="space-y-3 mb-4">
                 {([
-                  { key: 'yes' as const,     label: t('prop.yes'),    count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
-                  { key: 'no' as const,      label: t('prop.no'),  count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
-                  { key: 'abstain' as const, label: 'Jiepushe', count: voteSummary.abstain, bar: 'bg-white/20',   text: 'text-muted-foreground'    },
+                  { key: 'yes' as const,     label: t('prop.yes'),     count: voteSummary.yes,     bar: 'bg-emerald-500', text: 'text-emerald-400' },
+                  { key: 'no' as const,      label: t('prop.no'),      count: voteSummary.no,      bar: 'bg-red-500',     text: 'text-red-400'     },
+                  { key: 'abstain' as const, label: t('prop.abstain'), count: voteSummary.abstain, bar: 'bg-white/20',    text: 'text-muted-foreground' },
                 ]).map(row => (
                   <div key={row.key}>
                     <div className="flex items-center justify-between mb-1">
@@ -252,11 +308,14 @@ export default function MemberGroupProposalDetailsPage() {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                <p className="text-xs text-muted-foreground">Jumla: {voteSummary.total} kura{requiredYes > 0 ? ` · zinahitajika ${requiredYes} "Ndio"` : ''}</p>
+              <div className="flex items-center justify-between pt-3 border-t border-border gap-3 flex-wrap">
+                <p className="text-xs text-muted-foreground">
+                  {t('prop.totalVotes')}: {voteSummary.total} {t('prop.votes')}
+                  {requiredYes > 0 ? ` · ${t('prop.needed')} ${requiredYes} "${t('prop.yes')}"` : ''}
+                </p>
                 {myVote && (
                   <p className="text-xs text-[#e4a233]">
-                    Kura yako: <span className="font-semibold capitalize">{myVote === 'yes' ? t('prop.yes') : myVote === 'no' ? t('prop.no') : 'Jiepushe'}</span>
+                    {t('prop.yourVote')}: <span className="font-semibold">{myVote === 'yes' ? t('prop.yes') : myVote === 'no' ? t('prop.no') : t('prop.abstain')}</span>
                   </p>
                 )}
               </div>
@@ -276,8 +335,8 @@ export default function MemberGroupProposalDetailsPage() {
               <div className="grid grid-cols-3 gap-2">
                 {([
                   { key: 'yes' as const,     label: t('prop.yes'),     active: 'bg-emerald-500 hover:bg-emerald-600 text-foreground border-transparent', inactive: 'bg-card hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 border-border' },
-                  { key: 'no' as const,      label: t('prop.no'),   active: 'bg-red-500 hover:bg-red-600 text-foreground border-transparent',         inactive: 'bg-card hover:bg-red-500/10 text-muted-foreground hover:text-red-400 border-border'       },
-                  { key: 'abstain' as const, label: 'Jiepushe', active: 'bg-white/20 hover:bg-white/30 text-foreground border-transparent',       inactive: 'bg-card hover:bg-white/10 text-muted-foreground border-border'                             },
+                  { key: 'no' as const,      label: t('prop.no'),      active: 'bg-red-500 hover:bg-red-600 text-foreground border-transparent',         inactive: 'bg-card hover:bg-red-500/10 text-muted-foreground hover:text-red-400 border-border'       },
+                  { key: 'abstain' as const, label: t('prop.abstain'), active: 'bg-white/20 hover:bg-white/30 text-foreground border-transparent',       inactive: 'bg-card hover:bg-white/10 text-muted-foreground border-border'                             },
                 ]).map(btn => (
                   <button
                     key={btn.key}
@@ -308,8 +367,8 @@ export default function MemberGroupProposalDetailsPage() {
                 </div>
                 {proposal.recipient_name && (
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-muted-foreground">Mpokeaji</span>
-                    <span className="text-sm text-muted-foreground">{proposal.recipient_name}</span>
+                    <span className="text-sm text-muted-foreground">{t('prop.recipient')}</span>
+                    <span className="text-sm text-foreground">{proposal.recipient_name}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-2">
@@ -317,7 +376,7 @@ export default function MemberGroupProposalDetailsPage() {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>
-                    {isPaid ? 'Imelipwa' : 'Inasubiri'}
+                    {isPaid ? t('prop.status.paid') : t('prop.status.pending')}
                   </span>
                 </div>
               </div>
@@ -326,7 +385,7 @@ export default function MemberGroupProposalDetailsPage() {
             {/* Leadership actions on a closed proposal */}
             {isLeadership && !isOpen && (
               <div className="rounded-2xl bg-card border border-border p-5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Kitendo cha Uongozi</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t('prop.leaderAction')}</p>
 
                 {executeError && (
                   <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">{executeError}</div>
@@ -337,8 +396,8 @@ export default function MemberGroupProposalDetailsPage() {
 
                 {isPaid ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Hali</span>
-                    <span className="text-xs font-semibold text-emerald-400">✓ Imelipwa</span>
+                    <span className="text-sm text-muted-foreground">{t('prop.status')}</span>
+                    <span className="text-xs font-semibold text-emerald-400">✓ {t('prop.status.paid')}</span>
                   </div>
                 ) : passed ? (
                   <div className="space-y-3">
@@ -348,18 +407,18 @@ export default function MemberGroupProposalDetailsPage() {
                       <input
                         type="number" inputMode="numeric" value={amountInput}
                         onChange={e => setAmountInput(e.target.value)}
-                        placeholder="mf. 5000"
+                        placeholder={t('prop.amountPh')}
                         className="mt-1 w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder-white/20 focus:outline-none focus:border-orange-500/40"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Mpokeaji</label>
+                      <label className="text-xs text-muted-foreground">{t('prop.recipient')}</label>
                       <select
                         value={recipientInput}
                         onChange={e => setRecipientInput(e.target.value)}
                         className="mt-1 w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/40"
                       >
-                        <option value="" className="bg-card">— Chagua mwanachama —</option>
+                        <option value="" className="bg-card">— {t('prop.chooseMember')} —</option>
                         {members.map(mm => (
                           <option key={mm.id} value={mm.id} className="bg-card">{mm.full_name}</option>
                         ))}
@@ -377,7 +436,7 @@ export default function MemberGroupProposalDetailsPage() {
                 ) : (
                   <div className="space-y-3">
                     <p className="text-xs text-muted-foreground">
-                      Pendekezo halikupata kura za kutosha ({voteSummary.yes}/{requiredYes} &quot;Ndio&quot;). Unaweza kufungua kura tena au kutengeneza pendekezo jipya.
+                      {t('prop.notEnoughVotes')} ({voteSummary.yes}/{requiredYes} &quot;{t('prop.yes')}&quot;). {t('prop.notEnoughVotesTail')}
                     </p>
                     <button
                       onClick={handleReopen}
