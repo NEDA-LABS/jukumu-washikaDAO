@@ -24,6 +24,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import QuickActionModal, { type ActionType } from '@/components/QuickActionModal';
 import NotificationsSection from '@/components/NotificationsSection';
+import AvatarPicker from '@/components/AvatarPicker';
 
 export default function MemberDashboard() {
   const { language, toggleLanguage, t } = useLanguage();
@@ -416,7 +417,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [modal, setModal] = useState<ActionType | null>(null);
   const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string }>>([]);
+  const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string; logo_url?: string | null }>>([]);
 
   const fetchBalance = React.useCallback(() => {
     if (!userId) return;
@@ -440,7 +441,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
   useEffect(() => {
     fetch('/api/member/groups')
       .then(r => r.ok ? r.json() : { groups: [] })
-      .then(d => setMyGroups((d.groups || []).map((g: any) => ({ id: g.id, name: g.name }))))
+      .then(d => setMyGroups((d.groups || []).map((g: any) => ({ id: g.id, name: g.name, logo_url: g.logo_url ?? null }))))
       .catch(() => setMyGroups([]));
   }, []);
 
@@ -581,8 +582,12 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
                 onClick={() => router.push(`/member-dashboard/groups/${g.id}`)}
                 className="flex items-center gap-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-muted transition-all px-3 py-2.5 text-left group"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-bold text-sm">
-                  {g.name.charAt(0).toUpperCase()}
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-bold text-sm overflow-hidden">
+                  {g.logo_url ? (
+                    <img src={g.logo_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    g.name.charAt(0).toUpperCase()
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">{g.name}</p>
@@ -697,8 +702,10 @@ const inputCls = (editing: boolean) =>
   }`;
 
 function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile: any; user: any; loadMemberData: () => void }) {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [avatar, setAvatar] = useState<string | null>(memberProfile?.avatar_url ?? null);
   const [formData, setFormData] = useState({
     fullName: memberProfile?.full_name || '',
     phone: memberProfile?.phone || '',
@@ -722,6 +729,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
         monthlyRevenue: memberProfile.monthly_revenue || '',
         employeeCount: memberProfile.employee_count || '',
       });
+      setAvatar(memberProfile.avatar_url ?? null);
     }
   }, [memberProfile]);
 
@@ -731,7 +739,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       const res = await fetch(`/api/members/profile?userId=${user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, avatarUrl: avatar }),
       });
       if (res.ok) { setIsEditing(false); loadMemberData(); }
     } catch (e) { console.error(e); }
@@ -758,8 +766,12 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
     <div className="space-y-4">
       {/* Profile header card */}
       <div className="rounded-xl bg-card border border-border p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0">
-          <span className="text-lg font-bold text-foreground">{initials}</span>
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 overflow-hidden">
+          {avatar ? (
+            <img src={avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-lg font-bold text-white">{initials}</span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-semibold text-foreground truncate">{formData.fullName || 'Mwanachama'}</p>
@@ -786,6 +798,20 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
       {/* Personal info */}
       <div className="rounded-xl bg-card border border-border p-5">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
+        {isEditing && (
+          <div className="mb-4">
+            <label className="block text-xs text-muted-foreground mb-2">{t('set.field.avatar')}</label>
+            <AvatarPicker
+              value={avatar}
+              onChange={setAvatar}
+              fallbackText={formData.fullName || 'U'}
+              shape="circle"
+              size={72}
+              label={t('mg.field.logoUpload')}
+              helper={t('set.field.avatarHelper')}
+            />
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Jina Kamili" value={formData.fullName} field="fullName" />
           <Field label="Barua Pepe" value={memberProfile?.email || user?.email || ''} disabled />
@@ -843,6 +869,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5', contributionFrequency: 'monthly' as 'monthly' | 'weekly' });
+  const [createLogo, setCreateLogo] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -943,12 +970,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           votingNumerator: Number(createForm.votingNumerator),
           votingDenominator: Number(createForm.votingDenominator),
           contributionFrequency: createForm.contributionFrequency,
+          logoUrl: createLogo,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setShowCreateModal(false);
         setCreateForm({ name: '', monthlyContribution: '', votingNumerator: '3', votingDenominator: '5', contributionFrequency: 'monthly' });
+        setCreateLogo(null);
         await loadMyGroups();
         if (data.group?.id) router.push(`/member-dashboard/groups/${data.group.id}`);
       } else {
@@ -991,16 +1020,25 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 className="rounded-xl bg-card border border-border hover:border-primary/30 p-5 cursor-pointer transition-all group"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-semibold text-foreground truncate">{g.name}</h3>
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
-                        {g.member_role || t('mg.role.member')}
-                      </span>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-white font-bold overflow-hidden">
+                      {g.logo_url ? (
+                        <img src={g.logo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        g.name.charAt(0).toUpperCase()
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="text-base font-semibold text-foreground truncate">{g.name}</h3>
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
+                          {g.member_role || t('mg.role.member')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t('mg.status')}: {g.membership_status || g.status || 'active'}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t('mg.status')}: {g.membership_status || g.status || 'active'}
-                    </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-[#e4a233]">
@@ -1079,6 +1117,18 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
             <p className="text-xs text-muted-foreground mb-5">{t('mg.createNew.desc')}</p>
 
             <form onSubmit={handleCreateGroup} className="space-y-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-2">{t('mg.field.logo')}</label>
+                <AvatarPicker
+                  value={createLogo}
+                  onChange={setCreateLogo}
+                  fallbackText={createForm.name || 'G'}
+                  shape="square"
+                  size={72}
+                  label={t('mg.field.logoUpload')}
+                  helper={t('mg.field.logoHelper')}
+                />
+              </div>
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">{t('mg.field.name')} *</label>
                 <input
@@ -1493,10 +1543,14 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
         onClick={() => onNavigate('profile')}
         className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:bg-muted transition-all text-left"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-          <span className="text-lg font-bold text-white">
-            {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
-          </span>
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 shadow-lg shadow-primary/20 overflow-hidden">
+          {memberProfile?.avatar_url ? (
+            <img src={memberProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-lg font-bold text-white">
+              {(memberProfile?.full_name || user?.fullName || user?.email || 'U')[0].toUpperCase()}
+            </span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>

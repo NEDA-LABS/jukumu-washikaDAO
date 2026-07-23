@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
 
     try {
+      // Ensure the avatar column exists (idempotent).
+      await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
       // Primary lookup: member linked to this user
       let result = await client.query(`
         SELECT 
@@ -28,6 +30,7 @@ export async function GET(request: NextRequest) {
           m.age,
           m.monthly_revenue,
           m.employee_count,
+          m.avatar_url,
           m.status,
           m.created_at,
           g.name as group_name,
@@ -120,35 +123,41 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const { 
-      fullName, 
-      phone, 
-      location, 
-      businessType, 
-      businessName, 
-      businessDescription, 
-      monthlyRevenue, 
-      employeeCount 
+    const {
+      fullName,
+      phone,
+      location,
+      businessType,
+      businessName,
+      businessDescription,
+      monthlyRevenue,
+      employeeCount,
+      avatarUrl,
     } = body;
 
     const client = await pool.connect();
-    
-    const result = await client.query(`
-      UPDATE members 
-      SET 
-        full_name = $1,
-        phone = $2,
-        location = $3,
-        business_type = $4,
-        business_name = $5,
-        business_description = $6,
-        monthly_revenue = $7,
-        employee_count = $8,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $9
-      RETURNING *
-    `, [fullName, phone, location, businessType, businessName, businessDescription, monthlyRevenue, employeeCount, userId]);
-    
+    await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
+
+    const avatarProvided = Object.prototype.hasOwnProperty.call(body, 'avatarUrl');
+    const avatarValue = typeof avatarUrl === 'string' && avatarUrl.length > 0 ? avatarUrl : null;
+
+    const result = await client.query(
+      avatarProvided
+        ? `UPDATE members
+             SET full_name = $1, phone = $2, location = $3, business_type = $4,
+                 business_name = $5, business_description = $6, monthly_revenue = $7,
+                 employee_count = $8, avatar_url = $10, updated_at = CURRENT_TIMESTAMP
+             WHERE user_id = $9 RETURNING *`
+        : `UPDATE members
+             SET full_name = $1, phone = $2, location = $3, business_type = $4,
+                 business_name = $5, business_description = $6, monthly_revenue = $7,
+                 employee_count = $8, updated_at = CURRENT_TIMESTAMP
+             WHERE user_id = $9 RETURNING *`,
+      avatarProvided
+        ? [fullName, phone, location, businessType, businessName, businessDescription, monthlyRevenue, employeeCount, userId, avatarValue]
+        : [fullName, phone, location, businessType, businessName, businessDescription, monthlyRevenue, employeeCount, userId],
+    );
+
     client.release();
     
     if (result.rows.length === 0) {

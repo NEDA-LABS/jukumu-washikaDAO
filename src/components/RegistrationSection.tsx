@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Header from '@/components/Header';
+import AvatarPicker from '@/components/AvatarPicker';
 
 export default function RegistrationSection({ title }: { title?: string }) {
   const { t } = useLanguage();
@@ -22,6 +23,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
     gender: '',
     age: '',
   });
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +62,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
           idNumber: formData.idNumber,
           gender: formData.gender,
           age: formData.age,
+          avatarUrl: avatar,
         }),
       });
 
@@ -175,6 +178,18 @@ export default function RegistrationSection({ title }: { title?: string }) {
               {/* Section: Personal */}
               <div className="rounded-2xl bg-muted border border-border p-5 space-y-4">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('register.section.personal')}</p>
+                <div>
+                  <label className={lbl}>{t('set.field.avatar')} <span className="normal-case text-muted-foreground">{t('register.optional')}</span></label>
+                  <AvatarPicker
+                    value={avatar}
+                    onChange={setAvatar}
+                    fallbackText={formData.fullName || 'U'}
+                    shape="circle"
+                    size={72}
+                    label={t('mg.field.logoUpload')}
+                    helper={t('set.field.avatarHelper')}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="fullName" className={lbl}>{t('register.f.fullname')} *</label>

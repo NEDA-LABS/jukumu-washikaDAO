@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => null);
-  const { name, monthlyContribution, votingNumerator = 3, votingDenominator = 5, contributionFrequency = 'monthly' } = body || {};
+  const { name, monthlyContribution, votingNumerator = 3, votingDenominator = 5, contributionFrequency = 'monthly', logoUrl } = body || {};
 
   if (!name || !monthlyContribution) {
     return NextResponse.json({ error: 'Jina la kundi na mchango wa kila mwezi vinahitajika.' }, { status: 400 });
@@ -56,16 +56,17 @@ export async function POST(request: NextRequest) {
     await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
     await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
     await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS contribution_frequency VARCHAR(10) NOT NULL DEFAULT 'monthly'`);
+    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
 
     const groupCode = await generateUniqueGroupCode(client);
 
     // Create the group — leader_id references users table
     const groupRes = await client.query(
       `INSERT INTO groups (name, leader_id, founded_date, monthly_contribution, status,
-        voting_threshold_numerator, voting_threshold_denominator, group_code, join_policy, contribution_frequency)
-       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5, $6, 'invite_only', $7)
+        voting_threshold_numerator, voting_threshold_denominator, group_code, join_policy, contribution_frequency, logo_url)
+       VALUES ($1, $2, CURRENT_DATE, $3, 'active', $4, $5, $6, 'invite_only', $7, $8)
        RETURNING *`,
-      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator, groupCode, contributionFrequency]
+      [name.trim(), auth.userId, contribution, votingNumerator, votingDenominator, groupCode, contributionFrequency, typeof logoUrl === 'string' && logoUrl.length > 0 ? logoUrl : null]
     );
     const group = groupRes.rows[0] as { id: number; name: string };
 
@@ -153,6 +154,7 @@ export async function GET(request: NextRequest) {
         g.founded_date,
         g.monthly_contribution,
         g.status,
+        g.logo_url,
         gm.role AS member_role,
         gm.joined_date,
         gm.status AS membership_status

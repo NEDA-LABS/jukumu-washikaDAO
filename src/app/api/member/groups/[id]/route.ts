@@ -6,6 +6,7 @@ const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina
 
 async function ensureContributionFrequencyColumn(client: { query: (sql: string) => Promise<unknown> }) {
   await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS contribution_frequency VARCHAR(10) NOT NULL DEFAULT 'monthly'`);
+  await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
 }
 
 export async function GET(
@@ -62,6 +63,7 @@ export async function GET(
         g.created_at,
         g.group_code,
         g.join_policy,
+        g.logo_url,
         u.full_name AS leader_name,
         (SELECT COUNT(*)::int FROM group_members gm2 WHERE gm2.group_id = g.id AND gm2.status = 'active') AS member_count
       FROM groups g
@@ -106,9 +108,9 @@ export async function PATCH(
   if (!Number.isFinite(groupId)) return NextResponse.json({ error: 'Invalid group id' }, { status: 400 });
 
   const body = await request.json().catch(() => null);
-  const { monthlyContribution, contributionFrequency } = body || {};
+  const { monthlyContribution, contributionFrequency, logoUrl } = body || {};
 
-  if (monthlyContribution === undefined && contributionFrequency === undefined) {
+  if (monthlyContribution === undefined && contributionFrequency === undefined && logoUrl === undefined) {
     return NextResponse.json({ error: 'Hakuna kilichobadilishwa.' }, { status: 400 });
   }
   if (contributionFrequency !== undefined && !['monthly', 'weekly'].includes(contributionFrequency)) {
@@ -124,6 +126,7 @@ export async function PATCH(
   const client = await pool.connect();
   try {
     await ensureContributionFrequencyColumn(client);
+    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
 
     const membershipRes = await client.query(
       `SELECT gm.role FROM group_members gm
@@ -143,10 +146,11 @@ export async function PATCH(
     let i = 1;
     if (monthlyContribution !== undefined) { sets.push(`monthly_contribution = $${i++}`); values.push(Number(monthlyContribution)); }
     if (contributionFrequency !== undefined) { sets.push(`contribution_frequency = $${i++}`); values.push(contributionFrequency); }
+    if (logoUrl !== undefined) { sets.push(`logo_url = $${i++}`); values.push(typeof logoUrl === 'string' && logoUrl.length > 0 ? logoUrl : null); }
     values.push(groupId);
 
     const updated = await client.query(
-      `UPDATE groups SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, monthly_contribution, contribution_frequency`,
+      `UPDATE groups SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, monthly_contribution, contribution_frequency, logo_url`,
       values
     );
 

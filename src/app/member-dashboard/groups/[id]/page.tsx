@@ -6,6 +6,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
 import ShareGroupModal from '@/components/ShareGroupModal';
+import AvatarPicker from '@/components/AvatarPicker';
 import { ShareIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 function useCountUp(target: number, duration = 900) {
@@ -45,6 +46,7 @@ type Group = {
   member_count?: number;
   group_code?: string | null;
   join_policy?: string | null;
+  logo_url?: string | null;
 };
 
 type MemberRow = {
@@ -183,6 +185,7 @@ export default function MemberGroupDetailsPage() {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
+  const [settingsLogo, setSettingsLogo] = useState<string | null>(null);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
@@ -501,11 +504,15 @@ export default function MemberGroupDetailsPage() {
       const res = await fetch(`/api/member/groups/${groupId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monthlyContribution: amt, contributionFrequency: settingsFreq }),
+        body: JSON.stringify({
+          monthlyContribution: amt,
+          contributionFrequency: settingsFreq,
+          logoUrl: settingsLogo,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) { setSettingsError(data?.error || t('grp.settings.leadershipOnly')); return; }
-      setGroup((g) => (g ? { ...g, monthly_contribution: amt, contribution_frequency: settingsFreq } : g));
+      setGroup((g) => (g ? { ...g, monthly_contribution: amt, contribution_frequency: settingsFreq, logo_url: settingsLogo } : g));
       setSettingsSuccess(t('grp.settings.saved'));
       showToast(t('grp.settings.saved'), 'success');
       setTimeout(() => setShowSettings(false), 1200);
@@ -565,11 +572,15 @@ export default function MemberGroupDetailsPage() {
           <div className="relative p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex items-start gap-4">
-                {/* group avatar */}
-                <div className="w-12 h-12 rounded-xl bg-[#e4a233]/20 border border-[#e4a233]/35 flex items-center justify-center shrink-0">
-                  <span className="text-xl font-bold text-[#e4a233]">
-                    {(group?.name || 'G').charAt(0).toUpperCase()}
-                  </span>
+                {/* group avatar / logo */}
+                <div className="w-12 h-12 rounded-xl bg-[#e4a233]/20 border border-[#e4a233]/35 flex items-center justify-center shrink-0 overflow-hidden">
+                  {group?.logo_url ? (
+                    <img src={group.logo_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-[#e4a233]">
+                      {(group?.name || 'G').charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{group?.name || t('grp.groupWord')}</h1>
@@ -633,6 +644,7 @@ export default function MemberGroupDetailsPage() {
                     onClick={() => {
                       setSettingsAmount(String(Number.parseFloat(String(group?.monthly_contribution || 0)) || ''));
                       setSettingsFreq(group?.contribution_frequency === 'weekly' ? 'weekly' : 'monthly');
+                      setSettingsLogo(group?.logo_url ?? null);
                       setSettingsError(''); setSettingsSuccess('');
                       setShowSettings(true);
                     }}
@@ -1235,6 +1247,18 @@ export default function MemberGroupDetailsPage() {
               <button onClick={() => setShowSettings(false)} className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-2">{t('mg.field.logo')}</label>
+                <AvatarPicker
+                  value={settingsLogo}
+                  onChange={setSettingsLogo}
+                  fallbackText={group?.name || 'G'}
+                  shape="square"
+                  size={72}
+                  label={t('mg.field.logoUpload')}
+                  helper={t('mg.field.logoHelper')}
+                />
+              </div>
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">
                   {t('grp.freq.contribAmount')} ({settingsFreq === 'weekly' ? t('grp.freq.weekly') : t('grp.freq.monthly')}) (TSh)

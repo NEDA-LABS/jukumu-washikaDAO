@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   let client: PoolClient | null = null;
 
   try {
-    const { email, password, fullName, phone, memberId, location, businessType, idType, idNumber, gender, age } = await request.json();
+    const { email, password, fullName, phone, memberId, location, businessType, idType, idNumber, gender, age, avatarUrl } = await request.json();
 
     if (!password || !fullName) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -163,9 +163,10 @@ export async function POST(request: NextRequest) {
         const numericAge = age !== undefined && age !== null && age !== ''
           ? Number.parseInt(String(age), 10)
           : null;
+        await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
         await client.query(
-          `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')`,
+          `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status, avatar_url)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11)`,
           [
             user.id,
             fullName,
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
             idNumber || null,
             gender || null,
             Number.isFinite(numericAge) ? numericAge : null,
+            typeof avatarUrl === 'string' && avatarUrl.length > 0 ? avatarUrl : null,
           ]
         );
         console.log(`Auto-created member record for user ${user.id}`);
