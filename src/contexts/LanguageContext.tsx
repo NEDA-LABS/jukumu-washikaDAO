@@ -382,6 +382,7 @@ const translations = {
     // Notifications
     'notif.title': 'Arifa',
     'notif.markAllRead': 'Soma zote',
+    'notif.viewAll': 'Angalia zote',
     'notif.empty': 'Hakuna arifa bado',
     'notif.emptyDesc': 'Arifa za miamala, vikundi na mapendekezo zitaonekana hapa.',
     'notif.all': 'Zote',
@@ -951,6 +952,7 @@ const translations = {
     // Notifications
     'notif.title': 'Notifications',
     'notif.markAllRead': 'Mark all read',
+    'notif.viewAll': 'View all',
     'notif.empty': 'No notifications yet',
     'notif.emptyDesc': 'Alerts for transactions, groups and proposals will appear here.',
     'notif.all': 'All',
