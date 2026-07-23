@@ -213,6 +213,7 @@ function StatCard({ label, value, sub, accent, ink }: { label: string; value: st
 }
 
 function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void; onOpen: (p: Project) => void; ink: Ink }) {
+  const { t } = useLanguage();
   const goal = p.metadata?.funding_goal_tzs ?? 0;
   const funded = Number(p.total_investment ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
@@ -239,14 +240,14 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
                 className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{ background: '#FEF3E2', color: '#e4a233' }}
               >
-                Community Approved
+                {t('inv.communityApproved')}
               </span>
             ) : (
               <span
                 className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{ background: '#EFF6FF', color: '#3B82F6' }}
               >
-                Seeking Vote
+                {t('inv.seekingVote')}
               </span>
             )}
             <span className="text-[10px]" style={{ color: ink.mutedLight }}>
@@ -274,7 +275,7 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
       {!isApproved && (p.yes_votes > 0 || p.total_votes > 0) && (
         <div className="space-y-1.5">
           <div className="flex justify-between text-[10px]" style={{ color: ink.mutedLight }}>
-            <span>Community vote</span>
+            <span>{t('inv.communityVote')}</span>
             <span>{p.yes_votes} yes / {p.total_votes} cast</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
@@ -365,8 +366,12 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
 export default function InvestorDashboard() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const ink = getInk(resolvedTheme);
+  // Theme-aware status banner colors (verified / pending)
+  const statusBg = (ok: boolean) => (resolvedTheme === 'dark' ? (ok ? 'rgba(16,185,129,0.12)' : 'rgba(228,162,51,0.12)') : (ok ? '#ECFDF5' : '#FEF3E2'));
+  const statusBorder = (ok: boolean) => (resolvedTheme === 'dark' ? (ok ? 'rgba(16,185,129,0.3)' : 'rgba(228,162,51,0.3)') : (ok ? '#A7F3D0' : '#FCD9A0'));
+  const statusText = (ok: boolean) => (resolvedTheme === 'dark' ? (ok ? '#6EE7B7' : '#f3c893') : (ok ? '#065F46' : '#92400E'));
   const [user, setUser] = useState<{ id: number; email: string; fullName: string; role: string } | null>(null);
   const [profile, setProfile] = useState<InvestorProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -539,11 +544,11 @@ export default function InvestorDashboard() {
   }
 
   const navItems: { id: Section; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Overview', icon: '◈' },
-    { id: 'projects', label: 'Projects', icon: '◆' },
-    { id: 'groups', label: 'Groups', icon: '◉' },
-    { id: 'wallet', label: 'Wallet', icon: '◇' },
-    { id: 'profile', label: 'Profile', icon: '◎' },
+    { id: 'overview', label: t('inv.nav.overview'), icon: '◈' },
+    { id: 'projects', label: t('inv.nav.projects'), icon: '◆' },
+    { id: 'groups', label: t('inv.nav.groups'), icon: '◉' },
+    { id: 'wallet', label: t('inv.nav.wallet'), icon: '◇' },
+    { id: 'profile', label: t('inv.nav.profile'), icon: '◎' },
   ];
 
   const handleWalletAction = async (e: React.FormEvent) => {
@@ -637,7 +642,7 @@ export default function InvestorDashboard() {
             <Logo markOnly className="h-8 w-auto shrink-0" />
             <div>
               <p className="text-sm font-bold" style={{ color: '#E8D5B0', letterSpacing: '-0.01em' }}>Washika<span style={{ color: '#e4a233' }}>DAU</span></p>
-              <p className="text-[10px]" style={{ color: '#4A3D2A' }}>Investor Portal</p>
+              <p className="text-[10px]" style={{ color: '#4A3D2A' }}>{t('inv.investorPortal')}</p>
             </div>
           </div>
 
@@ -659,7 +664,7 @@ export default function InvestorDashboard() {
                     className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
                     style={{ background: profile?.verified ? '#0B3D2E' : '#2A1F0A', color: profile?.verified ? '#4ADE80' : '#e4a233' }}
                   >
-                    {profile?.verified ? '✓ Verified' : 'Pending'}
+                    {profile?.verified ? `✓ ${t('inv.verified')}` : t('inv.pending')}
                   </span>
                 </div>
               </div>
@@ -703,7 +708,7 @@ export default function InvestorDashboard() {
               onMouseOver={e => e.currentTarget.style.color = '#8A7560'}
               onMouseOut={e => e.currentTarget.style.color = '#4A3D2A'}
             >
-              ← Public Page
+              ← {t('inv.publicPage')}
             </button>
             <button
               onClick={handleLogout}
@@ -712,7 +717,7 @@ export default function InvestorDashboard() {
               onMouseOver={e => e.currentTarget.style.color = '#EF4444'}
               onMouseOut={e => e.currentTarget.style.color = '#4A3D2A'}
             >
-              ⏻ Sign Out
+              ⏻ {t('inv.signOut')}
             </button>
           </div>
         </aside>
@@ -786,36 +791,36 @@ export default function InvestorDashboard() {
               {/* Greeting */}
               <div>
                 <h2 className="text-2xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>
-                  Welcome, {profile?.full_name?.split(' ')[0] || 'Investor'}
+                  {t('inv.welcome')}, {profile?.full_name?.split(' ')[0] || 'Investor'}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: ink.muted }}>
-                  Here is an overview of investment opportunities across the WashikaDAU network.
+                  {t('inv.overviewSub')}
                 </p>
               </div>
 
               {/* Stat cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  label="Active Projects"
+                  label={t('inv.stat.activeProjects')}
                   value={String(projects.length)}
-                  sub="Approved Prodcasts"
+                  sub={t('inv.stat.approvedProdcasts')}
                   accent
                   ink={ink}
                 />
                 <StatCard
-                  label="Funding Sought"
+                  label={t('inv.stat.fundingSought')}
                   value={fmtShort(totalFundingSought)}
-                  sub="Total requested"
+                  sub={t('inv.stat.totalRequested')}
                   ink={ink}
                 />
                 <StatCard
-                  label="Groups"
+                  label={t('inv.stat.groups')}
                   value={String(stats?.totalGroups ?? groups.length)}
-                  sub="Active"
+                  sub={t('inv.stat.active')}
                   ink={ink}
                 />
                 <StatCard
-                  label="Members"
+                  label={t('inv.stat.members')}
                   value={String(stats?.totalMembers ?? '—')}
                   sub={`${stats?.activeRegions ?? '—'} regions`}
                   ink={ink}
@@ -826,13 +831,13 @@ export default function InvestorDashboard() {
               {projects.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>Recently Voted Projects</h3>
+                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>{t('inv.recentlyVoted')}</h3>
                     <button
                       onClick={() => setSection('projects')}
                       className="text-xs font-semibold"
                       style={{ color: '#e4a233' }}
                     >
-                      View all →
+                      {t('inv.viewAll')} →
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -847,23 +852,23 @@ export default function InvestorDashboard() {
               {groups.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>Active Groups</h3>
+                    <h3 className="text-sm font-bold" style={{ color: ink.heading }}>{t('inv.activeGroups')}</h3>
                     <button
                       onClick={() => setSection('groups')}
                       className="text-xs font-semibold"
                       style={{ color: '#e4a233' }}
                     >
-                      View all →
+                      {t('inv.viewAll')} →
                     </button>
                   </div>
                   <div
                     className="rounded-2xl overflow-hidden"
-                    style={{ border: '1px solid #EDE8E0', background: ink.card }}
+                    style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}
                   >
                     <table className="w-full text-xs">
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #EDE8E0', background: ink.bg }}>
-                          {['Group', 'Members', 'Monthly Contribution', 'Projects'].map(h => (
+                        <tr style={{ borderBottom: `1px solid ${ink.cardBorder}`, background: ink.bg }}>
+                          {[t('inv.col.group'), t('inv.col.members'), t('inv.col.contribution'), t('inv.col.projects')].map(h => (
                             <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider" style={{ color: ink.muted, fontSize: '10px' }}>{h}</th>
                           ))}
                         </tr>
@@ -874,7 +879,7 @@ export default function InvestorDashboard() {
                             key={g.id}
                             onClick={() => openGroupDetail(g.id)}
                             className="cursor-pointer hover:bg-amber-50/50 transition-colors"
-                            style={{ borderBottom: i < 4 ? '1px solid #F5F0E8' : 'none' }}
+                            style={{ borderBottom: i < 4 ? `1px solid ${ink.divider}` : 'none' }}
                           >
                             <td className="px-4 py-3">
                               <p className="font-semibold" style={{ color: ink.heading }}>{g.name}</p>
@@ -887,7 +892,7 @@ export default function InvestorDashboard() {
                                 <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3E2', color: '#e4a233' }}>
                                   {g.prodcast_count}
                                 </span>
-                              ) : <span style={{ color: '#C4B89E' }}>—</span>}
+                              ) : <span style={{ color: ink.mutedLight }}>—</span>}
                             </td>
                           </tr>
                         ))}
@@ -901,7 +906,7 @@ export default function InvestorDashboard() {
               {projects.length === 0 && groups.length === 0 && (
                 <div
                   className="rounded-2xl p-16 text-center"
-                  style={{ background: ink.card, border: '1px solid #EDE8E0' }}
+                  style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}
                 >
                   <div
                     className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl"
@@ -909,8 +914,8 @@ export default function InvestorDashboard() {
                   >
                     ◆
                   </div>
-                  <p className="font-semibold" style={{ color: ink.heading }}>No data yet</p>
-                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>Prodcast projects will appear here once approved by groups</p>
+                  <p className="font-semibold" style={{ color: ink.heading }}>{t('inv.noData')}</p>
+                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>{t('inv.noDataSub')}</p>
                 </div>
               )}
             </div>
@@ -920,16 +925,16 @@ export default function InvestorDashboard() {
           {section === 'projects' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>Investment Projects</h2>
+                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>{t('inv.investmentProjects')}</h2>
                 <p className="text-sm mt-1" style={{ color: ink.muted }}>
-                  {projects.length} {projects.length === 1 ? 'project' : 'projects'} approved by member vote
+                  {projects.length} {t('inv.approvedByVote2')}
                 </p>
               </div>
 
               {projects.length === 0 ? (
-                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
-                  <p className="font-semibold" style={{ color: ink.heading }}>No projects yet</p>
-                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>Groups will submit projects here through the voting process</p>
+                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
+                  <p className="font-semibold" style={{ color: ink.heading }}>{t('inv.noProjects')}</p>
+                  <p className="text-xs mt-1" style={{ color: ink.mutedLight }}>{t('inv.noProjectsSub')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -952,7 +957,7 @@ export default function InvestorDashboard() {
               </div>
 
               {groups.length === 0 ? (
-                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                <div className="rounded-2xl p-16 text-center" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
                   <p className="font-semibold" style={{ color: ink.heading }}>No groups yet</p>
                 </div>
               ) : (
@@ -965,7 +970,7 @@ export default function InvestorDashboard() {
                       onClick={() => openGroupDetail(g.id)}
                       onKeyDown={e => e.key === 'Enter' && openGroupDetail(g.id)}
                       className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all hover:shadow-md cursor-pointer"
-                      style={{ background: ink.card, border: '1px solid #EDE8E0' }}
+                      style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}
                     >
                       {/* Avatar + name */}
                       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1021,7 +1026,7 @@ export default function InvestorDashboard() {
           {section === 'wallet' && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>nTZS Wallet</h2>
+                <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>{t('inv.wallet.title')}</h2>
                 <p className="text-sm mt-1" style={{ color: ink.muted }}>Deposit, withdraw, or transfer funds via the Base network</p>
               </div>
 
@@ -1042,7 +1047,7 @@ export default function InvestorDashboard() {
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-6">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(212,136,30,0.7)' }}>Wallet Balance</p>
+                        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(212,136,30,0.7)' }}>{t('inv.wallet.balance')}</p>
                         <p
                           className="text-4xl font-black leading-none"
                           style={{ color: '#E8D5B0', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '-0.03em' }}
@@ -1071,7 +1076,7 @@ export default function InvestorDashboard() {
                         onMouseOver={e => e.currentTarget.style.background = '#c97e22'}
                         onMouseOut={e => e.currentTarget.style.background = '#e4a233'}
                       >
-                        + Deposit
+                        + {t('inv.deposit')}
                       </button>
                       <button
                         onClick={() => { setWalletModal('withdraw'); setWalletMsg(null); }}
@@ -1080,7 +1085,7 @@ export default function InvestorDashboard() {
                         onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
                         onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                       >
-                        − Withdraw
+                        − {t('inv.withdraw')}
                       </button>
                     </div>
                   </div>
@@ -1089,7 +1094,7 @@ export default function InvestorDashboard() {
                 /* Not provisioned */
                 <div
                   className="rounded-2xl p-8 text-center"
-                  style={{ background: ink.card, border: '2px dashed #EDE8E0' }}
+                  style={{ background: ink.card, border: `2px dashed ${ink.cardBorder}` }}
                 >
                   <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-2xl" style={{ background: '#FEF3E2' }}>◇</div>
                   <p className="font-bold mb-1" style={{ color: ink.heading }}>Wallet Not Set Up</p>
@@ -1107,13 +1112,13 @@ export default function InvestorDashboard() {
 
               {/* Transaction history */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>Recent Transactions</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>{t('inv.recentTx')}</p>
                 {transactions.length === 0 ? (
-                  <div className="rounded-2xl p-8 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
-                    <p className="text-sm" style={{ color: '#C4B89E' }}>No transactions yet</p>
+                  <div className="rounded-2xl p-8 text-center" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
+                    <p className="text-sm" style={{ color: ink.mutedLight }}>{t('inv.noTx')}</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl overflow-hidden" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                  <div className="rounded-2xl overflow-hidden" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
                     {transactions.map((tx, i) => {
                       const isCredit = tx.type === 'deposit';
                       const isDebit = tx.type === 'withdrawal';
@@ -1124,7 +1129,7 @@ export default function InvestorDashboard() {
                         <div
                           key={tx.id}
                           className="flex items-center gap-4 px-5 py-4"
-                          style={{ borderBottom: i < transactions.length - 1 ? '1px solid #F5F0E8' : 'none' }}
+                          style={{ borderBottom: i < transactions.length - 1 ? `1px solid ${ink.divider}` : 'none' }}
                         >
                           <div
                             className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-sm font-bold"
@@ -1169,8 +1174,8 @@ export default function InvestorDashboard() {
             <div className="space-y-6 max-w-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>Your Profile</h2>
-                  <p className="text-sm mt-1" style={{ color: ink.muted }}>Your investor information</p>
+                  <h2 className="text-xl font-bold" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>{t('inv.profile.title')}</h2>
+                  <p className="text-sm mt-1" style={{ color: ink.muted }}>{t('inv.profile.sub')}</p>
                 </div>
                 {!editMode && (
                   <button
@@ -1178,7 +1183,7 @@ export default function InvestorDashboard() {
                     className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
                     style={{ background: ink.heading, color: '#e4a233' }}
                   >
-                    Edit
+                    {t('inv.edit')}
                   </button>
                 )}
               </div>
@@ -1187,8 +1192,8 @@ export default function InvestorDashboard() {
               <div
                 className="rounded-2xl p-4 flex items-center gap-3"
                 style={{
-                  background: profile?.verified ? '#ECFDF5' : '#FEF3E2',
-                  border: `1px solid ${profile?.verified ? '#A7F3D0' : '#FCD9A0'}`,
+                  background: statusBg(!!profile?.verified),
+                  border: `1px solid ${statusBorder(!!profile?.verified)}`,
                 }}
               >
                 <div
@@ -1198,13 +1203,13 @@ export default function InvestorDashboard() {
                   {profile?.verified ? '✓' : '⏳'}
                 </div>
                 <div>
-                  <p className="text-xs font-bold" style={{ color: profile?.verified ? '#065F46' : '#92400E' }}>
-                    {profile?.verified ? 'Account Verified' : 'Pending Verification'}
+                  <p className="text-xs font-bold" style={{ color: statusText(!!profile?.verified) }}>
+                    {profile?.verified ? t('inv.verified') : t('inv.pending')}
                   </p>
-                  <p className="text-[10px]" style={{ color: profile?.verified ? '#6EE7B7' : '#FCD34D' }}>
+                  <p className="text-[10px]" style={{ color: ink.muted }}>
                     {profile?.verified
                       ? 'You have full access to group data'
-                      : 'Our team will reach out within 2 business days'}
+                      : t('inv.pendingSub')}
                   </p>
                 </div>
               </div>
@@ -1212,9 +1217,9 @@ export default function InvestorDashboard() {
               {editMode ? (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   {[
-                    { label: 'Full Name', key: 'full_name', type: 'text' },
-                    { label: 'Company', key: 'company', type: 'text' },
-                    { label: 'Country', key: 'country', type: 'text' },
+                    { label: t('inv.field.fullName'), key: 'full_name', type: 'text' },
+                    { label: t('inv.field.company'), key: 'company', type: 'text' },
+                    { label: t('inv.field.country'), key: 'country', type: 'text' },
                     { label: 'Website', key: 'website', type: 'url' },
                     { label: 'LinkedIn', key: 'linkedin', type: 'url' },
                   ].map(f => (
@@ -1225,7 +1230,7 @@ export default function InvestorDashboard() {
                         value={(editForm[f.key as keyof InvestorProfile] as string) || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
+                        style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       />
@@ -1239,7 +1244,7 @@ export default function InvestorDashboard() {
                       onChange={e => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
                       rows={3}
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
+                      style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       placeholder="Describe your investment interests..."
@@ -1254,7 +1259,7 @@ export default function InvestorDashboard() {
                         value={editForm.min_investment_tzs || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, min_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
+                        style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 500000"
@@ -1267,7 +1272,7 @@ export default function InvestorDashboard() {
                         value={editForm.max_investment_tzs || ''}
                         onChange={e => setEditForm(prev => ({ ...prev, max_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                        style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
+                        style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
                         onFocus={e => e.target.style.borderColor = '#e4a233'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 10000000"
@@ -1280,7 +1285,7 @@ export default function InvestorDashboard() {
                       type="button"
                       onClick={() => { setEditMode(false); setEditForm(profile ?? {}); }}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                      style={{ border: '1.5px solid #EDE8E0', color: ink.muted, background: 'transparent' }}
+                      style={{ border: `1.5px solid ${ink.cardBorder}`, color: ink.muted, background: 'transparent' }}
                     >
                       Cancel
                     </button>
@@ -1294,22 +1299,22 @@ export default function InvestorDashboard() {
                   </div>
                 </form>
               ) : (
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
+                <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}>
                   {[
-                    { label: 'Full Name', value: profile?.full_name },
-                    { label: 'Email', value: profile?.email },
-                    { label: 'Company', value: profile?.company },
-                    { label: 'Type', value: profile?.investor_type },
-                    { label: 'Country', value: profile?.country },
+                    { label: t('inv.field.fullName'), value: profile?.full_name },
+                    { label: t('inv.field.email'), value: profile?.email },
+                    { label: t('inv.field.company'), value: profile?.company },
+                    { label: t('inv.field.type'), value: profile?.investor_type },
+                    { label: t('inv.field.country'), value: profile?.country },
                     { label: 'Website', value: profile?.website },
                     { label: 'LinkedIn', value: profile?.linkedin },
-                    { label: 'Min Investment', value: fmt(profile?.min_investment_tzs) },
-                    { label: 'Max Investment', value: fmt(profile?.max_investment_tzs) },
+                    { label: t('inv.field.minInvestment'), value: fmt(profile?.min_investment_tzs) },
+                    { label: t('inv.field.maxInvestment'), value: fmt(profile?.max_investment_tzs) },
                   ].filter(r => r.value).map((row, i, arr) => (
                     <div
                       key={row.label}
                       className="flex items-start gap-4 px-5 py-4"
-                      style={{ borderBottom: i < arr.length - 1 ? '1px solid #F5F0E8' : 'none' }}
+                      style={{ borderBottom: i < arr.length - 1 ? `1px solid ${ink.divider}` : 'none' }}
                     >
                       <p className="text-xs font-semibold w-32 shrink-0 pt-0.5" style={{ color: ink.mutedLight }}>{row.label}</p>
                       <p className="text-sm font-medium flex-1" style={{ color: ink.heading }}>
@@ -1320,7 +1325,7 @@ export default function InvestorDashboard() {
                     </div>
                   ))}
                   {profile?.bio && (
-                    <div className="px-5 py-4" style={{ borderTop: '1px solid #F5F0E8' }}>
+                    <div className="px-5 py-4" style={{ borderTop: `1px solid ${ink.divider}` }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: ink.mutedLight }}>Bio</p>
                       <p className="text-sm" style={{ color: ink.heading }}>{profile.bio}</p>
                     </div>
@@ -1342,7 +1347,7 @@ export default function InvestorDashboard() {
           />
           <aside
             className="fixed right-0 top-0 h-full z-50 w-full max-w-lg flex flex-col shadow-2xl overflow-hidden"
-            style={{ background: ink.bg, borderLeft: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, borderLeft: `1px solid ${ink.cardBorder}` }}
           >
             {/* Drawer header */}
             <div
@@ -1382,7 +1387,7 @@ export default function InvestorDashboard() {
                     { label: 'Passed', value: `${groupDetail.passed_proposals}/${groupDetail.total_proposals}` },
                     { label: 'Executed', value: String(groupDetail.executed_proposals) },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
                       <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: ink.mutedLight }}>{s.label}</p>
                       <p className="text-sm font-black" style={{ color: ink.heading, fontFamily: 'monospace' }}>{s.value}</p>
                     </div>
@@ -1390,8 +1395,8 @@ export default function InvestorDashboard() {
                 </div>
 
                 {/* Financial Health */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
-                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: `1px solid ${ink.cardBorder}` }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◆ Financial Health</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: ink.chip }}>
@@ -1411,8 +1416,8 @@ export default function InvestorDashboard() {
                 </div>
 
                 {/* Governance */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
-                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: `1px solid ${ink.cardBorder}` }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◈ Governance</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: ink.chip }}>
@@ -1434,8 +1439,8 @@ export default function InvestorDashboard() {
                 </div>
 
                 {/* Activity */}
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
-                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}>
+                  <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: `1px solid ${ink.cardBorder}` }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◉ Recent Activity</p>
                   </div>
                   <div className="divide-y" style={{ borderColor: ink.chip }}>
@@ -1454,8 +1459,8 @@ export default function InvestorDashboard() {
 
                 {/* Leadership */}
                 {groupDetail.leadership.length > 0 && (
-                  <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE8E0', background: ink.card }}>
-                    <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: '1px solid #EDE8E0' }}>
+                  <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${ink.cardBorder}`, background: ink.card }}>
+                    <div className="px-4 py-3" style={{ background: ink.chip, borderBottom: `1px solid ${ink.cardBorder}` }}>
                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ink.muted }}>◎ Leadership</p>
                     </div>
                     <div className="divide-y" style={{ borderColor: ink.chip }}>
@@ -1477,7 +1482,7 @@ export default function InvestorDashboard() {
                       {groupDetail.projects.map(p => {
                         const goal = Number((p.metadata as { funding_goal_tzs?: number })?.funding_goal_tzs ?? 0);
                         return (
-                          <div key={p.id} className="rounded-xl p-4" style={{ background: ink.card, border: '1px solid #EDE8E0' }}>
+                          <div key={p.id} className="rounded-xl p-4" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <p className="text-sm font-bold" style={{ color: ink.heading }}>{p.title}</p>
                               <span
@@ -1516,62 +1521,110 @@ export default function InvestorDashboard() {
         </>
       )}
 
-      {/* ── Contact Modal ─────────────────────────────── */}
-      {/* Project / proposal detail modal */}
+      {/* ── Project / proposal detail — full page ─────── */}
       {detailTarget && (() => {
         const d = detailTarget;
         const dApproved = !!d.funded_at;
         const dGoal = d.metadata?.funding_goal_tzs ?? 0;
+        const votePct = d.total_votes > 0 ? Math.round((d.yes_votes / d.total_votes) * 100) : 0;
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setDetailTarget(null)}>
+          <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: ink.bg }}>
+            {/* Sticky top bar */}
             <div
-              className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-              style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
-              onClick={(e) => e.stopPropagation()}
+              className="sticky top-0 z-10 app-safe-top backdrop-blur-md"
+              style={{ background: `${ink.bg}ee`, borderBottom: `1px solid ${ink.cardBorder}` }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={dApproved ? { background: '#FEF3E2', color: '#e4a233' } : { background: '#EFF6FF', color: '#3B82F6' }}>
-                    {dApproved ? 'Community Approved' : 'Seeking Vote'}
-                  </span>
-                  <h3 className="text-lg font-bold mt-2 leading-snug" style={{ color: ink.heading }}>{d.title}</h3>
-                  <p className="text-xs mt-0.5" style={{ color: ink.muted }}>{d.group_name} · {d.member_count} members</p>
-                </div>
-                <button onClick={() => setDetailTarget(null)} className="p-1 shrink-0" style={{ color: ink.mutedLight }}>✕</button>
+              <div className="max-w-3xl mx-auto flex items-center justify-between px-5 sm:px-8 h-14">
+                <button
+                  onClick={() => setDetailTarget(null)}
+                  className="flex items-center gap-2 text-sm font-semibold transition-colors"
+                  style={{ color: ink.body }}
+                  onMouseOver={e => (e.currentTarget.style.color = '#e4a233')}
+                  onMouseOut={e => (e.currentTarget.style.color = ink.body)}
+                >
+                  <span className="text-lg leading-none">←</span> {t('inv.backToProjects')}
+                </button>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                  style={dApproved
+                    ? { background: statusBg(true), color: statusText(true), border: `1px solid ${statusBorder(true)}` }
+                    : { background: statusBg(false), color: statusText(false), border: `1px solid ${statusBorder(false)}` }}
+                >
+                  {dApproved ? t('inv.communityApproved') : t('inv.seekingVote')}
+                </span>
               </div>
+            </div>
 
-              {(d.metadata?.project_description || d.description) && (
-                <p className="text-sm leading-relaxed" style={{ color: ink.body }}>{d.metadata?.project_description || d.description}</p>
-              )}
+            {/* Content */}
+            <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8 sm:py-12 pb-32">
+              {/* Title block */}
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>{d.title}</h1>
+              <p className="text-sm mt-2" style={{ color: ink.muted }}>
+                {d.group_name} · {d.member_count} {t('inv.members')}
+              </p>
 
-              {dGoal > 0 && (
-                <div className="rounded-xl p-3" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
-                  <p className="text-xs" style={{ color: '#92400E' }}>Funding goal: <span className="font-black font-mono">{fmt(dGoal)}</span></p>
-                </div>
-              )}
-
-              {!dApproved && (d.yes_votes > 0 || d.total_votes > 0) && (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[11px]" style={{ color: ink.mutedLight }}>
-                    <span>Community vote</span><span>{d.yes_votes} yes / {d.total_votes} cast</span>
+              {/* Highlight cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-7">
+                {dGoal > 0 && (
+                  <div className="rounded-2xl p-4" style={{ background: statusBg(false), border: `1px solid ${statusBorder(false)}` }}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: statusText(false) }}>{t('inv.fundingGoal')}</p>
+                    <p className="text-base font-black font-mono mt-1" style={{ color: ink.heading }}>{fmtShort(dGoal)}</p>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
-                    <div className="h-full rounded-full" style={{ width: d.total_votes > 0 ? `${Math.round((d.yes_votes / d.total_votes) * 100)}%` : '0%', background: '#3B82F6' }} />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2 flex-wrap text-[11px]" style={{ color: ink.mutedLight }}>
-                {d.metadata?.timeline && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>◷ {d.metadata.timeline}</span>}
-                {d.metadata?.expected_impact && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>↑ {d.metadata.expected_impact}</span>}
-                {d.monthly_contribution && <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>Contribution: {fmtShort(Number(d.monthly_contribution))}/mo</span>}
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                {dApproved && (
-                  <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: '#e4a233', color: '#fff' }}>Fund →</button>
                 )}
-                <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-2.5 rounded-xl text-xs font-semibold" style={{ background: ink.chip, color: ink.body }}>Contact</button>
+                {d.metadata?.timeline && (
+                  <div className="rounded-2xl p-4" style={{ background: ink.chip, border: `1px solid ${ink.cardBorder}` }}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ink.mutedLight }}>{t('inv.timeline')}</p>
+                    <p className="text-sm font-bold mt-1" style={{ color: ink.heading }}>{d.metadata.timeline}</p>
+                  </div>
+                )}
+                {d.monthly_contribution && (
+                  <div className="rounded-2xl p-4" style={{ background: ink.chip, border: `1px solid ${ink.cardBorder}` }}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ink.mutedLight }}>{t('inv.contribution')}</p>
+                    <p className="text-sm font-bold font-mono mt-1" style={{ color: ink.heading }}>{fmtShort(Number(d.monthly_contribution))}/mo</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Vote progress */}
+              {!dApproved && (d.yes_votes > 0 || d.total_votes > 0) && (
+                <div className="mt-8 rounded-2xl p-5" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
+                  <div className="flex justify-between items-baseline mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: ink.muted }}>{t('inv.communityVote')}</span>
+                    <span className="text-sm font-bold font-mono" style={{ color: ink.heading }}>{d.yes_votes} / {d.total_votes} · {votePct}%</span>
+                  </div>
+                  <div className="h-2.5 rounded-full overflow-hidden" style={{ background: ink.chip }}>
+                    <div className="h-full rounded-full" style={{ width: `${votePct}%`, background: '#e4a233' }} />
+                  </div>
+                </div>
+              )}
+
+              {/* About */}
+              {(d.metadata?.project_description || d.description) && (
+                <div className="mt-8">
+                  <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>{t('inv.about')}</h2>
+                  <p className="text-base leading-relaxed whitespace-pre-line" style={{ color: ink.body }}>{d.metadata?.project_description || d.description}</p>
+                </div>
+              )}
+
+              {/* Expected impact */}
+              {d.metadata?.expected_impact && (
+                <div className="mt-6 rounded-2xl p-5" style={{ background: ink.chip, border: `1px solid ${ink.cardBorder}` }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: ink.mutedLight }}>↑ {t('inv.expectedImpact')}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: ink.body }}>{d.metadata.expected_impact}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Sticky action bar */}
+            <div
+              className="fixed bottom-0 inset-x-0 z-10 pb-safe backdrop-blur-md"
+              style={{ background: `${ink.bg}ee`, borderTop: `1px solid ${ink.cardBorder}` }}
+            >
+              <div className="max-w-3xl mx-auto flex gap-3 px-5 sm:px-8 py-4">
+                {dApproved && (
+                  <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-3.5 rounded-2xl text-sm font-bold" style={{ background: '#e4a233', color: '#fff' }}>{t('inv.fund')} →</button>
+                )}
+                <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-3.5 rounded-2xl text-sm font-bold" style={{ background: ink.heading, color: ink.bg }}>{t('inv.contact')}</button>
               </div>
             </div>
           </div>
@@ -1582,7 +1635,7 @@ export default function InvestorDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
             className="w-full max-w-md rounded-2xl p-6 space-y-4"
-            style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, border: `1px solid ${ink.cardBorder}` }}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1618,7 +1671,7 @@ export default function InvestorDashboard() {
             <button
               onClick={() => setContactTarget(null)}
               className="w-full py-2.5 rounded-xl text-sm"
-              style={{ color: ink.muted, border: '1px solid #EDE8E0' }}
+              style={{ color: ink.muted, border: `1px solid ${ink.cardBorder}` }}
             >
               Close
             </button>
@@ -1629,7 +1682,7 @@ export default function InvestorDashboard() {
       {/* ── Fund Project Modal ───────────────────────── */}
       {fundTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: ink.bg, border: '1px solid #EDE8E0' }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: ink.bg, border: `1px solid ${ink.cardBorder}` }}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5" style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}>
               <div>
@@ -1672,7 +1725,7 @@ export default function InvestorDashboard() {
                   onChange={e => setFundAmount(e.target.value)}
                   placeholder="e.g. 100000"
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading, fontFamily: 'monospace' }}
+                  style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
                   onFocus={e => e.target.style.borderColor = '#e4a233'}
                   onBlur={e => e.target.style.borderColor = ink.cardBorder}
                   required
@@ -1702,7 +1755,7 @@ export default function InvestorDashboard() {
                   type="button"
                   onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                  style={{ border: '1.5px solid #EDE8E0', color: ink.muted, background: 'transparent' }}
+                  style={{ border: `1.5px solid ${ink.cardBorder}`, color: ink.muted, background: 'transparent' }}
                 >
                   Cancel
                 </button>
@@ -1731,7 +1784,7 @@ export default function InvestorDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
             className="w-full max-w-sm rounded-2xl overflow-hidden"
-            style={{ background: ink.bg, border: '1px solid #EDE8E0' }}
+            style={{ background: ink.bg, border: `1px solid ${ink.cardBorder}` }}
           >
             {/* Modal header */}
             <div
@@ -1755,7 +1808,7 @@ export default function InvestorDashboard() {
 
             {/* Deposit method tabs — only shown for deposit */}
             {walletModal === 'deposit' && (
-              <div className="grid grid-cols-3 gap-0" style={{ borderBottom: '1px solid #EDE8E0', background: ink.card }}>
+              <div className="grid grid-cols-3 gap-0" style={{ borderBottom: `1px solid ${ink.cardBorder}`, background: ink.card }}>
                 {([
                   { key: 'mobile', icon: '◌', label: 'M-Pesa', live: true },
                   { key: 'bank',   icon: '▦', label: 'Bank', live: false },
@@ -1825,7 +1878,7 @@ export default function InvestorDashboard() {
                       onChange={e => setWalletAmount(e.target.value)}
                       placeholder="e.g. 50000"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading, fontFamily: 'monospace' }}
+                      style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
@@ -1839,7 +1892,7 @@ export default function InvestorDashboard() {
                       onChange={e => setWalletPhone(e.target.value)}
                       placeholder="e.g. 0712345678"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ background: ink.card, border: '1.5px solid #EDE8E0', color: ink.heading }}
+                      style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
                       onFocus={e => e.target.style.borderColor = '#e4a233'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
@@ -1864,7 +1917,7 @@ export default function InvestorDashboard() {
                       type="button"
                       onClick={() => { setWalletModal(null); setWalletMsg(null); setWalletAmount(''); setWalletPhone(''); setDepositMethod('mobile'); }}
                       className="flex-1 py-3 rounded-xl text-sm"
-                      style={{ border: '1.5px solid #EDE8E0', color: ink.muted }}
+                      style={{ border: `1.5px solid ${ink.cardBorder}`, color: ink.muted }}
                     >Cancel</button>
                     <button
                       type="submit" disabled={walletSubmitting}
