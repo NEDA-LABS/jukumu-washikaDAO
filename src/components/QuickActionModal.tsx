@@ -117,15 +117,13 @@ export default function QuickActionModal({
   const label = 'block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5';
 
   return (
-    <div className="fixed inset-0 z-[70] sm:flex sm:items-center sm:justify-center sm:p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <div
-        className="absolute inset-x-0 bottom-0 top-[env(safe-area-inset-top,0px)] sm:relative sm:inset-auto sm:top-auto sm:w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
+        className="relative w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
+        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)' }}
       >
-        {/* grab handle (mobile) */}
-        <div className="sm:hidden flex justify-center pt-3 shrink-0"><span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" /></div>
-
         <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-white text-sm font-bold">
