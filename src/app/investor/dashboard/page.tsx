@@ -1556,7 +1556,10 @@ export default function InvestorDashboard() {
             </div>
 
             {/* Content */}
-            <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8 sm:py-12 pb-32">
+            <div
+              className="max-w-3xl mx-auto px-5 sm:px-8 py-8 sm:py-12"
+              style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}
+            >
               {/* Title block */}
               <h1 className="text-2xl sm:text-3xl font-bold leading-tight" style={{ color: ink.heading, letterSpacing: '-0.02em' }}>{d.title}</h1>
               <p className="text-sm mt-2" style={{ color: ink.muted }}>
