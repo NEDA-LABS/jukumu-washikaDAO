@@ -748,7 +748,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
 }
 
 function MyGroupSection({ memberProfile }: { memberProfile: any }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [myGroups, setMyGroups] = useState<any[]>([]);
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
@@ -870,9 +870,9 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
   };
 
   const statusConfig: Record<string, { label: string; cls: string }> = {
-    pending:  { label: 'Inasubiri', cls: 'bg-yellow-500/15 text-yellow-400' },
-    approved: { label: 'Imeidhinishwa', cls: 'bg-emerald-500/15 text-emerald-400' },
-    rejected: { label: 'Imekataliwa', cls: 'bg-red-500/15 text-red-400' },
+    pending:  { label: t('mg.status.pending'), cls: 'bg-yellow-500/15 text-yellow-400' },
+    approved: { label: t('mg.status.approved'), cls: 'bg-emerald-500/15 text-emerald-400' },
+    rejected: { label: t('mg.status.rejected'), cls: 'bg-red-500/15 text-red-400' },
   };
 
   return (
@@ -881,14 +881,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Header with Create Group button */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-base font-semibold text-foreground">Makundi Yangu</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Makundi unayoshiriki nayo</p>
+          <p className="text-base font-semibold text-foreground">{t('mg.title')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('mg.subtitle')}</p>
         </div>
         <button
           onClick={() => { setShowCreateModal(true); setCreateError(''); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-xs font-medium transition-colors"
         >
-          <span className="text-base leading-none">+</span> Unda Kundi
+          <span className="text-base leading-none">+</span> {t('mg.create')}
         </button>
       </div>
 
@@ -906,25 +906,25 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-base font-semibold text-foreground truncate">{g.name}</h3>
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
-                        {g.member_role || 'mwanachama'}
+                        {g.member_role || t('mg.role.member')}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Hali: {g.membership_status || g.status || 'active'}
+                      {t('mg.status')}: {g.membership_status || g.status || 'active'}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-[#e4a233]">
                       TSh {parseInt(g.monthly_contribution || 0).toLocaleString()}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">kwa mwezi</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{g.contribution_frequency === 'weekly' ? t('mg.perWeek') : t('mg.perMonth')}</p>
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Gusa kuangalia kundi →</p>
+                  <p className="text-xs text-muted-foreground">{t('mg.tapToView')} →</p>
                   <div className="flex items-center gap-1.5">
                     <UserGroupIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground group-hover:text-[#e4a233] transition-colors">Angalia →</span>
+                    <span className="text-xs text-muted-foreground group-hover:text-[#e4a233] transition-colors">{t('mg.view')} →</span>
                   </div>
                 </div>
               </div>
@@ -935,7 +935,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
             onClick={() => setShowJoinModal(true)}
             className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
           >
-            + Jiunge na Kundi Jingine
+            + {t('mg.joinAnother')}
           </button>
         </>
       ) : (
@@ -943,13 +943,13 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
             <UserGroupIcon className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-muted-foreground mb-1 text-sm">Bado hujajiunga na kundi lolote.</p>
-          <p className="text-xs text-muted-foreground mb-5">Pata nambari ya kundi (mfano: JKM-A3F9K2) kutoka kwa kiongozi.</p>
+          <p className="text-muted-foreground mb-1 text-sm">{t('mg.emptyTitle')}</p>
+          <p className="text-xs text-muted-foreground mb-5">{t('mg.emptyHint')}</p>
           <button
             onClick={() => setShowJoinModal(true)}
             className="px-5 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium transition-colors"
           >
-            Jiunge na Kundi
+            {t('mg.joinCta')}
           </button>
         </div>
       )}
@@ -957,14 +957,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {/* Pending join requests */}
       {joinRequests.length > 0 && (
         <div className="rounded-xl bg-card border border-border p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Maombi Yangu</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('mg.myRequests')}</h3>
           <div className="space-y-2">
             {joinRequests.map((r) => (
               <div key={r.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div>
                   <p className="text-sm text-foreground">{r.group_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    TSh {parseInt(r.monthly_contribution).toLocaleString()}/mwezi · {new Date(r.created_at).toLocaleDateString('sw-TZ')}
+                    TSh {parseInt(r.monthly_contribution).toLocaleString()}/{t('mg.month')} · {new Date(r.created_at).toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-GB')}
                   </p>
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${(statusConfig[r.status] || { cls: 'bg-white/5 text-muted-foreground' }).cls}`}>
@@ -980,16 +980,16 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-base font-semibold text-foreground mb-1">Unda Kundi Jipya</h3>
-            <p className="text-xs text-muted-foreground mb-5">Utakuwa kiongozi wa kundi hili moja kwa moja.</p>
+            <h3 className="text-base font-semibold text-foreground mb-1">{t('mg.createNew.title')}</h3>
+            <p className="text-xs text-muted-foreground mb-5">{t('mg.createNew.desc')}</p>
 
             <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Jina la Kundi *</label>
+                <label className="block text-xs text-muted-foreground mb-1">{t('mg.field.name')} *</label>
                 <input
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Mfano: Vikundi vya Maendeleo"
+                  placeholder={t('mg.field.namePh')}
                   className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
                   required
                 />
@@ -1031,7 +1031,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               </div>
 
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Kiwango cha Kupiga Kura</label>
+                <label className="block text-xs text-muted-foreground mb-1">{t('mg.field.voting')}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -1040,7 +1040,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     min="1"
                     className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
-                  <span className="text-muted-foreground text-sm">kati ya</span>
+                  <span className="text-muted-foreground text-sm">{t('mg.field.of')}</span>
                   <input
                     type="number"
                     value={createForm.votingDenominator}
@@ -1048,10 +1048,10 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     min="1"
                     className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
                   />
-                  <span className="text-xs text-muted-foreground">kura kupita</span>
+                  <span className="text-xs text-muted-foreground">{t('mg.field.pass')}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Sasa hivi: {createForm.votingNumerator}/{createForm.votingDenominator} kura zinahitajika kupitisha pendekezo
+                  {t('mg.field.currently')}: {createForm.votingNumerator}/{createForm.votingDenominator} {t('mg.field.votesNeeded')}
                 </p>
               </div>
 
@@ -1065,14 +1065,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   onClick={() => { setShowCreateModal(false); setCreateError(''); }}
                   className="flex-1 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
                 >
-                  Ghairi
+                  {t('mg.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
                   className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
-                  {createLoading ? 'Inaunda...' : 'Unda Kundi'}
+                  {createLoading ? t('mg.creating') : t('mg.create')}
                 </button>
               </div>
             </form>
@@ -1085,14 +1085,14 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-semibold text-foreground">Jiunge na Kundi</h3>
+              <h3 className="text-base font-semibold text-foreground">{t('mg.joinModal.title')}</h3>
               <button onClick={resetJoinModal} className="text-muted-foreground hover:text-muted-foreground transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mb-5">Ingiza nambari ya kundi uliyopewa na kiongozi.</p>
+            <p className="text-xs text-muted-foreground mb-5">{t('mg.joinModal.desc')}</p>
 
             {/* Code input + search */}
             <div className="flex gap-2 mb-4">
@@ -1100,7 +1100,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 value={joinCode}
                 onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinLookupResult(null); setJoinLookupError(''); setJoinFeedback(null); }}
                 onKeyDown={e => { if (e.key === 'Enter') handleLookupCode(); }}
-                placeholder="Mfano: JKM-A3F9K2"
+                placeholder={t('mg.joinModal.codePh')}
                 maxLength={12}
                 className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground font-mono placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 uppercase tracking-wider"
               />
@@ -1109,7 +1109,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 disabled={joinLookupLoading || !joinCode.trim()}
                 className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
               >
-                {joinLookupLoading ? '...' : 'Tafuta'}
+                {joinLookupLoading ? '...' : t('mg.joinModal.search')}
               </button>
             </div>
 
@@ -1124,28 +1124,28 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{joinLookupResult.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Kiongozi: {joinLookupResult.leader_name || 'Hajapewa'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('mg.joinModal.leader')}: {joinLookupResult.leader_name || t('mg.joinModal.unassigned')}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-[#e4a233]">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">kwa mwezi</p>
+                    <p className="text-xs text-muted-foreground">{joinLookupResult.contribution_frequency === 'weekly' ? t('mg.perWeek') : t('mg.perMonth')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t border-border">
-                  <span>{joinLookupResult.member_count} wanachama</span>
+                  <span>{joinLookupResult.member_count} {t('mg.joinModal.members')}</span>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
                   <span className={joinLookupResult.join_policy === 'open' ? 'text-emerald-400' : 'text-yellow-400'}>
-                    {joinLookupResult.join_policy === 'open' ? 'Wazi — utajiunga moja kwa moja' : 'Inahitaji idhini ya kiongozi'}
+                    {joinLookupResult.join_policy === 'open' ? t('mg.joinModal.open') : t('mg.joinModal.needsApproval')}
                   </span>
                 </div>
 
                 {joinLookupResult.join_policy !== 'open' && (
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Ujumbe kwa kiongozi (si lazima)</label>
+                    <label className="block text-xs text-muted-foreground mb-1">{t('mg.joinModal.messageLabel')}</label>
                     <textarea
                       value={joinMessage}
                       onChange={e => setJoinMessage(e.target.value)}
-                      placeholder="Eleza kwa nini ungependa kujiunga..."
+                      placeholder={t('mg.joinModal.messagePh')}
                       className="w-full px-3 py-2 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 resize-none"
                       rows={2}
                     />
@@ -1157,7 +1157,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   disabled={joinLoading}
                   className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
-                  {joinLoading ? 'Inajiunga...' : joinLookupResult.join_policy === 'open' ? 'Jiunga Sasa' : 'Tuma Ombi'}
+                  {joinLoading ? t('mg.joinModal.joining') : joinLookupResult.join_policy === 'open' ? t('mg.joinModal.joinNow') : t('mg.joinModal.sendReq')}
                 </button>
               </div>
             )}
