@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
     // ── Phase 2: payout (money leaves the master) ──
     let withdrawal;
     try {
-      withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: phone });
+      const quote = await ntzs.withdrawals.quote({ userId: masterUserId, amountTzs: amount, phoneNumber: phone });
+      if (!quote.quoteId) throw new Error('nTZS declined to quote this withdrawal (insufficient master balance).');
+      withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: phone, quoteId: quote.quoteId });
     } catch (err) {
       try {
         await client.query('BEGIN');

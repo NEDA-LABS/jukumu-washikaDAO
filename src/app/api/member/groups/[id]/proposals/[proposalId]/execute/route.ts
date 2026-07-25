@@ -206,7 +206,9 @@ export async function POST(
       await debit(client, { ownerType: 'group', ownerId: groupId }, amount); // reserve from treasury
       const masterUserId = await getMasterNtzsUserId(client);
       const phone = normalizePhone(recipientPhone);
-      const withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: phone });
+      const quote = await ntzs.withdrawals.quote({ userId: masterUserId, amountTzs: amount, phoneNumber: phone });
+      if (!quote.quoteId) throw new Error('nTZS declined to quote this disbursement (insufficient master balance).');
+      const withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: phone, quoteId: quote.quoteId });
       await recordTransaction(client, {
         ntzsId: withdrawal.id,
         type: 'withdrawal',

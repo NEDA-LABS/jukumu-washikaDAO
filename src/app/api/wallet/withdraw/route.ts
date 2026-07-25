@@ -24,10 +24,16 @@ export async function POST(request: NextRequest) {
   const client = await pool.connect();
 
   try {
-    const { userId, amountTzs, phone } = await request.json();
+    const { userId, amountTzs, phone, quoteId } = await request.json();
 
     if (!userId || !amountTzs || !phone) {
       return NextResponse.json({ error: 'userId, amountTzs, and phone are required' }, { status: 400 });
+    }
+    if (!quoteId || typeof quoteId !== 'string') {
+      return NextResponse.json({
+        error: 'A withdrawal quote is required. Fetch one from /api/wallet/withdraw/quote first.',
+        code: 'quote_required',
+      }, { status: 400 });
     }
     const amount = Math.round(Number(amountTzs));
     if (!Number.isFinite(amount) || amount < 100) {
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
     // ── Phase 2: the actual payout (money leaves the master) ──
     let withdrawal;
     try {
-      withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: normalizedPhone });
+      withdrawal = await ntzs.withdrawals.create({ userId: masterUserId, amountTzs: amount, phoneNumber: normalizedPhone, quoteId });
     } catch (err) {
       // The send failed → nothing left; refund the full debit and mark failed.
       try {

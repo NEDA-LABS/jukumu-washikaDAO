@@ -49,6 +49,28 @@ export interface NtzsWithdrawal {
   createdAt: string;
 }
 
+/**
+ * Signed authorisation for a cash-out. Fetch via POST /withdrawals/quote,
+ * pass the returned `quoteId` on POST /withdrawals within the 5-minute TTL.
+ */
+export interface NtzsWithdrawalQuote {
+  quoteId: string | null;
+  expiresAt: string;
+  recipientName: string | null;
+  receiveAmountTzs: number;
+  burnAmountTzs: number;
+  fees: {
+    platformFeeTzs?: number;
+    pspFeeTzs?: number;
+    totalFeeTzs?: number;
+    [k: string]: unknown;
+  };
+  balance: {
+    availableTzs: number;
+    sufficient: boolean;
+  };
+}
+
 export interface NtzsBalance {
   balanceTzs: number;
 }
@@ -162,11 +184,23 @@ export const ntzsTransfers = {
 // ── Withdrawals (Off-Ramp: nTZS → Mobile Money) ──
 
 export const ntzsWithdrawals = {
-  /** Burn nTZS and send TZS to M-Pesa */
+  /**
+   * Price a cash-out. Returns a signed `quoteId` (valid ~5 minutes) plus the
+   * fee/net breakdown to show on a confirmation card. Quotes are now
+   * mandatory: cash-outs without a `quoteId` are rejected with `quote_required`.
+   */
+  quote: (params: {
+    userId: string;
+    amountTzs: number;
+    phoneNumber: string;
+  }) => ntzsRequest<NtzsWithdrawalQuote>('POST', '/withdrawals/quote', params),
+
+  /** Burn nTZS and send TZS to M-Pesa. Requires a fresh `quoteId`. */
   create: (params: {
     userId: string;
     amountTzs: number;
     phoneNumber: string;
+    quoteId: string;
   }) => ntzsRequest<NtzsWithdrawal>('POST', '/withdrawals', params),
 
   /** Check withdrawal status */

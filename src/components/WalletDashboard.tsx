@@ -101,6 +101,13 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
   const [myGroups, setMyGroups] = useState<Array<{ id: number; name: string }>>([]);
   const [availableMembers, setAvailableMembers] = useState<Array<{ id: number; full_name: string; email: string }>>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
+  const [withdrawQuote, setWithdrawQuote] = useState<{
+    quoteId: string; expiresAt: string; recipientName: string | null;
+    receiveAmountTzs: number; burnAmountTzs: number;
+    fees: { platformFeeTzs?: number; pspFeeTzs?: number; totalFeeTzs?: number };
+    balance: { availableTzs: number; sufficient: boolean };
+    platformFeeTzs: number; totalDebitTzs: number; normalizedPhone: string;
+  } | null>(null);
 
   const fetchBalance = useCallback(async () => {
     try {
@@ -226,8 +233,24 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
         endpoint = '/api/wallet/deposit';
         body = { userId, amountTzs: parseInt(formData.amount), phone: formData.phone };
       } else if (modal === 'withdraw') {
+        // Two-step: fetch quote first, then confirm with quoteId.
+        if (!withdrawQuote) {
+          const qRes = await fetch('/api/wallet/withdraw/quote', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, amountTzs: parseInt(formData.amount), phone: formData.phone }),
+          });
+          const qData = await qRes.json().catch(() => ({}));
+          if (!qRes.ok || !qData.quoteId) {
+            setFeedback({ type: 'error', message: qData.error || 'Could not get a withdrawal quote.' });
+            setSubmitting(false);
+            return;
+          }
+          setWithdrawQuote(qData);
+          setSubmitting(false);
+          return;
+        }
         endpoint = '/api/wallet/withdraw';
-        body = { userId, amountTzs: parseInt(formData.amount), phone: formData.phone };
+        body = { userId, amountTzs: parseInt(formData.amount), phone: formData.phone, quoteId: withdrawQuote.quoteId };
       } else {
         endpoint = '/api/wallet/transfer';
         body = {
@@ -252,12 +275,16 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       if (res.ok) {
         setFeedback({ type: 'success', message: data.message || 'Imefanikiwa!' });
         setFormData({ amount: '', phone: '', groupId: '', toMemberId: '', toUsername: '', purpose: 'contribution' });
+        setWithdrawQuote(null);
         // Refresh immediately then poll for status updates
         setTimeout(() => { fetchBalance(); fetchTransactions(); }, 2000);
         setTimeout(() => syncTransactions(), 8000);
         setTimeout(() => syncTransactions(), 20000);
         setTimeout(() => setModal(null), 3000);
       } else {
+        if (data.code === 'invalid_quote' || data.code === 'quote_stale' || data.code === 'quote_mismatch') {
+          setWithdrawQuote(null);
+        }
         setFeedback({ type: 'error', message: data.error || 'Imeshindikana' });
       }
     } catch {
@@ -417,11 +444,55 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
               <h3 className="font-semibold text-foreground">
                 {modal === 'deposit' ? t('wal.deposit') : modal === 'withdraw' ? t('wal.withdraw') : t('wal.transferFull')}
               </h3>
-              <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setModal(null); setWithdrawQuote(null); }} className="text-muted-foreground hover:text-foreground">
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
 
+            {modal === 'withdraw' && withdrawQuote && (
+              <div className="p-6 space-y-3">
+                <div className="rounded-xl border border-border bg-background p-4 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">You will receive</p>
+                    <p className="text-2xl font-bold text-foreground tabular-nums mt-0.5">TSh {Math.round(withdrawQuote.receiveAmountTzs).toLocaleString()}</p>
+                  </div>
+                  <div className="pt-3 border-t border-border grid gap-1.5 text-xs">
+                    {withdrawQuote.recipientName && (
+                      <div className="flex justify-between gap-3"><span className="text-muted-foreground">Recipient</span><span className="text-foreground">{withdrawQuote.recipientName}</span></div>
+                    )}
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">Phone</span><span className="text-foreground font-mono">{withdrawQuote.normalizedPhone}</span></div>
+                    {(withdrawQuote.fees?.totalFeeTzs ?? 0) > 0 && (
+                      <div className="flex justify-between gap-3"><span className="text-muted-foreground">nTZS fee</span><span className="text-foreground">TSh {Math.round(withdrawQuote.fees.totalFeeTzs!).toLocaleString()}</span></div>
+                    )}
+                    {withdrawQuote.platformFeeTzs > 0 && (
+                      <div className="flex justify-between gap-3"><span className="text-muted-foreground">Platform fee</span><span className="text-foreground">TSh {Math.round(withdrawQuote.platformFeeTzs).toLocaleString()}</span></div>
+                    )}
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">Total debited</span><span className="text-foreground font-semibold">TSh {Math.round(withdrawQuote.totalDebitTzs).toLocaleString()}</span></div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-center text-muted-foreground">Quote valid for 5 minutes.</p>
+                {feedback && (
+                  <div className={`rounded-lg px-4 py-3 text-sm ${feedback.type === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'}`}>
+                    {feedback.message}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setWithdrawQuote(null); setFeedback(null); }}
+                    className="px-4 py-2.5 rounded-lg bg-muted hover:bg-border text-foreground text-sm font-medium"
+                  >← Back</button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
+                    disabled={submitting}
+                    className="flex-1 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >{submitting ? t('wal.sending') : 'Confirm Withdrawal'}</button>
+                </div>
+              </div>
+            )}
+
+            {!(modal === 'withdraw' && withdrawQuote) && (
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Amount */}
               <div>
@@ -516,9 +587,14 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
                 disabled={submitting}
                 className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {submitting ? t('wal.sending') : modal === 'deposit' ? t('wal.deposit') : modal === 'withdraw' ? t('wal.withdraw') : t('wal.transfer')}
+                {submitting
+                  ? t('wal.sending')
+                  : modal === 'deposit' ? t('wal.deposit')
+                    : modal === 'withdraw' ? 'Continue →'
+                    : t('wal.transfer')}
               </button>
             </form>
+            )}
           </div>
         </div>
       )}
