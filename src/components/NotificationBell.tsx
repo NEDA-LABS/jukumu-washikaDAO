@@ -160,7 +160,7 @@ export default function NotificationBell({
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-[92vw] max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden z-50"
+          className="fixed left-3 right-3 top-[calc(env(safe-area-inset-top,0px)+4rem)] max-w-sm mx-auto sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 sm:max-w-none sm:mx-0 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden z-50"
           role="menu"
         >
           {/* Header */}
