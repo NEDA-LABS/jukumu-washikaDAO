@@ -86,6 +86,15 @@ const translations = {
     'hero.stat.groups': 'Vikundi',
     'hero.stat.businesses': 'Biashara',
     'hero.stat.trainers': 'Wakufunzi',
+    'hero.node.save': 'Weka Akiba',
+    'hero.node.learn': 'Jifunze',
+    'hero.node.invest': 'Wekeza',
+    'hero.node.center': 'Jamii',
+    'hero.live': 'Moja kwa moja',
+    'hero.ticker.1': 'Asha ameweka akiba TSh 50,000',
+    'hero.ticker.2': 'Kikundi THE BOYS FC kimefadhili mradi',
+    'hero.ticker.3': 'Juma amekamilisha mafunzo ya biashara',
+    'hero.ticker.4': 'Mwekezaji ameunga mkono kikundi kipya',
 
     // About / process rail
     'about.eyebrow': 'Mchakato Wetu',
@@ -656,6 +665,15 @@ const translations = {
     'hero.stat.groups': 'Groups',
     'hero.stat.businesses': 'Businesses',
     'hero.stat.trainers': 'Trainers',
+    'hero.node.save': 'Save',
+    'hero.node.learn': 'Learn',
+    'hero.node.invest': 'Invest',
+    'hero.node.center': 'Community',
+    'hero.live': 'Live',
+    'hero.ticker.1': 'Asha saved TSh 50,000',
+    'hero.ticker.2': 'Group THE BOYS FC funded a project',
+    'hero.ticker.3': 'Juma completed business training',
+    'hero.ticker.4': 'An investor backed a new group',
 
     // About / process rail
     'about.eyebrow': 'Our Process',
