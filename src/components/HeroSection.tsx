@@ -6,10 +6,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import AnimatedBackground from '@/components/AnimatedBackground';
 
 /* ── Count-up hook ─────────────────────────────────────────────── */
-function useCountUp(target: number, durationMs = 1400, start = true) {
+function useCountUp(target: number, durationMs = 1200) {
   const [value, setValue] = useState(0);
   useEffect(() => {
-    if (!start) return;
+    if (!target) { setValue(0); return; }
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setValue(target);
       return;
@@ -18,38 +18,126 @@ function useCountUp(target: number, durationMs = 1400, start = true) {
     const t0 = performance.now();
     const tick = (now: number) => {
       const p = Math.min((now - t0) / durationMs, 1);
-      // easeOutCubic
-      const eased = 1 - Math.pow(1 - p, 3);
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
       setValue(Math.round(target * eased));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [target, durationMs, start]);
+  }, [target, durationMs]);
   return value;
 }
 
-/* ── Small hexagon wrapper (clip-path) ─────────────────────────── */
+/* ── Live platform metrics ─────────────────────────────────────── */
+type Stats = {
+  groups: number; members: number; businesses: number;
+  trainings: number; volumeTzs: number; heldTzs: number; live: boolean;
+};
+
+function usePlatformStats() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/public/stats')
+      .then((r) => r.json())
+      .then((d) => { if (alive) setStats(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  return stats;
+}
+
+/** Compact money: 12_400_000 → "12.4M" */
+function compact(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(n % 1_000_000_000 === 0 ? 0 : 1)}B`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;
+  return String(n);
+}
+
 const HEX_CLIP = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
 
-/* ── Floating member avatar ────────────────────────────────────── */
-function FloatBubble({
-  x, y, delay, seed,
-}: { x: string; y: string; delay: number; seed: number }) {
-  const grads = [
-    'from-[#d1622b] to-[#e4a233]',
-    'from-emerald-400 to-teal-500',
-    'from-sky-400 to-blue-600',
-    'from-fuchsia-400 to-purple-600',
-  ];
-  const letters = ['A', 'J', 'M', 'F', 'N', 'S'];
+/* ── Illustrated member avatar ─────────────────────────────────── */
+type Persona = {
+  skin: string; cloth: string; hair: string;
+  style: 'afro' | 'bun' | 'wrap' | 'fade';
+  badge: 'save' | 'learn' | 'invest' | 'join';
+};
+
+const PERSONAS: Persona[] = [
+  { skin: '#8d5524', cloth: '#d1622b', hair: '#2b1d14', style: 'afro',  badge: 'save' },
+  { skin: '#c68642', cloth: '#0f9d76', hair: '#1c1410', style: 'bun',   badge: 'learn' },
+  { skin: '#6b4423', cloth: '#3b82f6', hair: '#e4a233', style: 'wrap',  badge: 'invest' },
+  { skin: '#a8683a', cloth: '#8b5cf6', hair: '#241812', style: 'fade',  badge: 'join' },
+];
+
+const BADGE: Record<Persona['badge'], { bg: string; path: string }> = {
+  save:   { bg: '#e4a233', path: 'M8 3.2c2.6 0 4.8.9 4.8 2s-2.2 2-4.8 2-4.8-.9-4.8-2 2.2-2 4.8-2zM3.2 5.2v5.6c0 1.1 2.2 2 4.8 2s4.8-.9 4.8-2V5.2' },
+  learn:  { bg: '#d1622b', path: 'M8 4.6C7 3.9 5.3 3.6 3 3.6v8.2c2.3 0 4 .3 5 1 1-.7 2.7-1 5-1V3.6c-2.3 0-4 .3-5 1z' },
+  invest: { bg: '#16a34a', path: 'M2.8 12.4h10.4M5.2 10.4V6.6M8 10.4V3.6M10.8 10.4V7.8' },
+  join:   { bg: '#3b82f6', path: 'M8 8.4a2.4 2.4 0 100-4.8 2.4 2.4 0 000 4.8zM3.4 13a4.6 4.6 0 019.2 0' },
+};
+
+function AvatarArt({ p }: { p: Persona }) {
   return (
-    <div
-      className="absolute"
-      style={{ left: x, top: y, animation: `wd-bob 5s ease-in-out ${delay}s infinite` }}
-    >
-      <div className={`h-9 w-9 rounded-full bg-gradient-to-br ${grads[seed % grads.length]} ring-2 ring-card shadow-lg flex items-center justify-center text-white text-xs font-bold`}>
-        {letters[seed % letters.length]}
+    <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
+      <defs>
+        <linearGradient id={`bg-${p.style}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="100%" stopColor={p.cloth} stopOpacity="0.28" />
+        </linearGradient>
+      </defs>
+      <rect width="40" height="40" fill={`url(#bg-${p.style})`} />
+
+      {/* hair behind the head */}
+      {p.style === 'afro' && <circle cx="20" cy="15" r="11" fill={p.hair} />}
+      {p.style === 'bun' && <circle cx="20" cy="6.5" r="4" fill={p.hair} />}
+      {p.style === 'wrap' && <path d="M9 15a11 11 0 0122 0c0 2-3 3-11 3S9 17 9 15z" fill={p.hair} />}
+
+      {/* shoulders */}
+      <path d="M4 40c0-8 7.2-12 16-12s16 4 16 12z" fill={p.cloth} />
+      {/* collar */}
+      <path d="M16 28.5c1.2 2 6.8 2 8 0l-4 3.5z" fill="#ffffff" fillOpacity="0.35" />
+      {/* neck */}
+      <rect x="16.6" y="21" width="6.8" height="8" rx="3.4" fill={p.skin} />
+      {/* head */}
+      <circle cx="20" cy="16" r="8.2" fill={p.skin} />
+
+      {/* hair in front */}
+      {p.style === 'fade' && <path d="M11.9 14.4a8.2 8.2 0 0116.2 0c-2.4-2.2-13.8-2.2-16.2 0z" fill={p.hair} />}
+      {p.style === 'bun' && <path d="M11.9 14.9a8.2 8.2 0 0116.2 0c-2-3.4-14.2-3.4-16.2 0z" fill={p.hair} />}
+      {p.style === 'afro' && <path d="M12 14.6a8.2 8.2 0 0116 0c-2.2-2.6-13.8-2.6-16 0z" fill={p.hair} fillOpacity="0.85" />}
+
+      {/* face */}
+      <circle cx="17.1" cy="16.2" r="0.95" fill="#1f1b16" />
+      <circle cx="22.9" cy="16.2" r="0.95" fill="#1f1b16" />
+      <path d="M17.4 19.4c1.4 1.3 3.8 1.3 5.2 0" stroke="#1f1b16" strokeOpacity="0.75" strokeWidth="1.1" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function MemberBubble({ x, y, delay, seed }: { x: string; y: string; delay: number; seed: number }) {
+  const p = PERSONAS[seed % PERSONAS.length];
+  const b = BADGE[p.badge];
+  return (
+    <div className="absolute" style={{ left: x, top: y, animation: `wd-bob 5.5s ease-in-out ${delay}s infinite` }}>
+      <div className="relative">
+        <div
+          className="h-10 w-10 sm:h-[52px] sm:w-[52px] rounded-full p-[2px] shadow-xl"
+          style={{ background: `linear-gradient(135deg, ${p.cloth}, #e4a233)` }}
+        >
+          <div className="h-full w-full overflow-hidden rounded-full bg-card ring-1 ring-black/5">
+            <AvatarArt p={p} />
+          </div>
+        </div>
+        <span
+          className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-card shadow"
+          style={{ background: b.bg }}
+        >
+          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d={b.path} />
+          </svg>
+        </span>
       </div>
     </div>
   );
@@ -63,7 +151,6 @@ function ActivityTicker() {
   useEffect(() => {
     const id = setInterval(() => setI((v) => (v + 1) % lines.length), 2800);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lines.length]);
   return (
     <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card/95 backdrop-blur-md px-3.5 py-2.5 shadow-xl">
@@ -77,41 +164,57 @@ function ActivityTicker() {
   );
 }
 
-/* ── The circular-economy orbit visual ─────────────────────────── */
+/* ── Circular-economy orbit visual ─────────────────────────────── */
+function OrbitNode({ angle, icon, label, accent }: { angle: number; icon: React.ReactNode; label: string; accent: string }) {
+  return (
+    <div
+      className="absolute left-1/2 top-1/2"
+      style={{ transform: `translate(-50%, -50%) translate(calc(cos(${angle}deg) * var(--r)), calc(sin(${angle}deg) * var(--r)))` }}
+    >
+      {/* counter-rotate so the chip stays upright while the ring spins */}
+      <div style={{ animation: 'wd-spin-rev 32s linear infinite' }}>
+        <div className="flex flex-col items-center gap-1.5">
+          <div
+            className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-border bg-card/90 backdrop-blur-md shadow-lg"
+            style={{ color: accent }}
+          >
+            {icon}
+          </div>
+          <span className="rounded-full bg-card/90 px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[11px] font-semibold text-foreground shadow-sm border border-border whitespace-nowrap">
+            {label}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CircularEconomyViz() {
   const { t } = useLanguage();
   const iconCls = 'h-6 w-6';
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[300px] sm:max-w-[380px] lg:max-w-[440px]">
-      {/* glow */}
+    <div className="mx-auto w-full max-w-[248px] sm:max-w-[360px] lg:max-w-[440px]">
+    <div className="relative aspect-square w-full">
       <div aria-hidden className="absolute inset-[12%] rounded-full bg-gradient-to-br from-[#e4a233]/25 to-[#d1622b]/20 blur-3xl" />
 
-      {/* rotating ring + connecting circle */}
       <div className="absolute inset-0" style={{ animation: 'wd-spin 32s linear infinite' }}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
           <circle
-            cx="50" cy="50" r="38"
-            fill="none"
-            stroke="var(--ds-gold)"
-            strokeOpacity="0.5"
-            strokeWidth="0.6"
-            strokeDasharray="4 4"
+            cx="50" cy="50" r="38" fill="none"
+            stroke="var(--ds-gold)" strokeOpacity="0.5" strokeWidth="0.6" strokeDasharray="4 4"
             style={{ animation: 'wd-dash 40s linear infinite' }}
           />
         </svg>
-        {/* orbit nodes positioned on the ring (radius ~ 38% of 440 ≈ 150px, tuned per breakpoint via % transform) */}
-        <div className="absolute inset-0 [--r:120px] sm:[--r:150px] lg:[--r:170px]">
-          <OrbitNodeResponsive angle={-90} icon={<CoinsIcon className={iconCls} />} label={t('hero.node.save')} accent="#e4a233" />
-          <OrbitNodeResponsive angle={30} icon={<BookIcon className={iconCls} />} label={t('hero.node.learn')} accent="#d1622b" />
-          <OrbitNodeResponsive angle={150} icon={<ChartIcon className={iconCls} />} label={t('hero.node.invest')} accent="#16a34a" />
+        <div className="absolute inset-0 [--r:82px] sm:[--r:138px] lg:[--r:168px]">
+          <OrbitNode angle={-90} icon={<CoinsIcon className={iconCls} />} label={t('hero.node.save')} accent="#e4a233" />
+          <OrbitNode angle={30} icon={<BookIcon className={iconCls} />} label={t('hero.node.learn')} accent="#d1622b" />
+          <OrbitNode angle={150} icon={<ChartIcon className={iconCls} />} label={t('hero.node.invest')} accent="#16a34a" />
         </div>
       </div>
 
-      {/* pulse rings behind center */}
       <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#e4a233]/40" style={{ animation: 'wd-pulse-ring 3s ease-out infinite' }} />
       <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#e4a233]/40" style={{ animation: 'wd-pulse-ring 3s ease-out 1.5s infinite' }} />
 
-      {/* center hexagon */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center bg-gradient-to-br from-[#d1622b] to-[#e4a233] shadow-2xl shadow-[#d1622b]/40"
@@ -124,41 +227,17 @@ function CircularEconomyViz() {
         </div>
       </div>
 
-      {/* floating members */}
-      <FloatBubble x="6%" y="18%" delay={0} seed={0} />
-      <FloatBubble x="86%" y="12%" delay={0.8} seed={1} />
-      <FloatBubble x="90%" y="72%" delay={1.6} seed={2} />
-      <FloatBubble x="2%" y="66%" delay={2.2} seed={3} />
-
-      {/* live ticker */}
-      <div className="absolute -bottom-3 left-1/2 w-[92%] max-w-xs -translate-x-1/2">
-        <ActivityTicker />
+      {/* Corner-anchored, outside the label span, so the rotating orbit chips
+          never collide with them (the section clips any slight overhang). */}
+      <MemberBubble x="-10%" y="4%" delay={0} seed={0} />
+      <MemberBubble x="88%" y="0%" delay={0.8} seed={1} />
+      <MemberBubble x="92%" y="68%" delay={1.6} seed={2} />
+        <MemberBubble x="-12%" y="64%" delay={2.2} seed={3} />
       </div>
-    </div>
-  );
-}
 
-/* Wrapper that reads the responsive --r orbit radius from CSS var. */
-function OrbitNodeResponsive({ angle, icon, label, accent }: { angle: number; icon: React.ReactNode; label: string; accent: string }) {
-  return (
-    <div
-      className="absolute left-1/2 top-1/2"
-      style={{
-        transform: `translate(-50%, -50%) translate(calc(cos(${angle}deg) * var(--r)), calc(sin(${angle}deg) * var(--r)))`,
-      }}
-    >
-      <div style={{ animation: 'wd-spin-rev 32s linear infinite' }}>
-        <div className="flex flex-col items-center gap-1.5">
-          <div
-            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-border bg-card/90 backdrop-blur-md shadow-lg"
-            style={{ color: accent }}
-          >
-            {icon}
-          </div>
-          <span className="rounded-full bg-card/90 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-foreground shadow-sm border border-border whitespace-nowrap">
-            {label}
-          </span>
-        </div>
+      {/* Sits under the square so the rotating labels never collide with it */}
+      <div className="mx-auto -mt-1 w-[96%] max-w-xs">
+        <ActivityTicker />
       </div>
     </div>
   );
@@ -185,24 +264,56 @@ function HexMark({ className }: { className?: string }) {
   );
 }
 
+/* ── Stat tiles ────────────────────────────────────────────────── */
+function StatTile({ value, label, loading }: { value: string; label: string; loading: boolean }) {
+  return (
+    <div className="group rounded-2xl border border-border bg-card/60 backdrop-blur-sm px-3 py-3.5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-md">
+      {loading ? (
+        <div className="h-7 w-14 rounded-md bg-muted animate-pulse" />
+      ) : (
+        <div className="font-display text-2xl sm:text-3xl text-foreground group-hover:text-gold transition-colors tabular-nums">{value}</div>
+      )}
+      <div className="mt-1 text-xs sm:text-sm text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function MoneyTile({ value, label, accent, loading }: { value: string; label: string; accent: string; loading: boolean }) {
+  return (
+    <div className="flex-1 rounded-2xl border border-border bg-card/70 backdrop-blur-sm px-4 py-3 transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-md">
+      <div className="flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: accent }} />
+        <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      </div>
+      {loading ? (
+        <div className="mt-1.5 h-6 w-24 rounded-md bg-muted animate-pulse" />
+      ) : (
+        <div className="mt-0.5 font-display text-xl sm:text-2xl text-foreground tabular-nums">
+          <span className="text-sm text-muted-foreground mr-1">TSh</span>{value}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Hero content ──────────────────────────────────────────────── */
 function HeroContent() {
   const { t } = useLanguage();
-  const groups = useCountUp(120);
-  const biz = useCountUp(200);
-  const trainers = useCountUp(42);
+  const stats = usePlatformStats();
+  const loading = stats === null;
 
-  const stats = [
-    { value: `${groups}+`, label: t('hero.stat.groups') },
-    { value: `${biz}+`, label: t('hero.stat.businesses') },
-    { value: `${trainers}+`, label: t('hero.stat.trainers') },
-  ];
+  const groups = useCountUp(stats?.groups ?? 0);
+  const biz = useCountUp(stats?.businesses ?? 0);
+  const trainings = useCountUp(stats?.trainings ?? 0);
+  const volume = useCountUp(stats?.volumeTzs ?? 0);
+  const held = useCountUp(stats?.heldTzs ?? 0);
 
   return (
-    <div className="wd-container grid lg:grid-cols-2 items-center gap-10 lg:gap-8 py-24 sm:py-28 lg:py-24">
-      {/* Left: copy */}
-      <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-        <div className="wd-rise inline-flex items-center gap-2 px-4 py-2 mb-7 rounded-full border border-border bg-card/70 backdrop-blur-sm shadow-sm" style={{ animationDelay: '0ms' }}>
+    <div className="wd-container grid gap-5 sm:gap-7 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:items-center pt-[7.5rem] pb-14 sm:pt-32 sm:pb-16 lg:py-20">
+
+      {/* A — brand block (first on mobile, top-left on desktop) */}
+      <div className="flex flex-col items-center text-center lg:col-start-1 lg:row-start-1 lg:items-start lg:text-left lg:self-end lg:pb-5">
+        <div className="wd-rise inline-flex items-center gap-2 px-4 py-2 mb-5 rounded-full border border-border bg-card/70 backdrop-blur-sm shadow-sm" style={{ animationDelay: '0ms' }}>
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full rounded-full bg-gold opacity-75 animate-ping" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
@@ -210,17 +321,29 @@ function HeroContent() {
           <span className="text-foreground/70 text-xs sm:text-sm font-medium tracking-wide">{t('tagline')}</span>
         </div>
 
-        <h1 className="wd-rise text-[3rem] leading-[0.98] sm:text-7xl lg:text-[5.5rem] text-foreground" style={{ animationDelay: '90ms' }}>
+        <h1 className="wd-rise text-[3rem] leading-[0.98] sm:text-7xl lg:text-[5.25rem] text-foreground" style={{ animationDelay: '80ms' }}>
           Washika<span className="text-gold"> DAU</span>
         </h1>
-        <p className="wd-rise mt-4 font-display text-2xl sm:text-3xl text-foreground/55 italic" style={{ animationDelay: '150ms' }}>
+        <p className="wd-rise mt-3 font-display text-2xl sm:text-3xl text-foreground/55 italic" style={{ animationDelay: '140ms' }}>
           {t('hero.motto')}
         </p>
-        <p className="wd-rise mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-md" style={{ animationDelay: '220ms' }}>
+      </div>
+
+      {/* B — visual (second on mobile, full right column on desktop) */}
+      <div
+        className="wd-rise lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-center"
+        style={{ animationDelay: '220ms' }}
+      >
+        <CircularEconomyViz />
+      </div>
+
+      {/* C — pitch, CTAs, live metrics (last on mobile, bottom-left on desktop) */}
+      <div className="flex flex-col items-center text-center lg:col-start-1 lg:row-start-2 lg:items-start lg:text-left lg:self-start">
+        <p className="wd-rise mt-2 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-md" style={{ animationDelay: '260ms' }}>
           {t('hero.subtitle')}
         </p>
 
-        <div className="wd-rise mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto" style={{ animationDelay: '300ms' }}>
+        <div className="wd-rise mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto" style={{ animationDelay: '320ms' }}>
           <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0">
             {t('hero.cta.join')}
             <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
@@ -230,19 +353,25 @@ function HeroContent() {
           </Link>
         </div>
 
-        <div className="wd-rise mt-12 grid grid-cols-3 gap-3 sm:gap-5 w-full max-w-md" style={{ animationDelay: '380ms' }}>
-          {stats.map((s) => (
-            <div key={s.label} className="group rounded-2xl border border-border bg-card/60 backdrop-blur-sm px-3 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-md">
-              <div className="font-display text-2xl sm:text-3xl text-foreground group-hover:text-gold transition-colors tabular-nums">{s.value}</div>
-              <div className="mt-1 text-xs sm:text-sm text-muted-foreground">{s.label}</div>
-            </div>
-          ))}
+        {/* Live metrics */}
+        <div className="wd-rise mt-9 w-full max-w-md space-y-2.5" style={{ animationDelay: '380ms' }}>
+          <div className="grid grid-cols-3 gap-2.5">
+            <StatTile value={String(groups)} label={t('hero.stat.groups')} loading={loading} />
+            <StatTile value={String(biz)} label={t('hero.stat.businesses')} loading={loading} />
+            <StatTile value={String(trainings)} label={t('hero.stat.trainings')} loading={loading} />
+          </div>
+          <div className="flex gap-2.5">
+            <MoneyTile value={compact(volume)} label={t('hero.stat.volume')} accent="#16a34a" loading={loading} />
+            <MoneyTile value={compact(held)} label={t('hero.stat.held')} accent="#e4a233" loading={loading} />
+          </div>
+          <p className="flex items-center justify-center lg:justify-start gap-1.5 pt-0.5 text-[10px] text-muted-foreground">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            {t('hero.stat.liveNote')}
+          </p>
         </div>
-      </div>
-
-      {/* Right: interactive visual */}
-      <div className="wd-rise order-first lg:order-last mb-6 lg:mb-0" style={{ animationDelay: '260ms' }}>
-        <CircularEconomyViz />
       </div>
     </div>
   );
@@ -253,21 +382,31 @@ export default function HeroSection() {
   const contentRef = useRef<HTMLDivElement>(null);
   const parallaxRef = useRef<HTMLDivElement>(null);
 
-  // Scroll fade + subtle mouse parallax on the visual layer.
   useEffect(() => {
+    // The hero is taller than a phone viewport, so its lower half (CTAs +
+    // live metrics) is reached by scrolling. Fading on scroll would dim the
+    // very content the user is scrolling toward — so only fade on desktop,
+    // where the whole hero fits above the fold.
+    const desktop = window.matchMedia('(min-width: 1024px)');
     const onScroll = () => {
       requestAnimationFrame(() => {
+        if (!contentRef.current) return;
+        if (!desktop.matches) {
+          contentRef.current.style.opacity = '1';
+          contentRef.current.style.transform = 'none';
+          return;
+        }
         const y = window.pageYOffset;
         const max = 500;
         const opacity = 1 - Math.min(y / max, 1) * 0.85;
         const translate = Math.min(y / max, 1) * 40;
-        if (contentRef.current) {
-          contentRef.current.style.opacity = opacity.toString();
-          contentRef.current.style.transform = `translateY(${translate}px)`;
-        }
+        contentRef.current.style.opacity = opacity.toString();
+        contentRef.current.style.transform = `translateY(${translate}px)`;
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    desktop.addEventListener('change', onScroll);
+    onScroll();
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const onMove = (e: MouseEvent) => {
@@ -275,13 +414,14 @@ export default function HeroSection() {
       const rect = sectionRef.current.getBoundingClientRect();
       const dx = (e.clientX - rect.left) / rect.width - 0.5;
       const dy = (e.clientY - rect.top) / rect.height - 0.5;
-      parallaxRef.current.style.transform = `translate3d(${dx * 22}px, ${dy * 22}px, 0)`;
+      parallaxRef.current.style.transform = `translate3d(${dx * 20}px, ${dy * 20}px, 0)`;
     };
     const host = sectionRef.current;
     host?.addEventListener('mousemove', onMove);
 
     return () => {
       window.removeEventListener('scroll', onScroll);
+      desktop.removeEventListener('change', onScroll);
       host?.removeEventListener('mousemove', onMove);
     };
   }, []);
@@ -297,7 +437,7 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce hidden sm:block">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce hidden lg:block">
         <div className="w-6 h-10 border-2 border-foreground/25 rounded-full flex justify-center">
           <div className="w-1 h-3 bg-foreground/40 rounded-full mt-2 animate-pulse" />
         </div>
