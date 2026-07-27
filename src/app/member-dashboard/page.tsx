@@ -748,12 +748,12 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-foreground truncate">{formData.fullName || 'Mwanachama'}</p>
+          <p className="text-base font-semibold text-foreground truncate">{formData.fullName || t('prof.member')}</p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">{memberProfile?.email || user?.email}</p>
           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${
             memberProfile?.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-yellow-500/15 text-yellow-400'
           }`}>
-            {memberProfile?.status === 'active' ? 'Mwanachama Hai' : 'Inasubiri'}
+            {memberProfile?.status === 'active' ? t('prof.activeMember') : t('prof.pending')}
           </span>
         </div>
         <button
@@ -765,13 +765,13 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
               : 'bg-white/5 hover:bg-white/10 text-muted-foreground'
           }`}
         >
-          {saving ? 'Inahifadhi...' : isEditing ? 'Hifadhi' : 'Hariri'}
+          {saving ? t('prof.saving') : isEditing ? t('prof.save') : t('prof.edit')}
         </button>
       </div>
 
       {/* Personal info */}
       <div className="rounded-xl bg-card border border-border p-5">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Taarifa Binafsi</h3>
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t('prof.personalInfo')}</h3>
         {isEditing && (
           <div className="mb-4">
             <label className="block text-xs text-muted-foreground mb-2">{t('set.field.avatar')}</label>
@@ -787,24 +787,24 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Jina Kamili" value={formData.fullName} field="fullName" />
-          <Field label="Barua Pepe" value={memberProfile?.email || user?.email || ''} disabled />
-          <Field label="Nambari ya Simu" type="tel" value={formData.phone} field="phone" />
-          <Field label="Mahali Unapoishi" value={formData.location} field="location" />
+          <Field label={t('prof.fullName')} value={formData.fullName} field="fullName" />
+          <Field label={t('prof.email')} value={memberProfile?.email || user?.email || ''} disabled />
+          <Field label={t('prof.phone')} type="tel" value={formData.phone} field="phone" />
+          <Field label={t('prof.location')} value={formData.location} field="location" />
         </div>
       </div>
 
       {/* Business info */}
       <div className="rounded-xl bg-card border border-border p-5">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Taarifa za Biashara</h3>
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t('prof.businessInfo')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Jina la Biashara" value={formData.businessName} field="businessName" />
-          <Field label="Aina ya Biashara" value={formData.businessType} field="businessType" />
-          <Field label="Mapato ya Kila Mwezi (TSh)" type="number" value={formData.monthlyRevenue} field="monthlyRevenue" />
-          <Field label="Idadi ya Wafanyakazi" type="number" value={formData.employeeCount} field="employeeCount" />
+          <Field label={t('prof.businessName')} value={formData.businessName} field="businessName" />
+          <Field label={t('prof.businessType')} value={formData.businessType} field="businessType" />
+          <Field label={t('prof.monthlyRevenue')} type="number" value={formData.monthlyRevenue} field="monthlyRevenue" />
+          <Field label={t('prof.employeeCount')} type="number" value={formData.employeeCount} field="employeeCount" />
         </div>
         <div className="mt-3">
-          <label className="block text-xs text-muted-foreground mb-1">Maelezo ya Biashara</label>
+          <label className="block text-xs text-muted-foreground mb-1">{t('prof.businessDesc')}</label>
           <textarea
             value={formData.businessDescription}
             onChange={(e) => setFormData({ ...formData, businessDescription: e.target.value })}
@@ -821,14 +821,14 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
             onClick={() => setIsEditing(false)}
             className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
           >
-            Ghairi
+            {t('prof.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Inahifadhi...' : 'Hifadhi Mabadiliko'}
+            {saving ? t('prof.saving') : t('prof.saveChanges')}
           </button>
         </div>
       )}
@@ -892,8 +892,8 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
       const res = await fetch(`/api/groups/lookup?code=${encodeURIComponent(code)}`);
       const d = await res.json();
       if (res.ok) { setJoinLookupResult(d.group); }
-      else { setJoinLookupError(d.error || 'Nambari hiyo haijapatikana.'); }
-    } catch { setJoinLookupError('Hitilafu imetokea. Jaribu tena.'); }
+      else { setJoinLookupError(d.error || t('mg.joinModal.notFound')); }
+    } catch { setJoinLookupError(t('mg.joinModal.err')); }
     finally { setJoinLookupLoading(false); }
   };
 
@@ -1301,14 +1301,15 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
 }
 
 function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] }) {
+  const { t, language } = useLanguage();
   const totalInvestment = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
   const totalReturns = memberInvestments.reduce((sum, inv) => sum + parseFloat(inv.actual_return || 0), 0);
   const returnRate = totalInvestment > 0 ? ((totalReturns / totalInvestment) * 100).toFixed(1) : '0';
 
   const summaryCards = [
-    { label: 'Jumla ya Uwekezaji', value: `TSh ${totalInvestment.toLocaleString()}`, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'Faida Halisi', value: `TSh ${totalReturns.toLocaleString()}`, accent: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Kiwango cha Faida', value: `${returnRate}%`, accent: 'text-[#e4a233]', bg: 'bg-[#e4a233]/10' },
+    { label: t('minv.totalInvested'), value: `TSh ${totalInvestment.toLocaleString()}`, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: t('minv.netReturns'), value: `TSh ${totalReturns.toLocaleString()}`, accent: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: t('minv.returnRate'), value: `${returnRate}%`, accent: 'text-[#e4a233]', bg: 'bg-[#e4a233]/10' },
   ];
 
   return (
@@ -1332,21 +1333,21 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{inv.group_name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(inv.investment_date).toLocaleDateString('sw-TZ')}
+                    {new Date(inv.investment_date).toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-GB')}
                   </p>
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   inv.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-yellow-500/15 text-yellow-400'
                 }`}>
-                  {inv.status === 'active' ? 'Inaendelea' : 'Inasubiri'}
+                  {inv.status === 'active' ? t('minv.active') : t('minv.pending')}
                 </span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Kiasi', value: `TSh ${parseFloat(inv.amount).toLocaleString()}` },
-                  { label: 'Hisa', value: `${inv.equity_percentage}%` },
-                  { label: 'Faida Inayotarajiwa', value: `TSh ${parseFloat(inv.expected_return || 0).toLocaleString()}` },
-                  { label: 'Faida Halisi', value: `TSh ${parseFloat(inv.actual_return || 0).toLocaleString()}` },
+                  { label: t('minv.amount'), value: `TSh ${parseFloat(inv.amount).toLocaleString()}` },
+                  { label: t('minv.equity'), value: `${inv.equity_percentage}%` },
+                  { label: t('minv.expectedReturn'), value: `TSh ${parseFloat(inv.expected_return || 0).toLocaleString()}` },
+                  { label: t('minv.netReturns'), value: `TSh ${parseFloat(inv.actual_return || 0).toLocaleString()}` },
                 ].map((item, j) => (
                   <div key={j} className="rounded-lg bg-card p-2.5">
                     <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
@@ -1359,10 +1360,10 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
         </div>
       ) : (
         <div className="rounded-xl bg-card border border-border p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <CurrencyDollarIcon className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-sm text-muted-foreground">Bado huna uwekezaji wowote.</p>
+          <p className="text-sm text-muted-foreground">{t('minv.empty')}</p>
         </div>
       )}
     </div>
@@ -1554,7 +1555,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{memberProfile?.full_name || user?.fullName || 'Mwanachama'}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{memberProfile?.full_name || user?.fullName || t('prof.member')}</p>
           <p className="text-xs text-muted-foreground truncate">{memberProfile?.username ? `@${memberProfile.username}` : memberProfile?.email || user?.email}</p>
         </div>
         <svg className="w-4 h-4 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
