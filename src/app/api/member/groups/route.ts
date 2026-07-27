@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkGroupWallet } from '@/lib/ntzs-db';
@@ -50,13 +51,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kundi lenye jina hilo tayari lipo. Tumia jina lingine.' }, { status: 400 });
     }
 
-    await client.query('BEGIN');
+    // Ensure extra group columns exist (once per process, and BEFORE the
+    // transaction so a later ROLLBACK can never undo DDL the cache thinks ran)
+    await oncePerProcess('groups-create-columns', async () => {
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS contribution_frequency VARCHAR(10) NOT NULL DEFAULT 'monthly'`);
+      await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
+    });
 
-    // Ensure group_code column exists (idempotent)
-    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(20) UNIQUE`);
-    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS join_policy VARCHAR(20) DEFAULT 'invite_only'`);
-    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS contribution_frequency VARCHAR(10) NOT NULL DEFAULT 'monthly'`);
-    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
+    await client.query('BEGIN');
 
     const groupCode = await generateUniqueGroupCode(client);
 

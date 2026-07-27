@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 import { getAuthTokenPayload } from '@/lib/auth';
 
 async function ensureProposalSchema(client: { query: (sql: string, params?: unknown[]) => Promise<unknown> }) {
@@ -59,8 +60,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
-    await ensureProposalVotingSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
+    await oncePerProcess('proposal-voting-schema', () => ensureProposalVotingSchema(client));
 
     // Group voting threshold + active member count → required "yes" votes.
     const groupRes = await client.query(

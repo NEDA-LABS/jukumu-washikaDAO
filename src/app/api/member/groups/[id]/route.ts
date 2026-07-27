@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 import { getAuthTokenPayload } from '@/lib/auth';
 
 const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina']);
@@ -26,7 +27,7 @@ export async function GET(
 
   const client = await pool.connect();
   try {
-    await ensureContributionFrequencyColumn(client);
+    await oncePerProcess('groups-extra-columns', () => ensureContributionFrequencyColumn(client));
 
     const membershipRes = await client.query(
       `
@@ -125,8 +126,7 @@ export async function PATCH(
 
   const client = await pool.connect();
   try {
-    await ensureContributionFrequencyColumn(client);
-    await client.query(`ALTER TABLE groups ADD COLUMN IF NOT EXISTS logo_url TEXT`);
+    await oncePerProcess('groups-extra-columns', () => ensureContributionFrequencyColumn(client));
 
     const membershipRes = await client.query(
       `SELECT gm.role FROM group_members gm

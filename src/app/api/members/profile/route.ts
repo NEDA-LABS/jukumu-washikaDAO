@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // Ensure the avatar column exists (idempotent).
-      await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
+      await oncePerProcess('members-avatar-column', () => client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`));
       // Primary lookup: member linked to this user
       let result = await client.query(`
         SELECT 
@@ -152,7 +153,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const client = await pool.connect();
-    await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
+    await oncePerProcess('members-avatar-column', () => client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`));
 
     values.push(userId);
     const result = await client.query(

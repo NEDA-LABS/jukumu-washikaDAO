@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { notifyGroupMembers } from '@/lib/notify';
 
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

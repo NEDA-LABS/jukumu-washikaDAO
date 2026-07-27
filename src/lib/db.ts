@@ -33,6 +33,10 @@ const pool = new Pool({
   max: 5,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  // TCP keepalive stops idle pooled connections from being silently dropped
+  // by intermediaries, which otherwise shows up as a slow reconnect on the
+  // next request.
+  keepAlive: true,
 });
 
 export default pool;

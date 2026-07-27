@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 import { getAuthTokenPayload } from '@/lib/auth';
 
 const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina']);
@@ -151,8 +152,8 @@ export async function GET(
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
-    await ensureProposalVotingSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
+    await oncePerProcess('proposal-voting-schema', () => ensureProposalVotingSchema(client));
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -233,8 +234,8 @@ export async function POST(
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
-    await ensureProposalVotingSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
+    await oncePerProcess('proposal-voting-schema', () => ensureProposalVotingSchema(client));
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -336,8 +337,8 @@ export async function PATCH(
 
   const client = await pool.connect();
   try {
-    await ensureProposalSchema(client);
-    await ensureProposalVotingSchema(client);
+    await oncePerProcess('proposal-schema', () => ensureProposalSchema(client));
+    await oncePerProcess('proposal-voting-schema', () => ensureProposalVotingSchema(client));
 
     const membership = await getMembership(client, auth.userId, groupId);
     if (auth.role !== 'admin') {

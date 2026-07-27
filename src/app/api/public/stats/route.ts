@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
-export const revalidate = 60;
+// Serve at request time, never at build time — prerendering this route makes
+// every deploy depend on the database being reachable from the build machine.
+// Freshness is handled by the Cache-Control header below instead.
+export const dynamic = 'force-dynamic';
 
 /**
  * Public platform metrics for the landing hero.
@@ -29,25 +32,27 @@ export async function GET() {
     return NextResponse.json({ groups: 0, members: 0, businesses: 0, trainings: 0, volumeTzs: 0, heldTzs: 0, live: false });
   }
 
-  const client = await pool.connect();
   try {
+    // Query via the pool (not a single checked-out client): pg serializes
+    // queries on one connection, so Promise.all over a shared client still
+    // runs them one after another. The pool fans them out for real.
     const [groups, members, businesses, trainings, volumeTzs, heldTzs] = await Promise.all([
-      scalar(client, `SELECT COUNT(*) FROM groups WHERE status = 'active'`),
-      scalar(client, `SELECT COUNT(*) FROM members`),
+      scalar(pool, `SELECT COUNT(*) FROM groups WHERE status = 'active'`),
+      scalar(pool, `SELECT COUNT(*) FROM members`),
       scalar(
-        client,
+        pool,
         `SELECT COUNT(*) FROM members
           WHERE COALESCE(NULLIF(TRIM(business_name), ''), NULLIF(TRIM(business_type), '')) IS NOT NULL`,
       ),
-      scalar(client, `SELECT COUNT(*) FROM training_modules`),
+      scalar(pool, `SELECT COUNT(*) FROM training_modules`),
       // Settled money that has moved through the platform.
       scalar(
-        client,
+        pool,
         `SELECT COALESCE(SUM(amount_tzs), 0) FROM ntzs_transactions
           WHERE status IN ('completed', 'minted', 'success', 'successful')`,
       ),
       // Money currently sitting in group treasuries.
-      scalar(client, `SELECT COALESCE(SUM(balance_tzs), 0) FROM wallet_accounts WHERE owner_type = 'group'`),
+      scalar(pool, `SELECT COALESCE(SUM(balance_tzs), 0) FROM wallet_accounts WHERE owner_type = 'group'`),
     ]);
 
     return NextResponse.json(
@@ -57,7 +62,5 @@ export async function GET() {
   } catch (error) {
     console.error('[public/stats]', error);
     return NextResponse.json({ groups: 0, members: 0, businesses: 0, trainings: 0, volumeTzs: 0, heldTzs: 0, live: false });
-  } finally {
-    client.release();
   }
 }

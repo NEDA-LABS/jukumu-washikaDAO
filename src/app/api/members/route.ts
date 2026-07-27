@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { oncePerProcess } from '@/lib/db-once';
 
 function normalizePhone(input: string) {
   const digits = input.replace(/\D/g, '');
@@ -97,16 +98,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Nambari ya simu tayari imesajiliwa.' }, { status: 400 });
       }
 
-      // First, try to add the missing columns if they don't exist
+      // Ensure ID columns exist — once per process, not on every registration
       try {
-        await client.query(`
-          ALTER TABLE members 
-          ADD COLUMN IF NOT EXISTS id_type VARCHAR(50);
-        `);
-        await client.query(`
-          ALTER TABLE members 
-          ADD COLUMN IF NOT EXISTS id_number VARCHAR(100);
-        `);
+        await oncePerProcess('members-id-columns', async () => {
+          await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS id_type VARCHAR(50)`);
+          await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS id_number VARCHAR(100)`);
+        });
       } catch (alterError) {
         console.log('Columns might already exist:', alterError);
       }
