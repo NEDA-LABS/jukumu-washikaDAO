@@ -174,6 +174,22 @@ const fmtShort = (n: number | null | undefined) => {
   return `TSH ${n}`;
 };
 
+/**
+ * Indicative USD conversion shown next to TSH figures so international
+ * investors can size an opportunity at a glance. Fixed reference rate — this
+ * is an approximation for orientation, not a settlement rate, so the rate
+ * itself is deliberately not surfaced in the UI.
+ */
+const TSH_PER_USD = 2650;
+
+const usd = (n: number | null | undefined): string => {
+  if (!n) return '';
+  const u = Number(n) / TSH_PER_USD;
+  if (u >= 1_000_000) return `≈ $${(u / 1_000_000).toFixed(1)}M`;
+  if (u >= 1) return `≈ $${Math.round(u).toLocaleString('en-US')}`;
+  return `≈ $${u.toFixed(2)}`;
+};
+
 const ago = (s: string) => {
   const diff = Date.now() - new Date(s).getTime();
   const d = Math.floor(diff / 86400000);
@@ -294,7 +310,10 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
       {isApproved && goal > 0 && (
         <div className="space-y-1.5">
           <div className="flex justify-between text-[10px]" style={{ color: ink.mutedLight }}>
-            <span>Goal: <span style={{ color: ink.heading, fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span></span>
+            <span>
+              Goal: <span style={{ color: ink.heading, fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span>
+              <span style={{ marginLeft: 4 }}>{usd(goal)}</span>
+            </span>
             <span>{pct}% funded</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
@@ -311,6 +330,7 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
         <div className="px-3 py-2 rounded-xl text-[10px]" style={{ background: '#F0F7FF', border: '1px solid #DBEAFE' }}>
           <span style={{ color: '#64748B' }}>Funding goal: </span>
           <span style={{ color: '#1A1200', fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span>
+          <span style={{ color: '#64748B', marginLeft: 4 }}>{usd(goal)}</span>
         </div>
       )}
 
@@ -323,7 +343,7 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
         )}
         {p.monthly_contribution && (
           <span className="px-2 py-1 rounded-lg" style={{ background: ink.chip }}>
-            Contribution: {fmtShort(Number(p.monthly_contribution))}/mo
+            Contribution: {fmtShort(Number(p.monthly_contribution))}/mo {usd(Number(p.monthly_contribution))}
           </span>
         )}
       </div>
@@ -810,7 +830,7 @@ export default function InvestorDashboard() {
                 <StatCard
                   label={t('inv.stat.fundingSought')}
                   value={fmtShort(totalFundingSought)}
-                  sub={t('inv.stat.totalRequested')}
+                  sub={usd(totalFundingSought) || t('inv.stat.totalRequested')}
                   ink={ink}
                 />
                 <StatCard
@@ -1054,6 +1074,11 @@ export default function InvestorDashboard() {
                         >
                           {walletLoading ? '...' : `TSH ${wallet.balanceTzs.toLocaleString('en-TZ')}`}
                         </p>
+                        {!walletLoading && wallet.balanceTzs > 0 && (
+                          <p className="text-sm mt-1" style={{ color: 'rgba(232,213,176,0.6)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                            {usd(wallet.balanceTzs)}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={fetchWallet}
@@ -1401,15 +1426,18 @@ export default function InvestorDashboard() {
                   </div>
                   <div className="divide-y" style={{ borderColor: ink.chip }}>
                     {[
-                      { label: 'Monthly Contribution', value: fmtShort(Number(groupDetail.monthly_contribution)) },
-                      { label: 'Monthly Pool (members × contribution)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
-                      { label: 'Treasury Wallet', value: groupDetail.ntzs_user_id ? '✓ Active (nTZS)' : 'Not yet configured' },
-                      { label: 'Transactions (90d)', value: `${groupDetail.transactions_90d} tx` },
-                      { label: 'Volume (90d)', value: fmtShort(Number(groupDetail.volume_90d_tzs)) },
+                      { label: 'Monthly Contribution', value: fmtShort(Number(groupDetail.monthly_contribution)), alt: usd(Number(groupDetail.monthly_contribution)) },
+                      { label: 'Monthly Pool (members × contribution)', value: fmtShort(Number(groupDetail.monthly_contribution) * groupDetail.member_count), alt: usd(Number(groupDetail.monthly_contribution) * groupDetail.member_count) },
+                      { label: 'Treasury Wallet', value: groupDetail.ntzs_user_id ? '✓ Active (nTZS)' : 'Not yet configured', alt: '' },
+                      { label: 'Transactions (90d)', value: `${groupDetail.transactions_90d} tx`, alt: '' },
+                      { label: 'Volume (90d)', value: fmtShort(Number(groupDetail.volume_90d_tzs)), alt: usd(Number(groupDetail.volume_90d_tzs)) },
                     ].map(r => (
                       <div key={r.label} className="flex items-center justify-between px-4 py-3">
                         <p className="text-xs" style={{ color: ink.muted }}>{r.label}</p>
-                        <p className="text-xs font-bold font-mono" style={{ color: ink.heading }}>{r.value}</p>
+                        <p className="text-xs font-bold font-mono" style={{ color: ink.heading }}>
+                          {r.value}
+                          {r.alt && <span className="font-normal" style={{ color: ink.mutedLight, marginLeft: 6 }}>{r.alt}</span>}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -1496,6 +1524,7 @@ export default function InvestorDashboard() {
                             {goal > 0 && (
                               <p className="text-xs font-bold font-mono mt-2" style={{ color: '#e4a233' }}>
                                 Goal: {fmtShort(goal)}
+                                <span className="font-normal" style={{ color: ink.muted, marginLeft: 4 }}>{usd(goal)}</span>
                               </p>
                             )}
                           </div>
@@ -1572,6 +1601,7 @@ export default function InvestorDashboard() {
                   <div className="rounded-2xl p-4" style={{ background: statusBg(false), border: `1px solid ${statusBorder(false)}` }}>
                     <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: statusText(false) }}>{t('inv.fundingGoal')}</p>
                     <p className="text-base font-black font-mono mt-1" style={{ color: ink.heading }}>{fmtShort(dGoal)}</p>
+                    <p className="text-[11px] font-mono mt-0.5" style={{ color: ink.muted }}>{usd(dGoal)}</p>
                   </div>
                 )}
                 {d.metadata?.timeline && (
@@ -1584,6 +1614,7 @@ export default function InvestorDashboard() {
                   <div className="rounded-2xl p-4" style={{ background: ink.chip, border: `1px solid ${ink.cardBorder}` }}>
                     <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ink.mutedLight }}>{t('inv.contribution')}</p>
                     <p className="text-sm font-bold font-mono mt-1" style={{ color: ink.heading }}>{fmtShort(Number(d.monthly_contribution))}/mo</p>
+                    <p className="text-[11px] font-mono mt-0.5" style={{ color: ink.muted }}>{usd(Number(d.monthly_contribution))}</p>
                   </div>
                 )}
               </div>
@@ -1653,6 +1684,7 @@ export default function InvestorDashboard() {
               <div className="rounded-xl p-3" style={{ background: '#FEF3E2', border: '1px solid #FCD9A0' }}>
                 <p className="text-xs" style={{ color: '#92400E' }}>
                   Funding goal: <span className="font-black font-mono">{fmt(contactTarget.metadata.funding_goal_tzs)}</span>
+                  <span className="font-mono"> {usd(contactTarget.metadata.funding_goal_tzs)}</span>
                 </p>
               </div>
             )}
@@ -1733,9 +1765,15 @@ export default function InvestorDashboard() {
                   onBlur={e => e.target.style.borderColor = ink.cardBorder}
                   required
                 />
+                {Number(fundAmount) > 0 && (
+                  <p className="text-[10px] mt-1.5 font-mono" style={{ color: ink.muted }}>
+                    {usd(Number(fundAmount))}
+                  </p>
+                )}
                 {fundTarget.metadata?.funding_goal_tzs && (
                   <p className="text-[10px] mt-1.5" style={{ color: ink.mutedLight }}>
                     Funding goal: <span style={{ fontFamily: 'monospace', color: ink.heading }}>TSH {Number(fundTarget.metadata.funding_goal_tzs).toLocaleString()}</span>
+                    <span style={{ fontFamily: 'monospace' }}> {usd(Number(fundTarget.metadata.funding_goal_tzs))}</span>
                   </p>
                 )}
               </div>
