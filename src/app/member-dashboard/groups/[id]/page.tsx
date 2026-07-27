@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
 import ShareGroupModal from '@/components/ShareGroupModal';
 import AvatarPicker from '@/components/AvatarPicker';
+import { readAttachmentAsDataUrl, type AttachmentPayload } from '@/lib/imageResize';
 import { ShareIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 function useCountUp(target: number, duration = 900) {
@@ -214,6 +215,10 @@ export default function MemberGroupDetailsPage() {
   const [proposalAmount, setProposalAmount] = useState('');
   const [proposalPhone, setProposalPhone] = useState('');
   const [proposalMeta, setProposalMeta] = useState<Record<string, string>>({});
+  const [proposalFile, setProposalFile] = useState<AttachmentPayload | null>(null);
+  const [proposalFileBusy, setProposalFileBusy] = useState(false);
+  const [proposalFileError, setProposalFileError] = useState('');
+  const proposalFileInputRef = useRef<HTMLInputElement>(null);
 
   // Finances / Payments state
   const [groupPayments, setGroupPayments] = useState<any[]>([]);
@@ -1325,7 +1330,7 @@ export default function MemberGroupDetailsPage() {
                   setShowCreateProposal(false);
                   setProposalTitle(''); setProposalDescription('');
                   setProposalType('general'); setProposalAmount('');
-                  setProposalPhone(''); setProposalMeta({});
+                  setProposalPhone(''); setProposalMeta({}); setProposalFile(null); setProposalFileError('');
                 }}
                 className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
               >
@@ -1404,6 +1409,11 @@ export default function MemberGroupDetailsPage() {
                   };
                 }
 
+                // Attachment rides in metadata for every proposal type.
+                if (proposalFile) {
+                  payload.metadata = { ...((payload.metadata as Record<string, unknown>) || {}), attachment: proposalFile };
+                }
+
                 setProposalSubmitting(true);
                 try {
                   const res = await fetch(`/api/member/groups/${groupId}/proposals`, {
@@ -1418,7 +1428,7 @@ export default function MemberGroupDetailsPage() {
                   showToast(t('prop.success.created'), 'success');
                   setProposalTitle(''); setProposalDescription('');
                   setProposalType('general'); setProposalAmount('');
-                  setProposalPhone(''); setProposalMeta({});
+                  setProposalPhone(''); setProposalMeta({}); setProposalFile(null); setProposalFileError('');
                   setShowCreateProposal(false);
                   setActiveTab('decisions');
                 } catch (err) {
@@ -1540,6 +1550,60 @@ export default function MemberGroupDetailsPage() {
                 </div>
               )}
 
+              {/* Attachment — all types */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  {t('prop.attachment')} {t('prop.desc.optional')}
+                </label>
+                <input
+                  ref={proposalFileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    setProposalFileError(''); setProposalFileBusy(true);
+                    try {
+                      setProposalFile(await readAttachmentAsDataUrl(file));
+                    } catch (err) {
+                      setProposalFileError(err instanceof Error ? err.message : t('prop.attachment.err'));
+                    } finally {
+                      setProposalFileBusy(false);
+                    }
+                  }}
+                />
+                {proposalFile ? (
+                  <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-border p-3">
+                    {proposalFile.mime.startsWith('image/') ? (
+                      <img src={proposalFile.dataUrl} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-400 text-[10px] font-bold">PDF</span>
+                    )}
+                    <p className="min-w-0 flex-1 truncate text-xs text-foreground">{proposalFile.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => setProposalFile(null)}
+                      className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-red-400 transition-colors"
+                    >
+                      {t('img.remove')}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={proposalFileBusy}
+                    onClick={() => proposalFileInputRef.current?.click()}
+                    className="w-full py-3 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-[#e4a233]/50 transition-all disabled:opacity-50"
+                  >
+                    {proposalFileBusy ? '…' : `＋ ${t('prop.attachment.add')}`}
+                  </button>
+                )}
+                {proposalFileError && <p className="mt-1.5 text-xs text-red-400">{proposalFileError}</p>}
+                <p className="mt-1 text-[10px] text-muted-foreground">{t('prop.attachment.helper')}</p>
+              </div>
+
               <div className={`rounded-xl px-4 py-3 border ${
                 proposalType === 'prodcast' ? 'bg-purple-500/5 border-purple-500/10' :
                 proposalType === 'ask' ? 'bg-blue-500/5 border-blue-500/10' :
@@ -1562,7 +1626,7 @@ export default function MemberGroupDetailsPage() {
                     setShowCreateProposal(false);
                     setProposalTitle(''); setProposalDescription('');
                     setProposalType('general'); setProposalAmount('');
-                    setProposalPhone(''); setProposalMeta({});
+                    setProposalPhone(''); setProposalMeta({}); setProposalFile(null); setProposalFileError('');
                   }}
                   className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-white/5 transition-colors"
                 >

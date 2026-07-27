@@ -12,6 +12,7 @@ type ProposalMetadata = {
   vendor_name?: string;
   expense_category?: string;
   business_purpose?: string;
+  attachment?: { dataUrl: string; name: string; mime: string } | null;
 } | null;
 
 type ProposalRow = {
@@ -249,6 +250,31 @@ export default function MemberGroupProposalDetailsPage() {
 
               {proposal.description && (
                 <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">{proposal.description}</p>
+              )}
+
+              {/* Attachment (photo/PDF) */}
+              {proposal.metadata?.attachment?.dataUrl && (
+                proposal.metadata.attachment.mime.startsWith('image/') ? (
+                  <a href={proposal.metadata.attachment.dataUrl} target="_blank" rel="noopener noreferrer" className="mt-4 block">
+                    <img
+                      src={proposal.metadata.attachment.dataUrl}
+                      alt={proposal.metadata.attachment.name || 'Attachment'}
+                      className="max-h-72 w-auto max-w-full rounded-xl border border-border object-contain"
+                    />
+                  </a>
+                ) : (
+                  <a
+                    href={proposal.metadata.attachment.dataUrl}
+                    download={proposal.metadata.attachment.name || 'attachment.pdf'}
+                    className="mt-4 inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-[#e4a233]/40 transition-colors"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-400 text-[10px] font-bold">PDF</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-semibold text-foreground">{proposal.metadata.attachment.name || 'attachment.pdf'}</span>
+                      <span className="block text-[11px] text-muted-foreground">{t('prop.attachment.view')} ↓</span>
+                    </span>
+                  </a>
+                )
               )}
             </div>
 

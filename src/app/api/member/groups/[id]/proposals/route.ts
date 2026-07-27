@@ -160,6 +160,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     ? body.metadata as Record<string, unknown>
     : null;
 
+  // Sanitize the optional attachment: it is rendered client-side as an
+  // <img src> / <a href>, so only accept a bounded image/PDF data: URL —
+  // never arbitrary strings (javascript:, external URLs, oversized blobs).
+  if (metadata && 'attachment' in metadata) {
+    const a = metadata.attachment as { dataUrl?: unknown; name?: unknown; mime?: unknown } | null;
+    const dataUrl = typeof a?.dataUrl === 'string' ? a.dataUrl : '';
+    const validHead = /^data:(image\/(jpeg|png|webp|gif)|application\/pdf);base64,/.test(dataUrl);
+    if (validHead && dataUrl.length <= 4_000_000) {
+      metadata.attachment = {
+        dataUrl,
+        name: typeof a?.name === 'string' ? a.name.slice(0, 200) : 'attachment',
+        mime: dataUrl.slice(5, dataUrl.indexOf(';')),
+      };
+    } else {
+      delete metadata.attachment;
+    }
+  }
+
   let paymentAmountTzs = body?.paymentAmountTzs ? Number(body.paymentAmountTzs) : null;
   let recipientMemberId = body?.recipientMemberId ? Number(body.recipientMemberId) : null;
   const recipientPhone = typeof body?.recipientPhone === 'string' ? body.recipientPhone.trim() : null;

@@ -79,6 +79,7 @@ type Project = {
     project_description?: string;
     timeline?: string;
     expected_impact?: string;
+    attachment?: { dataUrl: string; name: string; mime: string } | null;
   } | null;
   funded_at: string;
   created_at: string;
@@ -1638,6 +1639,30 @@ export default function InvestorDashboard() {
                   <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: ink.muted }}>{t('inv.about')}</h2>
                   <p className="text-base leading-relaxed whitespace-pre-line" style={{ color: ink.body }}>{d.metadata?.project_description || d.description}</p>
                 </div>
+              )}
+
+              {/* Attachment (photo/PDF supplied with the proposal) */}
+              {d.metadata?.attachment?.dataUrl && (
+                d.metadata.attachment.mime.startsWith('image/') ? (
+                  <a href={d.metadata.attachment.dataUrl} target="_blank" rel="noopener noreferrer" className="mt-6 block">
+                    <img
+                      src={d.metadata.attachment.dataUrl}
+                      alt={d.metadata.attachment.name || 'Attachment'}
+                      className="max-h-80 w-auto max-w-full rounded-2xl object-contain"
+                      style={{ border: `1px solid ${ink.cardBorder}` }}
+                    />
+                  </a>
+                ) : (
+                  <a
+                    href={d.metadata.attachment.dataUrl}
+                    download={d.metadata.attachment.name || 'attachment.pdf'}
+                    className="mt-6 inline-flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors"
+                    style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-500 text-[10px] font-bold">PDF</span>
+                    <span className="text-xs font-semibold" style={{ color: ink.heading }}>{d.metadata.attachment.name || 'attachment.pdf'}</span>
+                  </a>
+                )
               )}
 
               {/* Expected impact */}
