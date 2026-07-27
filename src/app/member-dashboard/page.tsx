@@ -302,8 +302,12 @@ export default function MemberDashboard() {
             >
               {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
             </button>
-            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-border hover:ring-[#e4a233]/40 transition-all">
-              <span className="text-xs font-bold text-white">{initials}</span>
+            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-border hover:ring-[#e4a233]/40 transition-all">
+              {memberProfile?.avatar_url ? (
+                <img src={memberProfile.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">{initials}</span>
+              )}
             </button>
           </div>
         </header>
@@ -1441,9 +1445,35 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Profile photo
+  const [avatar, setAvatar] = useState<string | null>(memberProfile?.avatar_url ?? null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarSaved, setAvatarSaved] = useState(false);
+  const avatarDirty = (avatar ?? null) !== (memberProfile?.avatar_url ?? null);
+
   useEffect(() => {
     if (memberProfile?.username) setUsername(memberProfile.username);
+    setAvatar(memberProfile?.avatar_url ?? null);
   }, [memberProfile]);
+
+  const saveAvatar = async () => {
+    if (!user?.id) return;
+    setAvatarSaving(true); setAvatarSaved(false);
+    try {
+      // Patch-style: only avatar_url is written, the rest of the profile is untouched.
+      const res = await fetch(`/api/members/profile?userId=${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: avatar }),
+      });
+      if (res.ok) {
+        setAvatarSaved(true);
+        loadMemberData();
+        setTimeout(() => setAvatarSaved(false), 2500);
+      }
+    } catch (e) { console.error(e); }
+    finally { setAvatarSaving(false); }
+  };
 
   const checkUsername = async (val: string) => {
     if (!val || val.length < 3) {
@@ -1530,6 +1560,32 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
+
+      {/* Profile photo */}
+      <div className="rounded-2xl bg-card border border-border p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-1">{t('set.field.avatar')}</h3>
+        <p className="text-xs text-muted-foreground mb-4">{t('set.field.avatarHelper')}</p>
+        <AvatarPicker
+          value={avatar}
+          onChange={setAvatar}
+          fallbackText={memberProfile?.full_name || user?.fullName || 'U'}
+          shape="circle"
+          size={80}
+          label={t('mg.field.logoUpload')}
+        />
+        {avatarDirty && (
+          <button
+            onClick={saveAvatar}
+            disabled={avatarSaving}
+            className="mt-4 w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+          >
+            {avatarSaving ? t('mg.creating') : t('grp.settings.save')}
+          </button>
+        )}
+        {avatarSaved && (
+          <p className="mt-3 text-xs text-emerald-500 text-center">✓ {t('grp.settings.saved')}</p>
+        )}
+      </div>
 
       {/* Username section */}
       <div className="rounded-2xl bg-card border border-border p-5">

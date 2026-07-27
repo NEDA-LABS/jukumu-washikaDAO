@@ -123,39 +123,42 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const {
-      fullName,
-      phone,
-      location,
-      businessType,
-      businessName,
-      businessDescription,
-      monthlyRevenue,
-      employeeCount,
-      avatarUrl,
-    } = body;
+    // Patch semantics: only columns actually present in the body are written.
+    // Sending just { avatarUrl } from Settings must not blank out the rest of
+    // the profile, which a fixed all-columns UPDATE would do.
+    const FIELDS: Record<string, string> = {
+      fullName: 'full_name',
+      phone: 'phone',
+      location: 'location',
+      businessType: 'business_type',
+      businessName: 'business_name',
+      businessDescription: 'business_description',
+      monthlyRevenue: 'monthly_revenue',
+      employeeCount: 'employee_count',
+      avatarUrl: 'avatar_url',
+    };
+
+    const sets: string[] = [];
+    const values: unknown[] = [];
+    for (const [key, column] of Object.entries(FIELDS)) {
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      const raw = body[key];
+      values.push(typeof raw === 'string' && raw.length === 0 ? null : raw ?? null);
+      sets.push(`${column} = $${values.length}`);
+    }
+
+    if (sets.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    }
 
     const client = await pool.connect();
     await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
 
-    const avatarProvided = Object.prototype.hasOwnProperty.call(body, 'avatarUrl');
-    const avatarValue = typeof avatarUrl === 'string' && avatarUrl.length > 0 ? avatarUrl : null;
-
+    values.push(userId);
     const result = await client.query(
-      avatarProvided
-        ? `UPDATE members
-             SET full_name = $1, phone = $2, location = $3, business_type = $4,
-                 business_name = $5, business_description = $6, monthly_revenue = $7,
-                 employee_count = $8, avatar_url = $10, updated_at = CURRENT_TIMESTAMP
-             WHERE user_id = $9 RETURNING *`
-        : `UPDATE members
-             SET full_name = $1, phone = $2, location = $3, business_type = $4,
-                 business_name = $5, business_description = $6, monthly_revenue = $7,
-                 employee_count = $8, updated_at = CURRENT_TIMESTAMP
-             WHERE user_id = $9 RETURNING *`,
-      avatarProvided
-        ? [fullName, phone, location, businessType, businessName, businessDescription, monthlyRevenue, employeeCount, userId, avatarValue]
-        : [fullName, phone, location, businessType, businessName, businessDescription, monthlyRevenue, employeeCount, userId],
+      `UPDATE members SET ${sets.join(', ')}, updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = $${values.length} RETURNING *`,
+      values,
     );
 
     client.release();

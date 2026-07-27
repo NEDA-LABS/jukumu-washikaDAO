@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { readImageAsResizedDataUrl } from '@/lib/imageResize';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * Compact "circle + upload" avatar picker used by profile / group-logo forms.
@@ -25,6 +26,7 @@ export default function AvatarPicker({
   label?: string;
   helper?: string;
 }) {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,7 @@ export default function AvatarPicker({
             disabled={busy}
             className="px-3 py-1.5 rounded-lg bg-muted hover:bg-border text-foreground text-xs font-semibold transition-colors disabled:opacity-60"
           >
-            {busy ? '…' : (value ? 'Change' : label)}
+            {busy ? '…' : (value ? t('img.change') : label)}
           </button>
           {value && (
             <button
@@ -74,7 +76,7 @@ export default function AvatarPicker({
               onClick={() => { onChange(null); setError(''); }}
               className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive text-xs font-semibold transition-colors"
             >
-              Remove
+              {t('img.remove')}
             </button>
           )}
         </div>
