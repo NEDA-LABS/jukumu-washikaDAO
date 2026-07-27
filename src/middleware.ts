@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server"
 const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/investor/signup', '/investor/login', '/portal']
 
 // Page prefixes that are fully public
-const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn']
+const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn', '/developers']
 
 // API prefixes that are publicly accessible
 const PUBLIC_API_PREFIXES = [
@@ -15,6 +15,10 @@ const PUBLIC_API_PREFIXES = [
   '/api/webhooks/',
   '/api/investor/stats',
   '/api/investor/funding-requests',
+  // The public developer API authenticates with Bearer API keys, not the
+  // session cookie, so it must bypass the cookie gate. Each /api/v1 route
+  // enforces its own key + scope check via lib/api/http.handle().
+  '/api/v1',
 ]
 
 export function middleware(request: NextRequest) {

@@ -3,6 +3,7 @@ import HeroSection from '@/components/HeroSection';
 import AboutSection from '@/components/AboutSection';
 import InvestorSection from '@/components/InvestorSection';
 import JoinCtaSection from '@/components/JoinCtaSection';
+import DevelopersSection from '@/components/DevelopersSection';
 import Footer from '@/components/Footer';
 import ScrollExpandSection from '@/components/ScrollExpandSection';
 
@@ -17,6 +18,9 @@ export default function Home() {
         </ScrollExpandSection>
         <ScrollExpandSection>
           <InvestorSection />
+        </ScrollExpandSection>
+        <ScrollExpandSection>
+          <DevelopersSection />
         </ScrollExpandSection>
         <ScrollExpandSection>
           <JoinCtaSection />
