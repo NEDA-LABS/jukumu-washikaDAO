@@ -40,12 +40,12 @@ export default function ContentPreview({
   return (
     <div className="space-y-6">
       {/* Course header */}
-      <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-        <p className="text-xs text-orange-400 uppercase tracking-wider mb-1">
+      <div className="bg-card border border-border rounded-xl p-4">
+        <p className="text-xs text-primary uppercase tracking-wider mb-1">
           Hakiki kozi
         </p>
-        <h2 className="text-xl font-bold text-white mb-1">{courseTitle}</h2>
-        <p className="text-sm text-white/60">{courseDescription}</p>
+        <h2 className="text-xl font-bold text-foreground mb-1">{courseTitle}</h2>
+        <p className="text-sm text-muted-foreground">{courseDescription}</p>
       </div>
 
       {/* Lesson tabs */}
@@ -60,8 +60,8 @@ export default function ContentPreview({
             }}
             className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
               i === activeLesson
-                ? 'bg-orange-500/20 border-orange-500/30 text-orange-400'
-                : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+                ? 'bg-orange-500/20 border-orange-500/30 text-primary'
+                : 'bg-muted border-border text-muted-foreground hover:text-foreground'
             }`}
           >
             {l.title || `Somo ${i + 1}`}
@@ -72,10 +72,10 @@ export default function ContentPreview({
       {/* Lesson content */}
       {lesson && (
         <div className="space-y-6">
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
+          <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold">{lesson.title}</h3>
-              <span className="text-xs text-white/40">
+              <h3 className="text-foreground font-semibold">{lesson.title}</h3>
+              <span className="text-xs text-muted-foreground">
                 {lesson.duration_minutes}d
               </span>
             </div>
@@ -85,7 +85,7 @@ export default function ContentPreview({
           {/* Assessment questions preview */}
           {lesson.assessment_questions && lesson.assessment_questions.length > 0 && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-white/60">
+              <h4 className="text-sm font-medium text-muted-foreground">
                 Maswali ya tathmini ({lesson.assessment_questions.length})
               </h4>
               {lesson.assessment_questions.map((q, qi) => {
@@ -123,7 +123,7 @@ export default function ContentPreview({
       )}
 
       {lessons.length === 0 && (
-        <div className="text-center py-8 text-white/40 text-sm">
+        <div className="text-center py-8 text-muted-foreground text-sm">
           Hakuna masomo ya kuhakiki
         </div>
       )}

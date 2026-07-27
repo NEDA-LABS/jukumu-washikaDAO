@@ -22,7 +22,7 @@ export default function CertificateViewer({
   });
 
   return (
-    <div className="relative bg-white/[0.02] rounded-2xl overflow-hidden">
+    <div className="relative bg-card rounded-2xl overflow-hidden">
       {/* Decorative border */}
       <div className="absolute inset-0 rounded-2xl border-2 border-orange-500/30" />
       <div className="absolute inset-1 rounded-xl border border-orange-500/15" />
@@ -37,15 +37,15 @@ export default function CertificateViewer({
       <div className="relative px-8 py-10 text-center space-y-6">
         {/* Icon */}
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/30">
-          <AcademicCapIcon className="w-8 h-8 text-orange-400" />
+          <AcademicCapIcon className="w-8 h-8 text-primary" />
         </div>
 
         {/* Title */}
         <div>
-          <p className="text-white/40 text-xs uppercase tracking-widest mb-1">
+          <p className="text-muted-foreground text-xs uppercase tracking-widest mb-1">
             Cheti cha Mafunzo
           </p>
-          <h1 className="text-2xl font-bold text-white">{categoryName}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{categoryName}</h1>
         </div>
 
         {/* Divider */}
@@ -55,26 +55,26 @@ export default function CertificateViewer({
 
         {/* Recipient */}
         <div>
-          <p className="text-white/40 text-xs uppercase tracking-wider mb-1">
+          <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
             Imetolewa kwa
           </p>
-          <p className="text-xl font-semibold text-white">{memberName}</p>
+          <p className="text-xl font-semibold text-foreground">{memberName}</p>
         </div>
 
         {/* Date */}
         <div>
-          <p className="text-white/40 text-xs uppercase tracking-wider mb-1">
+          <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
             Tarehe
           </p>
-          <p className="text-white/70">{date}</p>
+          <p className="text-muted-foreground">{date}</p>
         </div>
 
         {/* Credential ID */}
-        <div className="pt-4 border-t border-white/5">
-          <p className="text-white/30 text-[10px] uppercase tracking-wider mb-0.5">
+        <div className="pt-4 border-t border-border">
+          <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-0.5">
             Kitambulisho cha Cheti
           </p>
-          <p className="text-white/40 text-xs font-mono">{credentialId}</p>
+          <p className="text-muted-foreground text-xs font-mono">{credentialId}</p>
         </div>
       </div>
     </div>

@@ -33,10 +33,10 @@ export default function ScenarioQuestion({
   return (
     <div className="space-y-4">
       {/* Scenario callout */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+      <div className="bg-muted border border-border rounded-xl p-4">
         <div className="flex items-start gap-2">
-          <InformationCircleIcon className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
-          <p className="text-white text-sm leading-relaxed">
+          <InformationCircleIcon className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <p className="text-foreground text-sm leading-relaxed">
             {question.scenario_text}
           </p>
         </div>
@@ -49,8 +49,8 @@ export default function ScenarioQuestion({
           const isCorrect = showResult?.correctOption === option.label;
           const isWrong = showResult && isSelected && !showResult.correct;
 
-          let borderClass = 'border-white/10 hover:border-white/20';
-          let bgClass = 'bg-white/[0.02] hover:bg-white/5';
+          let borderClass = 'border-border hover:border-primary/30';
+          let bgClass = 'bg-card hover:bg-muted';
 
           if (showResult) {
             if (isCorrect) {
@@ -76,17 +76,17 @@ export default function ScenarioQuestion({
               <span
                 className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border ${
                   isSelected && !showResult
-                    ? 'bg-orange-500 border-orange-500 text-white'
+                    ? 'bg-primary border-orange-500 text-white'
                     : showResult && isCorrect
                       ? 'bg-green-500 border-green-500 text-white'
                       : showResult && isWrong
                         ? 'bg-red-500 border-red-500 text-white'
-                        : 'border-white/20 text-white/60'
+                        : 'border-border text-muted-foreground'
                 }`}
               >
                 {option.label}
               </span>
-              <span className="text-sm text-white pt-0.5 flex-1">
+              <span className="text-sm text-foreground pt-0.5 flex-1">
                 {option.text}
               </span>
               {showResult && isCorrect && (
@@ -112,7 +112,7 @@ export default function ScenarioQuestion({
           <p className="font-medium mb-1">
             {showResult.correct ? 'Sahihi!' : 'Si sahihi'}
           </p>
-          <p className="text-white/70">{showResult.explanation}</p>
+          <p className="text-muted-foreground">{showResult.explanation}</p>
         </div>
       )}
     </div>

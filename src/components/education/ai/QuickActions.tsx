@@ -22,7 +22,7 @@ export default function QuickActions({ onAction, disabled }: QuickActionsProps) 
           type="button"
           onClick={() => onAction(a.type)}
           disabled={disabled}
-          className="text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="text-xs px-3 py-1.5 rounded-full border border-border bg-muted text-muted-foreground hover:bg-border hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {a.label}
         </button>

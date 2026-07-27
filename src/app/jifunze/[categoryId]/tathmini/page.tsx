@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AssessmentRunner from '@/components/education/assessment/AssessmentRunner';
@@ -7,6 +8,7 @@ import type { SubmitAssessmentResponse } from '@/lib/education/types';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export default function PlacementAssessmentPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const categoryId = params.categoryId as string;
@@ -19,7 +21,7 @@ export default function PlacementAssessmentPage() {
     async function fetchPlacement() {
       try {
         const res = await fetch(`/api/education/categories/${categoryId}`);
-        if (!res.ok) throw new Error('Imeshindikana kupakia');
+        if (!res.ok) throw new Error(t('edu.err.loadFailed'));
         const data = await res.json();
         // Find the placement assessment for this category
         if (data.placement_assessment_id) {
@@ -32,12 +34,12 @@ export default function PlacementAssessmentPage() {
             if (Array.isArray(assessments) && assessments.length > 0) {
               setAssessmentId(assessments[0].id);
             } else {
-              setError('Hakuna tathmini ya awali kwa kategoria hii.');
+              setError(t('edu.err.noPreAssessment'));
             }
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Hitilafu imetokea');
+        setError(err instanceof Error ? err.message : t('edu.err.generic'));
       } finally {
         setLoading(false);
       }
@@ -54,7 +56,7 @@ export default function PlacementAssessmentPage() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
@@ -62,26 +64,24 @@ export default function PlacementAssessmentPage() {
 
   if (error || !assessmentId) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Tathmini haijapatikana'}</p>
-          <button onClick={() => router.push(`/jifunze/${categoryId}`)} className="text-orange-400 hover:underline">
-            Rudi
-          </button>
+          <p className="text-red-400 mb-4">{error || t('edu.err.assessmentNotFound')}</p>
+          <button onClick={() => router.push(`/jifunze/${categoryId}`)} className="text-primary hover:underline">{t('edu.back')}</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen text-white">
-      <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+    <div className="bg-background min-h-screen text-foreground">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => router.push(`/jifunze/${categoryId}`)} className="text-white/60 hover:text-white transition-colors">
+            <button onClick={() => router.push(`/jifunze/${categoryId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-bold text-white">Tathmini ya Kwanza</h1>
+            <h1 className="text-lg font-bold text-foreground">{t('edu.firstAssessment')}</h1>
           </div>
         </div>
       </header>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ChatMessage from './ChatMessage';
 import QuickActions from './QuickActions';
@@ -22,6 +23,7 @@ interface AICompanionProps {
 }
 
 export default function AICompanion({ lessonId, isOpen, onClose }: AICompanionProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -71,13 +73,13 @@ export default function AICompanion({ lessonId, isOpen, onClose }: AICompanionPr
         });
 
         if (res.status === 429) {
-          setError('Umezidi kikomo cha maswali. Jaribu tena baadaye.');
+          setError(t('edu.err.rateLimit'));
           setStreaming(false);
           return;
         }
 
         if (!res.ok) {
-          setError('Hitilafu imetokea. Jaribu tena.');
+          setError(t('edu.err.retry'));
           setStreaming(false);
           return;
         }
@@ -144,19 +146,19 @@ export default function AICompanion({ lessonId, isOpen, onClose }: AICompanionPr
     <>
       {/* Mobile overlay backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        className="fixed inset-0 bg-background/80 z-40 lg:hidden"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="fixed inset-x-0 bottom-0 z-50 lg:static lg:inset-auto lg:z-auto flex flex-col bg-[#0a0a0a] border-t lg:border-t-0 lg:border-l border-white/10 h-[70vh] lg:h-full lg:w-96">
+      <div className="fixed inset-x-0 bottom-0 z-50 lg:static lg:inset-auto lg:z-auto flex flex-col bg-background border-t lg:border-t-0 lg:border-l border-border h-[70vh] lg:h-full lg:w-96">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <h2 className="text-white font-medium text-sm">Msaidizi wa AI</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 className="text-foreground font-medium text-sm">Msaidizi wa AI</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-white/40 hover:text-white transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -166,7 +168,7 @@ export default function AICompanion({ lessonId, isOpen, onClose }: AICompanionPr
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-center py-8 space-y-2">
-              <p className="text-white/40 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Habari! Niko tayari kukusaidia na somo hili.
               </p>
               <QuickActions onAction={handleQuickAction} disabled={streaming} />
@@ -217,12 +219,12 @@ export default function AICompanion({ lessonId, isOpen, onClose }: AICompanionPr
               onChange={(e) => setInput(e.target.value)}
               placeholder="Andika swali lako..."
               disabled={streaming}
-              className="flex-1 bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30 disabled:opacity-50"
+              className="flex-1 bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm placeholder:text-muted-foreground disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={streaming || !input.trim()}
-              className="p-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <PaperAirplaneIcon className="w-4 h-4" />
             </button>

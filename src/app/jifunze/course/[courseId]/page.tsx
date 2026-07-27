@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import LessonViewer from '@/components/education/lesson/LessonViewer';
@@ -19,6 +20,7 @@ interface LessonWithProgress extends EduLesson {
 }
 
 export default function CourseViewerPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const courseId = params.courseId as string;
@@ -36,13 +38,13 @@ export default function CourseViewerPage() {
       setLoading(true);
       // Fetch course details
       const courseRes = await fetch(`/api/education/courses/${courseId}`);
-      if (!courseRes.ok) throw new Error('Kozi haijapatikana');
+      if (!courseRes.ok) throw new Error(t('edu.err.courseNotFound'));
       const courseData = await courseRes.json();
       setCourse(courseData);
 
       // Fetch lessons
       const lessonsRes = await fetch(`/api/education/courses/${courseId}/lessons`);
-      if (!lessonsRes.ok) throw new Error('Masomo hayajapatikana');
+      if (!lessonsRes.ok) throw new Error(t('edu.err.lessonsNotFound'));
       const lessonsData: EduLesson[] = await lessonsRes.json();
 
       // Fetch progress
@@ -71,7 +73,7 @@ export default function CourseViewerPage() {
       const firstIncomplete = lessonsWithProgress.findIndex((l) => !l.completed);
       if (firstIncomplete >= 0) setCurrentLessonIndex(firstIncomplete);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Hitilafu imetokea');
+      setError(err instanceof Error ? err.message : t('edu.err.generic'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export default function CourseViewerPage() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
@@ -125,34 +127,32 @@ export default function CourseViewerPage() {
 
   if (error || !course) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Kozi haijapatikana'}</p>
-          <button onClick={() => router.push('/jifunze')} className="text-orange-400 hover:underline">
-            Rudi kwenye Jifunze
-          </button>
+          <p className="text-red-400 mb-4">{error || t('edu.err.courseNotFound')}</p>
+          <button onClick={() => router.push('/jifunze')} className="text-primary hover:underline">{t('edu.backToLearn')}</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen text-white flex flex-col">
+    <div className="bg-background min-h-screen text-foreground flex flex-col">
       {/* Header */}
-      <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-full mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors">
+              <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeftIcon className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-white/60 hover:text-white transition-colors"
+                className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
               >
                 {sidebarOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
               </button>
-              <h1 className="text-sm font-semibold text-white truncate max-w-[200px] sm:max-w-none">
+              <h1 className="text-sm font-semibold text-foreground truncate max-w-[200px] sm:max-w-none">
                 {course.title}
               </h1>
             </div>
@@ -160,12 +160,12 @@ export default function CourseViewerPage() {
               onClick={() => setShowAI(!showAI)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 showAI
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-border hover:text-foreground'
               }`}
             >
               <ChatBubbleLeftRightIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">AI Msaidizi</span>
+              <span className="hidden sm:inline">{t('edu.ai.assistant')}</span>
             </button>
           </div>
         </div>
@@ -177,10 +177,10 @@ export default function CourseViewerPage() {
         <aside
           className={`${
             sidebarOpen ? 'w-72' : 'w-0'
-          } transition-all duration-300 overflow-hidden border-r border-white/5 bg-black/30 flex-shrink-0`}
+          } transition-all duration-300 overflow-hidden border-r border-border bg-card/50 flex-shrink-0`}
         >
           <div className="w-72 h-full overflow-y-auto py-4">
-            <h2 className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">
+            <h2 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Masomo ({lessons.filter((l) => l.completed).length}/{lessons.length})
             </h2>
             <nav className="space-y-1 px-2">
@@ -190,15 +190,15 @@ export default function CourseViewerPage() {
                   onClick={() => setCurrentLessonIndex(index)}
                   className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     index === currentLessonIndex
-                      ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white'
+                      ? 'bg-orange-500/10 text-primary border border-orange-500/20'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   {lesson.completed ? (
                     <CheckCircleIcon className="h-5 w-5 text-emerald-400 shrink-0" />
                   ) : (
                     <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center text-[10px] font-bold ${
-                      index === currentLessonIndex ? 'border-orange-400 text-orange-400' : 'border-white/20 text-white/30'
+                      index === currentLessonIndex ? 'border-primary text-primary' : 'border-border text-muted-foreground'
                     }`}>
                       {index + 1}
                     </div>
@@ -233,8 +233,8 @@ export default function CourseViewerPage() {
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <BookOpenIcon className="h-12 w-12 text-white/20 mx-auto mb-4" />
-                <p className="text-white/40">Hakuna masomo bado.</p>
+                <BookOpenIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground">{t('edu.noLessons')}</p>
               </div>
             </div>
           )}
@@ -242,7 +242,7 @@ export default function CourseViewerPage() {
 
         {/* AI Companion panel */}
         {showAI && currentLesson && (
-          <div className="w-80 border-l border-white/5 bg-black/30 flex-shrink-0 hidden lg:block">
+          <div className="w-80 border-l border-border bg-card/50 flex-shrink-0 hidden lg:block">
             <AICompanion
               lessonId={currentLesson.id}
               isOpen={showAI}
@@ -255,7 +255,7 @@ export default function CourseViewerPage() {
       {/* Mobile AI panel overlay */}
       {showAI && currentLesson && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-          <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#0a0a0a] border-l border-white/10">
+          <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-border">
             <AICompanion
               lessonId={currentLesson.id}
               isOpen={showAI}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import CourseCard from '@/components/education/library/CourseCard';
@@ -20,6 +21,7 @@ interface CategoryDetail extends EduCategory {
 }
 
 export default function CategoryPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const categoryId = params.categoryId as string;
@@ -33,11 +35,11 @@ export default function CategoryPage() {
       try {
         setLoading(true);
         const res = await fetch(`/api/education/categories/${categoryId}`);
-        if (!res.ok) throw new Error('Imeshindikana kupakia');
+        if (!res.ok) throw new Error(t('edu.err.loadFailed'));
         const data = await res.json();
         setCategory(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Hitilafu imetokea');
+        setError(err instanceof Error ? err.message : t('edu.err.generic'));
       } finally {
         setLoading(false);
       }
@@ -47,7 +49,7 @@ export default function CategoryPage() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent" />
       </div>
     );
@@ -55,12 +57,10 @@ export default function CategoryPage() {
 
   if (error || !category) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen text-white flex items-center justify-center">
+      <div className="bg-background min-h-screen text-foreground flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error || 'Haijpatikana'}</p>
-          <button onClick={() => router.push('/jifunze')} className="text-orange-400 hover:underline">
-            Rudi kwenye Jifunze
-          </button>
+          <button onClick={() => router.push('/jifunze')} className="text-primary hover:underline">{t('edu.backToLearn')}</button>
         </div>
       </div>
     );
@@ -71,30 +71,30 @@ export default function CategoryPage() {
     : 0;
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen text-white">
+    <div className="bg-background min-h-screen text-foreground">
       {/* Header */}
-      <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => router.push('/jifunze')} className="text-white/60 hover:text-white transition-colors">
+            <button onClick={() => router.push('/jifunze')} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-bold text-white">{category.name}</h1>
+            <h1 className="text-lg font-bold text-foreground">{category.name}</h1>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Category info */}
-        <div className="mb-8 rounded-2xl bg-white/[0.02] border border-white/10 p-6">
+        <div className="mb-8 rounded-2xl bg-card border border-border p-6">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center border border-orange-500/20 shrink-0">
-              <AcademicCapIcon className="h-7 w-7 text-orange-400" />
+              <AcademicCapIcon className="h-7 w-7 text-primary" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-white mb-1">{category.name}</h2>
+              <h2 className="text-xl font-bold text-foreground mb-1">{category.name}</h2>
               {category.description && (
-                <p className="text-sm text-white/50">{category.description}</p>
+                <p className="text-sm text-muted-foreground">{category.description}</p>
               )}
             </div>
           </div>
@@ -102,8 +102,8 @@ export default function CategoryPage() {
           {/* Progress indicator */}
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-white/50">Maendeleo ya Jumla</span>
-              <span className="text-orange-400 font-medium">{overallProgress}%</span>
+              <span className="text-muted-foreground">{t('edu.overallProgress')}</span>
+              <span className="text-primary font-medium">{overallProgress}%</span>
             </div>
             <ProgressBar completed={overallProgress} total={100} />
           </div>
@@ -112,7 +112,7 @@ export default function CategoryPage() {
           {category.certificate_earned && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <TrophyIcon className="h-5 w-5 text-emerald-400" />
-              <span className="text-sm text-emerald-400 font-medium">Cheti Kimepata!</span>
+              <span className="text-sm text-emerald-400 font-medium">{t('edu.cert.earned')}</span>
             </div>
           )}
         </div>
@@ -122,9 +122,9 @@ export default function CategoryPage() {
           <div className="mb-8 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 p-6">
             <div className="flex items-center gap-3 mb-3">
               <ClipboardDocumentCheckIcon className="h-6 w-6 text-blue-400" />
-              <h3 className="text-lg font-semibold text-white">Tathmini ya Kwanza</h3>
+              <h3 className="text-lg font-semibold text-foreground">{t('edu.firstAssessment')}</h3>
             </div>
-            <p className="text-sm text-white/50 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Fanya tathmini ya awali ili kupata mapendekezo ya kozi zinazokufaa zaidi.
             </p>
             <button
@@ -137,10 +137,10 @@ export default function CategoryPage() {
         )}
 
         {/* Courses grid */}
-        <h3 className="text-lg font-bold text-white mb-4">Kozi</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">{t('edu.coursesHeading')}</h3>
         {category.courses.length === 0 ? (
-          <div className="rounded-xl bg-white/[0.02] border border-white/5 p-12 text-center">
-            <p className="text-white/40">Hakuna kozi bado katika kategoria hii.</p>
+          <div className="rounded-xl bg-card border border-border p-12 text-center">
+            <p className="text-muted-foreground">{t('edu.noCourses')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -162,12 +162,12 @@ export default function CategoryPage() {
         {/* Final exam CTA */}
         {!category.certificate_earned && overallProgress >= 80 && (
           <div className="mt-8 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 p-6 text-center">
-            <TrophyIcon className="h-10 w-10 text-orange-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">Uko Tayari kwa Mtihani wa Mwisho!</h3>
-            <p className="text-sm text-white/50 mb-4">Kamilisha mtihani ili kupata cheti chako.</p>
+            <TrophyIcon className="h-10 w-10 text-primary mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t('edu.readyForFinal')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('edu.finishExamForCert')}</p>
             <button
               onClick={() => router.push(`/jifunze/${categoryId}/mtihani`)}
-              className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors"
             >
               Fanya Mtihani wa Mwisho
             </button>

@@ -100,7 +100,7 @@ export default function DocumentUploader({
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
           dragOver
             ? 'border-orange-500/50 bg-orange-500/5'
-            : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/5'
+            : 'border-border bg-card hover:border-primary/30 hover:bg-muted'
         }`}
       >
         <input
@@ -110,22 +110,22 @@ export default function DocumentUploader({
           onChange={handleInputChange}
           className="hidden"
         />
-        <CloudArrowUpIcon className="w-10 h-10 text-white/30 mx-auto mb-3" />
-        <p className="text-sm text-white/60 mb-1">
+        <CloudArrowUpIcon className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground mb-1">
           Buruta faili hapa au bonyeza kupakia
         </p>
-        <p className="text-xs text-white/30">
+        <p className="text-xs text-muted-foreground">
           {acceptedTypes.join(', ')} — hadi {maxSizeMB}MB
         </p>
       </div>
 
       {/* File info */}
       {file && (
-        <div className="flex items-center gap-3 bg-white/[0.02] border border-white/10 rounded-lg p-3">
-          <DocumentTextIcon className="w-5 h-5 text-white/40 shrink-0" />
+        <div className="flex items-center gap-3 bg-card border border-border rounded-lg p-3">
+          <DocumentTextIcon className="w-5 h-5 text-muted-foreground shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-white truncate">{file.name}</p>
-            <p className="text-xs text-white/40">
+            <p className="text-sm text-foreground truncate">{file.name}</p>
+            <p className="text-xs text-muted-foreground">
               {(file.size / 1024).toFixed(0)} KB
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function DocumentUploader({
               e.stopPropagation();
               reset();
             }}
-            className="p-1 text-white/40 hover:text-white transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
@@ -158,11 +158,11 @@ export default function DocumentUploader({
 
       {/* Preview */}
       {preview && (
-        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-          <h4 className="text-sm font-medium text-white mb-2">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h4 className="text-sm font-medium text-foreground mb-2">
             Muhtasari uliochukuliwa
           </h4>
-          <p className="text-sm text-white/60 whitespace-pre-wrap line-clamp-10">
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-10">
             {preview}
           </p>
         </div>

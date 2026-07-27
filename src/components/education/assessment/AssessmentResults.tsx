@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { SubmitAssessmentResponse } from '@/lib/education/types';
 import SkillProfile from '../progress/SkillProfile';
 import {
@@ -24,6 +25,7 @@ export default function AssessmentResults({
   questions,
   onContinue,
 }: AssessmentResultsProps) {
+  const { t } = useLanguage();
   const scorePct = Math.round(results.score);
 
   return (
@@ -42,26 +44,26 @@ export default function AssessmentResults({
             <ExclamationTriangleIcon className="w-10 h-10 text-red-400" />
           )}
         </div>
-        <h2 className="text-2xl font-bold text-white mb-1">{scorePct}%</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-1">{scorePct}%</h2>
         <p className={`text-sm font-medium ${results.passed ? 'text-green-400' : 'text-red-400'}`}>
           {results.passed ? 'Umefaulu!' : 'Hujafaulu'}
         </p>
-        <p className="text-white/40 text-sm mt-1">
+        <p className="text-muted-foreground text-sm mt-1">
           {results.correct_count}/{results.total_questions} majibu sahihi
         </p>
       </div>
 
       {/* Skill breakdown */}
       {Object.keys(results.skill_scores).length > 0 && (
-        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-          <h3 className="text-white font-medium mb-3">Ujuzi wako</h3>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="text-foreground font-medium mb-3">Ujuzi wako</h3>
           <SkillProfile skillScores={results.skill_scores} />
         </div>
       )}
 
       {/* Per-question results */}
       <div className="space-y-3">
-        <h3 className="text-white font-medium">Majibu kwa undani</h3>
+        <h3 className="text-foreground font-medium">Majibu kwa undani</h3>
         {results.results.map((r) => {
           const q = questions.find((qu) => qu.id === r.question_id);
           return (
@@ -79,15 +81,15 @@ export default function AssessmentResults({
                 ) : (
                   <XCircleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                 )}
-                <p className="text-sm text-white/80 line-clamp-2">
+                <p className="text-sm text-foreground/80 line-clamp-2">
                   {q?.scenario_text ?? `Swali #${r.question_id}`}
                 </p>
               </div>
               {!r.correct && (
-                <div className="ml-7 text-xs text-white/50 space-y-0.5">
+                <div className="ml-7 text-xs text-muted-foreground space-y-0.5">
                   <p>Jibu lako: {r.selected_option} | Jibu sahihi: {r.correct_option}</p>
                   {r.explanation && (
-                    <p className="text-white/40">{r.explanation}</p>
+                    <p className="text-muted-foreground">{r.explanation}</p>
                   )}
                 </div>
               )}
@@ -98,11 +100,11 @@ export default function AssessmentResults({
 
       {/* Recommendations */}
       {results.recommendations && results.recommendations.length > 0 && (
-        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-          <h3 className="text-white font-medium mb-2">Mapendekezo</h3>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h3 className="text-foreground font-medium mb-2">Mapendekezo</h3>
           <ul className="space-y-1">
             {results.recommendations.map((rec) => (
-              <li key={rec.id} className="text-sm text-white/60">
+              <li key={rec.id} className="text-sm text-muted-foreground">
                 {rec.reason}
               </li>
             ))}
@@ -115,10 +117,8 @@ export default function AssessmentResults({
         <button
           type="button"
           onClick={onContinue}
-          className="bg-orange-500 text-white rounded-lg px-6 py-2.5 font-medium hover:bg-orange-600 transition-colors"
-        >
-          Endelea
-        </button>
+          className="bg-primary text-white rounded-lg px-6 py-2.5 font-medium hover:bg-primary/90 transition-colors"
+        >{t('edu.continueBtn')}</button>
       </div>
     </div>
   );

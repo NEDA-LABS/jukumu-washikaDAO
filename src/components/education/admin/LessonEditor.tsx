@@ -56,7 +56,7 @@ export default function LessonEditor({
       {/* Title + Order controls */}
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="block text-sm text-white/60 mb-1.5">
+          <label className="block text-sm text-muted-foreground mb-1.5">
             Jina la somo
           </label>
           <input
@@ -65,7 +65,7 @@ export default function LessonEditor({
             onChange={(e) => setTitle(e.target.value)}
             required
             placeholder="Mfano: Utangulizi wa Bajeti"
-            className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30"
+            className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm placeholder:text-muted-foreground"
           />
         </div>
         {onReorder && (
@@ -73,14 +73,14 @@ export default function LessonEditor({
             <button
               type="button"
               onClick={() => onReorder('up')}
-              className="p-1 border border-white/10 rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+              className="p-1 border border-border rounded bg-muted hover:bg-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronUpIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => onReorder('down')}
-              className="p-1 border border-white/10 rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+              className="p-1 border border-border rounded bg-muted hover:bg-border text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronDownIcon className="w-4 h-4" />
             </button>
@@ -90,7 +90,7 @@ export default function LessonEditor({
 
       {/* Duration */}
       <div>
-        <label className="block text-sm text-white/60 mb-1.5">
+        <label className="block text-sm text-muted-foreground mb-1.5">
           Muda (dakika)
         </label>
         <input
@@ -98,18 +98,18 @@ export default function LessonEditor({
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}
           min={1}
-          className="w-32 bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm"
+          className="w-32 bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm"
         />
       </div>
 
       {/* Content area with preview toggle */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-sm text-white/60">Maudhui (Markdown)</label>
+          <label className="text-sm text-muted-foreground">Maudhui (Markdown)</label>
           <button
             type="button"
             onClick={() => setPreview(!preview)}
-            className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {preview ? (
               <>
@@ -126,7 +126,7 @@ export default function LessonEditor({
         </div>
 
         {preview ? (
-          <div className="min-h-[300px] bg-white/[0.02] border border-white/10 rounded-lg p-4">
+          <div className="min-h-[300px] bg-card border border-border rounded-lg p-4">
             <LessonContent content={content} />
           </div>
         ) : (
@@ -135,7 +135,7 @@ export default function LessonEditor({
             onChange={(e) => setContent(e.target.value)}
             rows={14}
             placeholder="Andika maudhui ya somo kwa Markdown..."
-            className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm font-mono placeholder:text-white/30 resize-y"
+            className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm font-mono placeholder:text-muted-foreground resize-y"
           />
         )}
       </div>
@@ -145,7 +145,7 @@ export default function LessonEditor({
         <button
           type="submit"
           disabled={saving || !title.trim() || !content.trim()}
-          className="bg-orange-500 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? 'Inahifadhi...' : 'Hifadhi'}
         </button>
@@ -153,7 +153,7 @@ export default function LessonEditor({
           <button
             type="button"
             onClick={onRegenerate}
-            className="flex items-center gap-1.5 border border-white/10 bg-white/5 text-white/70 rounded-lg px-4 py-2 text-sm hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 border border-border bg-muted text-muted-foreground rounded-lg px-4 py-2 text-sm hover:bg-border transition-colors"
           >
             <SparklesIcon className="w-4 h-4" />
             Tengeneza upya na AI

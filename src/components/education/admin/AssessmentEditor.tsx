@@ -44,19 +44,19 @@ function QuestionEditor({
   };
 
   return (
-    <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 space-y-4">
+    <div className="bg-card border border-border rounded-xl p-4 space-y-4">
       <div>
-        <label className="block text-sm text-white/60 mb-1">Hali (Scenario)</label>
+        <label className="block text-sm text-muted-foreground mb-1">Hali (Scenario)</label>
         <textarea
           value={q.scenario_text}
           onChange={(e) => setQ({ ...q, scenario_text: e.target.value })}
           rows={3}
-          className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30 resize-none"
+          className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm placeholder:text-muted-foreground resize-none"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm text-white/60">Chaguzi</label>
+        <label className="block text-sm text-muted-foreground">Chaguzi</label>
         {q.options.map((opt, i) => (
           <div key={opt.label} className="flex items-center gap-2">
             <button
@@ -65,7 +65,7 @@ function QuestionEditor({
               className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-colors ${
                 q.correct_option === opt.label
                   ? 'bg-green-500 border-green-500 text-white'
-                  : 'border-white/20 text-white/60 hover:border-white/40'
+                  : 'border-border text-muted-foreground hover:border-white/40'
               }`}
             >
               {opt.label}
@@ -74,7 +74,7 @@ function QuestionEditor({
               type="text"
               value={opt.text}
               onChange={(e) => updateOption(i, e.target.value)}
-              className="flex-1 bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2 text-sm placeholder:text-white/30"
+              className="flex-1 bg-muted border border-border text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground"
             />
           </div>
         ))}
@@ -82,21 +82,21 @@ function QuestionEditor({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-white/60 mb-1">Ujuzi (Skill tag)</label>
+          <label className="block text-sm text-muted-foreground mb-1">Ujuzi (Skill tag)</label>
           <input
             type="text"
             value={q.skill_tag}
             onChange={(e) => setQ({ ...q, skill_tag: e.target.value })}
             placeholder="mfano: bajeti"
-            className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2 text-sm placeholder:text-white/30"
+            className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground"
           />
         </div>
         <div>
-          <label className="block text-sm text-white/60 mb-1">Jibu sahihi</label>
+          <label className="block text-sm text-muted-foreground mb-1">Jibu sahihi</label>
           <select
             value={q.correct_option}
             onChange={(e) => setQ({ ...q, correct_option: e.target.value })}
-            className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2 text-sm"
           >
             {q.options.map((o) => (
               <option key={o.label} value={o.label}>
@@ -108,12 +108,12 @@ function QuestionEditor({
       </div>
 
       <div>
-        <label className="block text-sm text-white/60 mb-1">Maelezo (Explanation)</label>
+        <label className="block text-sm text-muted-foreground mb-1">Maelezo (Explanation)</label>
         <textarea
           value={q.explanation}
           onChange={(e) => setQ({ ...q, explanation: e.target.value })}
           rows={2}
-          className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30 resize-none"
+          className="w-full bg-muted border border-border text-foreground rounded-lg px-3 py-2.5 text-sm placeholder:text-muted-foreground resize-none"
         />
       </div>
 
@@ -121,7 +121,7 @@ function QuestionEditor({
         <button
           type="button"
           onClick={() => onSave(q)}
-          className="flex items-center gap-1 bg-orange-500 text-white rounded-lg px-3 py-1.5 text-sm hover:bg-orange-600 transition-colors"
+          className="flex items-center gap-1 bg-primary text-white rounded-lg px-3 py-1.5 text-sm hover:bg-primary/90 transition-colors"
         >
           <CheckIcon className="w-4 h-4" />
           Hifadhi
@@ -129,7 +129,7 @@ function QuestionEditor({
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center gap-1 border border-white/10 text-white/60 rounded-lg px-3 py-1.5 text-sm hover:bg-white/5 transition-colors"
+          className="flex items-center gap-1 border border-border text-muted-foreground rounded-lg px-3 py-1.5 text-sm hover:bg-muted transition-colors"
         >
           <XMarkIcon className="w-4 h-4" />
           Ghairi
@@ -179,7 +179,7 @@ export default function AssessmentEditor({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-white font-medium">
+        <h3 className="text-foreground font-medium">
           Maswali ({questions.length})
         </h3>
         <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export default function AssessmentEditor({
             <button
               type="button"
               onClick={onRegenerate}
-              className="flex items-center gap-1.5 border border-white/10 bg-white/5 text-white/70 rounded-lg px-3 py-1.5 text-sm hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1.5 border border-border bg-muted text-muted-foreground rounded-lg px-3 py-1.5 text-sm hover:bg-border transition-colors"
             >
               <SparklesIcon className="w-4 h-4" />
               Tengeneza upya
@@ -196,7 +196,7 @@ export default function AssessmentEditor({
           <button
             type="button"
             onClick={addQuestion}
-            className="flex items-center gap-1 bg-orange-500 text-white rounded-lg px-3 py-1.5 text-sm hover:bg-orange-600 transition-colors"
+            className="flex items-center gap-1 bg-primary text-white rounded-lg px-3 py-1.5 text-sm hover:bg-primary/90 transition-colors"
           >
             <PlusIcon className="w-4 h-4" />
             Ongeza
@@ -217,17 +217,17 @@ export default function AssessmentEditor({
           ) : (
             <div
               key={i}
-              className="bg-white/[0.02] border border-white/10 rounded-xl p-4"
+              className="bg-card border border-border rounded-xl p-4"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-white/80 line-clamp-2 mb-1">
+                  <p className="text-sm text-foreground/80 line-clamp-2 mb-1">
                     {q.scenario_text || 'Swali tupu'}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-white/40">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>Jibu: {q.correct_option}</span>
                     {q.skill_tag && (
-                      <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                      <span className="px-1.5 py-0.5 rounded bg-muted border border-border">
                         {q.skill_tag}
                       </span>
                     )}
@@ -237,14 +237,14 @@ export default function AssessmentEditor({
                   <button
                     type="button"
                     onClick={() => setEditIndex(i)}
-                    className="p-1.5 text-white/40 hover:text-white transition-colors"
+                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <PencilIcon className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => removeQuestion(i)}
-                    className="p-1.5 text-white/40 hover:text-red-400 transition-colors"
+                    className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
@@ -256,7 +256,7 @@ export default function AssessmentEditor({
       </div>
 
       {questions.length === 0 && (
-        <div className="text-center py-6 text-white/40 text-sm">
+        <div className="text-center py-6 text-muted-foreground text-sm">
           Hakuna maswali bado. Bonyeza &quot;Ongeza&quot; kuongeza swali.
         </div>
       )}

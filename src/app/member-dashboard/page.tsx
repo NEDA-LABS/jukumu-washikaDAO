@@ -1370,6 +1370,7 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
 }
 
 function LearningSection({ memberTraining, user }: { memberTraining: any[]; user: any }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [coursesInProgress, setCoursesInProgress] = useState(0);
   const [certificatesCount, setCertificatesCount] = useState(0);
@@ -1399,16 +1400,16 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
           <div className="w-10 h-10 rounded-xl bg-[#e4a233]/10 border border-[#e4a233]/20 flex items-center justify-center">
             <BookOpenIcon className="h-5 w-5 text-[#e4a233]" />
           </div>
-          <h3 className="text-base font-bold text-foreground">Masomo</h3>
+          <h3 className="text-base font-bold text-foreground">{t('edu.title')}</h3>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="rounded-xl bg-card border border-border p-4">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Kozi Zinaendelea</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{t('edu.inProgress')}</p>
             <p className="text-2xl font-bold text-[#e4a233]">{coursesInProgress}</p>
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Vyeti Vilivyopatikana</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{t('edu.certsEarned')}</p>
             <p className="text-2xl font-bold text-emerald-400">{certificatesCount}</p>
           </div>
         </div>
@@ -1416,15 +1417,15 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/jifunze')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-foreground transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-colors"
           >
-            Endelea Kujifunza
+            {t('edu.continue')}
           </button>
           <button
             onClick={() => router.push('/jifunze/vyeti')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground border border-border transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-muted hover:bg-border text-muted-foreground hover:text-foreground border border-border transition-colors"
           >
-            Vyeti Vyangu
+            {t('edu.myCerts')}
           </button>
         </div>
       </div>

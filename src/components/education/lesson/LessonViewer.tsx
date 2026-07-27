@@ -40,11 +40,11 @@ export default function LessonViewer({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="border-b border-white/10 px-4 py-3 space-y-2">
+      <div className="border-b border-border px-4 py-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-white/40 truncate">{courseTitle}</p>
-            <h1 className="text-lg font-semibold text-white truncate">
+            <p className="text-xs text-muted-foreground truncate">{courseTitle}</p>
+            <h1 className="text-lg font-semibold text-foreground truncate">
               {lessonTitle}
             </h1>
           </div>
@@ -52,10 +52,10 @@ export default function LessonViewer({
             <button
               type="button"
               onClick={onToggleAI}
-              className="shrink-0 ml-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              className="shrink-0 ml-3 p-2 rounded-lg bg-muted border border-border hover:bg-border transition-colors"
               title="Msaidizi wa AI"
             >
-              <ChatBubbleLeftRightIcon className="w-5 h-5 text-orange-400" />
+              <ChatBubbleLeftRightIcon className="w-5 h-5 text-primary" />
             </button>
           )}
         </div>

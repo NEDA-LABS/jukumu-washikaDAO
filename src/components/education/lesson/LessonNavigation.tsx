@@ -24,12 +24,12 @@ export default function LessonNavigation({
   hasNext,
 }: LessonNavigationProps) {
   return (
-    <div className="flex items-center justify-between border-t border-white/10 bg-[#0a0a0a] px-4 py-3">
+    <div className="flex items-center justify-between border-t border-border bg-background px-4 py-3">
       <button
         type="button"
         onClick={onPrev}
         disabled={!hasPrev}
-        className="flex items-center gap-1 text-sm text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ChevronLeftIcon className="w-4 h-4" />
         Nyuma
@@ -52,7 +52,7 @@ export default function LessonNavigation({
         type="button"
         onClick={onNext}
         disabled={!hasNext}
-        className="flex items-center gap-1 text-sm text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         Mbele
         <ChevronRightIcon className="w-4 h-4" />
