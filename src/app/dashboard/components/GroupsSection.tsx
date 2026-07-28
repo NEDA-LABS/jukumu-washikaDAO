@@ -1,10 +1,13 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 import React, { useState } from 'react';
 import { PlusIcon, UserGroupIcon, UsersIcon, CurrencyDollarIcon, DocumentTextIcon, TrashIcon, UserMinusIcon } from '@heroicons/react/24/outline';
 import { dkInput, dkSelect, dkLabel } from './shared';
 
 export default function GroupsSection({ groups, loadAdminData, showToast }: { groups: any[]; loadAdminData: () => void; showToast: (msg: string, type?: any) => void }) {
+  const { t } = useLanguage();
   const [showGroupDetails, setShowGroupDetails] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [editingGroup, setEditingGroup] = useState<any>(null);
@@ -41,7 +44,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
         setGroupWalletWarning('Imeshindwa kupakia data ya pochi');
       }
     } catch {
-      setGroupWalletWarning('Hitilafu ya mtandao wakati wa kupakia pochi');
+      setGroupWalletWarning(t('adm.o.walletLoadErr'));
     } finally {
       setWalletLoading(false);
     }
@@ -113,7 +116,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
       const r = await fetch(`/api/member/groups/${selectedGroup.id}/proposals/${proposalId}/execute`, { method: 'POST' });
       const d = await r.json().catch(() => null);
       if (r.ok && d?.success) {
-        showToast('Malipo yamekamilika! (Funds disbursed)', 'success');
+        showToast(t('adm.o.disbursed'), 'success');
         await reloadProposals(selectedGroup.id);
         fetchGroupWallet(selectedGroup.id);
       } else {
@@ -124,7 +127,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
         showToast(msg, 'error');
       }
     } catch {
-      showToast('Hitilafu ya mtandao', 'error');
+      showToast(t('adm.c.networkErr'), 'error');
     } finally {
       setExecutingProposalId(null);
     }
@@ -145,9 +148,9 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
         const mr = await fetch(`/api/admin/groups/${selectedGroup.id}/members`);
         if (mr.ok) setGroupMembers(await mr.json());
         loadAdminData();
-        showToast(d.message || 'Nafasi ya uongozi imebadilishwa!', 'success');
-      } else showToast(d.error || 'Hitilafu imetokea', 'error');
-    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+        showToast(d.message || t('adm.g.roleChanged'), 'success');
+      } else showToast(d.error || t('adm.c.error'), 'error');
+    } catch { showToast(t('adm.c.networkErr'), 'error'); }
   };
 
   const handleRemoveFromGroup = async (memberId: number) => {
@@ -159,27 +162,27 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
         const mr = await fetch(`/api/admin/groups/${selectedGroup.id}/members`);
         if (mr.ok) setGroupMembers(await mr.json());
         loadAdminData();
-        showToast(d.message || 'Mwanachama ameondolewa!', 'success');
-      } else showToast(d.error || 'Hitilafu imetokea', 'error');
-    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+        showToast(d.message || t('adm.g.memberRemoved'), 'success');
+      } else showToast(d.error || t('adm.c.error'), 'error');
+    } catch { showToast(t('adm.c.networkErr'), 'error'); }
   };
 
   const handleDeleteGroup = async (group: any) => {
     try {
       const r = await fetch('/api/admin/groups', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: group.id }) });
       const d = await r.json();
-      if (r.ok && d.success) { loadAdminData(); showToast(d.message || 'Kundi limefutwa!', 'success'); }
-      else showToast(d.error || 'Hitilafu imetokea', 'error');
-    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+      if (r.ok && d.success) { loadAdminData(); showToast(d.message || t('adm.g.groupDeleted'), 'success'); }
+      else showToast(d.error || t('adm.c.error'), 'error');
+    } catch { showToast(t('adm.c.networkErr'), 'error'); }
   };
 
   const handleUpdateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const r = await fetch('/api/admin/groups', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingGroup.id, name: groupForm.name, leaderId: groupForm.leaderId || null, monthlyContribution: parseFloat(groupForm.monthlyContribution), status: editingGroup.status }) });
-      if (r.ok) { showToast('Kundi limebadilishwa kwa mafanikio!', 'success'); setShowEditGroup(false); setShowGroupDetails(false); loadAdminData(); }
-      else { const d = await r.json(); showToast(d.error || 'Hitilafu imetokea', 'error'); }
-    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+      if (r.ok) { showToast(t('adm.g.groupUpdated'), 'success'); setShowEditGroup(false); setShowGroupDetails(false); loadAdminData(); }
+      else { const d = await r.json(); showToast(d.error || t('adm.c.error'), 'error'); }
+    } catch { showToast(t('adm.c.networkErr'), 'error'); }
   };
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -187,19 +190,19 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
     try {
       const r = await fetch('/api/admin/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(groupForm) });
       const d = await r.json();
-      if (r.ok && d.success) { setShowGroupForm(false); setGroupForm({ name: '', leaderId: '', monthlyContribution: '', foundedDate: new Date().toISOString().split('T')[0] }); loadAdminData(); showToast(d.message || 'Kundi limeanzishwa!', 'success'); }
-      else showToast(d.error || 'Hitilafu imetokea', 'error');
-    } catch { showToast('Hitilafu ya mtandao', 'error'); }
+      if (r.ok && d.success) { setShowGroupForm(false); setGroupForm({ name: '', leaderId: '', monthlyContribution: '', foundedDate: new Date().toISOString().split('T')[0] }); loadAdminData(); showToast(d.message || t('adm.g.groupCreated'), 'success'); }
+      else showToast(d.error || t('adm.c.error'), 'error');
+    } catch { showToast(t('adm.c.networkErr'), 'error'); }
   };
 
   const roleBadge = (r: string) => ({ leader:'bg-blue-500/10 text-blue-600', mwenyekiti:'bg-purple-500/10 text-purple-600', katibu:'bg-emerald-500/10 text-emerald-600', mwekahazina:'bg-yellow-500/10 text-yellow-600' }[r] || 'bg-foreground/5 text-foreground/40');
-  const roleLabel = (r: string) => ({ leader:'Kiongozi', mwenyekiti:'Mwenyekiti', katibu:'Katibu', mwekahazina:'MwekaHazina' }[r] || 'Mwanachama');
+  const roleLabel = (r: string) => ({ leader:t('grp.role.leader'), mwenyekiti:'Mwenyekiti', katibu:'Katibu', mwekahazina:'MwekaHazina' }[r] || t('adm.c.member'));
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-foreground">Usimamizi wa Makundi</h2>
+          <h2 className="text-base font-semibold text-foreground">{t('adm.g.title')}</h2>
           <button onClick={() => setShowGroupForm(v => !v)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">
             <PlusIcon className="h-4 w-4" /> Kundi Jipya
           </button>
@@ -207,21 +210,21 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
 
         {showGroupForm && (
           <form onSubmit={handleCreateGroup} className="mb-5 p-4 rounded-xl border border-orange-500/20 bg-orange-500/5 space-y-3">
-            <p className="text-xs font-semibold text-orange-500 mb-2">Anzisha Kundi Jipya</p>
+            <p className="text-xs font-semibold text-orange-500 mb-2">{t('adm.g.newGroup')}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><label className={dkLabel}>Jina la Kundi *</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} required /></div>
-              <div><label className={dkLabel}>Kiongozi</label>
+              <div><label className={dkLabel}>{t('adm.g.groupName')} *</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} required /></div>
+              <div><label className={dkLabel}>{t('adm.g.leader')}</label>
                 <select value={groupForm.leaderId} onChange={e => setGroupForm({...groupForm, leaderId: e.target.value})} className={dkSelect}>
-                  <option value="">Chagua kiongozi</option>
+                  <option value="">{t('adm.g.chooseLeaderPh')}</option>
                   {members.filter((m: any) => m.status === 'active').map((m: any) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                 </select>
               </div>
-              <div><label className={dkLabel}>Mchango wa Kila Mwezi (TSH) *</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} min="1000" required /></div>
-              <div><label className={dkLabel}>Tarehe ya Kuanzishwa *</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
+              <div><label className={dkLabel}>{t('adm.g.monthlyContrib')} *</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} min="1000" required /></div>
+              <div><label className={dkLabel}>{t('adm.g.founded')} *</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="button" onClick={() => setShowGroupForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
-              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Anzisha</button>
+              <button type="button" onClick={() => setShowGroupForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">{t('adm.c.cancel')}</button>
+              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{t('adm.g.create')}</button>
             </div>
           </form>
         )}
@@ -268,7 +271,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
           )) : (
             <div className="col-span-full text-center py-12">
               <UserGroupIcon className="h-8 w-8 mx-auto text-foreground/10 mb-3" />
-              <p className="text-sm text-muted-foreground">Hakuna makundi bado</p>
+              <p className="text-sm text-muted-foreground">{t('adm.g.none')}</p>
             </div>
           )}
         </div>
@@ -281,17 +284,17 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="text-lg font-bold text-foreground">{selectedGroup.name}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Maelezo ya kundi</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('adm.g.details')}</p>
                 </div>
                 <button onClick={() => setShowGroupDetails(false)} className="text-muted-foreground hover:text-foreground text-2xl leading-none">×</button>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                 {[
-                  { label: 'Wanachama', value: selectedGroup.member_count || 0, cls: 'text-blue-600' },
-                  { label: 'Mchango/Mwezi', value: `TSH ${parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}`, cls: 'text-emerald-600' },
+                  { label: t('adm.g.membersLabel'), value: selectedGroup.member_count || 0, cls: 'text-blue-600' },
+                  { label: t('adm.g.monthly'), value: `TSH ${parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}`, cls: 'text-emerald-600' },
                   { label: 'Uwekezaji', value: `TSH ${parseFloat(selectedGroup.total_investment||0).toLocaleString()}`, cls: 'text-orange-500' },
-                  { label: 'Hali', value: selectedGroup.status === 'active' ? 'Hai' : 'Inasubiri', cls: selectedGroup.status === 'active' ? 'text-emerald-600' : 'text-yellow-600' },
+                  { label: 'Hali', value: selectedGroup.status === 'active' ? 'Hai' : t('adm.c.pending'), cls: selectedGroup.status === 'active' ? 'text-emerald-600' : 'text-yellow-600' },
                 ].map((s,i) => (
                   <div key={i} className="rounded-xl bg-foreground/[0.03] border border-border p-3">
                     <p className="text-[10px] text-muted-foreground mb-1">{s.label}</p>
@@ -302,27 +305,27 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
                 <div className="rounded-xl bg-foreground/[0.03] border border-border p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">Maelezo ya Kundi</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">{t('adm.g.details')}</p>
                   <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Kiongozi:</span> {selectedGroup.leader_name || '—'}</p>
                   <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Kuanzishwa:</span> {selectedGroup.founded_date ? new Date(selectedGroup.founded_date).toLocaleDateString('sw-TZ') : '—'}</p>
                   <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Kutengenezwa:</span> {new Date(selectedGroup.created_at).toLocaleDateString('sw-TZ')}</p>
                 </div>
                 <div className="rounded-xl bg-foreground/[0.03] border border-border p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">Takwimu za Fedha</p>
-                  <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Mchango/Mwezi:</span> TSH {parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}</p>
-                  <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Uwekezaji:</span> TSH {parseFloat(selectedGroup.total_investment||0).toLocaleString()}</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">{t('adm.g.finStats')}</p>
+                  <p className="text-xs text-foreground/50"><span className="text-muted-foreground">{t('adm.g.monthly')}:</span> TSH {parseFloat(selectedGroup.monthly_contribution||0).toLocaleString()}</p>
+                  <p className="text-xs text-foreground/50"><span className="text-muted-foreground">{t('adm.g.investmentLabel')}:</span> TSH {parseFloat(selectedGroup.total_investment||0).toLocaleString()}</p>
                   <p className="text-xs text-foreground/50"><span className="text-muted-foreground">Jumla michango:</span> TSH {(parseFloat(selectedGroup.monthly_contribution||0)*(selectedGroup.member_count||0)).toLocaleString()}</p>
                 </div>
               </div>
 
               <div className="rounded-xl bg-foreground/[0.03] border border-border mb-4">
-                <div className="px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-muted-foreground">Wanachama wa Kundi</p></div>
+                <div className="px-4 py-3 border-b border-border"><p className="text-xs font-semibold text-muted-foreground">{t('adm.g.groupMembers')}</p></div>
                 <div className="p-3">
                   {groupMembers.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
                         <thead><tr className="border-b border-border">
-                          {['Jina','Nafasi','Kujiunge','Hali','Badilisha Nafasi','Ondoa'].map(h => (
+                          {[t('adm.g.groupName'),'Nafasi','Kujiunge','Hali',t('adm.g.changeRole'),t('adm.g.remove')].map(h => (
                             <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>
                           ))}
                         </tr></thead>
@@ -335,7 +338,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                               <td className="px-3 py-2.5"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${m.status==='active'?'bg-emerald-500/10 text-emerald-600':'bg-red-500/10 text-red-600'}`}>{m.status==='active'?'Hai':'Haifanyi kazi'}</span></td>
                               <td className="px-3 py-2.5">
                                 <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)} className="text-[10px] bg-background border border-border text-foreground/50 rounded-lg px-2 py-1 focus:outline-none">
-                                  <option value="member">Mwanachama</option><option value="leader">Kiongozi</option><option value="mwenyekiti">Mwenyekiti</option><option value="katibu">Katibu</option><option value="mwekahazina">MwekaHazina</option>
+                                  <option value="member">{t('adm.c.member')}</option><option value="leader">{t('adm.g.leader')}</option><option value="mwenyekiti">Mwenyekiti</option><option value="katibu">Katibu</option><option value="mwekahazina">MwekaHazina</option>
                                 </select>
                               </td>
                               <td className="px-3 py-2.5"><button onClick={() => handleRemoveFromGroup(m.id)} className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-colors"><UserMinusIcon className="h-3 w-3" /></button></td>
@@ -345,7 +348,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                       </table>
                     </div>
                   ) : (
-                    <div className="text-center py-8"><UsersIcon className="h-7 w-7 mx-auto text-foreground/10 mb-2" /><p className="text-xs text-muted-foreground">Hakuna wanachama bado</p></div>
+                    <div className="text-center py-8"><UsersIcon className="h-7 w-7 mx-auto text-foreground/10 mb-2" /><p className="text-xs text-muted-foreground">{t('adm.g.noMembers')}</p></div>
                   )}
                 </div>
               </div>
@@ -356,7 +359,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                   {groupProposals.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
-                        <thead><tr className="border-b border-border">{['Kichwa','Hali','Kura','Mwandishi','Tarehe','Kitendo'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
+                        <thead><tr className="border-b border-border">{['Kichwa','Hali','Kura','Mwandishi',t('adm.c.date'),'Kitendo'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
                         <tbody className="divide-y divide-border">
                           {groupProposals.map(p => (
                             <tr key={p.id} className="hover:bg-foreground/[0.02]">
@@ -387,7 +390,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                         </tbody>
                       </table>
                     </div>
-                  ) : <div className="text-center py-8"><DocumentTextIcon className="h-7 w-7 mx-auto text-foreground/10 mb-2" /><p className="text-xs text-muted-foreground">Hakuna mapendekezo bado</p></div>}
+                  ) : <div className="text-center py-8"><DocumentTextIcon className="h-7 w-7 mx-auto text-foreground/10 mb-2" /><p className="text-xs text-muted-foreground">{t('adm.g.noProposals')}</p></div>}
                 </div>
               </div>
 
@@ -435,7 +438,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                     <div className="space-y-3">
                       {/* Balance hero card */}
                       <div className={`rounded-xl p-4 border ${groupWalletWarning ? 'bg-orange-500/5 border-orange-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Salio la Pochi</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('adm.g.walletBalance')}</p>
                         {groupWalletWarning ? (
                           <>
                             <p className="text-xl font-bold text-orange-500">Haijulikani</p>
@@ -461,7 +464,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                         {groupTransfers.length > 0 ? (
                           <div className="overflow-x-auto">
                             <table className="min-w-full">
-                              <thead><tr className="border-b border-border">{['Aina','Kiasi','Hali','Maelezo','Tarehe'].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
+                              <thead><tr className="border-b border-border">{['Aina','Kiasi','Hali',t('adm.g.desc'),t('adm.c.date')].map(h => <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
                               <tbody className="divide-y divide-border">
                                 {groupTransfers.map(t => (
                                   <tr key={t.id} className="hover:bg-foreground/[0.02]">
@@ -476,7 +479,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
                             </table>
                           </div>
                         ) : (
-                          <p className="text-xs text-muted-foreground text-center py-4">Hakuna miamala bado</p>
+                          <p className="text-xs text-muted-foreground text-center py-4">{t('adm.g.noTx')}</p>
                         )}
                       </div>
                     </div>
@@ -486,7 +489,7 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
 
               <div className="flex gap-2 justify-end pt-2">
                 <button onClick={() => setShowGroupDetails(false)} className="px-4 py-2 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Funga</button>
-                <button onClick={() => handleEditGroup(selectedGroup)} className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Hariri Kundi</button>
+                <button onClick={() => handleEditGroup(selectedGroup)} className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">{t('adm.g.editGroup')}</button>
               </div>
             </div>
           </div>
@@ -498,21 +501,21 @@ export default function GroupsSection({ groups, loadAdminData, showToast }: { gr
           <div className="w-full max-w-md rounded-2xl bg-overlay border border-border shadow-xl">
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-bold text-foreground">Hariri Kundi</h2>
+                <h2 className="text-base font-bold text-foreground">{t('adm.g.editGroup')}</h2>
                 <button onClick={() => setShowEditGroup(false)} className="text-muted-foreground hover:text-foreground text-2xl leading-none">×</button>
               </div>
               <form onSubmit={handleUpdateGroup} className="space-y-3">
-                <div><label className={dkLabel}>Jina la Kundi</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} required /></div>
-                <div><label className={dkLabel}>Kiongozi</label>
+                <div><label className={dkLabel}>{t('adm.g.groupName')}</label><input type="text" value={groupForm.name} onChange={e => setGroupForm({...groupForm, name: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>{t('adm.g.leader')}</label>
                   <select value={groupForm.leaderId} onChange={e => setGroupForm({...groupForm, leaderId: e.target.value})} className={dkSelect}>
-                    <option value="">Chagua Kiongozi</option>
+                    <option value="">{t('adm.g.chooseLeader')}</option>
                     {members.map((m: any) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                   </select>
                 </div>
-                <div><label className={dkLabel}>Mchango wa Kila Mwezi (TSH)</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} required /></div>
-                <div><label className={dkLabel}>Tarehe ya Kuanzishwa</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>{t('adm.g.monthlyContrib')}</label><input type="number" value={groupForm.monthlyContribution} onChange={e => setGroupForm({...groupForm, monthlyContribution: e.target.value})} className={dkInput} required /></div>
+                <div><label className={dkLabel}>{t('adm.g.founded')}</label><input type="date" value={groupForm.foundedDate} onChange={e => setGroupForm({...groupForm, foundedDate: e.target.value})} className={dkInput} required /></div>
                 <div className="flex gap-2 pt-2">
-                  <button type="button" onClick={() => setShowEditGroup(false)} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">Ghairi</button>
+                  <button type="button" onClick={() => setShowEditGroup(false)} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition-colors">{t('adm.c.cancel')}</button>
                   <button type="submit" className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors">Badilisha</button>
                 </div>
               </form>

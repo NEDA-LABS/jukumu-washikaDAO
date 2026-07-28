@@ -93,7 +93,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         }
       }
     } catch {
-      setSweepMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+      setSweepMsg({ type: 'error', text: t('adm.c.networkErr') });
     } finally {
       setSweeping(false);
     }
@@ -124,7 +124,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         setRecMsg({ type: 'error', text: d?.error || d?.details || 'Imeshindikana kurekebisha' });
       }
     } catch {
-      setRecMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+      setRecMsg({ type: 'error', text: t('adm.c.networkErr') });
     } finally {
       setReconciling(false);
     }
@@ -156,7 +156,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         setFundMsg({ type: 'error', text: d?.error || 'Imeshindikana kutuma STK push' });
       }
     } catch {
-      setFundMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+      setFundMsg({ type: 'error', text: t('adm.c.networkErr') });
     } finally {
       setFunding(false);
     }
@@ -196,7 +196,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       loadReconcile();
       loadWalletTotals();
     } catch {
-      setSyncAllMsg({ type: 'error', text: 'Hitilafu ya mtandao' });
+      setSyncAllMsg({ type: 'error', text: t('adm.c.networkErr') });
     } finally {
       setSyncingAll(false);
     }
@@ -402,7 +402,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
             </div>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">Imeshindwa kupakia taarifa za hazina.</p>
+          <p className="text-xs text-muted-foreground">{t('adm.o.treasuryLoadErr')}</p>
         )}
       </div>
 
@@ -413,7 +413,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
         </div>
 
         <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Shughuli za Hivi Karibuni</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">{t('adm.o.recentActivity')}</h3>
           {displayActivities.length > 0 ? (
             <div className="space-y-3">
               {displayActivities.map((a, i) => (
@@ -429,7 +429,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
           ) : (
             <div className="text-center py-10">
               <ChartBarIcon className="h-8 w-8 mx-auto text-foreground/10 mb-3" />
-              <p className="text-sm text-muted-foreground">Hakuna shughuli za hivi karibuni</p>
+              <p className="text-sm text-muted-foreground">{t('adm.o.noActivity')}</p>
             </div>
           )}
         </div>
