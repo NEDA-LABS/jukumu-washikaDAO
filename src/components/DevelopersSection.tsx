@@ -114,7 +114,7 @@ export default function DevelopersSection() {
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
               <Link
-                href="/member-dashboard?section=settings"
+                href="/developers/dashboard"
                 className="inline-flex items-center rounded-full border border-border bg-card/70 px-6 py-3 text-sm font-semibold text-foreground backdrop-blur-sm transition-all hover:-translate-y-0.5"
               >
                 {t('dev.cta.key')}

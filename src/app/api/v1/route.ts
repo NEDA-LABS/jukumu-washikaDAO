@@ -36,6 +36,13 @@ export function GET() {
         { method: 'GET',  path: '/api/v1/members/{id}',                     scope: 'read',  description: 'One member with groups + wallet.' },
         { method: 'GET',  path: '/api/v1/wallets/{ownerType}/{ownerId}',    scope: 'read',  description: 'Balance + 30-day flow for member|group|investor.' },
         { method: 'GET',  path: '/api/v1/transactions',                     scope: 'read',  description: 'Money ledger. ?group_id= &member_id= &type= &since=' },
+        { method: 'GET',  path: '/api/v1/transactions/{id}',                scope: 'read',  description: 'One transaction by our id or the provider id.' },
+        { method: 'POST', path: '/api/v1/deposits',                         scope: 'write', description: 'Mobile money -> nTZS. Triggers an STK push.' },
+        { method: 'POST', path: '/api/v1/withdrawals/quote',                scope: 'write', description: 'Price a cash-out. Required before withdrawing.' },
+        { method: 'POST', path: '/api/v1/withdrawals',                      scope: 'write', description: 'nTZS -> mobile money. Needs a fresh quote_id.' },
+        { method: 'POST', path: '/api/v1/transfers',                        scope: 'write', description: 'Internal transfer: contribution | p2p | disbursement.' },
+        { method: 'POST', path: '/api/v1/groups/{id}/members/add',          scope: 'write', description: 'Add an existing member to a group.' },
+        { method: 'POST', path: '/api/v1/groups/{id}/contributions/record', scope: 'write', description: 'Record a contribution for a period.' },
       ],
     },
   });

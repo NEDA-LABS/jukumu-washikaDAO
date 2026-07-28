@@ -95,7 +95,7 @@ export default function DevelopersPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/member-dashboard?section=settings"
+              href="/developers/dashboard"
               className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5"
             >
               Get an API key
@@ -114,12 +114,12 @@ export default function DevelopersPage() {
           <div>
             <h2 className="text-xl font-bold">Quickstart</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Create a key from your dashboard settings, then send it as a bearer token. Keys are
-              shown once at creation and only a hash is stored, so save it somewhere safe.
+              Create a key in the partner dashboard, then send it as a bearer token. Keys are shown
+              once at creation and only a hash is stored, so save it somewhere safe.
             </p>
             <ol className="mt-4 space-y-2.5 text-sm text-muted-foreground">
               {[
-                'Sign in and open Settings → API keys.',
+                'Sign in and open the partner dashboard.',
                 'Create a key with the read (and optionally write) scope.',
                 'Send it as an Authorization: Bearer header on every request.',
               ].map((step, i) => (

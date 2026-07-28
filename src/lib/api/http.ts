@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
-import { verifyKey, type ApiKeyRecord, type ApiScope } from './keys';
+import { verifyKey, recordUsage, type ApiKeyRecord, type ApiScope } from './keys';
 
 /**
  * Shared plumbing for the public /api/v1 surface: a single response envelope,
@@ -85,11 +85,15 @@ export function handle(
 
     const searchParams = request.nextUrl.searchParams;
     const { limit, offset } = parsePaging(searchParams);
+    const route = `${request.method} ${request.nextUrl.pathname}`;
 
     try {
-      return await fn(request, { key, limit, offset, searchParams });
+      const res = await fn(request, { key, limit, offset, searchParams });
+      recordUsage(key.id, route, res.status >= 400);
+      return res;
     } catch (err) {
       console.error('[api/v1]', request.nextUrl.pathname, err);
+      recordUsage(key.id, route, true);
       return fail(500, 'internal_error', 'Something went wrong handling that request.');
     }
   };

@@ -54,7 +54,46 @@ export async function ensureApiKeysSchema(client: PoolClient): Promise<void> {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_owner ON api_keys(owner_user_id)`);
+
+    // Daily per-key, per-endpoint counters. One upserted row per key/day/route
+    // rather than a row per request, so usage reporting never becomes the
+    // heaviest write on the platform.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS api_key_usage (
+        key_id INTEGER NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
+        day DATE NOT NULL,
+        endpoint VARCHAR(120) NOT NULL,
+        requests INTEGER NOT NULL DEFAULT 0,
+        errors INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (key_id, day, endpoint)
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_api_usage_key_day ON api_key_usage(key_id, day DESC)`);
   });
+}
+
+/**
+ * Increment the daily counter for a key/endpoint. Fire-and-forget: usage
+ * accounting must never delay or fail a real API response.
+ */
+export function recordUsage(keyId: number, endpoint: string, isError: boolean): void {
+  pool
+    .connect()
+    .then(async (c) => {
+      try {
+        await c.query(
+          `INSERT INTO api_key_usage (key_id, day, endpoint, requests, errors)
+           VALUES ($1, CURRENT_DATE, $2, 1, $3)
+           ON CONFLICT (key_id, day, endpoint)
+           DO UPDATE SET requests = api_key_usage.requests + 1,
+                         errors   = api_key_usage.errors + $3`,
+          [keyId, endpoint.slice(0, 120), isError ? 1 : 0],
+        );
+      } finally {
+        c.release();
+      }
+    })
+    .catch(() => {});
 }
 
 /** Resolve a raw bearer token to a live key record, or null. */

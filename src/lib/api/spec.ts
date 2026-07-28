@@ -140,6 +140,17 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
+        method: 'POST',
+        path: '/api/v1/groups/{id}/members/add',
+        scope: 'write',
+        summary: 'Add a member to a group',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'An existing member id.' },
+          { name: 'role', type: 'string', description: 'leader, mwenyekiti, katibu, mwekahazina or mwanachama (default).' },
+          { name: 'status', type: 'string', description: 'Defaults to `active`.' },
+        ],
+      },
+      {
         method: 'GET',
         path: '/api/v1/groups/{id}/proposals',
         scope: 'read',
@@ -190,6 +201,22 @@ export const SECTIONS: Section[] = [
 
 # meta.summary      -> { paid_tzs, paid_count, unpaid_count }
 # meta.unpaid_members -> [{ id, full_name, username }]`,
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/groups/{id}/contributions/record',
+        scope: 'write',
+        summary: 'Record a contribution',
+        description:
+          'Writes the contribution ledger only — it does not move money. To do both, also call POST /api/v1/transfers with purpose "contribution". Returns 409 if a row already exists for that member and period.',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'Must already belong to the group.' },
+          { name: 'amount_tzs', type: 'integer', required: true, description: 'Positive whole TZS.' },
+          { name: 'period', type: 'string (YYYY-MM)', required: true, description: 'Contribution month.' },
+          { name: 'status', type: '"paid" | "pending" | "overdue"', description: 'Defaults to `paid`.' },
+          { name: 'payment_method', type: 'string', description: 'Free text, defaults to `api`.' },
+          { name: 'reference', type: 'string', description: 'Your own payment reference.' },
+        ],
       },
     ],
   },
@@ -245,6 +272,97 @@ export const SECTIONS: Section[] = [
 }`,
       },
       {
+        method: 'POST',
+        path: '/api/v1/deposits',
+        scope: 'write',
+        summary: 'Deposit — mobile money to nTZS',
+        description:
+          'Triggers an STK push to the payer. Returns 202 with a pending transaction: the balance is credited only when the provider confirms settlement, so an abandoned push never creates money. Poll GET /api/v1/transactions/{id} for the outcome.',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'Member being credited on settlement.' },
+          { name: 'amount_tzs', type: 'integer', required: true, description: 'At least 100 TZS.' },
+          { name: 'phone', type: 'string', required: true, description: '07XXXXXXXX or 2557XXXXXXXX.' },
+        ],
+        example: `curl -X POST "${API_BASE}/api/v1/deposits" \\
+  -H "Authorization: Bearer $WD_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "member_id": 126, "amount_tzs": 50000, "phone": "0712345678" }'`,
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/withdrawals/quote',
+        scope: 'write',
+        summary: 'Price a cash-out',
+        description:
+          'Mandatory before withdrawing — the provider rejects any payout without a fresh quote. Quotes expire after about five minutes. Shows the recipient name on the mobile-money account plus the full fee breakdown.',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'Member the funds come from.' },
+          { name: 'amount_tzs', type: 'integer', required: true, description: 'Net amount the recipient receives.' },
+          { name: 'phone', type: 'string', required: true, description: 'Recipient mobile-money number.' },
+        ],
+        example: `{
+  "data": {
+    "quote_id": "q_9f2c…",
+    "expires_at": "2026-07-28T10:05:00Z",
+    "recipient_name": "DAVID MACHUCHE",
+    "receive_amount_tzs": 50000,
+    "provider_fee_tzs": 1000,
+    "platform_fee_tzs": 0,
+    "total_debit_tzs": 50000,
+    "member_balance_tzs": 82000,
+    "sufficient_funds": true
+  }
+}`,
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/withdrawals',
+        scope: 'write',
+        summary: 'Withdraw — nTZS to mobile money',
+        description:
+          'Debits the member and pays out. Returns 409 with invalid_quote / quote_stale / quote_mismatch if the quote has expired or its terms changed — fetch a fresh quote and retry. Returns 402 insufficient_balance if the member cannot cover the amount plus fees.',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'Member being debited.' },
+          { name: 'amount_tzs', type: 'integer', required: true, description: 'Must match the quote.' },
+          { name: 'phone', type: 'string', required: true, description: 'Must match the quote.' },
+          { name: 'quote_id', type: 'string', required: true, description: 'From POST /api/v1/withdrawals/quote.' },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/transfers',
+        scope: 'write',
+        summary: 'Move money inside the platform',
+        description:
+          'Atomic database transfer between two wallet accounts — nothing touches the chain. Provide exactly one sender and one recipient. Use purpose "contribution" for member → group, "p2p" for member → member, "disbursement" for group → member.',
+        body: [
+          { name: 'amount_tzs', type: 'integer', required: true, description: 'Positive whole TZS.' },
+          { name: 'purpose', type: '"contribution" | "p2p" | "disbursement"', required: true, description: 'What the movement represents.' },
+          { name: 'from_member_id', type: 'integer', description: 'Sender. Mutually exclusive with from_group_id.' },
+          { name: 'from_group_id', type: 'integer', description: 'Sender. Mutually exclusive with from_member_id.' },
+          { name: 'to_member_id', type: 'integer', description: 'Recipient. Mutually exclusive with to_group_id.' },
+          { name: 'to_group_id', type: 'integer', description: 'Recipient. Mutually exclusive with to_member_id.' },
+        ],
+        example: `# Member pays their contribution into the group treasury
+curl -X POST "${API_BASE}/api/v1/transfers" \\
+  -H "Authorization: Bearer $WD_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+        "from_member_id": 126,
+        "to_group_id": 32,
+        "amount_tzs": 10000,
+        "purpose": "contribution"
+      }'`,
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/transactions/{id}',
+        scope: 'read',
+        summary: 'Retrieve one transaction',
+        description:
+          'Accepts our numeric id or the provider\u2019s external id. `settled` reflects the ledger\u2019s own view — true once the money has actually been applied to a balance.',
+      },
+      {
         method: 'GET',
         path: '/api/v1/transactions',
         scope: 'read',
@@ -272,6 +390,14 @@ export const ERRORS: { code: string; status: number; meaning: string }[] = [
   { code: 'not_found', status: 404, meaning: 'No resource with that identifier.' },
   { code: 'group_exists', status: 409, meaning: 'A group with that name already exists.' },
   { code: 'invalid_request', status: 422, meaning: 'A parameter is missing or malformed. The message names the field.' },
+  { code: 'quote_required', status: 422, meaning: 'A withdrawal was sent without a quote_id.' },
+  { code: 'invalid_quote', status: 409, meaning: 'The withdrawal quote expired or was malformed. Fetch a fresh one.' },
+  { code: 'quote_stale', status: 409, meaning: 'Pricing moved since the quote was issued. Re-quote and retry.' },
+  { code: 'insufficient_balance', status: 402, meaning: 'The sender cannot cover the amount plus fees.' },
+  { code: 'already_member', status: 409, meaning: 'That member is already in the group.' },
+  { code: 'already_recorded', status: 409, meaning: 'A contribution already exists for that member and period.' },
+  { code: 'provider_error', status: 502, meaning: 'The mobile-money provider rejected the request.' },
+  { code: 'wallet_unavailable', status: 503, meaning: 'The wallet provider is not configured.' },
   { code: 'rate_limited', status: 429, meaning: 'Over 120 requests/minute. Retry after the Retry-After header.' },
   { code: 'internal_error', status: 500, meaning: 'Unexpected server error. Safe to retry.' },
 ];

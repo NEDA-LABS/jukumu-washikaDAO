@@ -18,12 +18,36 @@ export async function GET(request: NextRequest) {
   try {
     await ensureApiKeysSchema(client);
     const res = await client.query(
-      `SELECT id, name, key_hint, scopes, rate_limit_per_min, last_used_at, revoked_at, created_at
-         FROM api_keys WHERE owner_user_id = $1 ORDER BY created_at DESC`,
+      `SELECT k.id, k.name, k.key_hint, k.scopes, k.rate_limit_per_min,
+              k.last_used_at, k.revoked_at, k.created_at,
+              COALESCE(u.reqs_7d, 0)::int   AS requests_7d,
+              COALESCE(u.errs_7d, 0)::int   AS errors_7d,
+              COALESCE(u.reqs_today, 0)::int AS requests_today
+         FROM api_keys k
+         LEFT JOIN (
+           SELECT key_id,
+                  SUM(requests) FILTER (WHERE day > CURRENT_DATE - 7) AS reqs_7d,
+                  SUM(errors)   FILTER (WHERE day > CURRENT_DATE - 7) AS errs_7d,
+                  SUM(requests) FILTER (WHERE day = CURRENT_DATE)     AS reqs_today
+             FROM api_key_usage GROUP BY key_id
+         ) u ON u.key_id = k.id
+        WHERE k.owner_user_id = $1
+        ORDER BY k.created_at DESC`,
       [auth.userId],
     );
+
+    // Per-endpoint breakdown across all of this user's keys, last 7 days.
+    const byEndpoint = await client.query(
+      `SELECT e.endpoint, SUM(e.requests)::int AS requests, SUM(e.errors)::int AS errors
+         FROM api_key_usage e
+         JOIN api_keys k ON k.id = e.key_id
+        WHERE k.owner_user_id = $1 AND e.day > CURRENT_DATE - 7
+        GROUP BY e.endpoint ORDER BY requests DESC LIMIT 12`,
+      [auth.userId],
+    );
+
     // Never return key_hash; the hint is the last 4 chars for identification.
-    return NextResponse.json({ keys: res.rows });
+    return NextResponse.json({ keys: res.rows, usage_by_endpoint: byEndpoint.rows });
   } catch (error) {
     console.error('[developer/keys] list', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
