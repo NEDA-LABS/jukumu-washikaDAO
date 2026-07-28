@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 import { useEffect, useState } from 'react';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 import GrowthChart from '@/components/GrowthChart';
@@ -20,6 +22,7 @@ function fmtTzs(n: number) {
 }
 
 export default function OverviewSection({ adminStats, recentActivities }: { adminStats: any; recentActivities: any[] }) {
+  const { t } = useLanguage();
   const [walletTotals, setWalletTotals] = useState<WalletTotals | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
   const [reconcile, setReconcile] = useState<any>(null);
@@ -200,31 +203,31 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
   };
 
   const stats = [
-    { name: 'Wanachama', value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} mwezi huu` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-    { name: 'Makundi Hai', value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} mwezi huu` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { name: t('adm.stat.members'), value: adminStats?.totalMembers?.toLocaleString() || '0', change: adminStats?.newMembersThisMonth ? `+${adminStats.newMembersThisMonth} ${t('adm.thisMonth')}` : '—', accent: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { name: t('adm.stat.activeGroups'), value: adminStats?.totalGroups?.toLocaleString() || '0', change: adminStats?.newGroupsThisMonth ? `+${adminStats.newGroupsThisMonth} ${t('adm.thisMonth')}` : '—', accent: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
     { name: 'Uwekezaji', value: adminStats?.totalInvestment ? `TSH ${(adminStats.totalInvestment/1000000).toFixed(1)}M` : 'TSH 0', change: `${adminStats?.returnRate || 0}% mapato`, accent: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
     { name: 'Mapato', value: adminStats?.totalReturns ? `TSH ${(adminStats.totalReturns/1000000).toFixed(1)}M` : 'TSH 0', change: `${adminStats?.returnRate || 0}% kiwango`, accent: 'text-purple-600', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
   ];
 
   const walletStats = [
     {
-      name: 'Salio Wanachama',
+      name: t('adm.stat.memberBalance'),
       value: walletLoading ? '…' : fmtTzs(walletTotals?.totalMembersBalance ?? 0),
-      change: walletLoading ? '' : `${walletTotals?.membersWithWallet ?? 0} pochi zilizounganishwa`,
+      change: walletLoading ? '' : `${walletTotals?.membersWithWallet ?? 0} ${t('adm.walletsLinked')}`,
       accent: 'text-teal-600', bg: 'bg-teal-500/10', border: 'border-teal-500/20',
     },
     {
-      name: 'Salio Makundi',
+      name: t('adm.stat.groupBalance'),
       value: walletLoading ? '…' : fmtTzs(walletTotals?.totalGroupsBalance ?? 0),
-      change: walletLoading ? '' : `${walletTotals?.groupsWithWallet ?? 0} pochi zilizounganishwa`,
+      change: walletLoading ? '' : `${walletTotals?.groupsWithWallet ?? 0} ${t('adm.walletsLinked')}`,
       accent: 'text-rose-600', bg: 'bg-rose-500/10', border: 'border-rose-500/20',
     },
     {
-      name: 'Jumla ya Salio',
+      name: t('adm.stat.totalBalance'),
       value: walletLoading ? '…' : fmtTzs(walletTotals?.totalWalletBalance ?? 0),
       change: walletLoading ? '' : walletTotals && walletTotals.failedFetches > 0
-        ? `⚠ ${walletTotals.failedFetches} pochi zilishindwa`
-        : 'pochi zote zimepitiwa',
+        ? `⚠ ${walletTotals.failedFetches} ${t('adm.walletsFailed')}`
+        : t('adm.walletsChecked'),
       accent: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
     },
   ];
@@ -261,10 +264,10 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
       {/* Master treasury — reconcile readout + on-chain sweep */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Hazina Kuu (Master Treasury)</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('adm.treasury.title')}</h3>
           {reconcile && (
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(reconcile.driftTzs ?? 0) < 0 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-600'}`}>
-              {(reconcile.driftTzs ?? 0) < 0 ? 'Inahitaji kufadhiliwa' : 'Imefadhiliwa'}
+              {(reconcile.driftTzs ?? 0) < 0 ? t('adm.treasury.needsFunding') : t('adm.treasury.funded')}
             </span>
           )}
         </div>
@@ -274,27 +277,27 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <p className="text-[10px] text-muted-foreground">Salio la mnyororo (on-chain)</p>
+                <p className="text-[10px] text-muted-foreground">{t('adm.treasury.onChain')}</p>
                 <p className="text-base font-bold text-foreground">{fmtTzs(reconcile.masterOnChainTzs ?? 0)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">Madeni (salio za watumiaji)</p>
+                <p className="text-[10px] text-muted-foreground">{t('adm.treasury.liabilities')}</p>
                 <p className="text-base font-bold text-foreground">{fmtTzs(reconcile.ledgerLiabilitiesTzs ?? 0)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">Tofauti</p>
+                <p className="text-[10px] text-muted-foreground">{t('adm.treasury.drift')}</p>
                 <p className={`text-base font-bold ${(reconcile.driftTzs ?? 0) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmtTzs(reconcile.driftTzs ?? 0)}</p>
               </div>
             </div>
             {(reconcile.driftTzs ?? 0) < 0 && (
               <p className="text-[11px] text-muted-foreground leading-snug">
-                Hazina kuu ina pungufu — fedha bado ziko kwenye pochi za zamani. Bonyeza kuzihamisha ili kutoa pesa (withdrawals) kufanye kazi.
+                {t('adm.treasury.shortfall')}
               </p>
             )}
             {/* Primary: pull every minted deposit from nTZS onto balances now */}
             <div className="space-y-1 pb-1">
               <p className="text-[10px] text-muted-foreground leading-snug">
-                Sasisha amana zote: huchukua hali halisi kutoka nTZS na kuweka zote zilizokamilika (minted) kwenye salio la mwanachama/kikundi. Ndicho kinachotokea kila baada ya dakika 2 kiotomatiki.
+                {t('adm.treasury.syncHelp')}
               </p>
               {syncAllMsg && (
                 <p className={`text-xs ${syncAllMsg.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>{syncAllMsg.text}</p>
@@ -305,7 +308,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
                 disabled={syncingAll}
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                {syncingAll ? 'Inasasisha…' : 'Sasisha amana zote sasa (sync)'}
+                {syncingAll ? t('adm.treasury.syncing') : t('adm.treasury.syncNow')}
               </button>
             </div>
 
@@ -318,7 +321,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
               disabled={sweeping}
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
             >
-              {sweeping ? 'Inahamisha…' : 'Hamisha fedha kwa Hazina Kuu'}
+              {sweeping ? t('adm.treasury.sweeping') : t('adm.treasury.sweep')}
             </button>
 
             {/* Fund the master treasury (STK push mints straight into the master,
@@ -405,7 +408,7 @@ export default function OverviewSection({ adminStats, recentActivities }: { admi
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="rounded-xl bg-card border border-border p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Ukuaji wa Wanachama</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">{t('adm.memberGrowth')}</h3>
           <GrowthChart memberCount={adminStats?.totalMembers || 0} groupCount={adminStats?.totalGroups || 0} />
         </div>
 

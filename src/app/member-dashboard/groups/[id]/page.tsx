@@ -108,6 +108,20 @@ type TreasuryActivity = {
   to_member_name?: string;
 };
 
+type JoinRequestRow = {
+  id: number;
+  member_id: number;
+  full_name: string;
+  phone: string | null;
+  location: string | null;
+  business_name: string | null;
+  avatar_url: string | null;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected' | string;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
 type GroupFeedItem = {
   key: string;
   kind: 'contribution' | 'disbursement' | 'transfer_in' | 'transfer_out' | 'proposal_created' | 'proposal_funded';
@@ -190,7 +204,7 @@ export default function MemberGroupDetailsPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'leadership' | 'decisions' | 'fedha'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'requests' | 'leadership' | 'decisions' | 'fedha'>('overview');
   const [error, setError] = useState<string>('');
 
   const [treasurySummary, setTreasurySummary] = useState<TreasurySummary | null>(null);
@@ -198,6 +212,8 @@ export default function MemberGroupDetailsPage() {
   const [treasuryError, setTreasuryError] = useState<string>('');
   const [treasuryActivities, setTreasuryActivities] = useState<TreasuryActivity[]>([]);
   const [feed, setFeed] = useState<GroupFeedItem[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequestRow[]>([]);
+  const [joinReqBusy, setJoinReqBusy] = useState<number | null>(null);
 
   const [walletTransfers, setWalletTransfers] = useState<WalletTransferRow[]>([]);
   const [walletTransfersLoading, setWalletTransfersLoading] = useState(false);
@@ -261,6 +277,10 @@ export default function MemberGroupDetailsPage() {
   }, [membership?.role]);
 
   const recentProposals = useMemo(() => proposals.slice(0, 3), [proposals]);
+  const pendingJoinCount = useMemo(
+    () => joinRequests.filter((r) => r.status === 'pending').length,
+    [joinRequests],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -363,6 +383,43 @@ export default function MemberGroupDetailsPage() {
   }, [groupId]);
 
   useEffect(() => { loadFeed(); }, [loadFeed]);
+
+  const loadJoinRequests = React.useCallback(async () => {
+    if (!groupId) return;
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/join-requests`);
+      if (!res.ok) { setJoinRequests([]); return; }
+      const json = await res.json();
+      setJoinRequests(Array.isArray(json?.requests) ? json.requests : []);
+    } catch { setJoinRequests([]); }
+  }, [groupId]);
+
+  useEffect(() => { loadJoinRequests(); }, [loadJoinRequests]);
+
+  const reviewJoinRequest = async (requestId: number, action: 'approve' | 'reject') => {
+    if (!groupId) return;
+    setJoinReqBusy(requestId);
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/join-requests`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) { showToast(json?.error || t('grp.req.failed'), 'error'); return; }
+      showToast(action === 'approve' ? t('grp.req.approved') : t('grp.req.rejected'), 'success');
+      // The roster changes on approval, so refresh both lists.
+      loadJoinRequests();
+      if (action === 'approve') {
+        fetch(`/api/member/groups/${groupId}/members`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { if (d?.members) setMembers(d.members); })
+          .catch(() => {});
+      }
+    } finally {
+      setJoinReqBusy(null);
+    }
+  };
 
   const loadGroupPayments = async () => {
     if (!groupId) return;
@@ -548,6 +605,11 @@ export default function MemberGroupDetailsPage() {
   const tabs: { id: typeof activeTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview',   label: t('grp.tab.overview'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
     { id: 'members',    label: t('grp.tab.members'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    ...(canCreateProposal ? [{
+      id: 'requests' as const,
+      label: t('grp.tab.requests'),
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>,
+    }] : []),
     { id: 'leadership', label: t('grp.tab.leadership'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
     { id: 'fedha',      label: t('grp.tab.fedha'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
     { id: 'decisions',  label: t('grp.tab.decisions'), icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
@@ -712,7 +774,12 @@ export default function MemberGroupDetailsPage() {
                   } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
                 >
                   <span className={activeTab === t.id ? 'text-[#e4a233]' : 'text-muted-foreground'}>{t.icon}</span>
-                  {t.label}
+                  <span className="flex-1 text-left">{t.label}</span>
+                  {t.id === 'requests' && pendingJoinCount > 0 && (
+                    <span className="rounded-full bg-[#d1622b] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                      {pendingJoinCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -967,6 +1034,83 @@ export default function MemberGroupDetailsPage() {
           )}
 
           {/* ── Leadership tab ── */}
+          {activeTab === 'requests' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">{t('grp.req.title')}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{t('grp.req.sub')}</p>
+              </div>
+
+              {joinRequests.length === 0 ? (
+                <div className="rounded-xl bg-card border border-border p-10 text-center">
+                  <p className="text-sm text-muted-foreground">{t('grp.req.none')}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {joinRequests.map((r) => {
+                    const pending = r.status === 'pending';
+                    return (
+                      <div key={r.id} className="rounded-xl bg-card border border-border p-4">
+                        <div className="flex flex-wrap items-start gap-3">
+                          <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-sm font-bold text-white">
+                            {r.avatar_url
+                              ? <img src={r.avatar_url} alt="" className="h-full w-full object-cover" />
+                              : (r.full_name || '?').charAt(0).toUpperCase()}
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{r.full_name}</p>
+                              {!pending && (
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                  r.status === 'approved'
+                                    ? 'bg-emerald-500/15 text-emerald-500'
+                                    : 'bg-red-500/15 text-red-500'
+                                }`}>
+                                  {r.status === 'approved' ? t('mg.status.approved') : t('mg.status.rejected')}
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {[r.phone, r.location, r.business_name].filter(Boolean).join(' · ') || '—'}
+                            </p>
+                            {r.message && (
+                              <p className="mt-2 rounded-lg border border-border bg-white/5 p-2.5 text-xs italic text-muted-foreground">
+                                “{r.message}”
+                              </p>
+                            )}
+                            <p className="mt-1.5 text-[10px] text-muted-foreground">
+                              {new Date(r.created_at).toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-GB')}
+                            </p>
+                          </div>
+
+                          {pending && (
+                            <div className="flex shrink-0 gap-2">
+                              <button
+                                onClick={() => reviewJoinRequest(r.id, 'approve')}
+                                disabled={joinReqBusy === r.id}
+                                className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                              >
+                                {t('grp.req.approve')}
+                              </button>
+                              <button
+                                onClick={() => reviewJoinRequest(r.id, 'reject')}
+                                disabled={joinReqBusy === r.id}
+                                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-red-500/40 hover:text-red-500 disabled:opacity-50"
+                              >
+                                {t('grp.req.reject')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'leadership' && (
             <div className="space-y-2">
               {leadership.length === 0 ? (

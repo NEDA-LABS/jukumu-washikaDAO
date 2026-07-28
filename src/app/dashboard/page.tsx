@@ -21,7 +21,7 @@ import ReportsSection from './components/ReportsSection';
 import SettingsSection from './components/SettingsSection';
 
 export default function AdminDashboard() {
-  const { } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [user, setUser] = useState<{id?: number; fullName?: string; email: string; role?: string} | null>(null);
@@ -106,15 +106,15 @@ export default function AdminDashboard() {
   }
 
   const menuItems = [
-    { id: 'overview',      name: 'Muhtasari',    icon: ChartBarIcon },
-    { id: 'members',       name: 'Wanachama',    icon: UsersIcon },
-    { id: 'groups',        name: 'Makundi',      icon: UserGroupIcon },
-    { id: 'join-requests', name: 'Maombi',       icon: UserGroupIcon },
-    { id: 'investments',   name: 'Uwekezaji',    icon: CurrencyDollarIcon },
-    { id: 'content',       name: 'Mafunzo',      icon: BookOpenIcon },
-    { id: 'reports',       name: 'Ripoti',       icon: DocumentTextIcon },
-    { id: 'partners',      name: 'API Partners', icon: CodeBracketIcon },
-    { id: 'settings',      name: 'Mipangilio',   icon: CogIcon },
+    { id: 'overview',      name: t('adm.nav.overview'),     icon: ChartBarIcon },
+    { id: 'members',       name: t('adm.nav.members'),      icon: UsersIcon },
+    { id: 'groups',        name: t('adm.nav.groups'),       icon: UserGroupIcon },
+    { id: 'join-requests', name: t('adm.nav.requests'),     icon: UserGroupIcon },
+    { id: 'investments',   name: t('adm.nav.investments'),  icon: CurrencyDollarIcon },
+    { id: 'content',       name: t('adm.nav.training'),     icon: BookOpenIcon },
+    { id: 'reports',       name: t('adm.nav.reports'),      icon: DocumentTextIcon },
+    { id: 'partners',      name: t('adm.nav.partners'),     icon: CodeBracketIcon },
+    { id: 'settings',      name: t('adm.nav.settings'),     icon: CogIcon },
   ];
 
   const pendingRequests = joinRequests.filter((r: any) => r.status === 'pending').length;
@@ -145,16 +145,22 @@ export default function AdminDashboard() {
                 <span className="text-xs font-bold text-orange-500">A</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground leading-none">Dashibodi ya Msimamizi</p>
+                <p className="text-sm font-semibold text-foreground leading-none">{t('adm.title')}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Washika DAU</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationCenter userId={1} className="" />
               <button
+                onClick={toggleLanguage}
+                className="h-8 rounded-full bg-foreground/5 border border-border px-3 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {language === 'sw' ? 'EN' : 'SW'}
+              </button>
+              <button
                 onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
                 className="h-8 w-8 rounded-full bg-foreground/5 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                title={resolvedTheme === 'dark' ? 'Mwanga' : 'Giza'}
+                title={resolvedTheme === 'dark' ? t('adm.lightMode') : t('adm.darkMode')}
               >
                 {resolvedTheme === 'dark'
                   ? <SunIcon className="h-4 w-4" />
@@ -169,7 +175,7 @@ export default function AdminDashboard() {
                 onClick={() => { localStorage.removeItem('user'); router.push('/'); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                Toka
+                {t('adm.logout')}
               </button>
             </div>
           </div>
