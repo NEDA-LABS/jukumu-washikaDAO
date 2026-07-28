@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashTopBar from '@/components/DashTopBar';
+import PartnerRegister from './PartnerRegister';
+import PlatformOverview from './PlatformOverview';
 import { SECTIONS } from '@/lib/api/spec';
 
 type KeyRow = {
@@ -21,11 +23,17 @@ type KeyRow = {
 
 type EndpointUsage = { endpoint: string; requests: number; errors: number };
 
+type Partner = {
+  org_name: string; contact_email: string; website: string | null;
+  status: string; write_enabled: boolean; write_requested: boolean; created_at: string;
+};
+
 const ALL_ENDPOINTS = SECTIONS.flatMap((s) =>
   s.endpoints.map((e) => ({ label: `${e.method} ${e.path}`, method: e.method, path: e.path })),
 ).filter((e) => e.method === 'GET' && !e.path.includes('{'));
 
 export default function PartnerDashboard() {
+  const [partner, setPartner] = useState<Partner | null | undefined>(undefined);
   const [keys, setKeys] = useState<KeyRow[] | null>(null);
   const [usage, setUsage] = useState<EndpointUsage[]>([]);
   const [error, setError] = useState('');
@@ -43,6 +51,15 @@ export default function PartnerDashboard() {
   const [testOut, setTestOut] = useState('');
   const [testing, setTesting] = useState(false);
 
+  const loadPartner = useCallback(async () => {
+    try {
+      const res = await fetch('/api/developer/partner');
+      if (res.status === 401) { setError('unauth'); setPartner(null); return; }
+      const d = await res.json();
+      setPartner(d.partner ?? null);
+    } catch { setPartner(null); }
+  }, []);
+
   const load = useCallback(async () => {
     try {
       const res = await fetch('/api/developer/keys');
@@ -57,7 +74,7 @@ export default function PartnerDashboard() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadPartner(); load(); }, [loadPartner, load]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,8 +158,40 @@ export default function PartnerDashboard() {
           </div>
         )}
 
-        {error !== 'unauth' && (
+        {error !== 'unauth' && partner === null && (
+          <PartnerRegister onDone={() => { loadPartner(); load(); }} />
+        )}
+
+        {error !== 'unauth' && partner && (
           <>
+            {/* Partner identity */}
+            <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] text-sm font-bold text-white">
+                {partner.org_name.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">{partner.org_name}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {partner.contact_email} · partner since{' '}
+                  {new Date(partner.created_at).toLocaleDateString('en-GB')}
+                </p>
+              </div>
+              <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                read enabled
+              </span>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                  partner.write_enabled
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                    : partner.write_requested
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {partner.write_enabled ? 'write enabled' : partner.write_requested ? 'write under review' : 'write off'}
+              </span>
+            </div>
+
             {/* Usage summary */}
             <div className="mt-8 grid gap-3 sm:grid-cols-4">
               {[
@@ -157,6 +206,8 @@ export default function PartnerDashboard() {
                 </div>
               ))}
             </div>
+
+            <PlatformOverview />
 
             {/* Fresh key reveal */}
             {freshKey && (
@@ -204,17 +255,26 @@ export default function PartnerDashboard() {
                         maxLength={120}
                       />
                     </div>
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-3">
+                    <label
+                      className={`flex items-start gap-3 rounded-xl border border-border bg-background p-3 ${
+                        partner.write_enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                      }`}
+                    >
                       <input
                         type="checkbox"
-                        checked={wantWrite}
+                        checked={wantWrite && partner.write_enabled}
+                        disabled={!partner.write_enabled}
                         onChange={(e) => setWantWrite(e.target.checked)}
                         className="mt-0.5 h-4 w-4 accent-[#d1622b]"
                       />
                       <span>
                         <span className="block text-sm font-medium text-foreground">Include write scope</span>
                         <span className="mt-0.5 block text-xs text-muted-foreground">
-                          Needed to create groups and move money. Leave off for reporting-only integrations.
+                          {partner.write_enabled
+                            ? 'Needed to create groups and move money. Leave off for reporting-only integrations.'
+                            : partner.write_requested
+                              ? 'Your write request is under review. Read-only keys work in the meantime.'
+                              : 'Write access is not enabled for this account. Contact us to request it.'}
                         </span>
                       </span>
                     </label>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { getPartner } from '@/lib/api/partners';
 import { ensureApiKeysSchema, generateKey, type ApiScope } from '@/lib/api/keys';
 
 export const dynamic = 'force-dynamic';
@@ -65,6 +66,33 @@ export async function POST(request: NextRequest) {
   const requested: string[] = Array.isArray(body?.scopes) ? body.scopes : ['read'];
   const scopes = requested.filter((s): s is ApiScope => s === 'read' || s === 'write');
   if (scopes.length === 0) scopes.push('read');
+
+  // A login is not a partner. Registration must come first, so every key
+  // traces back to a named organisation with a stated purpose.
+  const partner = await getPartner(auth.userId);
+  if (!partner) {
+    return NextResponse.json(
+      { error: 'Register as a partner before creating API keys.', code: 'partner_required' },
+      { status: 403 },
+    );
+  }
+  if (partner.status !== 'active') {
+    return NextResponse.json(
+      { error: 'This partner account is suspended. Contact support.', code: 'partner_suspended' },
+      { status: 403 },
+    );
+  }
+  // Write moves real money — it stays behind manual review even though the
+  // partner can self-serve read keys.
+  if (scopes.includes('write') && !partner.write_enabled) {
+    return NextResponse.json(
+      {
+        error: 'Write access is still under review. You can create read-only keys in the meantime.',
+        code: 'write_not_enabled',
+      },
+      { status: 403 },
+    );
+  }
 
   const client = await pool.connect();
   try {
