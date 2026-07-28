@@ -3,12 +3,18 @@
 import React, { useEffect, useState } from 'react';
 
 type Overview = {
-  people: { users: number; members: number; members_active: number; members_with_business: number; investors: number };
+  partner: { id: number; org_name: string; first_party: boolean };
+  people: { members: number; members_active: number; members_with_business: number };
   groups: { total: number; active: number; memberships: number; avg_members: number };
   money: {
     volume_processed_tzs: number; held_in_groups_tzs: number; held_by_members_tzs: number;
-    master_reserve_tzs: number; contributions_collected_tzs: number; contributions_count: number;
-    disbursed_tzs: number; deposits_tzs: number; withdrawals_tzs: number; investments_tzs: number;
+    contributions_collected_tzs: number; contributions_count: number;
+    disbursed_tzs: number; deposits_tzs: number; withdrawals_tzs: number;
+  };
+  treasury: {
+    liabilities_tzs: number; deposited_in_tzs: number; withdrawn_out_tzs: number;
+    net_contributed_tzs: number; attributed_float_tzs: number | null;
+    shortfall_tzs: number | null; coverage_ratio: number | null; fully_backed: boolean | null;
   };
   governance: { proposals: number; proposals_open: number; proposals_funded: number; votes_cast: number };
   activity: { tx_24h: number; tx_7d: number; tx_30d: number };
@@ -65,25 +71,81 @@ export default function PlatformOverview() {
   }
 
   const maxDaily = Math.max(...d.daily_volume.map((x) => Number(x.volume_tzs)), 1);
+  const isEmpty = d.people.members === 0 && d.groups.total === 0;
 
   return (
     <section className="mt-10">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl text-foreground">Platform overview</h2>
+        <h2 className="font-display text-xl text-foreground">
+          {d.partner.first_party ? 'Platform overview' : 'Your overview'}
+        </h2>
         <p className="text-[11px] text-muted-foreground">
           Live · {new Date(d.generated_at).toLocaleTimeString('en-GB')}
         </p>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Everything below is queryable through the API — this is the shape of the data you&rsquo;ll get.
+        {d.partner.first_party
+          ? 'Every tenant on the platform, because this is an internal first-party account.'
+          : 'Your own groups and members only — the same slice your API key returns.'}
       </p>
+
+      {isEmpty && (
+        <div className="mt-5 rounded-2xl border border-border bg-card p-6">
+          <p className="text-sm font-semibold text-foreground">Nothing here yet</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            Your tenant starts empty — you can&rsquo;t see groups or people created by WashikaDAU
+            or by other partners. Create your first member with{' '}
+            <code className="font-mono text-xs text-foreground">POST /api/v1/members/create</code>,
+            then a group for them to lead.
+          </p>
+        </div>
+      )}
 
       {/* People + groups */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Users" value={d.people.users.toLocaleString()} sub={`${d.people.members.toLocaleString()} member profiles`} />
-        <Stat label="Active members" value={d.people.members_active.toLocaleString()} sub={`${d.people.members_with_business.toLocaleString()} run a business`} />
+        <Stat label="Members" value={d.people.members.toLocaleString()} sub={`${d.people.members_with_business.toLocaleString()} run a business`} />
+        <Stat label="Active members" value={d.people.members_active.toLocaleString()} />
         <Stat label="Groups" value={d.groups.total.toLocaleString()} sub={`${d.groups.active} active · avg ${d.groups.avg_members} members`} />
-        <Stat label="Memberships" value={d.groups.memberships.toLocaleString()} sub={`${d.people.investors} investor profiles`} />
+        <Stat label="Memberships" value={d.groups.memberships.toLocaleString()} />
+      </div>
+
+      {/* Treasury */}
+      <h3 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Treasury</h3>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat
+          label="You owe your users"
+          value={tsh(d.treasury.liabilities_tzs)}
+          sub="Sum of your members' and groups' balances"
+          accent="#e4a233"
+        />
+        <Stat label="Deposited in" value={tsh(d.treasury.deposited_in_tzs)} sub="Settled, lifetime" />
+        <Stat label="Withdrawn out" value={tsh(d.treasury.withdrawn_out_tzs)} sub="Settled, incl. fees" />
+        <Stat
+          label="Net contributed"
+          value={tsh(d.treasury.net_contributed_tzs)}
+          sub="Float you've added to the pool"
+          accent={d.treasury.net_contributed_tzs < 0 ? '#dc2626' : undefined}
+        />
+      </div>
+      <div className={`mt-3 rounded-2xl border p-4 ${
+        d.treasury.fully_backed === false
+          ? 'border-amber-500/30 bg-amber-500/5'
+          : 'border-border bg-card'
+      }`}>
+        <p className="text-sm font-semibold text-foreground">
+          {d.treasury.coverage_ratio === null
+            ? 'Backing unavailable'
+            : d.treasury.fully_backed
+              ? 'Fully backed'
+              : `Pool coverage ${(d.treasury.coverage_ratio * 100).toFixed(1)}%`}
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          {d.treasury.coverage_ratio === null
+            ? 'The on-chain balance could not be read right now, so backing cannot be confirmed.'
+            : d.treasury.fully_backed
+              ? 'Balances are held in one shared WashikaDAU wallet whose on-chain float currently covers every tenant in full.'
+              : `Funds sit in one shared wallet that currently holds less than the total owed across all tenants. Your pro-rata share is ${tsh(d.treasury.attributed_float_tzs ?? 0)}, leaving ${tsh(d.treasury.shortfall_tzs ?? 0)} uncovered until WashikaDAU tops up the float.`}
+        </p>
       </div>
 
       {/* Money */}
@@ -92,7 +154,6 @@ export default function PlatformOverview() {
         <Stat label="Volume processed" value={tsh(d.money.volume_processed_tzs)} accent="#16a34a" />
         <Stat label="Held in groups" value={tsh(d.money.held_in_groups_tzs)} accent="#e4a233" />
         <Stat label="Held by members" value={tsh(d.money.held_by_members_tzs)} />
-        <Stat label="Master reserve" value={tsh(d.money.master_reserve_tzs)} />
         <Stat label="Contributions collected" value={tsh(d.money.contributions_collected_tzs)} sub={`${d.money.contributions_count} payments`} />
         <Stat label="Disbursed" value={tsh(d.money.disbursed_tzs)} />
         <Stat label="Deposits (settled)" value={tsh(d.money.deposits_tzs)} />

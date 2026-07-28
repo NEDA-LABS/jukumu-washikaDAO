@@ -19,8 +19,34 @@ type Partner = {
   requests_7d: number;
 };
 
+type TreasuryRow = {
+  partnerId: number | null;
+  orgName: string;
+  liabilitiesTzs: number;
+  memberBalanceTzs: number;
+  groupBalanceTzs: number;
+  depositedInTzs: number;
+  withdrawnOutTzs: number;
+  netContributedTzs: number;
+  attributedFloatTzs: number | null;
+  shortfallTzs: number | null;
+};
+
+type Treasury = {
+  masterOnChainTzs: number | null;
+  totalLiabilitiesTzs: number;
+  coverageRatio: number | null;
+  fullyBacked: boolean | null;
+  partners: TreasuryRow[];
+  onChainError: string | null;
+};
+
+const tsh = (n: number | null | undefined) =>
+  n == null ? '—' : `TSh ${Math.round(n).toLocaleString('en-US')}`;
+
 export default function PartnersSection({ showToast }: { showToast?: (m: string, t?: 'success' | 'error') => void }) {
   const [partners, setPartners] = useState<Partner[] | null>(null);
+  const [treasury, setTreasury] = useState<Treasury | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -33,7 +59,15 @@ export default function PartnersSection({ showToast }: { showToast?: (m: string,
     } catch { setPartners([]); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadTreasury = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/treasury/partners');
+      if (!res.ok) return;
+      setTreasury(await res.json());
+    } catch { /* the panel simply stays hidden */ }
+  }, []);
+
+  useEffect(() => { load(); loadTreasury(); }, [load, loadTreasury]);
 
   const update = async (id: number, patch: Record<string, unknown>, note: string) => {
     setBusy(id);
@@ -59,6 +93,67 @@ export default function PartnersSection({ showToast }: { showToast?: (m: string,
           money and is only enabled here.
         </p>
       </div>
+
+      {treasury && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-bold text-foreground">Treasury by tenant</h3>
+            <span className={`text-xs font-semibold ${
+              treasury.fullyBacked === false ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+            }`}>
+              {treasury.coverageRatio === null
+                ? treasury.onChainError ?? 'On-chain balance unavailable'
+                : `Float ${tsh(treasury.masterOnChainTzs)} · covers ${(treasury.coverageRatio * 100).toFixed(1)}% of ${tsh(treasury.totalLiabilitiesTzs)}`}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            All tenants share one on-chain wallet. Liabilities are exact; attributed float is the
+            pool&rsquo;s coverage applied pro-rata, not physically separated money.
+          </p>
+
+          <div className="mt-4 max-w-full overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <th className="pb-2 pr-3 font-semibold">Tenant</th>
+                  <th className="pb-2 pr-3 text-right font-semibold">Owed to users</th>
+                  <th className="pb-2 pr-3 text-right font-semibold">In</th>
+                  <th className="pb-2 pr-3 text-right font-semibold">Out</th>
+                  <th className="pb-2 pr-3 text-right font-semibold">Net float</th>
+                  <th className="pb-2 text-right font-semibold">Shortfall</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {treasury.partners.map((r) => (
+                  <tr key={r.partnerId ?? 'first-party'}>
+                    <td className="py-2.5 pr-3">
+                      <span className="font-medium text-foreground">{r.orgName}</span>
+                      <span className="ml-2 text-[11px] text-muted-foreground">
+                        {tsh(r.memberBalanceTzs)} members · {tsh(r.groupBalanceTzs)} groups
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums text-foreground">{tsh(r.liabilitiesTzs)}</td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{tsh(r.depositedInTzs)}</td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{tsh(r.withdrawnOutTzs)}</td>
+                    <td className={`py-2.5 pr-3 text-right tabular-nums ${
+                      r.netContributedTzs < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    }`}>{tsh(r.netContributedTzs)}</td>
+                    <td className={`py-2.5 text-right tabular-nums ${
+                      (r.shortfallTzs ?? 0) > 0 ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                    }`}>{r.shortfallTzs == null ? '—' : tsh(r.shortfallTzs)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {treasury.fullyBacked === false && (
+            <p className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+              On-chain float is below total liabilities — run the treasury sweep before large withdrawals.
+            </p>
+          )}
+        </div>
+      )}
 
       {pending.length > 0 && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3">
