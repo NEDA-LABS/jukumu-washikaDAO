@@ -221,6 +221,108 @@ export const SECTIONS: Section[] = [
     ],
   },
   {
+    id: 'proposals',
+    title: 'Proposals & voting',
+    blurb: 'Group governance: open proposals, read them, and cast votes.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/v1/proposals',
+        scope: 'read',
+        summary: 'List proposals across all groups',
+        params: [
+          { name: 'group_id', type: 'integer', description: 'Restrict to one group.' },
+          { name: 'status', type: '"open" | "closed"', description: 'Filter by voting status.' },
+          { name: 'type', type: 'string', description: 'general, ask, spend or prodcast.' },
+          { name: 'funded', type: 'boolean', description: '`true` returns only funded proposals.' },
+        ],
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/proposals/{id}',
+        scope: 'read',
+        summary: 'Retrieve a proposal',
+        description:
+          'Includes the type-specific metadata (funding goal, timeline, expected impact, vendor) and a vote block carrying the group threshold, how many yes votes are required, and whether it has passed.',
+        example: `{
+  "data": {
+    "id": 16,
+    "title": "Pesa ya majaribio",
+    "type": "spend",
+    "status": "closed",
+    "group_name": "Ali & Vic Admi",
+    "payment": { "amount_tzs": 6000, "status": "completed" },
+    "votes": {
+      "yes": 1, "no": 0, "abstain": 0, "total": 1,
+      "eligible_voters": 2, "required_yes": 2,
+      "threshold": "3/5", "passed": false
+    }
+  }
+}`,
+      },
+      {
+        method: 'PATCH',
+        path: '/api/v1/proposals/{id}',
+        scope: 'write',
+        summary: 'Close or reopen voting',
+        description: 'Refuses to reopen a proposal whose payment already completed.',
+        body: [{ name: 'status', type: '"open" | "closed"', required: true, description: 'New voting status.' }],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/groups/{id}/proposals/create',
+        scope: 'write',
+        summary: 'Open a proposal',
+        description:
+          'Required fields depend on type. general needs only a title; ask needs amount_tzs; spend needs amount_tzs plus a recipient_phone, recipient_member_id or vendor_name; prodcast needs funding_goal_tzs. The author must be an active member of the group.',
+        body: [
+          { name: 'created_by_member_id', type: 'integer', required: true, description: 'Author — must be an active group member.' },
+          { name: 'title', type: 'string', required: true, description: 'Short headline.' },
+          { name: 'description', type: 'string', description: 'Body text.' },
+          { name: 'type', type: '"general" | "ask" | "spend" | "prodcast"', description: 'Defaults to `general`.' },
+          { name: 'amount_tzs', type: 'integer', description: 'Required for ask and spend.' },
+          { name: 'recipient_member_id', type: 'integer', description: 'Payee, for spend.' },
+          { name: 'recipient_phone', type: 'string', description: 'Mobile-money payee, for spend.' },
+          { name: 'vendor_name', type: 'string', description: 'Supplier name, for spend.' },
+          { name: 'expense_category', type: 'string', description: 'Free text, for spend.' },
+          { name: 'funding_goal_tzs', type: 'integer', description: 'Required for prodcast.' },
+          { name: 'timeline', type: 'string', description: 'e.g. "6 months", for prodcast.' },
+          { name: 'expected_impact', type: 'string', description: 'For prodcast.' },
+        ],
+        example: `curl -X POST "${API_BASE}/api/v1/groups/32/proposals/create" \\
+  -H "Authorization: Bearer $WD_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+        "created_by_member_id": 126,
+        "title": "Buy a shared irrigation pump",
+        "type": "spend",
+        "amount_tzs": 450000,
+        "vendor_name": "Kilimo Supplies Ltd",
+        "expense_category": "Equipment"
+      }'`,
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/proposals/{id}/votes',
+        scope: 'read',
+        summary: 'List ballots',
+        description: 'Every member who voted, what they chose and when — plus the running tally.',
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/proposals/{id}/votes',
+        scope: 'write',
+        summary: 'Cast or change a vote',
+        description:
+          'One ballot per member: voting again replaces the earlier choice. Returns 409 voting_closed if voting has ended, or 403 not_eligible if the member is not an active member of the group.',
+        body: [
+          { name: 'member_id', type: 'integer', required: true, description: 'Voter — must be an active group member.' },
+          { name: 'vote', type: '"yes" | "no" | "abstain"', required: true, description: 'The ballot.' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'members',
     title: 'Members',
     blurb: 'Directory data. Phone numbers, emails and national IDs are never returned.',
@@ -398,6 +500,9 @@ export const ERRORS: { code: string; status: number; meaning: string }[] = [
   { code: 'already_recorded', status: 409, meaning: 'A contribution already exists for that member and period.' },
   { code: 'provider_error', status: 502, meaning: 'The mobile-money provider rejected the request.' },
   { code: 'wallet_unavailable', status: 503, meaning: 'The wallet provider is not configured.' },
+  { code: 'voting_closed', status: 409, meaning: 'Voting on that proposal has ended.' },
+  { code: 'not_eligible', status: 403, meaning: 'That member is not an active member of the group.' },
+  { code: 'already_executed', status: 409, meaning: 'The proposal was already paid out and cannot be reopened.' },
   { code: 'rate_limited', status: 429, meaning: 'Over 120 requests/minute. Retry after the Retry-After header.' },
   { code: 'internal_error', status: 500, meaning: 'Unexpected server error. Safe to retry.' },
 ];

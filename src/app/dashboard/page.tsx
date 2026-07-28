@@ -7,7 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/components/ToastProvider';
 import {
   UserGroupIcon, UsersIcon, CurrencyDollarIcon, ChartBarIcon, BookOpenIcon,
-  DocumentTextIcon, CogIcon, SunIcon, MoonIcon
+  DocumentTextIcon, CogIcon, SunIcon, MoonIcon, CodeBracketIcon
 } from '@heroicons/react/24/outline';
 import NotificationCenter from '@/components/NotificationCenter';
 import OverviewSection from './components/OverviewSection';
@@ -16,6 +16,7 @@ import GroupsSection from './components/GroupsSection';
 import JoinRequestsSection from './components/JoinRequestsSection';
 import InvestmentsSection from './components/InvestmentsSection';
 import ContentSection from './components/ContentSection';
+import PartnersSection from './components/PartnersSection';
 import ReportsSection from './components/ReportsSection';
 import SettingsSection from './components/SettingsSection';
 
@@ -112,6 +113,7 @@ export default function AdminDashboard() {
     { id: 'investments',   name: 'Uwekezaji',    icon: CurrencyDollarIcon },
     { id: 'content',       name: 'Mafunzo',      icon: BookOpenIcon },
     { id: 'reports',       name: 'Ripoti',       icon: DocumentTextIcon },
+    { id: 'partners',      name: 'API Partners', icon: CodeBracketIcon },
     { id: 'settings',      name: 'Mipangilio',   icon: CogIcon },
   ];
 
@@ -126,6 +128,7 @@ export default function AdminDashboard() {
       case 'investments':   return <InvestmentsSection investments={investments} groups={groups} loadAdminData={loadAdminData} />;
       case 'content':       return <ContentSection educationalContent={educationalContent} user={user} loadAdminData={loadAdminData} showToast={showToast} />;
       case 'reports':       return <ReportsSection adminStats={adminStats} />;
+      case 'partners':      return <PartnersSection showToast={showToast} />;
       case 'settings':      return <SettingsSection />;
       default:              return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
     }
