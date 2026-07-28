@@ -18,8 +18,10 @@ const METHOD_STYLE: Record<string, string> = {
 };
 
 function Code({ children }: { children: React.ReactNode }) {
+  // max-w-full + min-w-0 stop the <pre>'s long lines from stretching a grid or
+  // flex track wider than the viewport; overflow-x-auto then scrolls within it.
   return (
-    <pre className="overflow-x-auto rounded-xl border border-border bg-muted/60 p-4 text-[12.5px] leading-relaxed">
+    <pre className="max-w-full min-w-0 overflow-x-auto rounded-xl border border-border bg-muted/60 p-4 text-[12.5px] leading-relaxed">
       <code className="font-mono text-foreground/90">{children}</code>
     </pre>
   );
@@ -111,7 +113,7 @@ export default function DevelopersPage() {
 
         {/* Quickstart */}
         <section className="mt-16 grid gap-6 lg:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-xl font-bold">Quickstart</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Create a key in the partner dashboard, then send it as a bearer token. Keys are shown
@@ -132,7 +134,7 @@ export default function DevelopersPage() {
               ))}
             </ol>
           </div>
-          <div>
+          <div className="min-w-0">
             <Code>{`# Every request carries your key
 export WD_KEY="wd_live_xxxxxxxxxxxxxxxxxxxxxxxx"
 

@@ -123,7 +123,7 @@ export default function DevelopersSection() {
           </div>
 
           {/* Terminal */}
-          <div className="rounded-2xl border border-border bg-card shadow-2xl">
+          <div className="min-w-0 rounded-2xl border border-border bg-card shadow-2xl">
             <div className="flex items-center gap-2 border-b border-border px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
@@ -147,7 +147,7 @@ export default function DevelopersSection() {
               ))}
             </div>
 
-            <pre className="overflow-x-auto p-4 text-[12px] leading-relaxed">
+            <pre className="max-w-full min-w-0 overflow-x-auto p-4 text-[12px] leading-relaxed">
               <code className="font-mono text-foreground/90">{snippet.code}</code>
             </pre>
           </div>
