@@ -3,6 +3,7 @@ import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { amountTzs, normalizePhone } from '@/lib/api/money';
 import { serializeProposal } from '@/lib/api/serialize';
 import { PROPOSAL_SELECT, voteSummary, PROPOSAL_TYPES, type ProposalType } from '@/lib/api/proposals';
+import { ownsGroup, ownsMember } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
  *         recipient_member_id?, recipient_phone?, funding_goal_tzs?,
  *         timeline?, expected_impact?, vendor_name?, expense_category? }
  */
-export const POST = handleWithParams<{ id: string }>('write', async (request, { params }) => {
+export const POST = handleWithParams<{ id: string }>('write', async (request, { params, scope }) => {
   const groupId = Number.parseInt(params.id, 10);
   if (!Number.isFinite(groupId)) return fail(422, 'invalid_request', 'Group id must be numeric.');
 
@@ -75,8 +76,9 @@ export const POST = handleWithParams<{ id: string }>('write', async (request, { 
 
   const client = await pool.connect();
   try {
-    const group = await client.query(`SELECT 1 FROM groups WHERE id = $1`, [groupId]);
-    if (group.rows.length === 0) return fail(404, 'not_found', 'No group with that id.');
+    if (!(await ownsGroup(client, scope, groupId))) {
+      return fail(404, 'not_found', 'No group with that id.');
+    }
 
     // The author must actually belong to the group they're proposing to.
     const membership = await client.query(
@@ -87,9 +89,8 @@ export const POST = handleWithParams<{ id: string }>('write', async (request, { 
       return fail(403, 'not_eligible', 'The author is not an active member of this group.');
     }
 
-    if (recipientMemberId != null) {
-      const rm = await client.query(`SELECT 1 FROM members WHERE id = $1`, [recipientMemberId]);
-      if (rm.rows.length === 0) return fail(404, 'not_found', 'No member with that recipient_member_id.');
+    if (recipientMemberId != null && !(await ownsMember(client, scope, recipientMemberId))) {
+      return fail(404, 'not_found', 'No member with that recipient_member_id.');
     }
 
     const inserted = await client.query(

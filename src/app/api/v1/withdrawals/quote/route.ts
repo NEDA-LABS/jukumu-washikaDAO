@@ -1,5 +1,6 @@
 import pool from '@/lib/db';
 import { handle, ok, fail } from '@/lib/api/http';
+import { owned } from '@/lib/api/scope';
 import { normalizePhone, amountTzs } from '@/lib/api/money';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic';
  *
  * Body: { member_id, amount_tzs, phone }
  */
-export const POST = handle('write', async (request) => {
+export const POST = handle('write', async (request, { scope }) => {
   const body = await request.json().catch(() => null);
 
   const memberId = Number(body?.member_id);
@@ -33,7 +34,11 @@ export const POST = handle('write', async (request) => {
   try {
     await ensureNtzsSchema(client);
 
-    const memberRes = await client.query(`SELECT id FROM members WHERE id = $1 LIMIT 1`, [memberId]);
+    const memberValues: unknown[] = [memberId];
+    const memberRes = await client.query(
+      `SELECT id FROM members m WHERE m.id = $1 AND ${owned(scope, 'm', memberValues)} LIMIT 1`,
+      memberValues,
+    );
     if (memberRes.rows.length === 0) return fail(404, 'not_found', 'No member with that id.');
 
     const platformFee = withdrawalFeeTzs(amount);

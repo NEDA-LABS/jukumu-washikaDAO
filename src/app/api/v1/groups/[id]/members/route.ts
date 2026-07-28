@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handleWithParams, ok, fail, pageMeta } from '@/lib/api/http';
 import { serializeMember } from '@/lib/api/serialize';
+import { ownsGroup } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
  *
  * Query: role, status, limit, offset
  */
-export const GET = handleWithParams<{ id: string }>('read', async (_req, { params, limit, offset, searchParams }) => {
+export const GET = handleWithParams<{ id: string }>('read', async (_req, { params, scope, limit, offset, searchParams }) => {
   const groupId = Number.parseInt(params.id, 10);
   if (!Number.isFinite(groupId)) return fail(422, 'invalid_request', 'Group id must be numeric.');
 
@@ -25,8 +26,11 @@ export const GET = handleWithParams<{ id: string }>('read', async (_req, { param
 
   const client = await pool.connect();
   try {
-    const exists = await client.query(`SELECT 1 FROM groups WHERE id = $1`, [groupId]);
-    if (exists.rows.length === 0) return fail(404, 'not_found', 'No group with that id.');
+    // A group the caller does not own is indistinguishable from one that does
+    // not exist — 404 rather than 403, so ids cannot be probed.
+    if (!(await ownsGroup(client, scope, groupId))) {
+      return fail(404, 'not_found', 'No group with that id.');
+    }
 
     const countRes = await client.query(
       `SELECT COUNT(*)::int AS n FROM group_members gm ${clause}`, values,

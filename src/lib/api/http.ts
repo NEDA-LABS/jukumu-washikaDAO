@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { verifyKey, recordUsage, type ApiKeyRecord, type ApiScope } from './keys';
+import type { Scope } from './scope';
 
 /**
  * Shared plumbing for the public /api/v1 surface: a single response envelope,
@@ -29,6 +30,11 @@ export function fail(status: number, code: string, message: string, details?: un
 
 export interface Ctx {
   key: ApiKeyRecord;
+  /**
+   * The tenant this request reads and writes as. Pass it to the helpers in
+   * `scope.ts` — never filter on `partner_id` by hand in a route.
+   */
+  scope: Scope;
   /** Parsed ?limit= (1-100, default 25) */
   limit: number;
   /** Parsed ?offset= (>=0, default 0) */
@@ -74,6 +80,18 @@ export function handle(
       return fail(403, 'insufficient_scope', `This key needs the "${scope}" scope for that request.`);
     }
 
+    // Resolve the tenant. A key whose owner never completed partner
+    // registration has no slice of data to read, and a suspended partner
+    // loses access immediately rather than at the next key rotation.
+    if (key.partner_id === null && !key.is_first_party) {
+      return fail(403, 'partner_required',
+        'This key is not linked to a registered partner. Register at /developers/dashboard.');
+    }
+    if (key.partner_status === 'suspended') {
+      return fail(403, 'partner_suspended', 'This partner account is suspended. Contact WashikaDAU.');
+    }
+    const tenant: Scope = { partnerId: key.partner_id, firstParty: key.is_first_party };
+
     try {
       await limiter.consume(String(key.id), 1);
     } catch {
@@ -88,7 +106,7 @@ export function handle(
     const route = `${request.method} ${request.nextUrl.pathname}`;
 
     try {
-      const res = await fn(request, { key, limit, offset, searchParams });
+      const res = await fn(request, { key, scope: tenant, limit, offset, searchParams });
       recordUsage(key.id, route, res.status >= 400);
       return res;
     } catch (err) {

@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { serializeGroup } from '@/lib/api/serialize';
+import { owned } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,12 +10,14 @@ export const dynamic = 'force-dynamic';
  * A single group, including treasury balance and aggregate contribution totals.
  * `{id}` accepts the numeric id or the human group code (e.g. JKM-A3F9K2).
  */
-export const GET = handleWithParams<{ id: string }>('read', async (_req, { params }) => {
+export const GET = handleWithParams<{ id: string }>('read', async (_req, { params, scope }) => {
   const numeric = Number.parseInt(params.id, 10);
   const byCode = !Number.isFinite(numeric);
 
   const client = await pool.connect();
   try {
+    const values: unknown[] = [byCode ? params.id : numeric];
+    const tenant = owned(scope, 'g', values);
     const res = await client.query(
       `SELECT g.*,
               u.full_name AS leader_name,
@@ -25,8 +28,9 @@ export const GET = handleWithParams<{ id: string }>('read', async (_req, { param
          FROM groups g
          LEFT JOIN users u ON u.id = g.leader_id
         WHERE ${byCode ? 'upper(g.group_code) = upper($1)' : 'g.id = $1'}
+          AND ${tenant}
         LIMIT 1`,
-      [byCode ? params.id : numeric],
+      values,
     );
     if (res.rows.length === 0) return fail(404, 'not_found', 'No group with that id or code.');
 

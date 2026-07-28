@@ -1,5 +1,6 @@
 import pool from '@/lib/db';
 import { handle, ok, fail } from '@/lib/api/http';
+import { ownsGroup, ownsMember } from '@/lib/api/scope';
 import { amountTzs } from '@/lib/api/money';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { internalTransfer, LedgerError } from '@/lib/wallet/ledger';
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
 const PURPOSES = ['contribution', 'p2p', 'disbursement'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
-export const POST = handle('write', async (request) => {
+export const POST = handle('write', async (request, { scope }) => {
   const body = await request.json().catch(() => null);
 
   const amount = amountTzs(body?.amount_tzs, 1);
@@ -51,12 +52,14 @@ export const POST = handle('write', async (request) => {
   try {
     await ensureNtzsSchema(client);
 
-    // Verify both parties exist before touching balances, so a typo returns
-    // 404 rather than silently creating an account for a non-existent id.
+    // Verify both parties exist AND belong to the caller before touching
+    // balances. This is the check that stops a partner moving money into or
+    // out of an account that isn't theirs; a typo or a probe both return 404.
     for (const side of [from, to]) {
-      const table = side.ownerType === 'member' ? 'members' : 'groups';
-      const res = await client.query(`SELECT 1 FROM ${table} WHERE id = $1`, [side.ownerId]);
-      if (res.rows.length === 0) {
+      const ownsIt = side.ownerType === 'member'
+        ? await ownsMember(client, scope, side.ownerId)
+        : await ownsGroup(client, scope, side.ownerId);
+      if (!ownsIt) {
         return fail(404, 'not_found', `No ${side.ownerType} with id ${side.ownerId}.`);
       }
     }

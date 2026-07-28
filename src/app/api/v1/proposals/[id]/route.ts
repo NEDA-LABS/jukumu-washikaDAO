@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { serializeProposal } from '@/lib/api/serialize';
 import { PROPOSAL_SELECT, voteSummary } from '@/lib/api/proposals';
+import { ownedProposal, ownsProposal } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,13 +11,17 @@ export const dynamic = 'force-dynamic';
  * One proposal in full: description, type-specific metadata, payment state
  * and the complete vote breakdown including whether it has passed.
  */
-export const GET = handleWithParams<{ id: string }>('read', async (_req, { params }) => {
+export const GET = handleWithParams<{ id: string }>('read', async (_req, { params, scope }) => {
   const id = Number.parseInt(params.id, 10);
   if (!Number.isFinite(id)) return fail(422, 'invalid_request', 'Proposal id must be numeric.');
 
   const client = await pool.connect();
   try {
-    const res = await client.query(`${PROPOSAL_SELECT} WHERE p.id = $1 LIMIT 1`, [id]);
+    const values: unknown[] = [id];
+    const res = await client.query(
+      `${PROPOSAL_SELECT} WHERE p.id = $1 AND ${ownedProposal(scope, 'p', values)} LIMIT 1`,
+      values,
+    );
     if (res.rows.length === 0) return fail(404, 'not_found', 'No proposal with that id.');
 
     const row = res.rows[0] as Record<string, unknown>;
@@ -39,7 +44,7 @@ export const GET = handleWithParams<{ id: string }>('read', async (_req, { param
  *
  * Body: { status: "open" | "closed" }
  */
-export const PATCH = handleWithParams<{ id: string }>('write', async (request, { params }) => {
+export const PATCH = handleWithParams<{ id: string }>('write', async (request, { params, scope }) => {
   const id = Number.parseInt(params.id, 10);
   if (!Number.isFinite(id)) return fail(422, 'invalid_request', 'Proposal id must be numeric.');
 
@@ -51,6 +56,10 @@ export const PATCH = handleWithParams<{ id: string }>('write', async (request, {
 
   const client = await pool.connect();
   try {
+    if (!(await ownsProposal(client, scope, id))) {
+      return fail(404, 'not_found', 'No proposal with that id.');
+    }
+
     const current = await client.query(
       `SELECT id, status, payment_status FROM group_proposals WHERE id = $1 LIMIT 1`, [id],
     );

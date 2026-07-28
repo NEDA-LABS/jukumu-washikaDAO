@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handle, ok, fail, pageMeta } from '@/lib/api/http';
 import { serializeTransaction } from '@/lib/api/serialize';
+import { ownedTransaction } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ const TYPES = new Set(['deposit', 'withdrawal', 'transfer', 'disbursement']);
  *   since, until          ISO dates, filter on created_at
  *   limit, offset
  */
-export const GET = handle('read', async (_req, { limit, offset, searchParams }) => {
+export const GET = handle('read', async (_req, { scope, limit, offset, searchParams }) => {
   const groupId = searchParams.get('group_id');
   const memberId = searchParams.get('member_id');
   const type = searchParams.get('type');
@@ -36,8 +37,8 @@ export const GET = handle('read', async (_req, { limit, offset, searchParams }) 
     }
   }
 
-  const where: string[] = [];
   const values: unknown[] = [];
+  const where: string[] = [ownedTransaction(scope, 't', values)];
   if (groupId) {
     values.push(Number(groupId));
     where.push(`(t.from_group_id = $${values.length} OR t.to_group_id = $${values.length})`);
@@ -51,7 +52,7 @@ export const GET = handle('read', async (_req, { limit, offset, searchParams }) 
   if (status) { values.push(status); where.push(`t.status = $${values.length}`); }
   if (since) { values.push(since); where.push(`t.created_at >= $${values.length}`); }
   if (until) { values.push(until); where.push(`t.created_at <= $${values.length}`); }
-  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const clause = `WHERE ${where.join(' AND ')}`;
 
   const client = await pool.connect();
   try {

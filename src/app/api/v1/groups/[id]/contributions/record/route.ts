@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { amountTzs } from '@/lib/api/money';
 import { serializeContribution } from '@/lib/api/serialize';
+import { ownsGroup } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ const STATUSES = new Set(['paid', 'pending', 'overdue']);
  *
  * Body: { member_id, amount_tzs, period (YYYY-MM), status?, payment_method?, reference? }
  */
-export const POST = handleWithParams<{ id: string }>('write', async (request, { params }) => {
+export const POST = handleWithParams<{ id: string }>('write', async (request, { params, scope }) => {
   const groupId = Number.parseInt(params.id, 10);
   if (!Number.isFinite(groupId)) return fail(422, 'invalid_request', 'Group id must be numeric.');
 
@@ -34,6 +35,10 @@ export const POST = handleWithParams<{ id: string }>('write', async (request, { 
 
   const client = await pool.connect();
   try {
+    if (!(await ownsGroup(client, scope, groupId))) {
+      return fail(404, 'not_found', 'No group with that id.');
+    }
+
     const membership = await client.query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND member_id = $2`, [groupId, memberId],
     );

@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { ensureVotesTable, voteSummary, VOTE_CHOICES, type VoteChoice } from '@/lib/api/proposals';
+import { ownsProposal } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,13 +31,17 @@ const TALLY = `
  * Who voted and how, plus the running tally. Useful for showing a live
  * board during a group meeting.
  */
-export const GET = handleWithParams<{ id: string }>('read', async (_req, { params }) => {
+export const GET = handleWithParams<{ id: string }>('read', async (_req, { params, scope }) => {
   const id = Number.parseInt(params.id, 10);
   if (!Number.isFinite(id)) return fail(422, 'invalid_request', 'Proposal id must be numeric.');
 
   const client = await pool.connect();
   try {
     await ensureVotesTable(client);
+
+    if (!(await ownsProposal(client, scope, id))) {
+      return fail(404, 'not_found', 'No proposal with that id.');
+    }
 
     const tally = await client.query(TALLY, [id]);
     if (tally.rows.length === 0) return fail(404, 'not_found', 'No proposal with that id.');
@@ -76,7 +81,7 @@ export const GET = handleWithParams<{ id: string }>('read', async (_req, { param
  *
  * Body: { member_id, vote: "yes" | "no" | "abstain" }
  */
-export const POST = handleWithParams<{ id: string }>('write', async (request, { params }) => {
+export const POST = handleWithParams<{ id: string }>('write', async (request, { params, scope }) => {
   const id = Number.parseInt(params.id, 10);
   if (!Number.isFinite(id)) return fail(422, 'invalid_request', 'Proposal id must be numeric.');
 
@@ -92,6 +97,10 @@ export const POST = handleWithParams<{ id: string }>('write', async (request, { 
   const client = await pool.connect();
   try {
     await ensureVotesTable(client);
+
+    if (!(await ownsProposal(client, scope, id))) {
+      return fail(404, 'not_found', 'No proposal with that id.');
+    }
 
     const prop = await client.query(
       `SELECT id, group_id, status FROM group_proposals WHERE id = $1 LIMIT 1`, [id],

@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handle, ok, pageMeta } from '@/lib/api/http';
 import { serializeMember } from '@/lib/api/serialize';
+import { owned } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,14 +15,14 @@ export const dynamic = 'force-dynamic';
  * Contact details (phone, email, national ID) are deliberately never
  * returned — the public API exposes directory data, not PII.
  */
-export const GET = handle('read', async (_req, { limit, offset, searchParams }) => {
+export const GET = handle('read', async (_req, { scope, limit, offset, searchParams }) => {
   const q = searchParams.get('q');
   const status = searchParams.get('status');
   const groupId = searchParams.get('group_id');
   const hasBusiness = searchParams.get('has_business') === 'true';
 
-  const where: string[] = [];
   const values: unknown[] = [];
+  const where: string[] = [owned(scope, 'm', values)];
   const joins: string[] = [];
 
   if (q) {
@@ -36,7 +37,7 @@ export const GET = handle('read', async (_req, { limit, offset, searchParams }) 
   if (hasBusiness) {
     where.push(`COALESCE(NULLIF(TRIM(m.business_name), ''), NULLIF(TRIM(m.business_type), '')) IS NOT NULL`);
   }
-  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const clause = `WHERE ${where.join(' AND ')}`;
   const joinSql = joins.join(' ');
 
   const client = await pool.connect();

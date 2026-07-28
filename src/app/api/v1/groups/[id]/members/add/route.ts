@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
 import { serializeMember } from '@/lib/api/serialize';
+import { ownsGroup, ownsMember } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ const ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina', 'mwanach
  *
  * Body: { member_id, role?, status? }
  */
-export const POST = handleWithParams<{ id: string }>('write', async (request, { params }) => {
+export const POST = handleWithParams<{ id: string }>('write', async (request, { params, scope }) => {
   const groupId = Number.parseInt(params.id, 10);
   if (!Number.isFinite(groupId)) return fail(422, 'invalid_request', 'Group id must be numeric.');
 
@@ -26,11 +27,14 @@ export const POST = handleWithParams<{ id: string }>('write', async (request, { 
 
   const client = await pool.connect();
   try {
-    const group = await client.query(`SELECT 1 FROM groups WHERE id = $1`, [groupId]);
-    if (group.rows.length === 0) return fail(404, 'not_found', 'No group with that id.');
-
-    const member = await client.query(`SELECT 1 FROM members WHERE id = $1`, [memberId]);
-    if (member.rows.length === 0) return fail(404, 'not_found', 'No member with that id.');
+    // Both sides must be the caller's own: you cannot add a stranger's member
+    // to your group, nor your member to someone else's group.
+    if (!(await ownsGroup(client, scope, groupId))) {
+      return fail(404, 'not_found', 'No group with that id.');
+    }
+    if (!(await ownsMember(client, scope, memberId))) {
+      return fail(404, 'not_found', 'No member with that id.');
+    }
 
     const dupe = await client.query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND member_id = $2`, [groupId, memberId],

@@ -156,6 +156,7 @@ curl -H "Authorization: Bearer $WD_KEY" \\
               { t: 'Money', d: 'Always an integer number of TZS. Field names end in _tzs. No floats, no currency strings.' },
               { t: 'Time', d: 'Every timestamp is an ISO-8601 UTC string.' },
               { t: 'Paging', d: '?limit= (1–100, default 25) and ?offset=. meta carries total and has_more.' },
+              { t: 'Isolation', d: 'Your key reads and writes only the groups and members you created. Anything outside your tenant returns 404.' },
             ].map((c) => (
               <div key={c.t} className="rounded-2xl border border-border bg-card p-4">
                 <p className="text-sm font-semibold text-foreground">{c.t}</p>
@@ -163,6 +164,18 @@ curl -H "Authorization: Bearer $WD_KEY" \\
               </div>
             ))}
           </div>
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+            <p className="text-sm font-semibold text-foreground">Your data is your own</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Every group and member you create through the API belongs to your organisation
+              alone. You cannot see other partners&rsquo; records, and you cannot see the groups
+              and people who joined WashikaDAU directly — a new key starts with an empty tenant.
+              Begin with{' '}
+              <code className="font-mono text-xs text-foreground">POST /api/v1/members/create</code>,
+              then create a group for them to belong to.
+            </p>
+          </div>
+
           <div className="mt-4 rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4">
             <p className="text-sm text-amber-700 dark:text-amber-400">
               <strong>Rate limit:</strong> 120 requests per minute per key. Exceeding it returns{' '}

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import type { PoolClient } from 'pg';
 import pool from '@/lib/db';
 import { oncePerProcess } from '@/lib/db-once';
+import { ensurePartnersSchema } from './partners';
 
 /**
  * API key storage and verification for the public /api/v1 surface.
@@ -22,6 +23,11 @@ export interface ApiKeyRecord {
   rate_limit_per_min: number;
   revoked_at: string | null;
   last_used_at: string | null;
+  /** Tenant this key reads and writes as. Null if the owner never registered. */
+  partner_id: number | null;
+  partner_status: string | null;
+  /** Internal key: sees the whole platform instead of one tenant's slice. */
+  is_first_party: boolean;
 }
 
 const KEY_PREFIX = 'wd_live_';
@@ -103,10 +109,19 @@ export async function verifyKey(raw: string): Promise<ApiKeyRecord | null> {
   const client = await pool.connect();
   try {
     await ensureApiKeysSchema(client);
+    // The join below needs api_partners (and its partner_id columns) present.
+    await ensurePartnersSchema();
+    // Join the owning partner in the same round trip — every request needs the
+    // tenant id to scope its queries, so fetching it separately would double
+    // the auth cost on a database that is not local.
     const res = await client.query(
-      `SELECT id, name, owner_user_id, scopes, rate_limit_per_min, revoked_at, last_used_at
-         FROM api_keys
-        WHERE key_hash = $1 AND revoked_at IS NULL
+      `SELECT k.id, k.name, k.owner_user_id, k.scopes, k.rate_limit_per_min,
+              k.revoked_at, k.last_used_at,
+              p.id AS partner_id, p.status AS partner_status,
+              COALESCE(p.is_first_party, false) AS is_first_party
+         FROM api_keys k
+         LEFT JOIN api_partners p ON p.user_id = k.owner_user_id
+        WHERE k.key_hash = $1 AND k.revoked_at IS NULL
         LIMIT 1`,
       [hashKey(raw)],
     );

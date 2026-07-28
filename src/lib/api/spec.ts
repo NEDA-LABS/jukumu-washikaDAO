@@ -108,11 +108,11 @@ export const SECTIONS: Section[] = [
         scope: 'write',
         summary: 'Create a group',
         description:
-          'The member profile behind `leader_user_id` is added as the group leader in the same transaction. A join code is generated automatically.',
+          'The leader must be one of your own members; they are added to the group in the same transaction. A join code is generated automatically.',
         body: [
-          { name: 'name', type: 'string', required: true, description: 'Unique group name.' },
+          { name: 'name', type: 'string', required: true, description: 'Group name, unique within your tenant.' },
           { name: 'monthly_contribution_tzs', type: 'integer', required: true, description: 'Contribution amount per cycle, in TZS.' },
-          { name: 'leader_user_id', type: 'integer', required: true, description: 'User id who becomes the leader.' },
+          { name: 'leader_member_id', type: 'integer', required: true, description: 'Member who becomes the leader. Use `leader_user_id` instead if they have a WashikaDAU login.' },
           { name: 'contribution_frequency', type: '"monthly" | "weekly"', description: 'Defaults to `monthly`.' },
           { name: 'voting_numerator', type: 'integer', description: 'Defaults to 3.' },
           { name: 'voting_denominator', type: 'integer', description: 'Defaults to 5.' },
@@ -123,7 +123,7 @@ export const SECTIONS: Section[] = [
   -d '{
         "name": "Kilimo Pamoja",
         "monthly_contribution_tzs": 20000,
-        "leader_user_id": 42,
+        "leader_member_id": 42,
         "contribution_frequency": "monthly"
       }'`,
       },
@@ -327,6 +327,22 @@ export const SECTIONS: Section[] = [
     title: 'Members',
     blurb: 'Directory data. Phone numbers, emails and national IDs are never returned.',
     endpoints: [
+      {
+        method: 'POST',
+        path: '/api/v1/members/create',
+        scope: 'write',
+        summary: 'Onboard a member',
+        description:
+          'The entry point for an integration: your tenant starts empty, so create a member before creating a group to lead. The member belongs to you and is visible only to your keys.',
+        params: [
+          { name: 'full_name', type: 'string', required: true, description: 'The person’s name.' },
+          { name: 'phone', type: 'string', description: 'Tanzanian number. Stored, never returned.' },
+          { name: 'location', type: 'string', description: 'Town or region.' },
+          { name: 'business_name', type: 'string', description: 'Their business, if any.' },
+          { name: 'business_type', type: 'string', description: 'Sector or trade.' },
+          { name: 'status', type: 'string', description: '`active` (default), `pending` or `inactive`.' },
+        ],
+      },
       {
         method: 'GET',
         path: '/api/v1/members',

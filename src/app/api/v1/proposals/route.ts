@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { handle, ok, pageMeta } from '@/lib/api/http';
 import { serializeProposal } from '@/lib/api/serialize';
 import { PROPOSAL_SELECT, voteSummary, PROPOSAL_TYPES } from '@/lib/api/proposals';
+import { ownedProposal } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,14 +11,14 @@ export const dynamic = 'force-dynamic';
  * Every proposal across every group — the cross-group feed you want for a
  * governance dashboard. Filter by ?group_id= &status= &type= &passed=
  */
-export const GET = handle('read', async (_req, { limit, offset, searchParams }) => {
+export const GET = handle('read', async (_req, { scope, limit, offset, searchParams }) => {
   const groupId = searchParams.get('group_id');
   const status = searchParams.get('status');
   const type = searchParams.get('type');
   const fundedOnly = searchParams.get('funded') === 'true';
 
-  const where: string[] = [];
   const params: unknown[] = [];
+  const where: string[] = [ownedProposal(scope, 'p', params)];
 
   if (groupId && Number.isFinite(Number(groupId))) {
     params.push(Number(groupId));
@@ -33,7 +34,7 @@ export const GET = handle('read', async (_req, { limit, offset, searchParams }) 
   }
   if (fundedOnly) where.push(`p.funded_at IS NOT NULL`);
 
-  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const clause = `WHERE ${where.join(' AND ')}`;
 
   const client = await pool.connect();
   try {

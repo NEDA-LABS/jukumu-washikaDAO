@@ -1,5 +1,6 @@
 import pool from '@/lib/db';
 import { handleWithParams, ok, fail } from '@/lib/api/http';
+import { owned } from '@/lib/api/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ const OWNERS = new Set(['member', 'group', 'investor']);
  */
 export const GET = handleWithParams<{ ownerType: string; ownerId: string }>(
   'read',
-  async (_req, { params }) => {
+  async (_req, { params, scope }) => {
     const ownerType = params.ownerType.toLowerCase();
     const ownerId = Number.parseInt(params.ownerId, 10);
 
@@ -23,16 +24,22 @@ export const GET = handleWithParams<{ ownerType: string; ownerId: string }>(
     if (!Number.isFinite(ownerId)) {
       return fail(422, 'invalid_request', '`ownerId` must be numeric.');
     }
+    // Investors belong to WashikaDAU, never to an integrator, so there is no
+    // such thing as a partner-owned investor wallet.
+    if (ownerType === 'investor' && !scope.firstParty) {
+      return fail(404, 'not_found', 'No investor with that id.');
+    }
 
     const client = await pool.connect();
     try {
+      const values: unknown[] = [ownerId];
       const owner = await client.query(
         ownerType === 'group'
-          ? `SELECT name AS label FROM groups WHERE id = $1`
+          ? `SELECT name AS label FROM groups g WHERE g.id = $1 AND ${owned(scope, 'g', values)}`
           : ownerType === 'member'
-            ? `SELECT full_name AS label FROM members WHERE id = $1`
+            ? `SELECT full_name AS label FROM members m WHERE m.id = $1 AND ${owned(scope, 'm', values)}`
             : `SELECT full_name AS label FROM investor_profiles WHERE id = $1`,
-        [ownerId],
+        values,
       );
       if (owner.rows.length === 0) {
         return fail(404, 'not_found', `No ${ownerType} with that id.`);
