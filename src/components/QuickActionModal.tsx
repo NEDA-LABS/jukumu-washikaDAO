@@ -41,11 +41,15 @@ type WithdrawQuote = {
 export default function QuickActionModal({
   userId,
   type,
+  initialPurpose,
   onClose,
   onSuccess,
 }: {
   userId: number;
   type: ActionType;
+  /** Preselects the transfer kind so Home's buttons land on the right form
+      instead of dropping everyone on "contribution" and making them switch. */
+  initialPurpose?: Purpose;
   onClose: () => void;
   onSuccess?: () => void;
 }) {
@@ -54,7 +58,7 @@ export default function QuickActionModal({
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [toUsername, setToUsername] = useState('');
-  const [purpose, setPurpose] = useState<Purpose>('contribution');
+  const [purpose, setPurpose] = useState<Purpose>(initialPurpose ?? 'contribution');
   const [groupId, setGroupId] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);

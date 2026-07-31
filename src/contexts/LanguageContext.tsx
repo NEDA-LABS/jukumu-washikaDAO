@@ -669,6 +669,7 @@ const translations = {
     'tab.contribute': 'Weka',
     'tab.governance': 'Utawala',
     'tab.me': 'Mimi',
+    'me.logout': 'Ondoka',
 
     // Home screen
     'home.greet': 'Habari',
@@ -1641,6 +1642,7 @@ const translations = {
     'tab.contribute': 'Add',
     'tab.governance': 'Govern',
     'tab.me': 'Me',
+    'me.logout': 'Log out',
 
     // Home screen
     'home.greet': 'Hello',

@@ -53,7 +53,8 @@ function Tab({ active, label, onClick, children }: {
 }
 
 export default function MemberAppShell({
-  kicker, title, tab, onTab, unread = 0, onBell, children,
+  kicker, title, tab, onTab, unread = 0, onBell,
+  avatarUrl, initials, onAvatar, children,
 }: {
   kicker: string;
   title: string;
@@ -61,6 +62,9 @@ export default function MemberAppShell({
   onTab: (t: MemberTab) => void;
   unread?: number;
   onBell: () => void;
+  avatarUrl?: string | null;
+  initials?: string;
+  onAvatar?: () => void;
   children: React.ReactNode;
 }) {
   const { t, language, toggleLanguage } = useLanguage();
@@ -125,6 +129,23 @@ export default function MemberAppShell({
             {unread > 0 && (
               <span className="absolute -right-1 -top-1 min-w-[14px] bg-gold px-[3px] text-center font-mono text-[8px] font-semibold leading-[14px] text-[#1a1714]">
                 {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+
+          {/* The member's own face, squared like everything else. Doubles as
+              the shortcut into "Mimi" — the one control that is about you
+              rather than the group named beside it. */}
+          <button
+            onClick={onAvatar}
+            className="wd-press h-[26px] w-[26px] overflow-hidden border border-border bg-muted"
+            aria-label={t('tab.me')}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-muted-foreground">
+                {initials || '·'}
               </span>
             )}
           </button>

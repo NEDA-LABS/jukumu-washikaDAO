@@ -28,6 +28,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 import NotificationBell from '@/components/NotificationBell';
 import MemberAppShell, { type MemberTab } from '@/components/member/MemberAppShell';
 import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
+import MeScreen from '@/components/member/MeScreen';
 import { type WallData } from '@/components/UkutaWall';
 
 type HomeData = {
@@ -61,6 +62,17 @@ export default function MemberDashboard() {
   const [home, setHome] = useState<HomeData | null>(null);
   const [wall, setWall] = useState<WallData | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  // Home's money buttons open the real action directly. Sending someone to a
+  // wallet tab to hunt for the button they just pressed is the old dashboard's
+  // habit, not the prototype's.
+  const [quick, setQuick] = useState<{ type: ActionType; purpose?: 'contribution' | 'p2p' } | null>(null);
+
+  const reloadHome = React.useCallback(() => {
+    fetch('/api/member/home')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: HomeData | null) => { if (d) setHome(d); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -258,7 +270,12 @@ export default function MemberDashboard() {
     : activeSection === 'wallet' ? 'contribute'
     : 'me';
 
-  const onTab = (next: MemberTab) => setActiveSection(TAB_SECTION[next]);
+  // The raised centre tab is an action, not a destination: it opens the
+  // contribute sheet rather than navigating anywhere.
+  const onTab = (next: MemberTab) => {
+    if (next === 'contribute') { setQuick({ type: 'transfer', purpose: 'contribution' }); return; }
+    setActiveSection(TAB_SECTION[next]);
+  };
 
   const headerTitle =
     tab === 'home' ? (home?.group?.name ?? 'WashikaDAU')
@@ -277,6 +294,9 @@ export default function MemberDashboard() {
       onTab={onTab}
       unread={unreadCount}
       onBell={() => setActiveSection('notifications')}
+      avatarUrl={memberProfile?.avatar_url ?? null}
+      initials={initials}
+      onAvatar={() => setActiveSection('settings')}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center">
@@ -300,17 +320,44 @@ export default function MemberDashboard() {
             text: `${a.purpose === 'contribution' ? t('home.contribute') : a.type === 'deposit' ? t('wal.deposit') : a.type === 'withdrawal' ? t('wal.withdraw') : t('wal.transfer')}${a.groupName ? ` · ${a.groupName}` : ''} — TSh ${Math.round(a.amountTzs).toLocaleString('en-US')}`,
             time: new Date(a.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
           }))}
-          onContribute={() => setActiveSection('wallet')}
-          onTransfer={() => setActiveSection('wallet')}
-          onWithdraw={() => setActiveSection('wallet')}
+          onContribute={() => setQuick({ type: 'transfer', purpose: 'contribution' })}
+          onTransfer={() => setQuick({ type: 'transfer', purpose: 'p2p' })}
+          onWithdraw={() => setQuick({ type: 'withdraw' })}
           onWallet={() => setActiveSection('wallet')}
           onWhoPaid={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
           onGovernance={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}
         />
+      ) : tab === 'me' && activeSection === 'settings' ? (
+        <MeScreen
+          name={user.fullName || user.email}
+          username={memberProfile?.username}
+          avatarUrl={memberProfile?.avatar_url}
+          balanceTzs={home?.balanceTzs ?? 0}
+          groupCount={home?.group ? 1 : 0}
+          links={[
+            { id: 'wallet', label: t('dash.nav.wallet') },
+            { id: 'investments', label: t('dash.nav.investments') },
+            { id: 'learning', label: t('dash.nav.training') },
+            { id: 'notifications', label: t('notif.title'), meta: unreadCount ? String(unreadCount) : undefined },
+            { id: 'profile', label: t('dash.nav.settings') },
+          ]}
+          onLink={setActiveSection}
+          onLogout={handleLogout}
+        />
       ) : (
         <div className="px-4 py-5 pb-8">{renderContent()}</div>
+      )}
+
+      {quick && user?.id && (
+        <QuickActionModal
+          userId={user.id}
+          type={quick.type}
+          initialPurpose={quick.purpose}
+          onClose={() => setQuick(null)}
+          onSuccess={reloadHome}
+        />
       )}
     </MemberAppShell>
   );
