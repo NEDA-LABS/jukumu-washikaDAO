@@ -1,64 +1,79 @@
 @import "tailwindcss";
 
-/* ── WashikaDAO Design Tokens ── */
-/* Light theme (default) — warm "Claude"-style ivory */
+/* ── WashikaDAU Design Tokens ──
+   Editorial/modernist system: gold on cream over ink, zero radius, hairline
+   rules doing the work that shadows and rounded cards used to. Every surface
+   in the app reads these, so the palette is retuned here and nowhere else. */
+
+/* Light — cream paper */
 :root {
   color-scheme: light;
-  --ds-background: #f5f1ea;
-  --ds-foreground: #1f1b16;
-  --ds-card: #fdfbf7;
-  --ds-card-foreground: #1f1b16;
-  --ds-overlay: #ffffff;
-  --ds-muted: #ece5d8;
-  --ds-muted-foreground: #6d655a;
-  --ds-border: #e3dccd;
-  --ds-input: #e3dccd;
-  --ds-primary: #d1622b;
-  --ds-primary-foreground: #ffffff;
-  --ds-secondary: #1f1b16;
-  --ds-secondary-foreground: #f7f4ee;
-  --ds-accent: #f6ecdd;
-  --ds-accent-foreground: #8a4a1c;
-  --ds-gold: #e4a233;
-  --ds-destructive: #dc2626;
+  --ds-background: #f4ede4;
+  --ds-foreground: #1a1714;
+  --ds-card: #fffcf8;
+  --ds-card-foreground: #1a1714;
+  --ds-overlay: #fffcf8;
+  --ds-muted: #ece2d5;
+  --ds-muted-foreground: #6b6259;
+  --ds-border: rgba(26, 23, 20, 0.13);
+  --ds-input: rgba(26, 23, 20, 0.13);
+  --ds-primary: #e0a02e;
+  --ds-primary-foreground: #1a1714;
+  --ds-secondary: #1a1714;
+  --ds-secondary-foreground: #f4ede4;
+  --ds-accent: rgba(224, 160, 46, 0.16);
+  --ds-accent-foreground: #9c6a15;
+  --ds-gold: #e0a02e;
+  --ds-gold-deep: #9c6a15;
+  --ds-gold-tint: rgba(224, 160, 46, 0.16);
+  /* The heavy 2px separator: header underline, nav edge, table head. */
+  --ds-rule: rgba(26, 23, 20, 0.85);
+  --ds-ink-3: rgba(26, 23, 20, 0.34);
+  --ds-destructive: #b4321f;
   --ds-destructive-foreground: #ffffff;
-  --ds-success: #16a34a;
+  --ds-success: #2f6b4f;
   --ds-success-foreground: #ffffff;
-  --ds-warning: #ca8a04;
+  --ds-warning: #9c6a15;
   --ds-warning-foreground: #ffffff;
-  --ds-ring: #d1622b;
-  --ds-radius-sm: 0.375rem;
-  --ds-radius-md: 0.5rem;
-  --ds-radius-lg: 0.75rem;
-  --ds-radius-xl: 1rem;
+  --ds-ring: #e0a02e;
+  /* Squared off. Kept as tokens so a future retune is one edit, not a sweep. */
+  --ds-radius-sm: 0px;
+  --ds-radius-md: 0px;
+  --ds-radius-lg: 0px;
+  --ds-radius-xl: 0px;
 }
 
-/* Dark theme — warm charcoal */
+/* Dark — ink */
 :root.dark {
   color-scheme: dark;
   --ds-background: #141210;
-  --ds-foreground: #f7f4ee;
-  --ds-card: #1e1a15;
-  --ds-card-foreground: #f7f4ee;
-  --ds-overlay: #211d18;
-  --ds-muted: #2a251e;
-  --ds-muted-foreground: #a89f90;
-  --ds-border: #332d24;
-  --ds-input: #332d24;
-  --ds-primary: #e07a45;
-  --ds-primary-foreground: #ffffff;
-  --ds-secondary: #f7f4ee;
-  --ds-secondary-foreground: #1f1b16;
-  --ds-accent: #3a2414;
-  --ds-accent-foreground: #f3c893;
-  --ds-gold: #e8ac42;
-  --ds-destructive: #ef4444;
-  --ds-destructive-foreground: #ffffff;
-  --ds-success: #22c55e;
-  --ds-success-foreground: #ffffff;
-  --ds-warning: #eab308;
-  --ds-warning-foreground: #000000;
-  --ds-ring: #e07a45;
+  --ds-foreground: #f5efe7;
+  --ds-card: #1d1a17;
+  --ds-card-foreground: #f5efe7;
+  --ds-overlay: #272320;
+  --ds-muted: #272320;
+  --ds-muted-foreground: #9d958a;
+  --ds-border: rgba(245, 239, 231, 0.14);
+  --ds-input: rgba(245, 239, 231, 0.14);
+  --ds-primary: #e8b24e;
+  --ds-primary-foreground: #1a1714;
+  --ds-secondary: #f5efe7;
+  --ds-secondary-foreground: #141210;
+  --ds-accent: rgba(232, 178, 78, 0.16);
+  /* On ink, the deep gold goes muddy — the light gold is the readable one. */
+  --ds-accent-foreground: #e8b24e;
+  --ds-gold: #e8b24e;
+  --ds-gold-deep: #e8b24e;
+  --ds-gold-tint: rgba(232, 178, 78, 0.16);
+  --ds-rule: rgba(245, 239, 231, 0.8);
+  --ds-ink-3: rgba(245, 239, 231, 0.32);
+  --ds-destructive: #e0674e;
+  --ds-destructive-foreground: #141210;
+  --ds-success: #5fa97f;
+  --ds-success-foreground: #141210;
+  --ds-warning: #e8b24e;
+  --ds-warning-foreground: #141210;
+  --ds-ring: #e8b24e;
 }
 
 /* ── Map tokens to Tailwind v4 theme ── */
@@ -86,11 +101,15 @@
   --color-warning-foreground: var(--ds-warning-foreground);
   --color-ring: var(--ds-ring);
   --color-gold: var(--ds-gold);
+  --color-gold-deep: var(--ds-gold-deep);
+  --color-gold-tint: var(--ds-gold-tint);
+  --color-rule: var(--ds-rule);
+  --color-ink-3: var(--ds-ink-3);
 
   /* Typography */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, SFMono-Regular, monospace;
 
   /* Radii */
   --radius-sm: var(--ds-radius-sm);
@@ -133,7 +152,7 @@
   body {
     background: var(--ds-background);
     color: var(--ds-foreground);
-    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, sans-serif;
     min-height: 100dvh;
     overflow-x: hidden;
     max-width: 100%;
@@ -143,12 +162,12 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* ── Claude-style display headings ── */
+  /* ── Editorial display headings ── */
   h1, h2, h3 {
-    font-family: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
-    font-weight: 560;
-    letter-spacing: -0.02em;
-    line-height: 1.08;
+    font-family: var(--font-playfair), ui-serif, Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.12;
     font-optical-sizing: auto;
   }
 
@@ -159,6 +178,21 @@
     height: auto;
   }
   svg { max-width: 100%; }
+}
+
+/* The system is squared off — corners are a hairline meeting a hairline.
+   Radius is hardcoded as Tailwind utilities (rounded-xl, rounded-full) across
+   dozens of components, and those never read --radius-*. Neutralising it here
+   keeps the geometry in one place instead of scattering the redesign across
+   every file.
+
+   Deliberately UNLAYERED: unlayered rules outrank every @layer, so this beats
+   Tailwind's utilities without !important on each property.
+
+   `.wd-round` opts back in where a circle carries meaning — a cropped avatar
+   photo, a status dot, a spinner, a progress track. */
+[class*='rounded']:not(.wd-round):not(.wd-round *) {
+  border-radius: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -172,8 +206,73 @@
 
 /* Serif display utility (opt-in) */
 .font-display {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-family: var(--font-playfair), ui-serif, Georgia, serif;
   font-optical-sizing: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Editorial primitives
+
+   The system's voice lives in three moves: a letter-spaced mono kicker
+   above a thing, a hairline or 2px rule between things, and a figure set
+   in the display serif. These classes exist so those moves are declared
+   once instead of retyped as ad-hoc utility strings on every screen.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Uppercase mono micro-label. Sits above a value, never below it. */
+.wd-kicker {
+  font-family: var(--font-dm-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ds-ink-3);
+}
+.wd-kicker-gold { color: var(--ds-gold-deep); }
+
+/* The heavy separator. Structural — header from body, nav from content. */
+.wd-rule { height: 2px; background: var(--ds-rule); border: 0; }
+/* The light separator. Rhythmic — row from row, section from section. */
+.wd-hairline { height: 1px; background: var(--ds-border); border: 0; }
+
+/* A figure that should read as money or magnitude. */
+.wd-figure {
+  font-family: var(--font-playfair), ui-serif, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ukuta — the group wall. One brick per member per period: gold when the
+   contribution landed, hollow when it did not, ink-outlined for you. The
+   whole metaphor of the product is this grid, so it gets real names. */
+.wd-brick {
+  background: transparent;
+  border: 1px solid var(--ds-border);
+}
+.wd-brick[data-paid='1'] {
+  background: var(--ds-gold);
+  border-color: var(--ds-gold);
+}
+.wd-brick[data-paid='me'] {
+  background: var(--ds-gold);
+  border: 1px solid var(--ds-foreground);
+  outline: 1px solid var(--ds-foreground);
+}
+
+/* Vote tally strip — same grammar, different semantics. */
+.wd-vote { background: transparent; border: 1px solid var(--ds-border); }
+.wd-vote[data-vote='yes'] { background: var(--ds-gold); border-color: var(--ds-gold); }
+.wd-vote[data-vote='no'] { background: var(--ds-foreground); border-color: var(--ds-foreground); }
+
+/* Pressable surface: a 1px nudge, no shadow, no scale. */
+.wd-press { transition: transform 0.08s ease; }
+.wd-press:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-press:active { transform: none; }
 }
 
 ::selection {

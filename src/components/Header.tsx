@@ -33,8 +33,11 @@ export default function Header() {
     { name: t('nav.investor'), href: '/investor' },
   ];
 
+  // The 2px rule under the header is structural, not decorative: it is the line
+  // the whole page hangs from. Hairlines are for rhythm inside a section; this
+  // one separates chrome from content.
   return (
-    <header className={`fixed w-full top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/70 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className={`fixed w-full top-0 z-50 bg-background/80 backdrop-blur-xl border-b-2 border-rule transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <nav className="wd-container" aria-label="Top">
         <div className="flex w-full items-center justify-between py-4">
           <div className="flex items-center">

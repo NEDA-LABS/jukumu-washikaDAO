@@ -1,27 +1,37 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Fraunces, Geist_Mono } from 'next/font/google'
+import { Archivo, Playfair_Display, DM_Mono } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import ToastProvider from '@/components/ToastProvider'
 import { appConfig } from '@/app.config'
 
-// Body / UI typeface — clean, warm grotesque (Claude "Styrene"-style)
-const inter = Inter({
+// Body / UI typeface — a grotesque with enough weight range to carry both
+// 8px uppercase nav labels and 600-weight buttons.
+const archivo = Archivo({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-archivo',
   display: 'swap',
 })
 
-// Display / heading typeface — soft editorial serif (Claude "Copernicus"-style)
-const fraunces = Fraunces({
+// Display typeface — high-contrast didone serif. Carries the balance figures
+// and section titles; the editorial counterweight to Archivo's neutrality.
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-fraunces',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-playfair',
   display: 'swap',
-  axes: ['opsz', 'SOFT'],
 })
 
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' })
+// Mono — kickers, letter-spaced micro-labels, and every numeral that reads as
+// a code or a measurement rather than a quantity.
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
+  display: 'swap',
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -59,7 +69,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sw" suppressHydrationWarning>
-      <body className={`${inter.variable} ${fraunces.variable} ${geistMono.variable}`}>
+      <body className={`${archivo.variable} ${playfair.variable} ${dmMono.variable}`}>
         <ThemeProvider>
           <LanguageProvider>
             <ToastProvider>{children}</ToastProvider>

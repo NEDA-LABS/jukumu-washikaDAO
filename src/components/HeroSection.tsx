@@ -195,7 +195,9 @@ function CircularEconomyViz() {
   return (
     <div className="mx-auto w-full max-w-[248px] sm:max-w-[360px] lg:max-w-[440px]">
     <div className="relative aspect-square w-full">
-      <div aria-hidden className="absolute inset-[12%] rounded-full bg-gradient-to-br from-[#e4a233]/25 to-[#d1622b]/20 blur-3xl" />
+      {/* Softened well below the old value: a diffuse glow reads as gloss, and
+          this system gets its depth from rules and flat fills instead. */}
+      <div aria-hidden className="absolute inset-[12%] rounded-full bg-gold/[0.07] blur-3xl wd-round" />
 
       <div className="absolute inset-0" style={{ animation: 'wd-spin 32s linear infinite' }}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
@@ -217,7 +219,7 @@ function CircularEconomyViz() {
 
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
-          className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center bg-gradient-to-br from-[#d1622b] to-[#e4a233] shadow-2xl shadow-[#d1622b]/40"
+          className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center bg-gold"
           style={{ clipPath: HEX_CLIP }}
         >
           <div className="flex flex-col items-center text-white">
@@ -344,11 +346,11 @@ function HeroContent() {
         </p>
 
         <div className="wd-rise mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto" style={{ animationDelay: '320ms' }}>
-          <Link href="/register" className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0">
+          <Link href="/register" className="wd-press group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-sm font-semibold transition-colors duration-200 hover:bg-gold-deep hover:text-background">
             {t('hero.cta.join')}
             <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
           </Link>
-          <Link href="/learn" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-card/70 backdrop-blur-sm text-foreground text-sm font-semibold rounded-full border border-border hover:bg-card hover:-translate-y-0.5 transition-all duration-200">
+          <Link href="/learn" className="wd-press inline-flex items-center justify-center gap-2 px-8 py-3.5 text-foreground text-sm font-semibold border-2 border-foreground hover:bg-foreground hover:text-background transition-colors duration-200">
             {t('hero.learn_more')}
           </Link>
         </div>

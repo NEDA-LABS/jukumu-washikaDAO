@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import DashTopBar from '@/components/DashTopBar';
 import ShareGroupModal from '@/components/ShareGroupModal';
 import AvatarPicker from '@/components/AvatarPicker';
+import UkutaWall from '@/components/UkutaWall';
 import { readAttachmentAsDataUrl, type AttachmentPayload } from '@/lib/imageResize';
 import { ShareIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
@@ -812,6 +813,11 @@ export default function MemberGroupDetailsPage() {
                   <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{t('grp.role.leader')}</p>
                   <p className="text-sm sm:text-base font-semibold text-foreground leading-tight break-words line-clamp-2">{group?.leader_name || '—'}</p>
                 </div>
+              </div>
+
+              {/* Ukuta — who has built the wall this month, and who hasn't */}
+              <div className="border border-border bg-card p-4 sm:p-5">
+                <UkutaWall groupId={Number(groupId)} />
               </div>
 
               {/* Financial summary */}

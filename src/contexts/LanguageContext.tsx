@@ -662,6 +662,14 @@ const translations = {
     'grp.send': 'Tuma Fedha',
     'grp.noPayments': 'Hakuna malipo bado',
     'grp.noProposals': 'Hakuna mapendekezo bado',
+
+    // Ukuta — the group wall
+    'wall.title': 'Ukuta wa Kikundi',
+    'wall.sub': 'Tofali moja kwa kila mwanachama kila mwezi. Dhahabu = amelipa.',
+    'wall.paid': 'Amelipa',
+    'wall.unpaid': 'Hajalipa',
+    'wall.you': 'Wewe',
+    'wall.empty': 'Hakuna wanachama bado.',
     'grp.leadersCanPropose': 'Viongozi wanaweza kuunda mapendekezo',
     'grp.newProposalTitle': 'Pendekezo Jipya',
     'grp.propTitle': 'Kichwa cha Pendekezo',
@@ -1593,6 +1601,14 @@ const translations = {
     'grp.send': 'Send Money',
     'grp.noPayments': 'No payments yet',
     'grp.noProposals': 'No proposals yet',
+
+    // Ukuta — the group wall
+    'wall.title': 'The Group Wall',
+    'wall.sub': 'One brick per member per month. Gold means paid.',
+    'wall.paid': 'Paid',
+    'wall.unpaid': 'Unpaid',
+    'wall.you': 'You',
+    'wall.empty': 'No members yet.',
     'grp.leadersCanPropose': 'Leaders can create proposals',
     'grp.newProposalTitle': 'New Proposal',
     'grp.propTitle': 'Proposal Title',
