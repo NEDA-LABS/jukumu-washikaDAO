@@ -52,7 +52,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-[#e4a233]/60"
+        className="w-full flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-gold/60"
       >
         <span>{selectedOption?.label || placeholder || 'Chagua...'}</span>
         <ChevronDownIcon className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />

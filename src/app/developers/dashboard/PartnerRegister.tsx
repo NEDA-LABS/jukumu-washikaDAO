@@ -85,7 +85,7 @@ export default function PartnerRegister({ onDone }: { onDone: () => void }) {
           </div>
 
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-3.5">
-            <input type="checkbox" checked={wantsWrite} onChange={(e) => setWantsWrite(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#d1622b]" />
+            <input type="checkbox" checked={wantsWrite} onChange={(e) => setWantsWrite(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
             <span>
               <span className="block text-sm font-medium text-foreground">I need write access</span>
               <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
@@ -96,7 +96,7 @@ export default function PartnerRegister({ onDone }: { onDone: () => void }) {
           </label>
 
           <label className="flex cursor-pointer items-start gap-3">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#d1622b]" required />
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" required />
             <span className="text-xs leading-relaxed text-muted-foreground">
               I understand that API keys act on behalf of my organisation, that member and financial
               data must be handled lawfully, and that keys may be revoked for misuse.

@@ -116,7 +116,7 @@ export default function PlatformOverview() {
           label="You owe your users"
           value={tsh(d.treasury.liabilities_tzs)}
           sub="Sum of your members' and groups' balances"
-          accent="#e4a233"
+          accent="var(--ds-gold)"
         />
         <Stat label="Deposited in" value={tsh(d.treasury.deposited_in_tzs)} sub="Settled, lifetime" />
         <Stat label="Withdrawn out" value={tsh(d.treasury.withdrawn_out_tzs)} sub="Settled, incl. fees" />
@@ -152,7 +152,7 @@ export default function PlatformOverview() {
       <h3 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Money</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Volume processed" value={tsh(d.money.volume_processed_tzs)} accent="#16a34a" />
-        <Stat label="Held in groups" value={tsh(d.money.held_in_groups_tzs)} accent="#e4a233" />
+        <Stat label="Held in groups" value={tsh(d.money.held_in_groups_tzs)} accent="var(--ds-gold)" />
         <Stat label="Held by members" value={tsh(d.money.held_by_members_tzs)} />
         <Stat label="Contributions collected" value={tsh(d.money.contributions_collected_tzs)} sub={`${d.money.contributions_count} payments`} />
         <Stat label="Disbursed" value={tsh(d.money.disbursed_tzs)} />
@@ -214,7 +214,7 @@ export default function PlatformOverview() {
           <div className="divide-y divide-border">
             {d.top_groups.map((g) => (
               <div key={g.id} className="flex items-center gap-3 px-5 py-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#d1622b] to-[#e4a233] text-xs font-bold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-gold text-xs font-bold text-white">
                   {g.name.charAt(0).toUpperCase()}
                 </span>
                 <div className="min-w-0 flex-1">

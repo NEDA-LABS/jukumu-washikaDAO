@@ -86,7 +86,7 @@ export default function ShareGroupModal({
             ))}
           </div>
 
-          <button onClick={nativeShare} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white text-sm font-semibold shadow-lg shadow-primary/25">
+          <button onClick={nativeShare} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-primary to-gold text-white text-sm font-semibold shadow-lg shadow-primary/25">
             <ShareIcon className="h-4 w-4" />
             {t('share.more')}
           </button>

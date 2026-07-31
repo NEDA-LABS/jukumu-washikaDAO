@@ -65,15 +65,15 @@ type Persona = {
 };
 
 const PERSONAS: Persona[] = [
-  { skin: '#8d5524', cloth: '#d1622b', hair: '#2b1d14', style: 'afro',  badge: 'save' },
+  { skin: '#8d5524', cloth: 'var(--ds-primary)', hair: '#2b1d14', style: 'afro',  badge: 'save' },
   { skin: '#c68642', cloth: '#0f9d76', hair: '#1c1410', style: 'bun',   badge: 'learn' },
-  { skin: '#6b4423', cloth: '#3b82f6', hair: '#e4a233', style: 'wrap',  badge: 'invest' },
+  { skin: '#6b4423', cloth: '#3b82f6', hair: 'var(--ds-gold)', style: 'wrap',  badge: 'invest' },
   { skin: '#a8683a', cloth: '#8b5cf6', hair: '#241812', style: 'fade',  badge: 'join' },
 ];
 
 const BADGE: Record<Persona['badge'], { bg: string; path: string }> = {
-  save:   { bg: '#e4a233', path: 'M8 3.2c2.6 0 4.8.9 4.8 2s-2.2 2-4.8 2-4.8-.9-4.8-2 2.2-2 4.8-2zM3.2 5.2v5.6c0 1.1 2.2 2 4.8 2s4.8-.9 4.8-2V5.2' },
-  learn:  { bg: '#d1622b', path: 'M8 4.6C7 3.9 5.3 3.6 3 3.6v8.2c2.3 0 4 .3 5 1 1-.7 2.7-1 5-1V3.6c-2.3 0-4 .3-5 1z' },
+  save:   { bg: 'var(--ds-gold)', path: 'M8 3.2c2.6 0 4.8.9 4.8 2s-2.2 2-4.8 2-4.8-.9-4.8-2 2.2-2 4.8-2zM3.2 5.2v5.6c0 1.1 2.2 2 4.8 2s4.8-.9 4.8-2V5.2' },
+  learn:  { bg: 'var(--ds-primary)', path: 'M8 4.6C7 3.9 5.3 3.6 3 3.6v8.2c2.3 0 4 .3 5 1 1-.7 2.7-1 5-1V3.6c-2.3 0-4 .3-5 1z' },
   invest: { bg: '#16a34a', path: 'M2.8 12.4h10.4M5.2 10.4V6.6M8 10.4V3.6M10.8 10.4V7.8' },
   join:   { bg: '#3b82f6', path: 'M8 8.4a2.4 2.4 0 100-4.8 2.4 2.4 0 000 4.8zM3.4 13a4.6 4.6 0 019.2 0' },
 };
@@ -124,7 +124,7 @@ function MemberBubble({ x, y, delay, seed }: { x: string; y: string; delay: numb
       <div className="relative">
         <div
           className="h-10 w-10 sm:h-[52px] sm:w-[52px] rounded-full p-[2px] shadow-xl"
-          style={{ background: `linear-gradient(135deg, ${p.cloth}, #e4a233)` }}
+          style={{ background: `linear-gradient(135deg, ${p.cloth}, var(--ds-gold))` }}
         >
           <div className="h-full w-full overflow-hidden rounded-full bg-card ring-1 ring-black/5">
             <AvatarArt p={p} />
@@ -208,14 +208,14 @@ function CircularEconomyViz() {
           />
         </svg>
         <div className="absolute inset-0 [--r:82px] sm:[--r:138px] lg:[--r:168px]">
-          <OrbitNode angle={-90} icon={<CoinsIcon className={iconCls} />} label={t('hero.node.save')} accent="#e4a233" />
-          <OrbitNode angle={30} icon={<BookIcon className={iconCls} />} label={t('hero.node.learn')} accent="#d1622b" />
+          <OrbitNode angle={-90} icon={<CoinsIcon className={iconCls} />} label={t('hero.node.save')} accent="var(--ds-gold)" />
+          <OrbitNode angle={30} icon={<BookIcon className={iconCls} />} label={t('hero.node.learn')} accent="var(--ds-primary)" />
           <OrbitNode angle={150} icon={<ChartIcon className={iconCls} />} label={t('hero.node.invest')} accent="#16a34a" />
         </div>
       </div>
 
-      <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#e4a233]/40" style={{ animation: 'wd-pulse-ring 3s ease-out infinite' }} />
-      <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#e4a233]/40" style={{ animation: 'wd-pulse-ring 3s ease-out 1.5s infinite' }} />
+      <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold/40" style={{ animation: 'wd-pulse-ring 3s ease-out infinite' }} />
+      <div aria-hidden className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold/40" style={{ animation: 'wd-pulse-ring 3s ease-out 1.5s infinite' }} />
 
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
@@ -364,7 +364,7 @@ function HeroContent() {
           </div>
           <div className="flex gap-2.5">
             <MoneyTile value={compact(volume)} label={t('hero.stat.volume')} accent="#16a34a" loading={loading} />
-            <MoneyTile value={compact(held)} label={t('hero.stat.held')} accent="#e4a233" loading={loading} />
+            <MoneyTile value={compact(held)} label={t('hero.stat.held')} accent="var(--ds-gold)" loading={loading} />
           </div>
           <p className="flex items-center justify-center lg:justify-start gap-1.5 pt-0.5 text-[10px] text-muted-foreground">
             <span className="relative flex h-1.5 w-1.5">

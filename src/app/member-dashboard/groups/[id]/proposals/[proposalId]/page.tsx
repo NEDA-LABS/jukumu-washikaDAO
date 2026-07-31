@@ -266,7 +266,7 @@ export default function MemberGroupProposalDetailsPage() {
                   <a
                     href={proposal.metadata.attachment.dataUrl}
                     download={proposal.metadata.attachment.name || 'attachment.pdf'}
-                    className="mt-4 inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-[#e4a233]/40 transition-colors"
+                    className="mt-4 inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-gold/40 transition-colors"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-400 text-[10px] font-bold">PDF</span>
                     <span className="min-w-0">
@@ -340,7 +340,7 @@ export default function MemberGroupProposalDetailsPage() {
                   {requiredYes > 0 ? ` · ${t('prop.needed')} ${requiredYes} "${t('prop.yes')}"` : ''}
                 </p>
                 {myVote && (
-                  <p className="text-xs text-[#e4a233]">
+                  <p className="text-xs text-gold">
                     {t('prop.yourVote')}: <span className="font-semibold">{myVote === 'yes' ? t('prop.yes') : myVote === 'no' ? t('prop.no') : t('prop.abstain')}</span>
                   </p>
                 )}
@@ -453,7 +453,7 @@ export default function MemberGroupProposalDetailsPage() {
                     <button
                       onClick={handleExecute}
                       disabled={executing}
-                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-primary hover:bg-gold-deep text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {executing ? t('prop.executing') : t('prop.disburse')}
                     </button>

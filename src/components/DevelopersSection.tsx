@@ -72,7 +72,7 @@ export default function DevelopersSection() {
 
   return (
     <section id="developers" className="relative overflow-hidden bg-background py-24 sm:py-28">
-      <div aria-hidden className="pointer-events-none absolute -right-40 top-1/4 h-96 w-96 rounded-full bg-[#e4a233]/10 blur-[120px]" />
+      <div aria-hidden className="pointer-events-none absolute -right-40 top-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px]" />
 
       <div className="wd-container relative">
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">

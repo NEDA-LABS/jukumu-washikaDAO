@@ -587,7 +587,7 @@ export default function MemberGroupDetailsPage() {
   };
 
   // ── shared dark input style ──
-  const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60';
+  const dkInput = 'w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/60';
 
   // ── animated counters — must be above any early return (Rules of Hooks) ──
   const animTotal    = useCountUp(paymentSummary.total_collected);
@@ -598,7 +598,7 @@ export default function MemberGroupDetailsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#e4a233] border-t-transparent" />
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-gold border-t-transparent" />
       </div>
     );
   }
@@ -620,8 +620,8 @@ export default function MemberGroupDetailsPage() {
     <div className="relative min-h-[100dvh] bg-background text-foreground overflow-x-hidden">
       {/* Ambient warm glow */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-[#d1622b]/20 blur-[130px]" />
-        <div className="absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-[#e4a233]/12 blur-[130px]" />
+        <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-primary/20 blur-[130px]" />
+        <div className="absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-gold/12 blur-[130px]" />
       </div>
 
       <DashTopBar back="/member-dashboard?section=group" />
@@ -631,21 +631,21 @@ export default function MemberGroupDetailsPage() {
         {/* ── Hero banner ── */}
         <div className="relative rounded-2xl overflow-hidden mb-6">
           {/* gradient bg */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#d1622b]/40 via-[#e4a233]/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-gold/10 to-transparent" />
           <div className="absolute inset-0 bg-card" style={{ zIndex: -1 }} />
           {/* decorative circles */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#e4a233]/10 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-[#e4a233]/8 blur-xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-gold/8 blur-xl pointer-events-none" />
 
           <div className="relative p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex items-start gap-4">
                 {/* group avatar / logo */}
-                <div className="w-12 h-12 rounded-xl bg-[#e4a233]/20 border border-[#e4a233]/35 flex items-center justify-center shrink-0 overflow-hidden">
+                <div className="w-12 h-12 rounded-xl bg-gold/20 border border-gold/35 flex items-center justify-center shrink-0 overflow-hidden">
                   {group?.logo_url ? (
                     <img src={group.logo_url} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-xl font-bold text-[#e4a233]">
+                    <span className="text-xl font-bold text-gold">
                       {(group?.name || 'G').charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -653,7 +653,7 @@ export default function MemberGroupDetailsPage() {
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{group?.name || t('grp.groupWord')}</h1>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/15 text-[#e4a233] border border-[#e4a233]/30">
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-gold/15 text-gold border border-gold/30">
                       {roleLabel(membership?.role, t)}
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-xs ${
@@ -676,10 +676,10 @@ export default function MemberGroupDetailsPage() {
                           setTimeout(() => setCodeCopied(false), 2000);
                         });
                       }}
-                      className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-border hover:border-[#e4a233]/35 transition-all group/code"
+                      className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-border hover:border-gold/35 transition-all group/code"
                       title="Gusa kunakili nambari ya kundi"
                     >
-                      <span className="text-xs font-mono font-semibold text-[#e4a233] tracking-wider">{group.group_code}</span>
+                      <span className="text-xs font-mono font-semibold text-gold tracking-wider">{group.group_code}</span>
                       <svg className={`w-3.5 h-3.5 transition-colors ${codeCopied ? 'text-emerald-400' : 'text-muted-foreground group-hover/code:text-muted-foreground'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {codeCopied
                           ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -694,7 +694,7 @@ export default function MemberGroupDetailsPage() {
                   {group?.group_code && (
                     <button
                       onClick={() => setShareOpen(true)}
-                      className="mt-2.5 ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e4a233]/15 hover:bg-[#e4a233]/25 border border-[#e4a233]/30 text-[#e4a233] text-xs font-semibold transition-all"
+                      className="mt-2.5 ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold/15 hover:bg-gold/25 border border-gold/30 text-gold text-xs font-semibold transition-all"
                     >
                       <ShareIcon className="h-3.5 w-3.5" />
                       {t('share.button')}
@@ -706,7 +706,7 @@ export default function MemberGroupDetailsPage() {
                 <div className="shrink-0 self-start sm:self-auto flex items-center gap-2">
                   <button
                     onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-                    className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
+                    className="px-4 py-2 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-semibold transition-colors shadow-lg shadow-primary/25"
                   >{t('grp.newProposal')}</button>
                   <button
                     onClick={() => {
@@ -770,14 +770,14 @@ export default function MemberGroupDetailsPage() {
                   onClick={() => setActiveTab(t.id)}
                   className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-all ${
                     activeTab === t.id
-                      ? 'bg-[#e4a233]/10 text-[#e4a233] border-l-2 border-[#e4a233]'
+                      ? 'bg-gold/10 text-gold border-l-2 border-gold'
                       : 'text-muted-foreground hover:text-muted-foreground hover:bg-muted border-l-2 border-transparent'
                   } ${i !== 0 ? 'border-t border-t-white/[0.04]' : ''}`}
                 >
-                  <span className={activeTab === t.id ? 'text-[#e4a233]' : 'text-muted-foreground'}>{t.icon}</span>
+                  <span className={activeTab === t.id ? 'text-gold' : 'text-muted-foreground'}>{t.icon}</span>
                   <span className="flex-1 text-left">{t.label}</span>
                   {t.id === 'requests' && pendingJoinCount > 0 && (
-                    <span className="rounded-full bg-[#d1622b] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
                       {pendingJoinCount}
                     </span>
                   )}
@@ -787,7 +787,7 @@ export default function MemberGroupDetailsPage() {
             {canCreateProposal && (
               <button
                 onClick={() => { setActiveTab('decisions'); setShowCreateProposal(true); }}
-                className="mt-3 w-full px-3 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
+                className="mt-3 w-full px-3 py-2 rounded-lg bg-primary hover:bg-gold-deep text-white text-xs font-semibold transition-colors shadow-lg shadow-primary/25"
               >{t('grp.newProposal')}</button>
             )}
           </aside>
@@ -801,7 +801,7 @@ export default function MemberGroupDetailsPage() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="rounded-xl bg-card border border-border p-3 sm:p-4 min-w-0">
                   <p className="text-[11px] text-muted-foreground mb-1 leading-tight">{t('grp.stat.contribution')}</p>
-                  <p className="text-sm sm:text-base font-semibold text-[#e4a233] tabular-nums break-words">
+                  <p className="text-sm sm:text-base font-semibold text-gold tabular-nums break-words">
                     TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}
                   </p>
                 </div>
@@ -825,7 +825,7 @@ export default function MemberGroupDetailsPage() {
                 {[
                   { label: t('grp.stat.collected'), value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
                   { label: t('grp.stat.thisMonth'), value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
-                  { label: t('grp.stat.paidThisMonth'), value: String(paymentSummary.this_month_payers), accent: 'text-[#e4a233]' },
+                  { label: t('grp.stat.paidThisMonth'), value: String(paymentSummary.this_month_payers), accent: 'text-gold' },
                   { label: t('grp.stat.disbursed'), value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
                   <div key={i} className="rounded-xl bg-card border border-border p-3">
@@ -866,7 +866,7 @@ export default function MemberGroupDetailsPage() {
                           } catch (err) { const msg = err instanceof Error ? err.message : 'Imeshindikana kuunda hazina.'; setTreasuryError(msg); showToast(msg, 'error'); }
                           finally { setTreasuryLoading(false); }
                         }}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#d1622b] hover:bg-[#b9531f] text-white disabled:opacity-50 transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary hover:bg-gold-deep text-white disabled:opacity-50 transition-colors"
                       >
                         {treasuryLoading ? 'Inaunda...' : 'Unda Hazina'}
                       </button>
@@ -964,7 +964,7 @@ export default function MemberGroupDetailsPage() {
               <div className="rounded-xl bg-card border border-border p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-foreground">{t('grp.recentProposals')}</p>
-                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-[#e4a233] hover:text-[#f0b95a] transition-colors">{t('grp.viewAll')} →
+                  <button onClick={() => setActiveTab('decisions')} className="text-xs text-gold hover:text-[#f0b95a] transition-colors">{t('grp.viewAll')} →
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -973,7 +973,7 @@ export default function MemberGroupDetailsPage() {
                   ) : recentProposals.map((p) => (
                     <button key={p.id}
                       onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                      className="w-full text-left rounded-lg bg-card border border-border hover:border-[#e4a233]/25 hover:bg-[#e4a233]/8 px-3 py-2.5 transition-all"
+                      className="w-full text-left rounded-lg bg-card border border-border hover:border-gold/25 hover:bg-gold/8 px-3 py-2.5 transition-all"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
@@ -1009,8 +1009,8 @@ export default function MemberGroupDetailsPage() {
                     return (
                       <div key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-[#e4a233]/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-semibold text-[#e4a233]">
+                          <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-gold">
                               {m.full_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -1021,7 +1021,7 @@ export default function MemberGroupDetailsPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={`px-2 py-0.5 rounded-full text-xs ${
-                            m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-[#e4a233]/10 text-[#e4a233]'
+                            m.role === 'leader' || m.role === 'mwenyekiti' ? 'bg-gold/10 text-gold'
                             : m.role === 'katibu' || m.role === 'mwekahazina' ? 'bg-blue-500/10 text-blue-400'
                             : 'bg-white/5 text-muted-foreground'
                           }`}>{roleLabel(m.role, t)}</span>
@@ -1058,7 +1058,7 @@ export default function MemberGroupDetailsPage() {
                     return (
                       <div key={r.id} className="rounded-xl bg-card border border-border p-4">
                         <div className="flex flex-wrap items-start gap-3">
-                          <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-sm font-bold text-white">
+                          <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center text-sm font-bold text-white">
                             {r.avatar_url
                               ? <img src={r.avatar_url} alt="" className="h-full w-full object-cover" />
                               : (r.full_name || '?').charAt(0).toUpperCase()}
@@ -1138,7 +1138,7 @@ export default function MemberGroupDetailsPage() {
                       <p className="text-xs text-muted-foreground">{l.email || ''}</p>
                     </div>
                   </div>
-                  <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25">
+                  <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-gold/10 text-gold border border-gold/25">
                     {roleLabel(l.role, t)}
                   </span>
                 </div>
@@ -1154,7 +1154,7 @@ export default function MemberGroupDetailsPage() {
                 {[
                   { label: t('grp.stat.collected'), value: `TSh ${paymentSummary.total_collected.toLocaleString()}`, accent: 'text-emerald-400' },
                   { label: t('grp.stat.thisMonth'), value: `TSh ${paymentSummary.this_month_collected.toLocaleString()}`, accent: 'text-blue-400' },
-                  { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-[#e4a233]' },
+                  { label: `Waliolipa (${paymentSummary.this_month_payers}/${members.length})`, value: `${members.length > 0 ? Math.round((paymentSummary.this_month_payers / members.length) * 100) : 0}%`, accent: 'text-gold' },
                   { label: t('grp.stat.disbursed'), value: `TSh ${paymentSummary.total_disbursed.toLocaleString()}`, accent: 'text-purple-400' },
                 ].map((c, i) => (
                   <div key={i} className="rounded-xl bg-card border border-border p-3">
@@ -1167,7 +1167,7 @@ export default function MemberGroupDetailsPage() {
               {/* Pay buttons */}
               <div className="flex gap-3">
                 <button onClick={() => handleOpenPay('contribution')}
-                  className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-gold-deep text-white text-sm font-medium transition-colors">
                   Lipa Mchango
                 </button>
                 <button onClick={() => handleOpenPay('topup')}
@@ -1222,7 +1222,7 @@ export default function MemberGroupDetailsPage() {
                     <div>
                       <label className="block text-xs text-muted-foreground mb-1">Mtandao</label>
                       <select value={disburseProvider} onChange={e => setDisburseProvider(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-[#e4a233]/60 [&>option]:bg-card [&>option]:text-foreground">
+                        className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-gold/60 [&>option]:bg-card [&>option]:text-foreground">
                         <option value="airtel">Airtel Money</option>
                         <option value="mpesa">Vodacom M-Pesa</option>
                         <option value="tigopesa">Tigo Pesa</option>
@@ -1238,7 +1238,7 @@ export default function MemberGroupDetailsPage() {
                   {disburseError && <p className="text-xs text-red-400 mt-2">{disburseError}</p>}
                   {disburseSuccess && <p className="text-xs text-emerald-400 mt-2">{disburseSuccess}</p>}
                   <button onClick={handleDisburse} disabled={disburseLoading}
-                    className="mt-4 px-5 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    className="mt-4 px-5 py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {disburseLoading ? t('grp.sending') : t('grp.send')}
                   </button>
                 </div>
@@ -1300,7 +1300,7 @@ export default function MemberGroupDetailsPage() {
                 {canCreateProposal && (
                   <button
                     onClick={() => setShowCreateProposal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-xs font-semibold transition-colors shadow-lg shadow-[#d1622b]/25"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-xs font-semibold transition-colors shadow-lg shadow-primary/25"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                     {t('grp.newProposalBtn')}
@@ -1321,14 +1321,14 @@ export default function MemberGroupDetailsPage() {
                 const typeMeta: Record<string, { label: string; color: string; dot: string }> = {
                   general:  { label: t('grp.ptype.general'),     color: 'bg-white/5 text-muted-foreground border border-border',            dot: 'bg-white/20' },
                   ask:      { label: t('grp.ptype.ask'),      color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',     dot: 'bg-blue-400' },
-                  spend:    { label: t('grp.ptype.spend'),  color: 'bg-[#e4a233]/10 text-[#e4a233] border border-[#e4a233]/25', dot: 'bg-[#e4a233]' },
+                  spend:    { label: t('grp.ptype.spend'),  color: 'bg-gold/10 text-gold border border-gold/25', dot: 'bg-gold' },
                   prodcast:  { label: 'Prodcast',   color: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', dot: 'bg-purple-400' },
                 };
                 const tm = typeMeta[pType] ?? typeMeta.general;
                 return (
                   <button key={p.id}
                     onClick={() => router.push(`/member-dashboard/groups/${groupId}/proposals/${p.id}`)}
-                    className="w-full text-left rounded-2xl bg-card border border-border hover:border-[#e4a233]/30 hover:bg-[#e4a233]/[0.05] p-5 transition-all group"
+                    className="w-full text-left rounded-2xl bg-card border border-border hover:border-gold/30 hover:bg-gold/[0.05] p-5 transition-all group"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
@@ -1357,7 +1357,7 @@ export default function MemberGroupDetailsPage() {
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                           p.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-muted-foreground border border-border'
                         }`}>{p.status === 'open' ? t('grp.statusOpen') : t('grp.statusClosed')}</span>
-                        <span className="text-muted-foreground group-hover:text-[#e4a233] transition-colors text-xs">→</span>
+                        <span className="text-muted-foreground group-hover:text-gold transition-colors text-xs">→</span>
                       </div>
                     </div>
                   </button>
@@ -1377,10 +1377,10 @@ export default function MemberGroupDetailsPage() {
             key={t.id}
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-all ${
-              activeTab === t.id ? 'text-[#e4a233]' : 'text-muted-foreground'
+              activeTab === t.id ? 'text-gold' : 'text-muted-foreground'
             }`}
           >
-            <span className={activeTab === t.id ? 'text-[#e4a233]' : 'text-muted-foreground'}>{t.icon}</span>
+            <span className={activeTab === t.id ? 'text-gold' : 'text-muted-foreground'}>{t.icon}</span>
             {t.label}
           </button>
         ))}
@@ -1436,7 +1436,7 @@ export default function MemberGroupDetailsPage() {
                       onClick={() => setSettingsFreq(f)}
                       className={`py-2.5 rounded-lg text-sm font-semibold border transition-all ${
                         settingsFreq === f
-                          ? 'bg-[#e4a233]/15 border-[#e4a233]/50 text-[#e4a233]'
+                          ? 'bg-gold/15 border-gold/50 text-gold'
                           : 'bg-white/5 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -1450,7 +1450,7 @@ export default function MemberGroupDetailsPage() {
               <button
                 onClick={handleSaveSettings}
                 disabled={settingsSaving}
-                className="w-full py-3 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                className="w-full py-3 rounded-xl bg-primary hover:bg-gold-deep text-white text-sm font-semibold disabled:opacity-50 transition-colors"
               >
                 {settingsSaving ? t('grp.settings.saving') : t('grp.settings.save')}
               </button>
@@ -1493,7 +1493,7 @@ export default function MemberGroupDetailsPage() {
               {([
                 { value: 'general', label: t('prop.type.general'), color: 'text-muted-foreground' },
                 { value: 'ask', label: t('prop.type.ask'), color: 'text-blue-400' },
-                { value: 'spend', label: t('prop.type.spend'), color: 'text-[#e4a233]' },
+                { value: 'spend', label: t('prop.type.spend'), color: 'text-gold' },
                 { value: 'prodcast', label: t('prop.type.prodcast'), color: 'text-purple-400' },
               ] as { value: ProposalType; label: string; color: string }[]).map(tab => (
                 <button
@@ -1745,7 +1745,7 @@ export default function MemberGroupDetailsPage() {
                     type="button"
                     disabled={proposalFileBusy}
                     onClick={() => proposalFileInputRef.current?.click()}
-                    className="w-full py-3 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-[#e4a233]/50 transition-all disabled:opacity-50"
+                    className="w-full py-3 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-gold/50 transition-all disabled:opacity-50"
                   >
                     {proposalFileBusy ? '…' : `＋ ${t('prop.attachment.add')}`}
                   </button>
@@ -1757,13 +1757,13 @@ export default function MemberGroupDetailsPage() {
               <div className={`rounded-xl px-4 py-3 border ${
                 proposalType === 'prodcast' ? 'bg-purple-500/5 border-purple-500/10' :
                 proposalType === 'ask' ? 'bg-blue-500/5 border-blue-500/10' :
-                proposalType === 'spend' ? 'bg-[#e4a233]/8 border-[#e4a233]/15' :
-                'bg-[#e4a233]/8 border-[#e4a233]/15'
+                proposalType === 'spend' ? 'bg-gold/8 border-gold/15' :
+                'bg-gold/8 border-gold/15'
               }`}>
                 <p className={`text-xs ${
                   proposalType === 'prodcast' ? 'text-purple-400/70' :
                   proposalType === 'ask' ? 'text-blue-400/70' :
-                  'text-[#e4a233]/70'
+                  'text-gold/70'
                 }`}>
                   {t(`prop.info.${proposalType}`)}
                 </p>
@@ -1788,7 +1788,7 @@ export default function MemberGroupDetailsPage() {
                   className={`flex-1 py-2.5 rounded-xl text-foreground text-sm font-semibold disabled:opacity-40 transition-colors shadow-lg ${
                     proposalType === 'prodcast' ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20' :
                     proposalType === 'ask' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' :
-                    'bg-[#d1622b] hover:bg-[#b9531f] shadow-[#d1622b]/25'
+                    'bg-primary hover:bg-gold-deep shadow-primary/25'
                   }`}
                 >
                   {proposalSubmitting ? t('grp.creating') : t('grp.createProposal')}
@@ -1811,7 +1811,7 @@ export default function MemberGroupDetailsPage() {
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">{group?.name}</p>
                 {payModal.type === 'contribution' && (
-                  <p className="text-xs text-[#e4a233]/70 mb-4 px-3 py-2 rounded-lg bg-[#e4a233]/8 border border-[#e4a233]/15">
+                  <p className="text-xs text-gold/70 mb-4 px-3 py-2 rounded-lg bg-gold/8 border border-gold/15">
                     {t('grp.regularContribution')}: TSh {Number.parseFloat(String(group?.monthly_contribution || 0)).toLocaleString()}/{t('grp.perMonth')}
                   </p>
                 )}
@@ -1837,7 +1837,7 @@ export default function MemberGroupDetailsPage() {
                     Ghairi
                   </button>
                   <button onClick={handlePay} disabled={payLoading}
-                    className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {payLoading ? 'Inatuma...' : 'Lipa Sasa'}
                   </button>
                 </div>
@@ -1846,12 +1846,12 @@ export default function MemberGroupDetailsPage() {
 
             {payStatus === 'waiting' && (
               <div className="text-center py-4">
-                <div className="w-14 h-14 rounded-full border-2 border-[#e4a233] border-t-transparent animate-spin mx-auto mb-4" />
+                <div className="w-14 h-14 rounded-full border-2 border-gold border-t-transparent animate-spin mx-auto mb-4" />
                 <h3 className="text-base font-semibold text-foreground mb-2">Inasubiri Uthibitisho...</h3>
                 <p className="text-sm text-muted-foreground mb-1">Arifa imetumwa kwa <span className="text-foreground">{payPhone}</span></p>
                 <p className="text-xs text-muted-foreground mb-4">Ingiza PIN kwenye simu yako kuthibitisha TSh {parseInt(payAmount).toLocaleString()}</p>
-                <div className="px-4 py-3 rounded-xl bg-[#e4a233]/8 border border-[#e4a233]/15 mb-4">
-                  <p className="text-xs text-[#e4a233]/70">{t('grp.dontClose')}</p>
+                <div className="px-4 py-3 rounded-xl bg-gold/8 border border-gold/15 mb-4">
+                  <p className="text-xs text-gold/70">{t('grp.dontClose')}</p>
                 </div>
                 <button onClick={handleClosePay} className="text-xs text-muted-foreground hover:text-muted-foreground underline transition-colors">Ghairi</button>
               </div>
@@ -1883,7 +1883,7 @@ export default function MemberGroupDetailsPage() {
                 <div className="flex gap-2">
                   <button onClick={handleClosePay} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-white/5 transition-colors">Funga</button>
                   <button onClick={() => { setPayStatus('input'); setPayError(''); }}
-                    className="flex-1 py-2.5 rounded-xl bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium transition-colors">Jaribu Tena</button>
+                    className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-gold-deep text-white text-sm font-medium transition-colors">Jaribu Tena</button>
                 </div>
               </div>
             )}

@@ -176,7 +176,7 @@ export default function PartnersSection({ showToast }: { showToast?: (m: string,
           {partners.map((p) => (
             <div key={p.id} className="rounded-xl border border-border bg-card p-5">
               <div className="flex flex-wrap items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] text-sm font-bold text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-gold text-sm font-bold text-white">
                   {p.org_name.charAt(0).toUpperCase()}
                 </span>
 

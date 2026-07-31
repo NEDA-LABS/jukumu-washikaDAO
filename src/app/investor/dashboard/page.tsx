@@ -208,7 +208,7 @@ function StatCard({ label, value, sub, accent, ink }: { label: string; value: st
     <div
       className="rounded-2xl p-5 flex flex-col gap-2"
       style={{
-        background: accent ? 'linear-gradient(135deg, #e4a233 0%, #c97e22 100%)' : ink.card,
+        background: accent ? 'linear-gradient(135deg, var(--ds-gold) 0%, #c97e22 100%)' : ink.card,
         border: `1px solid ${accent ? 'transparent' : ink.cardBorder}`,
         boxShadow: accent ? '0 4px 24px rgba(212,136,30,0.25)' : '0 1px 4px rgba(0,0,0,0.04)',
       }}
@@ -255,7 +255,7 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
             {isApproved ? (
               <span
                 className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                style={{ background: '#FEF3E2', color: '#e4a233' }}
+                style={{ background: '#FEF3E2', color: 'var(--ds-gold)' }}
               >
                 {t('inv.communityApproved')}
               </span>
@@ -320,7 +320,7 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${pct}%`, background: pct >= 80 ? '#0B3D2E' : '#e4a233' }}
+              style={{ width: `${pct}%`, background: pct >= 80 ? '#0B3D2E' : 'var(--ds-gold)' }}
             />
           </div>
         </div>
@@ -354,9 +354,9 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
           <button
             onClick={(e) => { e.stopPropagation(); onFund(p); }}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: '#e4a233', color: '#fff' }}
+            style={{ background: 'var(--ds-gold)', color: '#fff' }}
             onMouseOver={e => { e.currentTarget.style.background = '#c97e22'; }}
-            onMouseOut={e => { e.currentTarget.style.background = '#e4a233'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'var(--ds-gold)'; }}
           >
             Fund →
           </button>
@@ -662,7 +662,7 @@ export default function InvestorDashboard() {
           <div className="flex items-center gap-3 px-6 py-6 border-b" style={{ borderColor: '#2A1F0A' }}>
             <Logo markOnly className="h-8 w-auto shrink-0" />
             <div>
-              <p className="text-sm font-bold" style={{ color: '#E8D5B0', letterSpacing: '-0.01em' }}>Washika<span style={{ color: '#e4a233' }}>DAU</span></p>
+              <p className="text-sm font-bold" style={{ color: '#E8D5B0', letterSpacing: '-0.01em' }}>Washika<span style={{ color: 'var(--ds-gold)' }}>DAU</span></p>
               <p className="text-[10px]" style={{ color: '#4A3D2A' }}>{t('inv.investorPortal')}</p>
             </div>
           </div>
@@ -672,7 +672,7 @@ export default function InvestorDashboard() {
             <div className="flex items-center gap-3">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-                style={{ background: '#2A1F0A', color: '#e4a233' }}
+                style={{ background: '#2A1F0A', color: 'var(--ds-gold)' }}
               >
                 {(profile?.full_name || user?.fullName || 'I').charAt(0).toUpperCase()}
               </div>
@@ -683,7 +683,7 @@ export default function InvestorDashboard() {
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
                     className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
-                    style={{ background: profile?.verified ? '#0B3D2E' : '#2A1F0A', color: profile?.verified ? '#4ADE80' : '#e4a233' }}
+                    style={{ background: profile?.verified ? '#0B3D2E' : '#2A1F0A', color: profile?.verified ? '#4ADE80' : 'var(--ds-gold)' }}
                   >
                     {profile?.verified ? `✓ ${t('inv.verified')}` : t('inv.pending')}
                   </span>
@@ -701,7 +701,7 @@ export default function InvestorDashboard() {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
                 style={{
                   background: section === item.id ? '#2A1F0A' : 'transparent',
-                  color: section === item.id ? '#e4a233' : '#6B5C3E',
+                  color: section === item.id ? 'var(--ds-gold)' : '#6B5C3E',
                 }}
                 onMouseOver={e => { if (section !== item.id) e.currentTarget.style.color = '#E8D5B0'; }}
                 onMouseOut={e => { if (section !== item.id) e.currentTarget.style.color = '#6B5C3E'; }}
@@ -711,7 +711,7 @@ export default function InvestorDashboard() {
                 {item.id === 'projects' && projects.length > 0 && (
                   <span
                     className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: '#e4a233', color: '#fff' }}
+                    style={{ background: 'var(--ds-gold)', color: '#fff' }}
                   >
                     {projects.length}
                   </span>
@@ -796,7 +796,7 @@ export default function InvestorDashboard() {
             <a
               href="mailto:invest@jukumufund.co.tz"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: '#e4a233', color: '#fff' }}
+              style={{ background: 'var(--ds-gold)', color: '#fff' }}
             >
               Contact
             </a>
@@ -856,7 +856,7 @@ export default function InvestorDashboard() {
                     <button
                       onClick={() => setSection('projects')}
                       className="text-xs font-semibold"
-                      style={{ color: '#e4a233' }}
+                      style={{ color: 'var(--ds-gold)' }}
                     >
                       {t('inv.viewAll')} →
                     </button>
@@ -877,7 +877,7 @@ export default function InvestorDashboard() {
                     <button
                       onClick={() => setSection('groups')}
                       className="text-xs font-semibold"
-                      style={{ color: '#e4a233' }}
+                      style={{ color: 'var(--ds-gold)' }}
                     >
                       {t('inv.viewAll')} →
                     </button>
@@ -910,7 +910,7 @@ export default function InvestorDashboard() {
                             <td className="px-4 py-3 font-mono" style={{ color: ink.heading }}>{fmtShort(Number(g.monthly_contribution))}</td>
                             <td className="px-4 py-3">
                               {Number(g.prodcast_count) > 0 ? (
-                                <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3E2', color: '#e4a233' }}>
+                                <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3E2', color: 'var(--ds-gold)' }}>
                                   {g.prodcast_count}
                                 </span>
                               ) : <span style={{ color: ink.mutedLight }}>—</span>}
@@ -1029,7 +1029,7 @@ export default function InvestorDashboard() {
                             <p className="text-[10px] font-semibold uppercase" style={{ color: ink.mutedLight }}>Projects</p>
                             <p
                               className="text-sm font-bold px-2 py-0.5 rounded-full inline-block"
-                              style={{ background: '#FEF3E2', color: '#e4a233' }}
+                              style={{ background: '#FEF3E2', color: 'var(--ds-gold)' }}
                             >
                               {g.prodcast_count}
                             </p>
@@ -1061,7 +1061,7 @@ export default function InvestorDashboard() {
                   <div
                     className="absolute inset-0 opacity-[0.05]"
                     style={{
-                      backgroundImage: 'linear-gradient(#e4a233 1px, transparent 1px), linear-gradient(90deg, #e4a233 1px, transparent 1px)',
+                      backgroundImage: 'linear-gradient(var(--ds-gold) 1px, transparent 1px), linear-gradient(90deg, var(--ds-gold) 1px, transparent 1px)',
                       backgroundSize: '28px 28px',
                     }}
                   />
@@ -1085,7 +1085,7 @@ export default function InvestorDashboard() {
                         onClick={fetchWallet}
                         disabled={walletLoading}
                         className="w-8 h-8 rounded-lg flex items-center justify-center transition-all disabled:opacity-40"
-                        style={{ background: 'rgba(212,136,30,0.15)', color: '#e4a233' }}
+                        style={{ background: 'rgba(212,136,30,0.15)', color: 'var(--ds-gold)' }}
                         title="Refresh"
                       >
                         <svg className={`w-4 h-4 ${walletLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1098,9 +1098,9 @@ export default function InvestorDashboard() {
                       <button
                         onClick={() => { setWalletModal('deposit'); setWalletMsg(null); }}
                         className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
-                        style={{ background: '#e4a233', color: '#fff' }}
+                        style={{ background: 'var(--ds-gold)', color: '#fff' }}
                         onMouseOver={e => e.currentTarget.style.background = '#c97e22'}
-                        onMouseOut={e => e.currentTarget.style.background = '#e4a233'}
+                        onMouseOut={e => e.currentTarget.style.background = 'var(--ds-gold)'}
                       >
                         + {t('inv.deposit')}
                       </button>
@@ -1129,7 +1129,7 @@ export default function InvestorDashboard() {
                     onClick={handleProvisionWallet}
                     disabled={provisioningWallet}
                     className="px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
-                    style={{ background: '#e4a233', color: '#fff' }}
+                    style={{ background: 'var(--ds-gold)', color: '#fff' }}
                   >
                     {provisioningWallet ? 'Setting up...' : 'Create Wallet →'}
                   </button>
@@ -1161,7 +1161,7 @@ export default function InvestorDashboard() {
                             className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-sm font-bold"
                             style={{
                               background: isCredit ? '#ECFDF5' : isDebit ? '#FEF2F2' : '#FEF3E2',
-                              color: isCredit ? '#059669' : isDebit ? '#DC2626' : '#e4a233',
+                              color: isCredit ? '#059669' : isDebit ? '#DC2626' : 'var(--ds-gold)',
                             }}
                           >
                             {isCredit ? '↓' : isDebit ? '↑' : '↔'}
@@ -1207,7 +1207,7 @@ export default function InvestorDashboard() {
                   <button
                     onClick={() => setEditMode(true)}
                     className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-                    style={{ background: ink.heading, color: '#e4a233' }}
+                    style={{ background: ink.heading, color: 'var(--ds-gold)' }}
                   >
                     {t('inv.edit')}
                   </button>
@@ -1224,7 +1224,7 @@ export default function InvestorDashboard() {
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                  style={{ background: profile?.verified ? '#059669' : '#e4a233', color: '#fff' }}
+                  style={{ background: profile?.verified ? '#059669' : 'var(--ds-gold)', color: '#fff' }}
                 >
                   {profile?.verified ? '✓' : '⏳'}
                 </div>
@@ -1257,7 +1257,7 @@ export default function InvestorDashboard() {
                         onChange={e => setEditForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                         style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
-                        onFocus={e => e.target.style.borderColor = '#e4a233'}
+                        onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       />
                     </div>
@@ -1271,7 +1271,7 @@ export default function InvestorDashboard() {
                       rows={3}
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
                       style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
-                      onFocus={e => e.target.style.borderColor = '#e4a233'}
+                      onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       placeholder="Describe your investment interests..."
                     />
@@ -1286,7 +1286,7 @@ export default function InvestorDashboard() {
                         onChange={e => setEditForm(prev => ({ ...prev, min_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                         style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
-                        onFocus={e => e.target.style.borderColor = '#e4a233'}
+                        onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 500000"
                       />
@@ -1299,7 +1299,7 @@ export default function InvestorDashboard() {
                         onChange={e => setEditForm(prev => ({ ...prev, max_investment_tzs: e.target.value ? Number(e.target.value) : null }))}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                         style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
-                        onFocus={e => e.target.style.borderColor = '#e4a233'}
+                        onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                         onBlur={e => e.target.style.borderColor = ink.cardBorder}
                         placeholder="e.g. 10000000"
                       />
@@ -1318,7 +1318,7 @@ export default function InvestorDashboard() {
                     <button
                       type="submit" disabled={saving}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                      style={{ background: '#e4a233', color: '#fff' }}
+                      style={{ background: 'var(--ds-gold)', color: '#fff' }}
                     >
                       {saving ? 'Saving...' : 'Save'}
                     </button>
@@ -1345,7 +1345,7 @@ export default function InvestorDashboard() {
                       <p className="text-xs font-semibold w-32 shrink-0 pt-0.5" style={{ color: ink.mutedLight }}>{row.label}</p>
                       <p className="text-sm font-medium flex-1" style={{ color: ink.heading }}>
                         {(row.label === 'Website' || row.label === 'LinkedIn') && row.value
-                          ? <a href={row.value} target="_blank" rel="noopener noreferrer" style={{ color: '#e4a233' }} className="underline">{row.value}</a>
+                          ? <a href={row.value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ds-gold)' }} className="underline">{row.value}</a>
                           : row.value}
                       </p>
                     </div>
@@ -1381,7 +1381,7 @@ export default function InvestorDashboard() {
               style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}
             >
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#e4a233' }}>Group Details</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--ds-gold)' }}>Group Details</p>
                 <h2 className="text-base font-bold truncate" style={{ color: '#E8D5B0' }}>
                   {groupDetailLoading ? 'Loading...' : groupDetail?.name ?? '...'}
                 </h2>
@@ -1516,14 +1516,14 @@ export default function InvestorDashboard() {
                               <p className="text-sm font-bold" style={{ color: ink.heading }}>{p.title}</p>
                               <span
                                 className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
-                                style={{ background: p.funded_at ? '#ECFDF5' : '#FEF3E2', color: p.funded_at ? '#059669' : '#e4a233' }}
+                                style={{ background: p.funded_at ? '#ECFDF5' : '#FEF3E2', color: p.funded_at ? '#059669' : 'var(--ds-gold)' }}
                               >
                                 {p.funded_at ? 'Funded' : 'Pending'}
                               </span>
                             </div>
                             {p.description && <p className="text-xs line-clamp-2" style={{ color: ink.muted }}>{p.description}</p>}
                             {goal > 0 && (
-                              <p className="text-xs font-bold font-mono mt-2" style={{ color: '#e4a233' }}>
+                              <p className="text-xs font-bold font-mono mt-2" style={{ color: 'var(--ds-gold)' }}>
                                 Goal: {fmtShort(goal)}
                                 <span className="font-normal" style={{ color: ink.muted, marginLeft: 4 }}>{usd(goal)}</span>
                               </p>
@@ -1539,9 +1539,9 @@ export default function InvestorDashboard() {
                 <a
                   href={`mailto:invest@jukumufund.co.tz?subject=Interest in Group: ${encodeURIComponent(groupDetail.name)}&body=Hello,%0A%0AI would like to learn more about the group "${groupDetail.name}".%0A%0AMy name: ${encodeURIComponent(profile?.full_name ?? '')}%0ACompany: ${encodeURIComponent(profile?.company ?? 'N/A')}%0A%0AThank you.`}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-bold transition-all"
-                  style={{ background: ink.heading, color: '#e4a233' }}
-                  onMouseOver={e => { e.currentTarget.style.background = '#e4a233'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = ink.heading; e.currentTarget.style.color = '#e4a233'; }}
+                  style={{ background: ink.heading, color: 'var(--ds-gold)' }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'var(--ds-gold)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = ink.heading; e.currentTarget.style.color = 'var(--ds-gold)'; }}
                 >
                   Contact Us About This Group →
                 </a>
@@ -1569,7 +1569,7 @@ export default function InvestorDashboard() {
                   onClick={() => setDetailTarget(null)}
                   className="flex items-center gap-2 text-sm font-semibold transition-colors"
                   style={{ color: ink.body }}
-                  onMouseOver={e => (e.currentTarget.style.color = '#e4a233')}
+                  onMouseOver={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
                   onMouseOut={e => (e.currentTarget.style.color = ink.body)}
                 >
                   <span className="text-lg leading-none">←</span> {t('inv.backToProjects')}
@@ -1628,7 +1628,7 @@ export default function InvestorDashboard() {
                     <span className="text-sm font-bold font-mono" style={{ color: ink.heading }}>{d.yes_votes} / {d.total_votes} · {votePct}%</span>
                   </div>
                   <div className="h-2.5 rounded-full overflow-hidden" style={{ background: ink.chip }}>
-                    <div className="h-full rounded-full" style={{ width: `${votePct}%`, background: '#e4a233' }} />
+                    <div className="h-full rounded-full" style={{ width: `${votePct}%`, background: 'var(--ds-gold)' }} />
                   </div>
                 </div>
               )}
@@ -1681,7 +1681,7 @@ export default function InvestorDashboard() {
             >
               <div className="max-w-3xl mx-auto flex gap-3 px-5 sm:px-8 py-4">
                 {dApproved && (
-                  <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-3.5 rounded-2xl text-sm font-bold" style={{ background: '#e4a233', color: '#fff' }}>{t('inv.fund')} →</button>
+                  <button onClick={() => { setDetailTarget(null); setFundTarget(d); }} className="flex-1 py-3.5 rounded-2xl text-sm font-bold" style={{ background: 'var(--ds-gold)', color: '#fff' }}>{t('inv.fund')} →</button>
                 )}
                 <button onClick={() => { setDetailTarget(null); setContactTarget(d); }} className="flex-1 py-3.5 rounded-2xl text-sm font-bold" style={{ background: ink.heading, color: ink.bg }}>{t('inv.contact')}</button>
               </div>
@@ -1698,7 +1698,7 @@ export default function InvestorDashboard() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#e4a233' }}>Contact Request</p>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-gold)' }}>Contact Request</p>
                 <h3 className="text-base font-bold mt-1" style={{ color: ink.heading }}>{contactTarget.title}</h3>
                 <p className="text-xs" style={{ color: ink.muted }}>{contactTarget.group_name}</p>
               </div>
@@ -1723,7 +1723,7 @@ export default function InvestorDashboard() {
             <a
               href={`mailto:invest@jukumufund.co.tz?subject=Interest in: ${encodeURIComponent(contactTarget.title)} (${encodeURIComponent(contactTarget.group_name)})&body=Hello,%0A%0AI would like to learn more about the project "${contactTarget.title}" from the group ${contactTarget.group_name}.%0A%0AMy name: ${encodeURIComponent(profile?.full_name || '')}%0ACompany: ${encodeURIComponent(profile?.company || 'N/A')}%0A%0AThank you.`}
               className="w-full py-3 rounded-xl text-sm font-semibold text-center block transition-all"
-              style={{ background: '#e4a233', color: '#fff' }}
+              style={{ background: 'var(--ds-gold)', color: '#fff' }}
             >
               Send Email →
             </a>
@@ -1746,7 +1746,7 @@ export default function InvestorDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5" style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}>
               <div>
-                <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: '#e4a233' }}>Fund Project</p>
+                <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: 'var(--ds-gold)' }}>Fund Project</p>
                 <p className="text-sm font-bold mt-0.5 truncate max-w-[220px]" style={{ color: '#E8D5B0' }}>{fundTarget.title}</p>
               </div>
               <button
@@ -1786,7 +1786,7 @@ export default function InvestorDashboard() {
                   placeholder="e.g. 100000"
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                   style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
-                  onFocus={e => e.target.style.borderColor = '#e4a233'}
+                  onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                   onBlur={e => e.target.style.borderColor = ink.cardBorder}
                   required
                 />
@@ -1829,7 +1829,7 @@ export default function InvestorDashboard() {
                   type="submit"
                   disabled={fundSubmitting || !wallet.provisioned}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                  style={{ background: '#e4a233', color: '#fff' }}
+                  style={{ background: 'var(--ds-gold)', color: '#fff' }}
                 >
                   {fundSubmitting ? 'Sending...' : 'Send nTZS →'}
                 </button>
@@ -1858,7 +1858,7 @@ export default function InvestorDashboard() {
               style={{ background: '#0E0B07', borderBottom: '1px solid #2A1F0A' }}
             >
               <div>
-                <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: '#e4a233' }}>
+                <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: 'var(--ds-gold)' }}>
                   {walletModal === 'deposit' ? 'Deposit' : 'Withdraw'}
                 </p>
                 <p className="text-sm font-bold mt-0.5" style={{ color: '#E8D5B0' }}>
@@ -1886,8 +1886,8 @@ export default function InvestorDashboard() {
                     onClick={() => { if (m.live) { setDepositMethod(m.key); setWalletMsg(null); } }}
                     className="flex flex-col items-center gap-1 py-3 text-center transition-all relative"
                     style={{
-                      borderBottom: depositMethod === m.key ? '2px solid #e4a233' : '2px solid transparent',
-                      color: depositMethod === m.key ? '#e4a233' : m.live ? ink.muted : '#C4B89E',
+                      borderBottom: depositMethod === m.key ? '2px solid var(--ds-gold)' : '2px solid transparent',
+                      color: depositMethod === m.key ? 'var(--ds-gold)' : m.live ? ink.muted : '#C4B89E',
                       cursor: m.live ? 'pointer' : 'default',
                     }}
                   >
@@ -1945,7 +1945,7 @@ export default function InvestorDashboard() {
                       placeholder="e.g. 50000"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                       style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
-                      onFocus={e => e.target.style.borderColor = '#e4a233'}
+                      onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
                     />
@@ -1959,7 +1959,7 @@ export default function InvestorDashboard() {
                       placeholder="e.g. 0712345678"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                       style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading }}
-                      onFocus={e => e.target.style.borderColor = '#e4a233'}
+                      onFocus={e => e.target.style.borderColor = 'var(--ds-gold)'}
                       onBlur={e => e.target.style.borderColor = ink.cardBorder}
                       required
                     />
@@ -1988,7 +1988,7 @@ export default function InvestorDashboard() {
                     <button
                       type="submit" disabled={walletSubmitting}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                      style={{ background: walletModal === 'deposit' ? '#e4a233' : '#0B3D2E', color: '#fff' }}
+                      style={{ background: walletModal === 'deposit' ? 'var(--ds-gold)' : '#0B3D2E', color: '#fff' }}
                     >
                       {walletSubmitting ? 'Sending...' : walletModal === 'deposit' ? 'Deposit' : 'Withdraw'}
                     </button>

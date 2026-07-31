@@ -35,7 +35,7 @@ export default function DashTopBar({ back, homeHref = '/member-dashboard' }: { b
         )}
         <Link href={homeHref} className="flex items-center gap-2 min-w-0">
           <Logo markOnly className="h-7 w-auto shrink-0" />
-          <span className="text-sm font-bold text-foreground truncate">Washika<span className="text-[#e4a233]">DAU</span></span>
+          <span className="text-sm font-bold text-foreground truncate">Washika<span className="text-gold">DAU</span></span>
         </Link>
       </div>
 

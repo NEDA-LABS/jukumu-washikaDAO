@@ -166,7 +166,7 @@ export default function PartnerDashboard() {
           <>
             {/* Partner identity */}
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] text-sm font-bold text-white">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-gold text-sm font-bold text-white">
                 {partner.org_name.charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
@@ -265,7 +265,7 @@ export default function PartnerDashboard() {
                         checked={wantWrite && partner.write_enabled}
                         disabled={!partner.write_enabled}
                         onChange={(e) => setWantWrite(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 accent-[#d1622b]"
+                        className="mt-0.5 h-4 w-4 accent-primary"
                       />
                       <span>
                         <span className="block text-sm font-medium text-foreground">Include write scope</span>

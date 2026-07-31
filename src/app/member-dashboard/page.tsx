@@ -199,9 +199,9 @@ export default function MemberDashboard() {
 
       {/* ── Ambient warm gradient backdrop ── */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-[#d1622b]/25 blur-[130px]" />
-        <div className="absolute top-1/3 -right-40 h-[26rem] w-[26rem] rounded-full bg-[#e4a233]/15 blur-[130px]" />
-        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-[#7c3f14]/20 blur-[130px]" />
+        <div className="absolute -top-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-[130px]" />
+        <div className="absolute top-1/3 -right-40 h-[26rem] w-[26rem] rounded-full bg-gold/15 blur-[130px]" />
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-gold-deep/20 blur-[130px]" />
       </div>
 
       {/* ── Mobile drawer overlay ── */}
@@ -222,7 +222,7 @@ export default function MemberDashboard() {
           <div className="flex items-center gap-2.5 min-w-0">
             <Logo markOnly className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground leading-none">Washika<span className="text-[#e4a233]">DAU</span></p>
+              <p className="text-sm font-bold text-foreground leading-none">Washika<span className="text-gold">DAU</span></p>
               <p className="text-[10px] text-muted-foreground truncate mt-1">{user.fullName || user.email}</p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function MemberDashboard() {
                 onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
                 className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
                   active
-                    ? 'bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white font-semibold shadow-lg shadow-[#d1622b]/25'
+                    ? 'bg-gradient-to-r from-primary to-gold text-white font-semibold shadow-lg shadow-primary/25'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
@@ -276,7 +276,7 @@ export default function MemberDashboard() {
             </button>
             <div className="lg:hidden flex items-center gap-2">
               <Logo markOnly className="h-7 w-auto" />
-              <span className="text-sm font-bold">Washika<span className="text-[#e4a233]">DAU</span></span>
+              <span className="text-sm font-bold">Washika<span className="text-gold">DAU</span></span>
             </div>
             {/* Desktop: page title */}
             <h1 className="hidden lg:block text-lg font-semibold text-foreground">{activeName}</h1>
@@ -302,7 +302,7 @@ export default function MemberDashboard() {
             >
               {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
             </button>
-            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center ring-2 ring-border hover:ring-[#e4a233]/40 transition-all">
+            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center ring-2 ring-border hover:ring-gold/40 transition-all">
               {memberProfile?.avatar_url ? (
                 <img src={memberProfile.avatar_url} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -316,7 +316,7 @@ export default function MemberDashboard() {
         <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-5 lg:py-7 pb-28 lg:pb-8">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#e4a233] border-t-transparent" />
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-gold border-t-transparent" />
             </div>
           ) : (
             renderContent()
@@ -337,8 +337,8 @@ export default function MemberDashboard() {
             const active = activeSection === t.id;
             return (
               <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t.label}</span>
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-gold' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-gold' : 'text-muted-foreground'}`}>{t.label}</span>
               </button>
             );
           })}
@@ -347,12 +347,12 @@ export default function MemberDashboard() {
           <button onClick={() => setActiveSection('group')} className="flex flex-col items-center gap-1 -mt-5">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
               activeSection === 'group'
-                ? 'bg-gradient-to-br from-[#d1622b] to-[#e4a233] shadow-xl shadow-[#d1622b]/40 scale-105'
-                : 'bg-muted border border-[#e4a233]/25 shadow-lg shadow-[#d1622b]/10'
+                ? 'bg-gradient-to-br from-primary to-gold shadow-xl shadow-primary/40 scale-105'
+                : 'bg-muted border border-gold/25 shadow-lg shadow-primary/10'
             }`}>
               <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-muted-foreground'}`} />
             </div>
-            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t('dash.nav.group')}</span>
+            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-gold' : 'text-muted-foreground'}`}>{t('dash.nav.group')}</span>
           </button>
 
           {[
@@ -362,8 +362,8 @@ export default function MemberDashboard() {
             const active = activeSection === t.id || activeSection === (t as { extra?: string }).extra;
             return (
               <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-[#e4a233]' : 'text-muted-foreground'}`}>{t.label}</span>
+                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-gold' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] font-medium ${active ? 'text-gold' : 'text-muted-foreground'}`}>{t.label}</span>
               </button>
             );
           })}
@@ -425,7 +425,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
 
   const stats = [
     { name: t('dash.stat.membership'), value: isActive ? t('dash.stat.active') : t('dash.stat.pending'), icon: UserIcon, from: isActive ? 'from-emerald-400' : 'from-yellow-400', to: isActive ? 'to-teal-500' : 'to-amber-500' },
-    { name: t('dash.stat.investment'), value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-[#e4a233]', to: 'to-[#d1622b]' },
+    { name: t('dash.stat.investment'), value: `TSh ${totalInvestment.toLocaleString()}`, icon: CurrencyDollarIcon, from: 'from-gold', to: 'to-primary' },
     { name: t('dash.stat.returns'), value: `TSh ${expectedReturns.toLocaleString()}`, icon: ChartBarIcon, from: 'from-fuchsia-400', to: 'to-purple-600' },
   ];
 
@@ -472,7 +472,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
       </div>
 
       {/* ── Balance hero card ── */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 bg-gradient-to-br from-[#d1622b] via-[#c25a24] to-[#7c3f14] shadow-2xl shadow-[#d1622b]/30">
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 bg-gradient-to-br from-primary via-gold-deep to-gold-deep shadow-2xl shadow-primary/30">
         {/* decorative hexagon watermark */}
         <div aria-hidden className="absolute -right-8 -top-10 opacity-[0.12]">
           <Logo markOnly className="h-52 w-52" />
@@ -505,7 +505,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
                 onClick={() => setModal(a.action)}
                 className="group flex flex-col items-center gap-2 rounded-2xl bg-white/12 hover:bg-white/20 backdrop-blur-sm border border-white/15 py-3 transition-all hover:-translate-y-0.5"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[#c25a24] group-hover:scale-110 transition-transform">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-gold-deep group-hover:scale-110 transition-transform">
                   <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.4}><path strokeLinecap="round" strokeLinejoin="round" d={a.icon} /></svg>
                 </span>
                 <span className="text-xs font-semibold text-white">{a.label}</span>
@@ -580,7 +580,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
       >
         <div aria-hidden className="absolute -right-6 -bottom-8 h-32 w-32 rounded-full bg-gold/15 blur-2xl" />
         <div className="relative flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e4a233] to-[#d1622b] shadow-lg">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-gold to-primary shadow-lg">
             <DocumentTextIcon className="h-6 w-6 text-white" />
           </div>
           <div className="min-w-0 flex-1">
@@ -596,7 +596,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
         {/* Recent activity — clickable feed */}
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-gold to-primary" />
             {t('dash.activity.title')}
           </h3>
           <div className="space-y-1.5">
@@ -636,7 +636,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
         {/* Nav shortcuts */}
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-[#e4a233] to-[#d1622b]" />
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-gold to-primary" />
             {t('dash.quicknav.title')}
           </h3>
           <div className="space-y-1.5">
@@ -671,7 +671,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
 const inputCls = (editing: boolean) =>
   `w-full px-3 py-2.5 rounded-lg text-sm border transition-colors focus:outline-none ${
     editing
-      ? 'bg-white/5 border-border text-foreground placeholder:text-muted-foreground focus:border-[#e4a233]/60'
+      ? 'bg-white/5 border-border text-foreground placeholder:text-muted-foreground focus:border-gold/60'
       : 'bg-card border-border text-muted-foreground cursor-default'
   }`;
 
@@ -740,7 +740,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
     <div className="space-y-4">
       {/* Profile header card */}
       <div className="rounded-xl bg-card border border-border p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center shrink-0 overflow-hidden">
           {avatar ? (
             <img src={avatar} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -761,7 +761,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           disabled={saving}
           className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
             isEditing
-              ? 'bg-[#d1622b] hover:bg-[#b9531f] text-foreground'
+              ? 'bg-primary hover:bg-gold-deep text-foreground'
               : 'bg-white/5 hover:bg-white/10 text-muted-foreground'
           }`}
         >
@@ -826,7 +826,7 @@ function ProfileSection({ memberProfile, user, loadMemberData }: { memberProfile
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {saving ? t('prof.saving') : t('prof.saveChanges')}
           </button>
@@ -978,7 +978,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
         </div>
         <button
           onClick={() => { setShowCreateModal(true); setCreateError(''); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-gold-deep text-foreground text-xs font-medium transition-colors"
         >
           <span className="text-base leading-none">+</span> {t('mg.create')}
         </button>
@@ -995,7 +995,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <span className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-white font-bold overflow-hidden">
+                    <span className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white font-bold overflow-hidden">
                       {g.logo_url ? (
                         <img src={g.logo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -1005,7 +1005,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="text-base font-semibold text-foreground truncate">{g.name}</h3>
-                        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-[#e4a233]/10 text-[#e4a233]">
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs bg-gold/10 text-gold">
                           {g.member_role || t('mg.role.member')}
                         </span>
                       </div>
@@ -1015,7 +1015,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-[#e4a233]">
+                    <p className="text-sm font-semibold text-gold">
                       TSh {parseInt(g.monthly_contribution || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">{g.contribution_frequency === 'weekly' ? t('mg.perWeek') : t('mg.perMonth')}</p>
@@ -1025,7 +1025,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   <p className="text-xs text-muted-foreground">{t('mg.tapToView')} →</p>
                   <div className="flex items-center gap-1.5">
                     <UserGroupIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground group-hover:text-[#e4a233] transition-colors">{t('mg.view')} →</span>
+                    <span className="text-xs text-muted-foreground group-hover:text-gold transition-colors">{t('mg.view')} →</span>
                   </div>
                 </div>
               </div>
@@ -1048,7 +1048,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
           <p className="text-xs text-muted-foreground mb-5">{t('mg.emptyHint')}</p>
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-5 py-2 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-foreground text-sm font-medium transition-colors"
+            className="px-5 py-2 rounded-lg bg-primary hover:bg-gold-deep text-foreground text-sm font-medium transition-colors"
           >
             {t('mg.joinCta')}
           </button>
@@ -1109,7 +1109,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder={t('mg.field.namePh')}
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/60"
                   required
                 />
               </div>
@@ -1124,7 +1124,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                   onChange={e => setCreateForm(f => ({ ...f, monthlyContribution: e.target.value }))}
                   placeholder="Mfano: 50000"
                   min="1"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/60"
                   required
                 />
               </div>
@@ -1139,7 +1139,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                       onClick={() => setCreateForm(prev => ({ ...prev, contributionFrequency: f }))}
                       className={`py-2.5 rounded-lg text-sm font-semibold border transition-all ${
                         createForm.contributionFrequency === f
-                          ? 'bg-[#e4a233]/15 border-[#e4a233]/50 text-[#e4a233]'
+                          ? 'bg-gold/15 border-gold/50 text-gold'
                           : 'bg-white/5 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -1157,7 +1157,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     value={createForm.votingNumerator}
                     onChange={e => setCreateForm(f => ({ ...f, votingNumerator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-gold/60"
                   />
                   <span className="text-muted-foreground text-sm">{t('mg.field.of')}</span>
                   <input
@@ -1165,7 +1165,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     value={createForm.votingDenominator}
                     onChange={e => setCreateForm(f => ({ ...f, votingDenominator: e.target.value }))}
                     min="1"
-                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-[#e4a233]/60"
+                    className="w-20 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground text-center focus:outline-none focus:border-gold/60"
                   />
                   <span className="text-xs text-muted-foreground">{t('mg.field.pass')}</span>
                 </div>
@@ -1189,7 +1189,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {createLoading ? t('mg.creating') : t('mg.create')}
                 </button>
@@ -1227,12 +1227,12 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 onKeyDown={e => { if (e.key === 'Enter') handleLookupCode(); }}
                 placeholder={t('mg.joinModal.codePh')}
                 maxLength={12}
-                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground font-mono placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 uppercase tracking-wider"
+                className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground font-mono placeholder:text-muted-foreground focus:outline-none focus:border-gold/60 uppercase tracking-wider"
               />
               <button
                 onClick={handleLookupCode}
                 disabled={joinLookupLoading || !joinCode.trim()}
-                className="px-4 py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
+                className="px-4 py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors shrink-0"
               >
                 {joinLookupLoading ? '...' : t('mg.joinModal.search')}
               </button>
@@ -1252,7 +1252,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                     <p className="text-xs text-muted-foreground mt-0.5">{t('mg.joinModal.leader')}: {joinLookupResult.leader_name || t('mg.joinModal.unassigned')}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-[#e4a233]">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-gold">TSh {parseInt(joinLookupResult.monthly_contribution || 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">{joinLookupResult.contribution_frequency === 'weekly' ? t('mg.perWeek') : t('mg.perMonth')}</p>
                   </div>
                 </div>
@@ -1271,7 +1271,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                       value={joinMessage}
                       onChange={e => setJoinMessage(e.target.value)}
                       placeholder={t('mg.joinModal.messagePh')}
-                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60 resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/60 resize-none"
                       rows={2}
                     />
                   </div>
@@ -1280,7 +1280,7 @@ function MyGroupSection({ memberProfile }: { memberProfile: any }) {
                 <button
                   onClick={handleJoinByCode}
                   disabled={joinLoading}
-                  className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                  className="w-full py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors"
                 >
                   {joinLoading ? t('mg.joinModal.joining') : joinLookupResult.join_policy === 'open' ? t('mg.joinModal.joinNow') : t('mg.joinModal.sendReq')}
                 </button>
@@ -1309,7 +1309,7 @@ function MyInvestmentsSection({ memberInvestments }: { memberInvestments: any[] 
   const summaryCards = [
     { label: t('minv.totalInvested'), value: `TSh ${totalInvestment.toLocaleString()}`, accent: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: t('minv.netReturns'), value: `TSh ${totalReturns.toLocaleString()}`, accent: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: t('minv.returnRate'), value: `${returnRate}%`, accent: 'text-[#e4a233]', bg: 'bg-[#e4a233]/10' },
+    { label: t('minv.returnRate'), value: `${returnRate}%`, accent: 'text-gold', bg: 'bg-gold/10' },
   ];
 
   return (
@@ -1398,8 +1398,8 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
       {/* Summary card */}
       <div className="rounded-2xl bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-[#e4a233]/10 border border-[#e4a233]/20 flex items-center justify-center">
-            <BookOpenIcon className="h-5 w-5 text-[#e4a233]" />
+          <div className="w-10 h-10 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center">
+            <BookOpenIcon className="h-5 w-5 text-gold" />
           </div>
           <h3 className="text-base font-bold text-foreground">{t('edu.title')}</h3>
         </div>
@@ -1407,7 +1407,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="rounded-xl bg-card border border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{t('edu.inProgress')}</p>
-            <p className="text-2xl font-bold text-[#e4a233]">{coursesInProgress}</p>
+            <p className="text-2xl font-bold text-gold">{coursesInProgress}</p>
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{t('edu.certsEarned')}</p>
@@ -1418,7 +1418,7 @@ function LearningSection({ memberTraining, user }: { memberTraining: any[]; user
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/jifunze')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#d1622b] hover:bg-[#b9531f] text-white transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-primary hover:bg-gold-deep text-white transition-colors"
           >
             {t('edu.continue')}
           </button>
@@ -1545,7 +1545,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
         onClick={() => onNavigate('profile')}
         className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:bg-muted transition-all text-left"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center shrink-0 shadow-lg shadow-primary/20 overflow-hidden">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center shrink-0 shadow-lg shadow-primary/20 overflow-hidden">
           {memberProfile?.avatar_url ? (
             <img src={memberProfile.avatar_url} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -1579,7 +1579,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
           <button
             onClick={saveAvatar}
             disabled={avatarSaving}
-            className="mt-4 w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 transition-colors"
+            className="mt-4 w-full py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {avatarSaving ? t('mg.creating') : t('grp.settings.save')}
           </button>
@@ -1626,7 +1626,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
                   value={username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   placeholder="juma_ally"
-                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e4a233]/60"
+                  className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/60"
                   pattern="[a-z0-9_]{3,30}"
                   minLength={3}
                   maxLength={30}
@@ -1643,7 +1643,7 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
             <button
               onClick={saveUsername}
               disabled={saving || usernameStatus !== 'available' || !username || username === memberProfile?.username}
-              className="w-full py-2.5 rounded-lg bg-[#d1622b] hover:bg-[#b9531f] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? t('set.username.saving') : t('set.username.save')}
             </button>

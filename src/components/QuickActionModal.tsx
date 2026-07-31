@@ -189,7 +189,7 @@ export default function QuickActionModal({
       >
         <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-[#d1622b] to-[#e4a233] flex items-center justify-center text-white text-sm font-bold">
+            <span className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white text-sm font-bold">
               {type === 'deposit' ? '+' : type === 'withdraw' ? '−' : '⇄'}
             </span>
             <h3 className="font-display text-lg text-foreground truncate">
@@ -257,7 +257,7 @@ export default function QuickActionModal({
               </button>
               <button
                 type="submit" disabled={submitting}
-                className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
+                className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-gold text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
               >
                 {submitting ? (sw ? 'Inatuma...' : 'Sending...') : (sw ? 'Thibitisha Kutoa' : 'Confirm Withdrawal')}
               </button>
@@ -347,7 +347,7 @@ export default function QuickActionModal({
 
             <button
               type="submit" disabled={submitting || quoting}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d1622b] to-[#e4a233] text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
+              className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-gold text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
             >
               {type === 'withdraw'
                 ? (quoting ? (sw ? 'Inapata bei...' : 'Getting quote...') : (sw ? 'Endelea' : 'Continue'))
