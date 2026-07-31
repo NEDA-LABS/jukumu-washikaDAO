@@ -26,6 +26,21 @@ import QuickActionModal, { type ActionType } from '@/components/QuickActionModal
 import NotificationsSection from '@/components/NotificationsSection';
 import AvatarPicker from '@/components/AvatarPicker';
 import NotificationBell from '@/components/NotificationBell';
+import MemberAppShell, { type MemberTab } from '@/components/member/MemberAppShell';
+import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
+import { type WallData } from '@/components/UkutaWall';
+
+type HomeData = {
+  member: { id: number; firstName: string; since: string } | null;
+  balanceTzs: number;
+  streakMonths: number;
+  yieldTzs: number;
+  group: { id: number; name: string; code: string | null; memberCount: number } | null;
+  collectedTzs: number;
+  targetTzs: number;
+  proposal: HomeProposal | null;
+  activity: { id: string; type: string; purpose: string | null; amountTzs: number; groupName: string | null; at: string }[];
+};
 
 export default function MemberDashboard() {
   const { language, toggleLanguage, t } = useLanguage();
@@ -40,6 +55,36 @@ export default function MemberDashboard() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Home is one request; the wall is its own so a slow roster query never
+  // holds up the balance, which is the first thing anyone looks at.
+  const [home, setHome] = useState<HomeData | null>(null);
+  const [wall, setWall] = useState<WallData | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/member/home')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: HomeData) => {
+        if (!alive) return;
+        setHome(d);
+        if (d.group) {
+          fetch(`/api/member/groups/${d.group.id}/wall`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((w) => { if (alive && w) setWall(w); })
+            .catch(() => {});
+        }
+      })
+      .catch(() => { if (alive) setHome(null); });
+
+    fetch('/api/notifications?unreadOnly=true&limit=1')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setUnreadCount(Number(d.unreadCount ?? d.total ?? 0)); })
+      .catch(() => {});
+
+    return () => { alive = false; };
+  }, []);
 
   // Check authentication and load member data
   useEffect(() => {
@@ -194,182 +239,80 @@ export default function MemberDashboard() {
 
   const initials = (user.fullName || user.email || 'U')[0].toUpperCase();
 
+  // ── The prototype's five tabs ──────────────────────────────────────────
+  // The old sidebar exposed seven peer sections. The prototype collapses that
+  // to five thumb-reachable tabs, with the sections that are not daily acts
+  // (investments, training, settings) moved behind "Mimi". Nothing is dropped;
+  // the hierarchy just stops pretending every section is equally urgent.
+  const TAB_SECTION: Record<MemberTab, string> = {
+    home: 'overview',
+    group: 'group',
+    contribute: 'wallet',
+    governance: 'group',
+    me: 'settings',
+  };
+
+  const tab: MemberTab =
+    activeSection === 'overview' ? 'home'
+    : activeSection === 'group' ? 'group'
+    : activeSection === 'wallet' ? 'contribute'
+    : 'me';
+
+  const onTab = (next: MemberTab) => setActiveSection(TAB_SECTION[next]);
+
+  const headerTitle =
+    tab === 'home' ? (home?.group?.name ?? 'WashikaDAU')
+    : menuItems.find((m) => m.id === activeSection)?.name ?? 'WashikaDAU';
+
+  const headerKicker =
+    tab === 'home' && home?.group
+      ? `${home.group.code ?? ''}${home.group.code ? ' · ' : ''}${home.group.memberCount} ${language === 'sw' ? 'WANACHAMA' : 'MEMBERS'}`
+      : (user.fullName || user.email || '').toUpperCase();
+
   return (
-    <div className="relative min-h-[100dvh] bg-background text-foreground flex overflow-hidden">
-
-      {/* ── Ambient warm gradient backdrop ── */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-48 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-[130px]" />
-        <div className="absolute top-1/3 -right-40 h-[26rem] w-[26rem] rounded-full bg-gold/15 blur-[130px]" />
-        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-gold-deep/20 blur-[130px]" />
-      </div>
-
-      {/* ── Mobile drawer overlay ── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+    <MemberAppShell
+      kicker={headerKicker}
+      title={headerTitle}
+      tab={tab}
+      onTab={onTab}
+      unread={unreadCount}
+      onBell={() => setActiveSection('notifications')}
+    >
+      {loading ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gold border-t-transparent wd-round" />
+        </div>
+      ) : tab === 'home' && home ? (
+        <HomeScreen
+          firstName={home.member?.firstName || (user.fullName || 'U').split(' ')[0]}
+          balanceTzs={home.balanceTzs}
+          streakMonths={home.streakMonths}
+          yieldTzs={home.yieldTzs}
+          sinceLabel={home.member?.since ? new Date(home.member.since).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null}
+          group={home.group ? { id: home.group.id, name: home.group.name, code: home.group.code } : null}
+          wall={wall}
+          collectedTzs={home.collectedTzs}
+          targetTzs={home.targetTzs}
+          proposal={home.proposal}
+          activity={home.activity.map((a) => ({
+            id: a.id,
+            glyph: a.type === 'deposit' ? '↓' : a.type === 'withdrawal' ? '↑' : a.purpose === 'contribution' ? '◧' : '⇄',
+            text: `${a.purpose === 'contribution' ? t('home.contribute') : a.type === 'deposit' ? t('wal.deposit') : a.type === 'withdrawal' ? t('wal.withdraw') : t('wal.transfer')}${a.groupName ? ` · ${a.groupName}` : ''} — TSh ${Math.round(a.amountTzs).toLocaleString('en-US')}`,
+            time: new Date(a.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+          }))}
+          onContribute={() => setActiveSection('wallet')}
+          onTransfer={() => setActiveSection('wallet')}
+          onWithdraw={() => setActiveSection('wallet')}
+          onWallet={() => setActiveSection('wallet')}
+          onWhoPaid={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
+          onGovernance={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
+          onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
+          onActivity={() => setActiveSection('wallet')}
+        />
+      ) : (
+        <div className="px-4 py-5 pb-8">{renderContent()}</div>
       )}
-
-      {/* ── Sidebar ── */}
-      <aside className={`
-        fixed top-0 left-0 h-[100dvh] w-64 z-50 flex flex-col
-        bg-card/95 backdrop-blur-xl border-r border-border
-        transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-20 lg:flex lg:shrink-0
-      `}>
-        {/* Brand */}
-        <div className="px-5 py-5 border-b border-border flex items-center justify-between" style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))' }}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Logo markOnly className="h-9 w-auto shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground leading-none">Washika<span className="text-gold">DAU</span></p>
-              <p className="text-[10px] text-muted-foreground truncate mt-1">{user.fullName || user.email}</p>
-            </div>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
-          {menuItems.map((item) => {
-            const active = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
-                className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
-                  active
-                    ? 'bg-gradient-to-r from-primary to-gold text-white font-semibold shadow-lg shadow-primary/25'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span>{item.name}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Logout */}
-        <div className="px-3 py-4 border-t border-border">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-red-300 hover:bg-red-500/10 transition-all"
-          >
-            <ArrowRightOnRectangleIcon className="h-5 w-5 shrink-0" />
-            <span>{t('dash.logout')}</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Main column ── */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0">
-
-        {/* Sticky branded top header — visible throughout */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 h-16 border-b border-border bg-background/70 backdrop-blur-xl" style={{ height: 'calc(4rem + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile: menu + logo */}
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground -ml-1 p-1">
-              <Bars3Icon className="h-6 w-6" />
-            </button>
-            <div className="lg:hidden flex items-center gap-2">
-              <Logo markOnly className="h-7 w-auto" />
-              <span className="text-sm font-bold">Washika<span className="text-gold">DAU</span></span>
-            </div>
-            {/* Desktop: page title */}
-            <h1 className="hidden lg:block text-lg font-semibold text-foreground">{activeName}</h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-medium text-emerald-300">nTZS live</span>
-            </div>
-            {/* Notification bell — dropdown, no redirect */}
-            <NotificationBell />
-            <button
-              onClick={toggleLanguage}
-              className="rounded-full border border-border bg-card hover:bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors"
-            >
-              {language === 'sw' ? 'EN' : 'SW'}
-            </button>
-            <button
-              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-              className="rounded-full border border-border bg-card hover:bg-muted p-2 text-muted-foreground transition-colors"
-              aria-label={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
-            >
-              {resolvedTheme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-            </button>
-            <button onClick={() => setActiveSection('settings')} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center ring-2 ring-border hover:ring-gold/40 transition-all">
-              {memberProfile?.avatar_url ? (
-                <img src={memberProfile.avatar_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-xs font-bold text-white">{initials}</span>
-              )}
-            </button>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-5 lg:py-7 pb-28 lg:pb-8">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-gold border-t-transparent" />
-            </div>
-          ) : (
-            renderContent()
-          )}
-        </main>
-      </div>
-
-      {/* ── Mobile Bottom Nav ── */}
-      <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/90 backdrop-blur-xl border-t border-border"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <div className="flex items-end justify-around px-1 h-16">
-          {[
-            { id: 'overview', label: t('dash.nav.overview'), icon: ChartBarIcon },
-            { id: 'wallet', label: t('dash.nav.wallet'), icon: WalletIcon },
-          ].map((t) => {
-            const active = activeSection === t.id;
-            return (
-              <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-gold' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-gold' : 'text-muted-foreground'}`}>{t.label}</span>
-              </button>
-            );
-          })}
-
-          {/* Groups — elevated centre tab */}
-          <button onClick={() => setActiveSection('group')} className="flex flex-col items-center gap-1 -mt-5">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-              activeSection === 'group'
-                ? 'bg-gradient-to-br from-primary to-gold shadow-xl shadow-primary/40 scale-105'
-                : 'bg-muted border border-gold/25 shadow-lg shadow-primary/10'
-            }`}>
-              <UserGroupIcon className={`h-6 w-6 ${activeSection === 'group' ? 'text-white' : 'text-muted-foreground'}`} />
-            </div>
-            <span className={`text-[10px] font-medium ${activeSection === 'group' ? 'text-gold' : 'text-muted-foreground'}`}>{t('dash.nav.group')}</span>
-          </button>
-
-          {[
-            { id: 'learning', label: t('dash.nav.training'), icon: AcademicCapIcon },
-            { id: 'settings', label: t('dash.nav.more'), icon: CogIcon, extra: 'profile' },
-          ].map((t) => {
-            const active = activeSection === t.id || activeSection === (t as { extra?: string }).extra;
-            return (
-              <button key={t.id} onClick={() => setActiveSection(t.id)} className="flex flex-col items-center gap-0.5 px-4 py-2 transition-colors">
-                <t.icon className={`h-5 w-5 transition-colors ${active ? 'text-gold' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] font-medium ${active ? 'text-gold' : 'text-muted-foreground'}`}>{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+    </MemberAppShell>
   );
 }
 

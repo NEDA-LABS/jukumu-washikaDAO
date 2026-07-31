@@ -126,6 +126,13 @@
   50% { opacity: 0; }
 }
 
+/* Screen entrance — a short lift, so changing tabs reads as a new page
+   arriving rather than content silently swapping in place. */
+@keyframes wdIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
