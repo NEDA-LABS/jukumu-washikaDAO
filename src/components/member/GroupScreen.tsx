@@ -31,13 +31,24 @@ export interface GroupScreenData {
   members: GroupMemberRow[];
 }
 
+export interface GroupSummary {
+  id: number;
+  name: string;
+  code: string | null;
+  memberCount: number;
+  treasuryTzs: number;
+}
+
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const PAGE = 10;
 
 export default function GroupScreen({
-  data, onInvite, onRemind, onMember,
+  data, groups = [], onSelectGroup, onInvite, onRemind, onMember,
 }: {
   data: GroupScreenData;
+  /** Every group the member belongs to. One or none hides the switcher. */
+  groups?: GroupSummary[];
+  onSelectGroup?: (id: number) => void;
   onInvite: () => void;
   onRemind: () => void;
   onMember: (m: GroupMemberRow) => void;
@@ -49,6 +60,38 @@ export default function GroupScreen({
 
   return (
     <div className="animate-[wdIn_.22s_ease_both]">
+      {/* Belonging to several chamas is normal. The row is only worth its
+          space when there is actually something to switch between. */}
+      {groups.length > 1 && (
+        <section className="border-b border-border px-5 py-3">
+          <span className="wd-kicker">{t('grp.myGroups')} · {groups.length}</span>
+          <div className="scrollbar-none -mx-5 mt-2.5 flex gap-2 overflow-x-auto px-5">
+            {groups.map((g) => {
+              const active = g.id === data.group.id;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => onSelectGroup?.(g.id)}
+                  aria-current={active ? 'true' : undefined}
+                  className={`wd-press flex-none border px-3 py-2 text-left ${
+                    active ? 'border-foreground bg-gold-tint' : 'border-border'
+                  }`}
+                >
+                  <span className={`block max-w-[150px] truncate text-[11px] font-semibold leading-none ${
+                    active ? '' : 'text-muted-foreground'
+                  }`}>
+                    {g.name}
+                  </span>
+                  <span className="mt-1.5 block font-mono text-[8.5px] leading-none text-ink-3">
+                    {g.memberCount} · {fmt(g.treasuryTzs)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section className="border-b border-border px-5 py-[18px]">
         <div className="flex border border-border">
           <div className="flex-1 border-r border-border px-3 py-2.5">

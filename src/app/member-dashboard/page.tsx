@@ -48,6 +48,8 @@ type HomeData = {
   streakMonths: number;
   yieldTzs: number;
   group: { id: number; name: string; code: string | null; memberCount: number } | null;
+  groups: { id: number; name: string; code: string | null; logoUrl: string | null;
+            memberCount: number; treasuryTzs: number; monthlyContribution: number }[];
   collectedTzs: number;
   targetTzs: number;
   proposal: HomeProposal | null;
@@ -207,9 +209,15 @@ export default function MemberDashboard() {
       .catch(() => {});
   }, []);
 
+  // Which group every screen speaks for. Null until the first load picks one.
+  const [activeGroupId, setActiveGroupId] = useState<number | null>(null);
+
   useEffect(() => {
     let alive = true;
-    fetch('/api/member/home')
+    // Drop the old group's wall first — showing one group's bricks under
+    // another group's name is worse than showing a skeleton.
+    setWall(null);
+    fetch(activeGroupId ? `/api/member/home?groupId=${activeGroupId}` : '/api/member/home')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d: HomeData) => {
         if (!alive) return;
@@ -223,11 +231,15 @@ export default function MemberDashboard() {
       })
       .catch(() => { if (alive) setHome(null); });
 
+    return () => { alive = false; };
+  }, [activeGroupId]);
+
+  useEffect(() => {
+    let alive = true;
     fetch('/api/notifications?unreadOnly=true&limit=1')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive && d) setUnreadCount(Number(d.unreadCount ?? d.total ?? 0)); })
       .catch(() => {});
-
     return () => { alive = false; };
   }, []);
 
@@ -485,6 +497,8 @@ export default function MemberDashboard() {
       ) : tab === 'group' && screen ? (
         <GroupScreen
           data={screen}
+          groups={home?.groups ?? []}
+          onSelectGroup={(id) => { setScreen(null); setOpenProposal(null); setActiveGroupId(id); }}
           onInvite={inviteToGroup}
           onRemind={remindUnpaid}
           onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}

@@ -36,23 +36,36 @@ export async function GET(request: NextRequest) {
           WHERE owner_type = 'member' AND owner_id = $1 LIMIT 1`,
         [me.id],
       ),
-      // The group whose wall this member is building. With several, the one
-      // they joined first is the one Home speaks for.
+      // EVERY active membership, not just the first. A member commonly belongs
+      // to several chamas, and a screen that silently speaks for one of them
+      // hides the rest.
       client.query(
-        `SELECT g.id, g.name, g.group_code, g.monthly_contribution,
+        `SELECT g.id, g.name, g.group_code, g.monthly_contribution, g.logo_url,
                 (SELECT COUNT(*)::int FROM group_members x
-                  WHERE x.group_id = g.id AND x.status = 'active') AS member_count
-           FROM group_members gm JOIN groups g ON g.id = gm.group_id
+                  WHERE x.group_id = g.id AND x.status = 'active') AS member_count,
+                COALESCE(w.balance_tzs, 0)::bigint AS treasury_tzs
+           FROM group_members gm
+           JOIN groups g ON g.id = gm.group_id
+           LEFT JOIN wallet_accounts w ON w.owner_type = 'group' AND w.owner_id = g.id
           WHERE gm.member_id = $1 AND gm.status = 'active'
-          ORDER BY gm.joined_date NULLS LAST, g.id LIMIT 1`,
+          ORDER BY gm.joined_date NULLS LAST, g.id`,
         [me.id],
       ),
     ]);
 
     const balanceTzs = Number((balRes.rows[0] as { b?: string } | undefined)?.b ?? 0);
-    const group = groupRes.rows[0] as
-      | { id: number; name: string; group_code: string | null; member_count: number | null; monthly_contribution: string | null }
-      | undefined;
+
+    type GroupRow = {
+      id: number; name: string; group_code: string | null; logo_url: string | null;
+      member_count: number | null; monthly_contribution: string | null; treasury_tzs: string;
+    };
+    const allGroups = groupRes.rows as GroupRow[];
+
+    // ?groupId= selects which group Home speaks for. Anything not in the
+    // caller's own memberships falls back to the first rather than erroring —
+    // a stale id in a bookmark should not brick the screen.
+    const wanted = Number(request.nextUrl.searchParams.get('groupId'));
+    const group = allGroups.find((g) => g.id === wanted) ?? allGroups[0];
 
     // Streak: consecutive months ending at the current one in which this member
     // contributed. Counted in SQL-fed JS rather than a window function so the
@@ -145,6 +158,15 @@ export async function GET(request: NextRequest) {
       group: group
         ? { id: group.id, name: group.name, code: group.group_code, memberCount: group.member_count ?? 0 }
         : null,
+      groups: allGroups.map((g) => ({
+        id: g.id,
+        name: g.name,
+        code: g.group_code,
+        logoUrl: g.logo_url,
+        memberCount: g.member_count ?? 0,
+        treasuryTzs: Number(g.treasury_tzs ?? 0),
+        monthlyContribution: Number(g.monthly_contribution ?? 0),
+      })),
       collectedTzs,
       targetTzs,
       proposal,
