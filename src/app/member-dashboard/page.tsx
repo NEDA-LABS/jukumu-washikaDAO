@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/components/ToastProvider';
 import {
   ChartBarIcon,
   UserGroupIcon,
@@ -31,6 +32,8 @@ import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
 import MeScreen from '@/components/member/MeScreen';
 import GroupScreen, { type GroupScreenData, type GroupMemberRow } from '@/components/member/GroupScreen';
 import GovernanceScreen, { type ProposalRow } from '@/components/member/GovernanceScreen';
+import ProposalScreen, { type ProposalDetail } from '@/components/member/ProposalScreen';
+import ContributeScreen, { type PayMethod } from '@/components/member/ContributeScreen';
 
 type ScreenData = GroupScreenData & {
   myMemberId: number;
@@ -53,6 +56,7 @@ type HomeData = {
 
 export default function MemberDashboard() {
   const { language, toggleLanguage, t } = useLanguage();
+  const { showToast } = useToast();
   const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<{id?: number; fullName?: string; email: string; role?: string} | null>(null);
@@ -78,6 +82,12 @@ export default function MemberDashboard() {
   // Kikundi and Utawala read the same payload — one roster query serving both
   // beats two endpoints returning overlapping halves of the group.
   const [screen, setScreen] = useState<ScreenData | null>(null);
+  // Opening a proposal pushes it over the governance list rather than routing
+  // away — the tab bar has to stay put for this to read as an app.
+  const [openProposal, setOpenProposal] = useState<ProposalDetail | null>(null);
+  const [voting, setVoting] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const loadScreen = React.useCallback((gid: number) => {
     fetch(`/api/member/groups/${gid}/screen`)
@@ -89,6 +99,106 @@ export default function MemberDashboard() {
   useEffect(() => {
     if (home?.group?.id) loadScreen(home.group.id);
   }, [home?.group?.id, loadScreen]);
+
+  const openProposalById = React.useCallback(async (gid: number, pid: number) => {
+    try {
+      const res = await fetch(`/api/member/groups/${gid}/proposals/${pid}`);
+      if (!res.ok) { router.push(`/member-dashboard/groups/${gid}/proposals/${pid}`); return; }
+      const d = await res.json();
+      const p = d.proposal ?? d;
+      // The route returns tallies under `voteSummary`; reading `votes` would
+      // have silently rendered every proposal as 0–0.
+      const yes = Number(d.voteSummary?.yes ?? 0);
+      const no = Number(d.voteSummary?.no ?? 0);
+      setOpenProposal({
+        id: pid,
+        groupId: gid,
+        title: p.title ?? '',
+        body: p.description ?? null,
+        kind: p.proposal_type || 'proposal',
+        amountTzs: Number(p.payment_amount_tzs ?? 0),
+        by: p.created_by_name ?? p.creator_name ?? null,
+        yes, no,
+        pending: Math.max(0, (screen?.total ?? 0) - (yes + no)),
+        myVote: d.myVote ?? p.my_vote ?? null,
+        requiredYes: Number(d.requiredYes ?? 0),
+        status: p.status ?? 'open',
+        isLeader: screen?.isLeader ?? false,
+      });
+    } catch {
+      router.push(`/member-dashboard/groups/${gid}/proposals/${pid}`);
+    }
+  }, [router, screen?.total, screen?.isLeader]);
+
+  const castVote = React.useCallback(async (v: 'yes' | 'no') => {
+    if (!openProposal) return;
+    setVoting(true);
+    try {
+      const res = await fetch(
+        `/api/member/groups/${openProposal.groupId}/proposals/${openProposal.id}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vote: v }) },
+      );
+      if (res.ok) {
+        await openProposalById(openProposal.groupId, openProposal.id);
+        loadScreen(openProposal.groupId);
+      }
+    } finally {
+      setVoting(false);
+    }
+  }, [openProposal, openProposalById, loadScreen]);
+
+  const submitContribution = React.useCallback(async ({ amountTzs, method, phone }: {
+    amountTzs: number; method: PayMethod; phone: string;
+  }) => {
+    if (!user?.id || !home?.group) return;
+    setPaying(true); setPayError(null);
+    try {
+      // From the wallet this is an internal ledger transfer; by mobile money it
+      // is a deposit that has to land before it can become a contribution.
+      const res = method === 'wallet'
+        ? await fetch('/api/wallet/transfer', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, purpose: 'contribution', amountTzs, groupId: home.group.id }),
+          })
+        : await fetch('/api/wallet/deposit', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, amountTzs, phoneNumber: `255${phone}` }),
+          });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setPayError(d.error || 'Could not complete that.'); return; }
+      reloadHome();
+      if (home.group) loadScreen(home.group.id);
+      setActiveSection('overview');
+    } catch {
+      setPayError('Network error. Try again.');
+    } finally {
+      setPaying(false);
+    }
+  }, [user?.id, home?.group, loadScreen]);
+
+  const inviteToGroup = React.useCallback(async () => {
+    if (!screen?.group.code) return;
+    const url = `${window.location.origin}/register?group=${encodeURIComponent(screen.group.code)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast(t('grp.inviteSent'), 'success');
+    } catch {
+      // Clipboard is blocked in some in-app browsers; the group page has the
+      // full share sheet, so fall back there rather than failing silently.
+      router.push(`/member-dashboard/groups/${screen.group.id}`);
+    }
+  }, [screen?.group.code, screen?.group.id, router, t]);
+
+  const remindUnpaid = React.useCallback(async () => {
+    if (!screen?.group.id) return;
+    try {
+      const res = await fetch(`/api/member/groups/${screen.group.id}/remind`, { method: 'POST' });
+      if (res.ok) showToast(t('grp.reminded'), 'success');
+      else router.push(`/member-dashboard/groups/${screen.group.id}`);
+    } catch {
+      router.push(`/member-dashboard/groups/${screen.group.id}`);
+    }
+  }, [screen?.group.id, router, t]);
 
   const reloadHome = React.useCallback(() => {
     fetch('/api/member/home')
@@ -282,7 +392,7 @@ export default function MemberDashboard() {
   const TAB_SECTION: Record<MemberTab, string> = {
     home: 'overview',
     group: 'group',
-    contribute: 'wallet',
+    contribute: 'contribute',
     // Its own section id, not 'group' — sharing one would make the two tabs
     // indistinguishable and light both at once.
     governance: 'governance',
@@ -293,12 +403,14 @@ export default function MemberDashboard() {
     activeSection === 'overview' ? 'home'
     : activeSection === 'group' ? 'group'
     : activeSection === 'governance' ? 'governance'
+    : activeSection === 'contribute' ? 'contribute'
     : 'me';
 
-  // The raised centre tab is an action, not a destination: it opens the
-  // contribute sheet rather than navigating anywhere.
+  // Leaving a tab drops the proposal detail, so returning to Utawala lands on
+  // the list rather than the last thing that happened to be open.
   const onTab = (next: MemberTab) => {
-    if (next === 'contribute') { setQuick({ type: 'transfer', purpose: 'contribution' }); return; }
+    if (next !== 'governance') setOpenProposal(null);
+    if (next === 'contribute') setPayError(null);
     setActiveSection(TAB_SECTION[next]);
   };
 
@@ -354,11 +466,27 @@ export default function MemberDashboard() {
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}
         />
+      ) : tab === 'contribute' && home ? (
+        <ContributeScreen
+          monthlyContribution={screen?.group.monthlyContribution ?? 0}
+          walletBalanceTzs={home.balanceTzs}
+          groupName={home.group?.name ?? null}
+          submitting={paying}
+          error={payError}
+          onSubmit={submitContribution}
+        />
+      ) : tab === 'governance' && openProposal ? (
+        <ProposalScreen
+          p={openProposal}
+          submitting={voting}
+          onVote={castVote}
+          onClose={() => router.push(`/member-dashboard/groups/${openProposal.groupId}/proposals/${openProposal.id}`)}
+        />
       ) : tab === 'group' && screen ? (
         <GroupScreen
           data={screen}
-          onInvite={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
-          onRemind={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onInvite={inviteToGroup}
+          onRemind={remindUnpaid}
           onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
         />
       ) : tab === 'governance' && screen ? (
@@ -367,7 +495,7 @@ export default function MemberDashboard() {
           closed={screen.closedProposals}
           canPropose
           onNewProposal={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
-          onProposal={(p) => router.push(`/member-dashboard/groups/${screen.group.id}/proposals/${p.id}`)}
+          onProposal={(p) => openProposalById(screen.group.id, p.id)}
         />
       ) : (tab === 'group' || tab === 'governance') && !home?.group ? (
         <div className="px-5 py-10 text-center">
