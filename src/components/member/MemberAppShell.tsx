@@ -86,7 +86,9 @@ export default function MemberAppShell({
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
       >
         <div className="flex min-w-0 flex-col gap-px">
-          <span className="font-mono text-[9px] font-medium uppercase leading-none tracking-[0.16em] text-ink-3">
+          {/* Must stay one line — wrapping pushes the title down and the
+              header stops being a fixed-height band. */}
+          <span className="truncate font-mono text-[9px] font-medium uppercase leading-none tracking-[0.16em] text-ink-3">
             {kicker}
           </span>
           <h1 className="truncate font-display text-[19px] font-bold leading-[1.15] tracking-[-0.01em]">

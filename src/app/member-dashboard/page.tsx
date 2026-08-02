@@ -29,6 +29,14 @@ import NotificationBell from '@/components/NotificationBell';
 import MemberAppShell, { type MemberTab } from '@/components/member/MemberAppShell';
 import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
 import MeScreen from '@/components/member/MeScreen';
+import GroupScreen, { type GroupScreenData, type GroupMemberRow } from '@/components/member/GroupScreen';
+import GovernanceScreen, { type ProposalRow } from '@/components/member/GovernanceScreen';
+
+type ScreenData = GroupScreenData & {
+  myMemberId: number;
+  openProposals: ProposalRow[];
+  closedProposals: ProposalRow[];
+};
 import { type WallData } from '@/components/UkutaWall';
 
 type HomeData = {
@@ -66,6 +74,21 @@ export default function MemberDashboard() {
   // wallet tab to hunt for the button they just pressed is the old dashboard's
   // habit, not the prototype's.
   const [quick, setQuick] = useState<{ type: ActionType; purpose?: 'contribution' | 'p2p' } | null>(null);
+
+  // Kikundi and Utawala read the same payload — one roster query serving both
+  // beats two endpoints returning overlapping halves of the group.
+  const [screen, setScreen] = useState<ScreenData | null>(null);
+
+  const loadScreen = React.useCallback((gid: number) => {
+    fetch(`/api/member/groups/${gid}/screen`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ScreenData | null) => { if (d) setScreen(d); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (home?.group?.id) loadScreen(home.group.id);
+  }, [home?.group?.id, loadScreen]);
 
   const reloadHome = React.useCallback(() => {
     fetch('/api/member/home')
@@ -260,14 +283,16 @@ export default function MemberDashboard() {
     home: 'overview',
     group: 'group',
     contribute: 'wallet',
-    governance: 'group',
+    // Its own section id, not 'group' — sharing one would make the two tabs
+    // indistinguishable and light both at once.
+    governance: 'governance',
     me: 'settings',
   };
 
   const tab: MemberTab =
     activeSection === 'overview' ? 'home'
     : activeSection === 'group' ? 'group'
-    : activeSection === 'wallet' ? 'contribute'
+    : activeSection === 'governance' ? 'governance'
     : 'me';
 
   // The raised centre tab is an action, not a destination: it opens the
@@ -329,6 +354,31 @@ export default function MemberDashboard() {
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}
         />
+      ) : tab === 'group' && screen ? (
+        <GroupScreen
+          data={screen}
+          onInvite={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onRemind={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+        />
+      ) : tab === 'governance' && screen ? (
+        <GovernanceScreen
+          open={screen.openProposals}
+          closed={screen.closedProposals}
+          canPropose
+          onNewProposal={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onProposal={(p) => router.push(`/member-dashboard/groups/${screen.group.id}/proposals/${p.id}`)}
+        />
+      ) : (tab === 'group' || tab === 'governance') && !home?.group ? (
+        <div className="px-5 py-10 text-center">
+          <p className="text-xs text-muted-foreground">{t('home.noGroup')}</p>
+          <button
+            onClick={() => setActiveSection('group')}
+            className="wd-press mt-4 border-2 border-foreground px-4 py-3 text-[11px] font-semibold"
+          >
+            {t('home.joinGroup')}
+          </button>
+        </div>
       ) : tab === 'me' && activeSection === 'settings' ? (
         <MeScreen
           name={user.fullName || user.email}
