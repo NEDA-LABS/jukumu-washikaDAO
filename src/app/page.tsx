@@ -1,30 +1,18 @@
 import Header from '@/components/Header';
-import HeroSection from '@/components/HeroSection';
-import AboutSection from '@/components/AboutSection';
-import InvestorSection from '@/components/InvestorSection';
-import JoinCtaSection from '@/components/JoinCtaSection';
+import LandingPage from '@/components/landing/LandingPage';
 import DevelopersSection from '@/components/DevelopersSection';
 import Footer from '@/components/Footer';
-import ScrollExpandSection from '@/components/ScrollExpandSection';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main>
-        <HeroSection />
-        <ScrollExpandSection>
-          <AboutSection />
-        </ScrollExpandSection>
-        <ScrollExpandSection>
-          <InvestorSection />
-        </ScrollExpandSection>
-        <ScrollExpandSection>
-          <DevelopersSection />
-        </ScrollExpandSection>
-        <ScrollExpandSection>
-          <JoinCtaSection />
-        </ScrollExpandSection>
+        {/* One continuous document now. The old ScrollExpandSection wrappers
+            are gone: they scaled whole sections on scroll, which fought the
+            new per-block reveal and made the hard-offset shadows shear. */}
+        <LandingPage />
+        <DevelopersSection />
       </main>
       <Footer />
     </div>

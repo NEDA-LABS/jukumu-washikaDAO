@@ -278,6 +278,61 @@
 .wd-press { transition: transform 0.08s ease; }
 .wd-press:active { transform: translateY(1px); }
 
+/* ══════════════════════════════════════════════════════════════════
+   Landing page
+
+   The marketing surface leans harder on motion than the app does: a
+   hard-offset shadow on hover instead of a glow, and a scroll reveal that
+   lifts each block into place. All of it is decoration, so all of it is
+   disabled under prefers-reduced-motion at the foot of this file.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* CTA: shifts up-left into its own hard shadow. No blur — this system has
+   no soft edges, so depth is a second solid rectangle. */
+.wl-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.3s ease;
+}
+.wl-cta:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ds-foreground); }
+.wl-cta-ghost:hover { box-shadow: 6px 6px 0 var(--ds-gold); }
+
+.wl-lift { transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1), background 0.35s ease; }
+.wl-lift:hover { transform: translateY(-3px); }
+
+/* Step rows: the whole row shifts right and its arrow slides out. */
+.wl-row { transition: background 0.35s ease, padding-left 0.35s ease; }
+.wl-row:hover { background: var(--ds-muted); padding-left: 14px; }
+.wl-arrow { opacity: 0.3; transition: transform 0.35s ease, opacity 0.35s ease; }
+.wl-row:hover .wl-arrow { transform: translateX(6px); opacity: 1; }
+
+.wl-marquee { animation: wlMarquee 34s linear infinite; }
+@keyframes wlMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.wl-float { animation: wlFloat 7s ease-in-out infinite; }
+@keyframes wlFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+/* A brick that has just been laid pops in, so the demo registers as a change
+   rather than a silent repaint. */
+.wd-brick[data-new='1'] { animation: wlPop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes wlPop { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* Scroll reveal — only armed once JS confirms it can un-hide these again. */
+.wl-anim [data-r] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.3, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.wl-anim [data-r].wl-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-cta:hover, .wl-lift:hover { transform: none; box-shadow: none; }
+  .wl-row:hover { padding-left: 0; }
+  .wl-marquee, .wl-float, .wd-brick[data-new='1'] { animation: none; }
+  .wl-anim [data-r] { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wd-press:active { transform: none; }
 }
