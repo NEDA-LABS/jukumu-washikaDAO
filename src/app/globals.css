@@ -318,19 +318,25 @@
 .wd-brick[data-new='1'] { animation: wlPop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 @keyframes wlPop { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-/* Scroll reveal — only armed once JS confirms it can un-hide these again. */
-.wl-anim [data-r] {
-  opacity: 0;
-  transform: translateY(22px);
+/* Scroll reveal.
+
+   Note what is NOT here: any rule that hides [data-r] by default. Content must
+   never be invisible because of a stylesheet that JavaScript is expected to
+   undo — a missed observer, a stalled transition or a failed hydration then
+   deletes a whole section from the page, which is exactly what happened when
+   this was CSS-first. `.wl-hidden` is applied BY the script, only to nodes it
+   has taken responsibility for revealing. No script, no hiding. */
+.wl-reveal {
   transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.3, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-.wl-anim [data-r].wl-in { opacity: 1; transform: none; }
+.wl-hidden { opacity: 0; transform: translateY(22px); }
 
 @media (prefers-reduced-motion: reduce) {
   .wl-cta:hover, .wl-lift:hover { transform: none; box-shadow: none; }
   .wl-row:hover { padding-left: 0; }
   .wl-marquee, .wl-float, .wd-brick[data-new='1'] { animation: none; }
-  .wl-anim [data-r] { opacity: 1; transform: none; }
+  /* Reduced motion never leaves anything hidden, whatever the script did. */
+  .wl-hidden { opacity: 1 !important; transform: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

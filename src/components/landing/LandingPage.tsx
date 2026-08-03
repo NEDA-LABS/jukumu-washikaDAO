@@ -29,35 +29,35 @@ function useReveal() {
 
     // No IntersectionObserver, or reduced motion: show everything immediately
     // rather than leaving the page permanently blank.
+    // Nothing to undo in these cases — the markup is already visible, so we
+    // simply never hide it.
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || !('IntersectionObserver' in window)) {
-      nodes.forEach((n) => n.classList.add('wl-in'));
-      return;
-    }
+    if (reduce || !('IntersectionObserver' in window)) return;
 
-    root.classList.add('wl-anim');
-
-    const show = (n: Element) => { n.classList.add('wl-in'); io.unobserve(n); };
+    const show = (n: HTMLElement) => {
+      n.classList.remove('wl-hidden');
+      io.unobserve(n);
+    };
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) show(e.target); }),
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) show(e.target as HTMLElement); }),
       { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
     );
 
-    const sweep = () => {
-      let remaining = 0;
-      nodes.forEach((n) => {
-        if (n.classList.contains('wl-in')) return;
-        if (n.getBoundingClientRect().top < window.innerHeight * 0.92) show(n);
-        else remaining += 1;
-      });
-      return remaining;
-    };
-
-    nodes.forEach((n, i) => {
-      n.style.transitionDelay = `${Math.min(i % 5, 4) * 60}ms`;
-      io.observe(n);
+    const sweep = () => nodes.forEach((n) => {
+      if (!n.classList.contains('wl-hidden')) return;
+      if (n.getBoundingClientRect().top < window.innerHeight * 0.92) show(n);
     });
-    sweep();
+
+    // Hide only now, from script, and only what is genuinely below the fold.
+    // Anything already on screen is never hidden at all, so the first paint is
+    // complete even if every listener below fails.
+    nodes.forEach((n, i) => {
+      if (n.getBoundingClientRect().top >= window.innerHeight * 0.92) {
+        n.classList.add('wl-reveal', 'wl-hidden');
+        n.style.transitionDelay = `${Math.min(i % 5, 4) * 60}ms`;
+        io.observe(n);
+      }
+    });
 
     // IntersectionObserver does not deliver callbacks while the document is
     // hidden, and a page restored from bfcache can miss them entirely. Because
@@ -69,7 +69,8 @@ function useReveal() {
     window.addEventListener('scroll', sweep, { passive: true });
     window.addEventListener('resize', sweep, { passive: true });
     document.addEventListener('visibilitychange', sweep);
-    const failsafe = window.setTimeout(() => nodes.forEach(show), 4000);
+    // Last resort: after this, nothing stays hidden for any reason.
+    const failsafe = window.setTimeout(() => nodes.forEach(show), 3000);
 
     return () => {
       io.disconnect();
