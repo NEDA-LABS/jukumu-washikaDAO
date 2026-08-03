@@ -84,6 +84,39 @@ function useReveal() {
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US');
 
+/** Compact money for headline figures: 4_238_538 → "4.2M". */
+function compact(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 1)}B`;
+  if (n >= 1_000_000) return `${(n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1e3).toFixed(n % 1e3 === 0 ? 0 : 1)}K`;
+  return String(Math.round(n));
+}
+
+interface PlatformStats {
+  groups: number; members: number; businesses: number;
+  trainings: number; volumeTzs: number; heldTzs: number; live: boolean;
+}
+
+/**
+ * Live platform figures.
+ *
+ * Returns null until the request lands, and stays null if it fails. Callers
+ * render nothing rather than a placeholder: a made-up number on a savings
+ * product is worse than a blank, because a visitor cannot tell the difference.
+ */
+function usePlatformStats() {
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/public/stats')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: PlatformStats) => { if (alive && d?.live) setStats(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  return stats;
+}
+
 /* ── Shared bits ───────────────────────────────────────────────── */
 function Kicker({ children }: { children: React.ReactNode }) {
   return (
@@ -173,9 +206,32 @@ export default function LandingPage() {
   const counts = [30, 30, 28, 30, 29, paid];
   const pending = 30 - vote.y - vote.n;
 
-  const marquee = sw
-    ? ['Vikundi 1,240 vinatumia Washika', 'TZS 3.8 bilioni zimewekwa akiba', 'Wanachama 31,000', 'Mikopo 412 imelipwa kikamilifu', 'nTZS 1:1 na shilingi', 'Riba 10% kwa mwaka']
-    : ['1,240 groups on Washika', 'TZS 3.8 billion saved', '31,000 members', '412 loans repaid in full', 'nTZS pegged 1:1', '10% annual yield'];
+  const stats = usePlatformStats();
+
+  // Only claims the database can substantiate. The design's marquee also
+  // carried "412 loans repaid in full", which nothing here counts — an
+  // unverifiable number on a savings product is not a rounding issue, so it
+  // is gone rather than approximated. The peg and the yield stay: they are
+  // terms of the product, not counts of activity.
+  const marquee = stats
+    ? (sw
+      ? [
+          `Vikundi ${fmt(stats.groups)} vinatumia Washika`,
+          `TZS ${compact(stats.volumeTzs)} zimepita jukwaani`,
+          `Wanachama ${fmt(stats.members)}`,
+          `TZS ${compact(stats.heldTzs)} kwenye hazina za vikundi`,
+          'nTZS 1:1 na shilingi',
+          'Riba 10% kwa mwaka',
+        ]
+      : [
+          `${fmt(stats.groups)} groups on Washika`,
+          `TZS ${compact(stats.volumeTzs)} processed`,
+          `${fmt(stats.members)} members`,
+          `TZS ${compact(stats.heldTzs)} held in group treasuries`,
+          'nTZS pegged 1:1',
+          '10% annual yield',
+        ])
+    : ['nTZS 1:1', '10% p.a.', 'Bank of Tanzania sandbox'];
 
   const pains = [1, 2, 3, 4].map((i) => ({ n: `0${i}`, h: t(`wl.p${i}h`), b: t(`wl.p${i}b`) }));
   const steps = [1, 2, 3, 4, 5].map((i) => ({ n: `0${i}`, h: t(`wl.s${i}h`), b: t(`wl.s${i}b`) }));
@@ -216,17 +272,23 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div data-r className="mt-8 flex flex-wrap gap-x-7 gap-y-4 border-t border-border pt-6">
-            {[
-              { n: '1,240', l: sw ? 'vikundi' : 'groups' },
-              { n: '31,000', l: sw ? 'wanachama' : 'members' },
-              { n: 'TZS 3.8B', l: sw ? 'zimewekwa akiba' : 'saved' },
-            ].map((x) => (
-              <div key={x.l}>
-                <div className="font-display text-[22px] leading-none">{x.n}</div>
-                <div className="mt-2 font-mono text-[9px] font-medium uppercase leading-[1.4] tracking-[0.11em] text-ink-3">{x.l}</div>
+          {/* Real counts, or nothing. While the request is in flight the row
+              reserves its height so the hero does not jolt when it lands. */}
+          <div data-r className="mt-8 min-h-[58px] border-t border-border pt-6">
+            {stats && (
+              <div className="flex flex-wrap gap-x-7 gap-y-4">
+                {[
+                  { n: fmt(stats.groups), l: sw ? 'vikundi' : 'groups' },
+                  { n: fmt(stats.members), l: sw ? 'wanachama' : 'members' },
+                  { n: `TSh ${compact(stats.volumeTzs)}`, l: sw ? 'zimepita jukwaani' : 'processed' },
+                ].map((x) => (
+                  <div key={x.l}>
+                    <div className="font-display text-[22px] leading-none tabular-nums">{x.n}</div>
+                    <div className="mt-2 font-mono text-[9px] font-medium uppercase leading-[1.4] tracking-[0.11em] text-ink-3">{x.l}</div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
 
