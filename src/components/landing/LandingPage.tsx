@@ -246,7 +246,11 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section
         id="top"
-        className="mx-auto grid max-w-[1240px] items-center gap-[clamp(30px,5vw,72px)] px-[clamp(20px,4vw,44px)] pt-[clamp(40px,6vw,84px)] lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]"
+        // Clears the fixed header by its actually-measured height (published by
+        // Header as --wd-header-h), plus the design's own breathing room. The
+        // fallback covers the first paint before the measurement lands.
+        style={{ paddingTop: 'calc(var(--wd-header-h, 112px) + clamp(24px, 4vw, 56px))' }}
+        className="mx-auto grid max-w-[1240px] items-center gap-[clamp(30px,5vw,72px)] px-[clamp(20px,4vw,44px)] lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]"
       >
         <div>
           <div data-r className="flex items-center gap-2.5">

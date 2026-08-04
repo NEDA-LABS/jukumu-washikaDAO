@@ -90,6 +90,11 @@ export async function GET(request: NextRequest) {
     let collectedTzs = 0;
     let targetTzs = 0;
     let proposal = null;
+    // Whether THIS member has paid into THIS group this month, and what is
+    // still outstanding. Home leads with these because they are the two
+    // questions a member opens the app to answer.
+    let paidThisMonth = false;
+    let dueTzs = 0;
 
     if (group) {
       const [collRes, propRes] = await Promise.all([
@@ -117,7 +122,20 @@ export async function GET(request: NextRequest) {
 
       collectedTzs = Number((collRes.rows[0] as { s: string }).s);
       const members = Number(group.member_count ?? 0);
-      targetTzs = members * Number(group.monthly_contribution ?? 0);
+      const dues = Number(group.monthly_contribution ?? 0);
+      targetTzs = members * dues;
+
+      const mineRes = await client.query(
+        `SELECT COALESCE(SUM(amount_tzs), 0)::bigint AS s
+           FROM ntzs_transactions
+          WHERE to_group_id = $1 AND from_member_id = $2 AND purpose = 'contribution'
+            AND created_at >= date_trunc('month', CURRENT_DATE)`,
+        [group.id, me.id],
+      );
+      const paidByMe = Number((mineRes.rows[0] as { s: string }).s);
+      paidThisMonth = paidByMe > 0;
+      // Never negative: paying more than the dues is not a credit to display.
+      dueTzs = Math.max(0, dues - paidByMe);
 
       const p = propRes.rows[0] as
         | { id: number; title: string; amount: string; yes: number; no: number }
@@ -154,7 +172,6 @@ export async function GET(request: NextRequest) {
       },
       balanceTzs,
       streakMonths: streak,
-      yieldTzs: 0,
       group: group
         ? { id: group.id, name: group.name, code: group.group_code, memberCount: group.member_count ?? 0 }
         : null,
@@ -169,6 +186,8 @@ export async function GET(request: NextRequest) {
       })),
       collectedTzs,
       targetTzs,
+      paidThisMonth,
+      dueTzs,
       proposal,
       activity: (actRes.rows as {
         id: number; type: string; purpose: string | null; amount_tzs: string;

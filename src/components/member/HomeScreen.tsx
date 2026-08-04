@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { UkutaWallView, type WallData } from '@/components/UkutaWall';
+import { UkutaWallView, PeriodToggle, type WallData, type WallPeriod } from '@/components/UkutaWall';
 
 /**
  * Home, per the prototype.
@@ -41,24 +41,31 @@ export interface HomeActivity {
 }
 
 export default function HomeScreen({
-  firstName, balanceTzs, streakMonths, yieldTzs, sinceLabel,
-  group, wall, collectedTzs, targetTzs,
+  firstName, balanceTzs, streakMonths, sinceLabel,
+  paidThisMonth = false, dueTzs = 0,
+  group, wall, wallPeriod, onWallPeriod, collectedTzs, targetTzs,
   proposal, activity,
-  onContribute, onTransfer, onWithdraw, onWallet,
+  onContribute, onDeposit, onTransfer, onWithdraw, onWallet,
   onWhoPaid, onGovernance, onProposal, onActivity,
 }: {
   firstName: string;
   balanceTzs: number;
   streakMonths: number;
-  yieldTzs: number;
   sinceLabel: string | null;
+  /** Has this member contributed in the current month? */
+  paidThisMonth?: boolean;
+  /** What they still owe this month, 0 when settled or no dues are set. */
+  dueTzs?: number;
   group: HomeGroup | null;
   wall: WallData | null;
+  wallPeriod?: WallPeriod;
+  onWallPeriod?: (p: WallPeriod) => void;
   collectedTzs: number;
   targetTzs: number;
   proposal: HomeProposal | null;
   activity: HomeActivity[];
   onContribute: () => void;
+  onDeposit: () => void;
   onTransfer: () => void;
   onWithdraw: () => void;
   onWallet: () => void;
@@ -86,18 +93,25 @@ export default function HomeScreen({
           {t('home.myAkiba')}{sinceLabel ? ` · ${t('home.since')} ${sinceLabel}` : ''}
         </p>
 
-        {/* Streak and yield share one bordered box split by a hairline — they
-            are two readings of the same habit, not two separate cards. */}
+        {/* Was "streak / yield". Yield was permanently +0 — there is no yield
+            product — and a zero interest figure on a savings screen is worse
+            than none, because it reads as a promise that is failing. Both
+            tiles now answer questions a member actually has: have I paid this
+            month, and what do I owe. */}
         <div className="mt-4 flex border border-border">
           <div className="flex-1 border-r border-border px-2.5 py-2.5">
-            <span className="wd-kicker">{t('home.streak')}</span>
-            <p className="mt-1 text-[15px] font-semibold leading-tight">
-              {streakMonths} <span className="text-[9px] font-normal text-muted-foreground">{t('home.months')}</span>
+            <span className="wd-kicker">{t('home.thisMonth')}</span>
+            <p className={`mt-1 text-[15px] font-semibold leading-tight ${paidThisMonth ? 'text-success' : 'text-destructive'}`}>
+              {paidThisMonth ? t('home.paidUp') : t('home.notPaid')}
             </p>
           </div>
           <div className="flex-1 px-2.5 py-2.5">
-            <span className="wd-kicker">{t('home.yield')}</span>
-            <p className="mt-1 text-[15px] font-semibold leading-tight text-success">+{fmt(yieldTzs)}</p>
+            <span className="wd-kicker">{dueTzs > 0 ? t('home.due') : t('home.streak')}</span>
+            <p className="mt-1 text-[15px] font-semibold leading-tight">
+              {dueTzs > 0
+                ? fmt(dueTzs)
+                : <>{streakMonths} <span className="text-[9px] font-normal text-muted-foreground">{t('home.months')}</span></>}
+            </p>
           </div>
         </div>
 
@@ -109,25 +123,51 @@ export default function HomeScreen({
           <span className="font-mono text-xs font-medium leading-none">→</span>
         </button>
 
-        <div className="mt-2 flex gap-2">
-          <button onClick={onTransfer} className="wd-press flex-1 border-2 border-foreground px-3 py-[11px] text-left text-[10.5px] font-semibold leading-[1.15]">
-            {t('home.transferToGroup')}
-          </button>
-          <button onClick={onWithdraw} className="wd-press flex-none border-2 border-foreground px-3 py-[11px] text-[10.5px] font-semibold leading-[1.15]">
-            {t('home.withdraw')}
-          </button>
-          <button onClick={onWallet} className="wd-press flex-none border border-border px-3 py-[11px] text-[10.5px] font-semibold leading-[1.15] text-muted-foreground">
-            {t('home.wallet')}
-          </button>
+        {/* Four equal actions, icon over a one-word label, in one bordered box
+            split by hairlines — the same shape as the status box above it.
+            These were previously flex buttons carrying full sentences, so
+            "Hamisha kwa kikundi" stretched to fill the row while "Pochi" sat
+            tiny beside it. Equal cells and short labels is what makes a wallet
+            row scannable; the long phrasing moves to the aria-label so screen
+            readers still get "Hamisha kwa kikundi" rather than one word. */}
+        <div className="mt-2 grid grid-cols-4 border border-border">
+          {([
+            // Deposit first: money has to arrive before any of the others can
+            // happen. Its arrow points down, mirroring withdraw's, so the pair
+            // reads as in/out without needing the labels.
+            { id: 'deposit', label: t('home.act.deposit'), full: t('wal.deposit'), onClick: onDeposit,
+              icon: <path d="M12 4v15m0 0 5.5-5.5M12 19l-5.5-5.5" /> },
+            { id: 'transfer', label: t('home.act.transfer'), full: t('home.transferToGroup'), onClick: onTransfer,
+              icon: <path d="M4 8h13m0 0-3.5-3.5M17 8l-3.5 3.5M20 16H7m0 0 3.5-3.5M7 16l3.5 3.5" /> },
+            { id: 'withdraw', label: t('home.act.withdraw'), full: t('home.withdraw'), onClick: onWithdraw,
+              icon: <path d="M12 20V5m0 0-5.5 5.5M12 5l5.5 5.5" /> },
+            { id: 'wallet', label: t('home.act.wallet'), full: t('home.wallet'), onClick: onWallet,
+              icon: <><path d="M3 7.5h15a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M3 7.5 15 4v3.5" /><circle cx="16.5" cy="13" r="1.1" /></> },
+          ]).map((a, i) => (
+            <button
+              key={a.id}
+              onClick={a.onClick}
+              aria-label={a.full}
+              className={`wd-press flex flex-col items-center gap-2 py-3.5 ${i > 0 ? 'border-l border-border' : ''}`}
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                {a.icon}
+              </svg>
+              <span className="text-[10.5px] font-semibold leading-none">{a.label}</span>
+            </button>
+          ))}
         </div>
       </section>
 
       {/* ── Ukuta ── */}
       {group && (
         <section className="border-b border-border px-5 pb-5 pt-[18px]">
-          <div className="flex items-baseline justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-display text-[15px] font-bold leading-tight">{t('wall.title')}</h2>
-            {group.code && <span className="font-mono text-[9px] font-medium text-ink-3">{group.code}</span>}
+            {wallPeriod && onWallPeriod
+              ? <PeriodToggle value={wallPeriod} onChange={onWallPeriod} />
+              : group.code && <span className="font-mono text-[9px] font-medium text-ink-3">{group.code}</span>}
           </div>
           <p className="mt-1.5 max-w-[280px] text-[10px] leading-[1.4] text-muted-foreground">
             {t('home.wallSub')}

@@ -10,6 +10,28 @@ export default function Header() {
   const { language, toggleLanguage, t } = useLanguage();
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const headerRef = useRef<HTMLElement | null>(null);
+
+  // The header is fixed, so it takes no space in flow and page content slides
+  // underneath it. Its height is not a constant — the nav wraps to a second row
+  // on narrow screens, Swahili labels are longer than English, and the safe-area
+  // inset varies by device. So it publishes its own measured height and pages
+  // offset by that, instead of a magic number that silently goes stale.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const publish = () => {
+      document.documentElement.style.setProperty('--wd-header-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    };
+    publish();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', publish);
+      return () => window.removeEventListener('resize', publish);
+    }
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [language]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -37,7 +59,7 @@ export default function Header() {
   // the whole page hangs from. Hairlines are for rhythm inside a section; this
   // one separates chrome from content.
   return (
-    <header className={`fixed w-full top-0 z-50 bg-background/80 backdrop-blur-xl border-b-2 border-rule transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header ref={headerRef} className={`fixed w-full top-0 z-50 bg-background/80 backdrop-blur-xl border-b-2 border-rule transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <nav className="wd-container" aria-label="Top">
         <div className="flex w-full items-center justify-between py-4">
           <div className="flex items-center">

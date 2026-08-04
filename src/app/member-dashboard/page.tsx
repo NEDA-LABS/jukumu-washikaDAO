@@ -40,13 +40,14 @@ type ScreenData = GroupScreenData & {
   openProposals: ProposalRow[];
   closedProposals: ProposalRow[];
 };
-import { type WallData } from '@/components/UkutaWall';
+import { type WallData, type WallPeriod } from '@/components/UkutaWall';
 
 type HomeData = {
   member: { id: number; firstName: string; since: string } | null;
   balanceTzs: number;
   streakMonths: number;
-  yieldTzs: number;
+  paidThisMonth: boolean;
+  dueTzs: number;
   group: { id: number; name: string; code: string | null; memberCount: number } | null;
   groups: { id: number; name: string; code: string | null; logoUrl: string | null;
             memberCount: number; treasuryTzs: number; monthlyContribution: number }[];
@@ -211,6 +212,9 @@ export default function MemberDashboard() {
 
   // Which group every screen speaks for. Null until the first load picks one.
   const [activeGroupId, setActiveGroupId] = useState<number | null>(null);
+  // Week / month / year zoom on the Ukuta. Lives here because changing it
+  // refetches the wall, which Home only renders.
+  const [wallPeriod, setWallPeriod] = useState<WallPeriod>('month');
 
   useEffect(() => {
     let alive = true;
@@ -223,7 +227,7 @@ export default function MemberDashboard() {
         if (!alive) return;
         setHome(d);
         if (d.group) {
-          fetch(`/api/member/groups/${d.group.id}/wall`)
+          fetch(`/api/member/groups/${d.group.id}/wall?period=${wallPeriod}`)
             .then((r) => (r.ok ? r.json() : null))
             .then((w) => { if (alive && w) setWall(w); })
             .catch(() => {});
@@ -232,7 +236,7 @@ export default function MemberDashboard() {
       .catch(() => { if (alive) setHome(null); });
 
     return () => { alive = false; };
-  }, [activeGroupId]);
+  }, [activeGroupId, wallPeriod]);
 
   useEffect(() => {
     let alive = true;
@@ -456,10 +460,13 @@ export default function MemberDashboard() {
           firstName={home.member?.firstName || (user.fullName || 'U').split(' ')[0]}
           balanceTzs={home.balanceTzs}
           streakMonths={home.streakMonths}
-          yieldTzs={home.yieldTzs}
+          paidThisMonth={home.paidThisMonth}
+          dueTzs={home.dueTzs}
           sinceLabel={home.member?.since ? new Date(home.member.since).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null}
           group={home.group ? { id: home.group.id, name: home.group.name, code: home.group.code } : null}
           wall={wall}
+          wallPeriod={wallPeriod}
+          onWallPeriod={setWallPeriod}
           collectedTzs={home.collectedTzs}
           targetTzs={home.targetTzs}
           proposal={home.proposal}
@@ -470,6 +477,7 @@ export default function MemberDashboard() {
             time: new Date(a.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
           }))}
           onContribute={() => setQuick({ type: 'transfer', purpose: 'contribution' })}
+          onDeposit={() => setQuick({ type: 'deposit' })}
           onTransfer={() => setQuick({ type: 'transfer', purpose: 'p2p' })}
           onWithdraw={() => setQuick({ type: 'withdraw' })}
           onWallet={() => setActiveSection('wallet')}
