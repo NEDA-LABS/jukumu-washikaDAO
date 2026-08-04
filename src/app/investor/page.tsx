@@ -13,8 +13,13 @@ interface NetworkStats {
   activeRegions: number;
 }
 
+/** WashikaDAU support line. */
+const WASHIKA_SUPPORT_TEL = '+255744277496';
+const WASHIKA_SUPPORT_DISPLAY = '+255 744 277 496';
+
 interface FundingRequest {
   id: number;
+  group_id: number;
   title: string;
   description?: string | null;
   metadata?: {
@@ -32,6 +37,19 @@ interface FundingRequest {
 export default function InvestorPage() {
   const [stats, setStats] = useState<NetworkStats | null>(null);
   const [fundingRequests, setFundingRequests] = useState<FundingRequest[]>([]);
+  const [contactTarget, setContactTarget] = useState<FundingRequest | null>(null);
+
+  // Tell the group it was approached. This page is public, so an anonymous
+  // visitor simply gets a 401 here and nothing is sent — we will not fan
+  // notifications out to a whole chama on the word of unauthenticated traffic.
+  const notifyGroupOfContact = (r: FundingRequest, channel: 'email' | 'support') => {
+    fetch('/api/investor/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupId: r.group_id, projectTitle: r.title, channel }),
+      keepalive: true,
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     fetch('/api/investor/stats')
@@ -267,17 +285,17 @@ export default function InvestorPage() {
         <section className="py-20 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 text-xs font-semibold uppercase tracking-widest mb-4">Prodcast</span>
+              <span className="inline-block px-3 py-1 rounded-full bg-gold-tint text-gold-deep text-xs font-semibold uppercase tracking-widest mb-4">Prodcast</span>
               <h2 className="text-3xl font-bold text-foreground mb-3">Projects Seeking Investors</h2>
               <p className="text-foreground/50 max-w-xl mx-auto">Groups that have passed a vote and are seeking investment partnerships. Each project invites investors to co-fund together.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {fundingRequests.map(req => (
-                <div key={req.id} className="rounded-2xl bg-card border border-border p-6 flex flex-col gap-4 hover:border-purple-500/30 transition-colors">
+                <div key={req.id} className="rounded-2xl bg-card border border-border p-6 flex flex-col gap-4 hover:border-gold/40 transition-colors">
                   {/* Group + members */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-purple-600 bg-purple-500/10 px-2.5 py-1 rounded-full">{req.group_name}</span>
+                    <span className="text-xs font-semibold text-gold-deep bg-gold-tint px-2.5 py-1">{req.group_name}</span>
                     <span className="text-[10px] text-muted-foreground">{req.member_count} members</span>
                   </div>
 
@@ -311,18 +329,85 @@ export default function InvestorPage() {
                     <p className="text-[11px] text-foreground/40 italic">&ldquo;{req.metadata.expected_impact}&rdquo;</p>
                   )}
 
-                  {/* CTA */}
-                  <a
-                    href="mailto:invest@jukumufund.co.tz"
-                    className="mt-auto w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold text-center transition-colors"
+                  {/* CTA — opens the contact sheet. It was a bare mailto with
+                      no subject and no project reference, so it produced an
+                      empty draft the group could never be told about. */}
+                  <button
+                    onClick={() => setContactTarget(req)}
+                    className="wd-press mt-auto w-full bg-gold py-3 text-xs font-semibold text-[#1a1714] transition-colors hover:bg-gold-deep hover:text-background"
                   >
-                    Contact Us
-                  </a>
+                    Contact about this project
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         </section>
+      )}
+
+      {/* ── Contact sheet ─────────────────────────────
+          Deliberately does NOT show the group's own phone number. This page is
+          public, so publishing a chama member's line here exposes it to anyone
+          on the internet — savings groups are a standing target for scam calls.
+          The direct line stays on the signed-in investor dashboard, where the
+          person asking has registered and is identifiable. ── */}
+      {contactTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Contact about this project"
+          onClick={(e) => { if (e.target === e.currentTarget) setContactTarget(null); }}
+        >
+          <div className="w-full max-w-md border-2 border-rule bg-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <span className="wd-kicker wd-kicker-gold">Contact request</span>
+                <h3 className="mt-2 font-display text-lg font-bold leading-tight">{contactTarget.title}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{contactTarget.group_name}</p>
+              </div>
+              <button onClick={() => setContactTarget(null)} aria-label="Close" className="p-1 text-muted-foreground">✕</button>
+            </div>
+
+            {contactTarget.metadata?.funding_goal_tzs && (
+              <p className="mt-4 border border-border bg-gold-tint px-3 py-2 text-xs text-gold-deep">
+                Funding goal:{' '}
+                <span className="font-mono font-bold">
+                  TSH {Number(contactTarget.metadata.funding_goal_tzs).toLocaleString()}
+                </span>
+              </p>
+            )}
+
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Send us the details and the Washika team will introduce you to{' '}
+              <span className="font-semibold text-foreground">{contactTarget.group_name}</span>.
+              The group is notified that you got in touch.
+            </p>
+
+            <div className="mt-5 space-y-2">
+              <a
+                href={`mailto:invest@jukumufund.co.tz?subject=${encodeURIComponent(`Interest in: ${contactTarget.title} (${contactTarget.group_name})`)}&body=${encodeURIComponent(`Hello,\n\nI would like to learn more about the project "${contactTarget.title}" from the group ${contactTarget.group_name}.\n\nMy name:\nCompany:\n\nThank you.`)}`}
+                onClick={() => notifyGroupOfContact(contactTarget, 'email')}
+                className="wd-press block w-full bg-gold py-3 text-center text-sm font-semibold text-[#1a1714]"
+              >
+                Email the Washika team →
+              </a>
+              <a
+                href={`tel:${WASHIKA_SUPPORT_TEL}`}
+                onClick={() => notifyGroupOfContact(contactTarget, 'support')}
+                className="wd-press block w-full border-2 border-foreground py-3 text-center text-sm font-semibold"
+              >
+                Call support · {WASHIKA_SUPPORT_DISPLAY}
+              </a>
+              <button
+                onClick={() => setContactTarget(null)}
+                className="w-full border border-border py-2.5 text-sm text-muted-foreground"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Footer />
