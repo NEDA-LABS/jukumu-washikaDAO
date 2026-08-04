@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { ensureGroupContactColumns } from '@/lib/groups-schema';
 
 /**
  * GET /api/investor/projects
@@ -14,6 +15,9 @@ export async function GET(request: NextRequest) {
 
   let client;
   try {
+    // The contact columns are created lazily; this route reads them, so it has
+    // to guarantee they exist rather than assume another endpoint ran first.
+    await ensureGroupContactColumns();
     client = await pool.connect();
 
     const res = await client.query(`
@@ -27,6 +31,8 @@ export async function GET(request: NextRequest) {
         p.created_at,
         g.id AS group_id,
         g.name AS group_name,
+        g.contact_phone AS group_phone,
+        g.contact_email AS group_email,
         g.monthly_contribution,
         g.total_investment,
         g.founded_date,

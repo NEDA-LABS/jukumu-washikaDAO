@@ -70,6 +70,10 @@ type InvestorProfile = {
   email?: string;
 };
 
+/** WashikaDAU support line, shown in every contact sheet. */
+const WASHIKA_SUPPORT_TEL = '+255744277496';
+const WASHIKA_SUPPORT_DISPLAY = '+255 744 277 496';
+
 type Project = {
   id: number;
   title: string;
@@ -85,6 +89,8 @@ type Project = {
   created_at: string;
   group_id: number;
   group_name: string;
+  group_phone?: string | null;
+  group_email?: string | null;
   monthly_contribution?: number | null;
   total_investment?: number | null;
   member_count: number;
@@ -401,6 +407,18 @@ export default function InvestorDashboard() {
   const [section, setSection] = useState<Section>('overview');
   const [loading, setLoading] = useState(true);
   const [contactTarget, setContactTarget] = useState<Project | null>(null);
+
+  // Tell the group it is being approached, whichever channel the investor
+  // picks. Fire-and-forget: the tel:/mailto: hand-off must not wait on us, and
+  // a failed notification is not a reason to block the introduction.
+  const notifyGroupOfContact = (p: Project, channel: 'email' | 'phone' | 'support') => {
+    fetch('/api/investor/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupId: p.group_id, projectTitle: p.title, channel }),
+      keepalive: true,
+    }).catch(() => {});
+  };
   const [detailTarget, setDetailTarget] = useState<Project | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [groupDetailId, setGroupDetailId] = useState<number | null>(null);
@@ -1715,18 +1733,46 @@ export default function InvestorDashboard() {
             )}
 
             <p className="text-sm" style={{ color: ink.body }}>
-              Our team will help you connect with{' '}
+              Reach{' '}
               <span className="font-semibold" style={{ color: ink.heading }}>{contactTarget.group_name}</span>{' '}
-              through our due diligence and onboarding process.
+              directly, or go through the Washika team. Either way the group is
+              notified that you got in touch.
             </p>
 
-            <a
-              href={`mailto:invest@jukumufund.co.tz?subject=Interest in: ${encodeURIComponent(contactTarget.title)} (${encodeURIComponent(contactTarget.group_name)})&body=Hello,%0A%0AI would like to learn more about the project "${contactTarget.title}" from the group ${contactTarget.group_name}.%0A%0AMy name: ${encodeURIComponent(profile?.full_name || '')}%0ACompany: ${encodeURIComponent(profile?.company || 'N/A')}%0A%0AThank you.`}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-center block transition-all"
-              style={{ background: 'var(--ds-gold)', color: '#fff' }}
-            >
-              Send Email →
-            </a>
+            <div className="space-y-2">
+              {/* The group's own line comes first when it has one — going
+                  straight to the chama beats waiting on us to relay. */}
+              {contactTarget.group_phone && (
+                <a
+                  href={`tel:${contactTarget.group_phone.replace(/[^\d+]/g, '')}`}
+                  onClick={() => notifyGroupOfContact(contactTarget, 'phone')}
+                  className="w-full py-3 rounded-xl text-sm font-semibold text-center block"
+                  style={{ background: 'var(--ds-gold)', color: '#1a1714' }}
+                >
+                  Call the group · {contactTarget.group_phone}
+                </a>
+              )}
+
+              <a
+                href={`mailto:${contactTarget.group_email || 'invest@jukumufund.co.tz'}?subject=Interest in: ${encodeURIComponent(contactTarget.title)} (${encodeURIComponent(contactTarget.group_name)})&body=Hello,%0A%0AI would like to learn more about the project "${contactTarget.title}" from the group ${contactTarget.group_name}.%0A%0AMy name: ${encodeURIComponent(profile?.full_name || '')}%0ACompany: ${encodeURIComponent(profile?.company || 'N/A')}%0A%0AThank you.`}
+                onClick={() => notifyGroupOfContact(contactTarget, 'email')}
+                className="w-full py-3 rounded-xl text-sm font-semibold text-center block"
+                style={contactTarget.group_phone
+                  ? { border: `2px solid ${ink.heading}`, color: ink.heading }
+                  : { background: 'var(--ds-gold)', color: '#1a1714' }}
+              >
+                Email {contactTarget.group_email ? 'the group' : 'the Washika team'} →
+              </a>
+
+              <a
+                href={`tel:${WASHIKA_SUPPORT_TEL}`}
+                onClick={() => notifyGroupOfContact(contactTarget, 'support')}
+                className="w-full py-3 rounded-xl text-sm text-center block"
+                style={{ border: `1px solid ${ink.cardBorder}`, color: ink.body }}
+              >
+                Washika support · {WASHIKA_SUPPORT_DISPLAY}
+              </a>
+            </div>
 
             <button
               onClick={() => setContactTarget(null)}

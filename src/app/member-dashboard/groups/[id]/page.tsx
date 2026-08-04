@@ -42,6 +42,8 @@ type Group = {
   total_investment: string | number | null;
   monthly_contribution: string | number | null;
   contribution_frequency?: 'monthly' | 'weekly' | string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
   status: string;
   created_at?: string;
   leader_name?: string | null;
@@ -202,6 +204,8 @@ export default function MemberGroupDetailsPage() {
   const [settingsError, setSettingsError] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
   const [settingsLogo, setSettingsLogo] = useState<string | null>(null);
+  const [settingsPhone, setSettingsPhone] = useState('');
+  const [settingsEmail, setSettingsEmail] = useState('');
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [leadership, setLeadership] = useState<LeadershipRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
@@ -571,11 +575,14 @@ export default function MemberGroupDetailsPage() {
           monthlyContribution: amt,
           contributionFrequency: settingsFreq,
           logoUrl: settingsLogo,
+          contactPhone: settingsPhone,
+          contactEmail: settingsEmail,
         }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) { setSettingsError(data?.error || t('grp.settings.leadershipOnly')); return; }
-      setGroup((g) => (g ? { ...g, monthly_contribution: amt, contribution_frequency: settingsFreq, logo_url: settingsLogo } : g));
+      setGroup((g) => (g ? { ...g, monthly_contribution: amt, contribution_frequency: settingsFreq, logo_url: settingsLogo,
+        contact_phone: settingsPhone.trim() || null, contact_email: settingsEmail.trim() || null } : g));
       setSettingsSuccess(t('grp.settings.saved'));
       showToast(t('grp.settings.saved'), 'success');
       setTimeout(() => setShowSettings(false), 1200);
@@ -713,6 +720,8 @@ export default function MemberGroupDetailsPage() {
                       setSettingsAmount(String(Number.parseFloat(String(group?.monthly_contribution || 0)) || ''));
                       setSettingsFreq(group?.contribution_frequency === 'weekly' ? 'weekly' : 'monthly');
                       setSettingsLogo(group?.logo_url ?? null);
+                      setSettingsPhone(group?.contact_phone ?? '');
+                      setSettingsEmail(group?.contact_email ?? '');
                       setSettingsError(''); setSettingsSuccess('');
                       setShowSettings(true);
                     }}
@@ -1445,6 +1454,38 @@ export default function MemberGroupDetailsPage() {
                   ))}
                 </div>
               </div>
+              {/* How outsiders reach this group. Without it an investor's only
+                  route is the Washika inbox, so every introduction waits on us
+                  to relay it. */}
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-foreground">{t('grp.contact.title')}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{t('grp.contact.hint')}</p>
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">{t('grp.contact.phone')}</label>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={settingsPhone}
+                      onChange={(e) => setSettingsPhone(e.target.value)}
+                      placeholder="+255 7xx xxx xxx"
+                      className={dkInput}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">{t('grp.contact.email')}</label>
+                    <input
+                      type="email"
+                      inputMode="email"
+                      value={settingsEmail}
+                      onChange={(e) => setSettingsEmail(e.target.value)}
+                      placeholder="kikundi@example.com"
+                      className={dkInput}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {settingsError && <p className="text-sm text-red-400">{settingsError}</p>}
               {settingsSuccess && <p className="text-sm text-emerald-400">{settingsSuccess}</p>}
               <button
