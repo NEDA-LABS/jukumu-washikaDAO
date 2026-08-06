@@ -311,7 +311,7 @@ export default function LandingPage() {
               <p className="text-[9px] text-muted-foreground">{t('wl.phoneGreet')}</p>
               <div className="mt-[7px] flex items-end gap-1.5">
                 <span className="wd-figure text-[33px]">{fmt(612_000 + (paid - 23) * 50_000)}</span>
-                <span className="pb-1 font-mono text-[8px] font-medium leading-none text-gold-deep">nTZS</span>
+                <span className="pb-1 font-mono text-[8px] font-medium leading-none text-gold-deep">TZS</span>
               </div>
               <p className="mt-[7px] text-[8.5px] text-ink-3">{t('wl.phoneMine')} · +42,180 {t('wl.phoneYield')}</p>
             </div>
@@ -427,7 +427,7 @@ export default function LandingPage() {
               <div>
                 <span className="wd-kicker">{t('grp.treasury')}</span>
                 <div className="mt-2 font-display text-[clamp(24px,2.6vw,34px)] leading-none">
-                  {fmt(treasury)} <span className="font-mono text-[10px] font-medium text-gold-deep">nTZS</span>
+                  {fmt(treasury)} <span className="font-mono text-[10px] font-medium text-gold-deep">TZS</span>
                 </div>
               </div>
               <div className="text-right">

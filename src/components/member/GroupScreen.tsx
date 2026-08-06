@@ -97,7 +97,7 @@ export default function GroupScreen({
           <div className="flex-1 border-r border-border px-3 py-2.5">
             <span className="wd-kicker">{t('grp.treasury')}</span>
             <p className="mt-1.5 wd-figure text-[20px]">{fmt(data.treasuryTzs)}</p>
-            <p className="mt-1.5 font-mono text-[8px] font-medium text-gold-deep">nTZS</p>
+            <p className="mt-1.5 font-mono text-[8px] font-medium text-gold-deep">TZS</p>
           </div>
           <div className="w-28 flex-none px-3 py-2.5">
             <span className="wd-kicker">{t('grp.havePaid')}</span>

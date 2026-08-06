@@ -69,10 +69,16 @@ export default function InvestorPage() {
 
       {/* ── Hero ── */}
       <section className="relative min-h-[90vh] overflow-hidden bg-black flex items-end">
+        {/* A real savings group mid-meeting, phones out with the app open —
+            the investor page should show the thing being invested in, not a
+            posed portrait. Chosen over a sharper alternative that had a third
+            party bank's branding across it, which would imply a partnership on
+            a page about who funds these groups. */}
         <Image
-          src="/PXL_20250618_112718098.PORTRAIT.jpg"
-          alt="Washika DAU community"
+          src="/PXL_20250606_102256087.LONG_EXPOSURE-01.COVER.jpg"
+          alt="A savings group meeting in Dar es Salaam, members recording contributions on their phones"
           fill
+          sizes="100vw"
           className="object-cover object-center opacity-60"
           priority
         />

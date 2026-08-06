@@ -80,18 +80,21 @@ export default function HomeScreen({
     <div className="animate-[wdIn_.22s_ease_both]">
       {/* ── Balance + actions ── */}
       <section className="border-b border-border px-5 pb-[18px] pt-5">
-        <p className="text-[11px] leading-none text-muted-foreground">
+        {/* The greeting leads the screen. It was 11px grey above the balance,
+            which read as a caption on the number rather than the app saying
+            hello to the person holding the phone. */}
+        <h1 className="font-display text-[26px] font-bold leading-tight">
           {t('home.greet')}, {firstName}
-        </p>
+        </h1>
 
-        <div className="mt-2 flex items-end gap-2">
-          <span className="wd-figure text-[44px]">{fmt(balanceTzs)}</span>
-          <span className="pb-1.5 font-mono text-[10px] font-medium leading-none text-gold-deep">nTZS</span>
-        </div>
-
-        <p className="mt-[7px] text-[11px] leading-none text-muted-foreground">
+        <p className="mt-4 text-[11px] leading-none text-muted-foreground">
           {t('home.myAkiba')}{sinceLabel ? ` · ${t('home.since')} ${sinceLabel}` : ''}
         </p>
+
+        <div className="mt-1.5 flex items-end gap-2">
+          <span className="wd-figure text-[44px]">{fmt(balanceTzs)}</span>
+          <span className="pb-1.5 font-mono text-[10px] font-medium leading-none text-gold-deep">TZS</span>
+        </div>
 
         {/* Was "streak / yield". Yield was permanently +0 — there is no yield
             product — and a zero interest figure on a savings screen is worse

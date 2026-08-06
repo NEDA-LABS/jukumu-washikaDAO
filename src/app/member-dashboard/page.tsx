@@ -674,7 +674,7 @@ function MemberOverviewSection({ memberProfile, memberInvestments, onNavigate, u
             <p className="text-xs font-medium uppercase tracking-widest text-white/70">{t('dash.balance.label')}</p>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-[10px] font-semibold text-white">nTZS</span>
+              <span className="text-[10px] font-semibold text-white">TZS</span>
             </div>
           </div>
 
