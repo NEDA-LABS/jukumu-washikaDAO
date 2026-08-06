@@ -15,6 +15,9 @@ const COPY: Record<ActionType, { sw: string; en: string }> = {
 type Group = { id: number; name: string };
 type Purpose = 'contribution' | 'p2p';
 
+/** A member you share an active group with — see /api/member/peers. */
+type Peer = { id: number; name: string; username: string | null; groups: string[] };
+
 type WithdrawQuote = {
   quoteId: string;
   expiresAt: string;
@@ -58,6 +61,9 @@ export default function QuickActionModal({
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [toUsername, setToUsername] = useState('');
+  const [toMemberId, setToMemberId] = useState('');
+  const [peers, setPeers] = useState<Peer[]>([]);
+  const [loadingPeers, setLoadingPeers] = useState(false);
   const [purpose, setPurpose] = useState<Purpose>(initialPurpose ?? 'contribution');
   const [groupId, setGroupId] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
@@ -96,6 +102,24 @@ export default function QuickActionModal({
       fetchGroups();
     }
   }, [type, purpose, groups.length, loadingGroups, fetchGroups]);
+
+  const fetchPeers = useCallback(async () => {
+    setLoadingPeers(true);
+    try {
+      const res = await fetch('/api/member/peers');
+      if (res.ok) setPeers((await res.json()).peers ?? []);
+    } catch {
+      // swallow — the field falls back to typing a username
+    } finally {
+      setLoadingPeers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (type === 'transfer' && purpose === 'p2p' && peers.length === 0 && !loadingPeers) {
+      fetchPeers();
+    }
+  }, [type, purpose, peers.length, loadingPeers, fetchPeers]);
 
   const title = sw ? COPY[type].sw : COPY[type].en;
 
@@ -139,8 +163,8 @@ export default function QuickActionModal({
     if (type === 'transfer' && purpose === 'contribution' && !groupId) {
       setFeedback({ type: 'error', message: sw ? 'Chagua kundi' : 'Choose a group' }); return;
     }
-    if (type === 'transfer' && purpose === 'p2p' && !toUsername.trim()) {
-      setFeedback({ type: 'error', message: sw ? 'Weka jina la mtumiaji' : 'Enter a username' }); return;
+    if (type === 'transfer' && purpose === 'p2p' && !toMemberId && !toUsername.trim()) {
+      setFeedback({ type: 'error', message: sw ? 'Chagua mpokeaji' : 'Choose a recipient' }); return;
     }
     setSubmitting(true);
     try {
@@ -151,7 +175,11 @@ export default function QuickActionModal({
             amountTzs: parseInt(amount),
             purpose,
             groupId: purpose === 'contribution' && groupId ? parseInt(groupId) : undefined,
-            toUsername: purpose === 'p2p' ? toUsername.trim() : undefined,
+            // A picked recipient wins: usernames are rarely set, so the id is
+            // the reliable identifier. The typed field stays as a fallback for
+            // sending to someone outside your groups.
+            toMemberId: purpose === 'p2p' && toMemberId ? parseInt(toMemberId) : undefined,
+            toUsername: purpose === 'p2p' && !toMemberId ? toUsername.trim() : undefined,
           }
         : type === 'withdraw'
           ? { userId, amountTzs: parseInt(amount), phone, quoteId: withdrawQuote?.quoteId }
@@ -160,7 +188,7 @@ export default function QuickActionModal({
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setFeedback({ type: 'success', message: data.message || (sw ? 'Imefanikiwa!' : 'Success!') });
-        setAmount(''); setPhone(''); setToUsername(''); setGroupId(''); setWithdrawQuote(null);
+        setAmount(''); setPhone(''); setToUsername(''); setToMemberId(''); setGroupId(''); setWithdrawQuote(null);
         onSuccess?.();
         setTimeout(onClose, 1800);
       } else {
@@ -227,7 +255,7 @@ export default function QuickActionModal({
                 )}
                 <Row label={sw ? 'Nambari ya simu' : 'Phone number'} value={<span className="font-mono">{withdrawQuote.normalizedPhone}</span>} />
                 {(withdrawQuote.fees?.totalFeeTzs ?? 0) > 0 && (
-                  <Row label={sw ? 'Ada ya nTZS' : 'nTZS fee'} value={fmtTzs(withdrawQuote.fees.totalFeeTzs!)} />
+                  <Row label={sw ? 'Ada ya huduma' : 'Service fee'} value={fmtTzs(withdrawQuote.fees.totalFeeTzs!)} />
                 )}
                 {withdrawQuote.platformFeeTzs > 0 && (
                   <Row label={sw ? 'Ada ya jukwaa' : 'Platform fee'} value={fmtTzs(withdrawQuote.platformFeeTzs)} />
@@ -323,16 +351,49 @@ export default function QuickActionModal({
                   </div>
                 ) : (
                   <div>
-                    <label className={label}>{sw ? 'Mpokeaji (jina la mtumiaji)' : 'Recipient (username)'}</label>
-                    <input
-                      type="text"
-                      value={toUsername}
-                      onChange={e => setToUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                      placeholder="juma_ally"
+                    <label className={label}>{sw ? 'Mpokeaji' : 'Recipient'}</label>
+                    {/* A named list of the people you actually share a group
+                        with. This was a bare username box, which asked members
+                        to recall a handle almost nobody has set — 4 of 199 at
+                        the time of writing — for a person they know by name. */}
+                    <select
+                      value={toMemberId}
+                      onChange={e => { setToMemberId(e.target.value); if (e.target.value) setToUsername(''); }}
                       className={input}
-                      minLength={3}
-                      maxLength={30}
-                    />
+                      disabled={loadingPeers}
+                    >
+                      <option value="">
+                        {loadingPeers
+                          ? (sw ? 'Inapakia…' : 'Loading…')
+                          : peers.length === 0
+                            ? (sw ? '-- Hakuna wanachama wenzako --' : '-- No fellow members --')
+                            : (sw ? '-- Chagua mwanachama --' : '-- Choose a member --')}
+                      </option>
+                      {peers.map(pr => (
+                        <option key={pr.id} value={String(pr.id)}>
+                          {pr.name}{pr.groups.length ? ` · ${pr.groups[0]}` : ''}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Kept so you can still pay someone outside your groups,
+                        but demoted: it is the exception, not the default. */}
+                    {!toMemberId && (
+                      <>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          {sw ? 'Au tuma kwa username:' : 'Or send by username:'}
+                        </p>
+                        <input
+                          type="text"
+                          value={toUsername}
+                          onChange={e => setToUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                          placeholder="juma_ally"
+                          className={`${input} mt-1`}
+                          minLength={3}
+                          maxLength={30}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
               </>
@@ -358,7 +419,7 @@ export default function QuickActionModal({
                 : (submitting ? (sw ? 'Inatuma...' : 'Sending...') : title)}
             </button>
             <p className="text-[11px] text-center text-muted-foreground">
-              {sw ? 'Inaendeshwa na nTZS · Malipo salama' : 'Powered by nTZS · Secure payments'}
+              {sw ? 'Malipo salama' : 'Secure payments'}
             </p>
           </form>
         )}
