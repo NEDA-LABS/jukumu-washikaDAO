@@ -576,6 +576,18 @@ export default function InvestorDashboard() {
     router.push('/investor');
   };
 
+  // Fetch the treasury address the first time the external funding tab is
+  // opened. This has to sit above the `loading` early return below — a hook
+  // placed after it is skipped on the loading render and runs once loading
+  // clears, which changes the hook count between renders (React error #310).
+  useEffect(() => {
+    if (fundMode !== 'external' || treasuryAddress) return;
+    fetch('/api/investor/wallet/fund-external')
+      .then(r => r.json())
+      .then(d => { if (d?.treasuryAddress) setTreasuryAddress(d.treasuryAddress); })
+      .catch(() => { /* the address is also shown by the server on submit */ });
+  }, [fundMode, treasuryAddress]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF7' }}>
@@ -635,14 +647,6 @@ export default function InvestorDashboard() {
       setProvisioningWallet(false);
     }
   };
-
-  useEffect(() => {
-    if (fundMode !== 'external' || treasuryAddress) return;
-    fetch('/api/investor/wallet/fund-external')
-      .then(r => r.json())
-      .then(d => { if (d?.treasuryAddress) setTreasuryAddress(d.treasuryAddress); })
-      .catch(() => { /* the address is also shown by the server on submit */ });
-  }, [fundMode, treasuryAddress]);
 
   const resetFundForm = () => {
     setFundTarget(null); setFundMsg(null); setFundAmount('');
