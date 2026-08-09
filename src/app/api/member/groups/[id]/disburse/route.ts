@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { createPayout, getPayoutFee } from '@/lib/snippe';
+import { ensureNtzsSchema } from '@/lib/ntzs-db';
+import { debit, LedgerError } from '@/lib/wallet/ledger';
+import { assertPayoutAuthorized, PayoutAuthorizationError } from '@/lib/groups/payout-authorization';
 
 const LEADERSHIP_ROLES = new Set(['leader', 'mwenyekiti', 'katibu', 'mwekahazina']);
 
@@ -26,6 +29,7 @@ export async function POST(
     provider: string;
     amount: number;
     description?: string;
+    proposalId?: number;
   };
   try {
     body = await request.json();
@@ -33,7 +37,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { recipientPhone, recipientName, provider, amount, description } = body;
+  const { recipientPhone, recipientName, provider, amount, description, proposalId } = body;
 
   if (!recipientPhone || !recipientName || !provider || !amount || amount <= 0) {
     return NextResponse.json(
@@ -51,6 +55,7 @@ export async function POST(
   }
 
   const client = await pool.connect();
+  let inTx = false;
   try {
     // Get requesting member
     const memberRes = await client.query(
@@ -100,7 +105,24 @@ export async function POST(
       // non-fatal — proceed without fee preview
     }
 
-    const payout = await createPayout({
+    // Members authorize the spend; leadership only executes it. The proposal is
+    // locked and the treasury debited in one transaction, so a payout can never
+    // leave the group without the balance moving with it.
+    await ensureNtzsSchema(client);
+    await client.query('BEGIN');
+    inTx = true;
+    await assertPayoutAuthorized(client, groupId, proposalId, amount);
+    await debit(client, { ownerType: 'group', ownerId: groupId }, amount);
+    await client.query(
+      `UPDATE group_proposals SET payment_status = 'processing' WHERE id = $1`,
+      [Number(proposalId)]
+    );
+    await client.query('COMMIT');
+    inTx = false;
+
+    let payout;
+    try {
+      payout = await createPayout({
       amount,
       phone: recipientPhone,
       name: recipientName,
@@ -113,8 +135,25 @@ export async function POST(
         group_name: groupName,
         initiated_by_member_id: String(member.id),
         initiated_by_name: member.full_name,
+        proposal_id: String(proposalId),
       },
-    });
+      });
+    } catch (payoutErr) {
+      // The rail refused it. Put the money back — the debit above already
+      // committed, so nothing else will unwind it.
+      await client.query('BEGIN');
+      await client.query(
+        `UPDATE wallet_accounts SET balance_tzs = balance_tzs + $1, updated_at = NOW()
+          WHERE owner_type = 'group' AND owner_id = $2`,
+        [amount, groupId]
+      );
+      await client.query(
+        `UPDATE group_proposals SET payment_status = 'failed' WHERE id = $1`,
+        [Number(proposalId)]
+      );
+      await client.query('COMMIT');
+      throw payoutErr;
+    }
 
     return NextResponse.json({
       success: true,
@@ -126,6 +165,16 @@ export async function POST(
       recipient: { phone: recipientPhone, name: recipientName, provider },
     });
   } catch (error) {
+    if (inTx) await client.query('ROLLBACK').catch(() => {});
+    if (error instanceof PayoutAuthorizationError) {
+      return NextResponse.json({ error: error.message, details: error.details }, { status: error.status });
+    }
+    if (error instanceof LedgerError) {
+      const msg = error.code === 'insufficient_balance'
+        ? 'Salio la kundi haitoshi (Insufficient group balance)'
+        : error.message;
+      return NextResponse.json({ error: msg, code: error.code }, { status: 400 });
+    }
     console.error('Disbursement error:', error);
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: msg }, { status: 500 });

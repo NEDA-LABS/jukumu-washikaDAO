@@ -84,6 +84,11 @@ type ProposalRow = {
   metadata?: Record<string, unknown> | null;
   payment_amount_tzs?: number | null;
   payment_status?: string | null;
+  recipient_member_id?: number | null;
+  recipient_phone?: string | null;
+  recipient_name?: string | null;
+  yes_votes?: number;
+  required_yes?: number;
   funded_at?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -262,6 +267,7 @@ export default function MemberGroupDetailsPage() {
   const [disburseAmount, setDisburseAmount] = useState('');
   const [disburseProvider, setDisburseProvider] = useState('airtel');
   const [disburseDesc, setDisburseDesc] = useState('');
+  const [disburseProposalId, setDisburseProposalId] = useState('');
   const [disburseLoading, setDisburseLoading] = useState(false);
   const [disburseError, setDisburseError] = useState('');
   const [disburseSuccess, setDisburseSuccess] = useState('');
@@ -282,6 +288,17 @@ export default function MemberGroupDetailsPage() {
   }, [membership?.role]);
 
   const recentProposals = useMemo(() => proposals.slice(0, 3), [proposals]);
+
+  // A leader can only pay out against a proposal that reached its threshold and
+  // has not been paid yet — the same rule the server enforces.
+  const payableProposals = useMemo(
+    () => proposals.filter(p =>
+      (p.payment_amount_tzs ?? 0) > 0 &&
+      p.payment_status !== 'completed' &&
+      (p.yes_votes ?? 0) >= (p.required_yes ?? Number.MAX_SAFE_INTEGER)
+    ),
+    [proposals]
+  );
   const pendingJoinCount = useMemo(
     () => joinRequests.filter((r) => r.status === 'pending').length,
     [joinRequests],
@@ -520,6 +537,10 @@ export default function MemberGroupDetailsPage() {
 
   const handleDisburse = async () => {
     if (!groupId) return;
+    if (!disburseProposalId) {
+      setDisburseError(t('grp.disburse.needProposal'));
+      return;
+    }
     if (!disbursePhone || !disburseName || !disburseAmount) {
       setDisburseError('Jaza taarifa zote zinazohitajika');
       return;
@@ -539,6 +560,7 @@ export default function MemberGroupDetailsPage() {
           provider: disburseProvider,
           amount,
           description: disburseDesc || undefined,
+          proposalId: Number(disburseProposalId),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -553,6 +575,7 @@ export default function MemberGroupDetailsPage() {
       setDisburseName('');
       setDisburseAmount('');
       setDisburseDesc('');
+      setDisburseProposalId('');
       loadGroupPayments();
     } catch {
       setDisburseError('Hitilafu imetokea.');
@@ -1211,7 +1234,49 @@ export default function MemberGroupDetailsPage() {
               {isLeader && (
                 <div className="rounded-xl bg-card border border-border p-5">
                   <p className="text-sm font-semibold text-foreground mb-0.5">{t('grp.sendToMember')}</p>
-                  <p className="text-xs text-muted-foreground mb-4">{t('grp.sendDesc')}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t('grp.disburse.desc')}</p>
+
+                  {payableProposals.length === 0 ? (
+                    <div className="rounded-lg border border-border bg-background/40 p-4">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {t('grp.disburse.noneApproved')}
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('decisions')}
+                        className="mt-3 px-4 py-2 rounded-lg border border-border text-xs text-foreground hover:border-gold/60 transition-colors"
+                      >
+                        {t('grp.disburse.goToProposals')}
+                      </button>
+                    </div>
+                  ) : (
+                  <>
+                  <div className="mb-3">
+                    <label className="block text-xs text-muted-foreground mb-1">{t('grp.disburse.proposal')}</label>
+                    <select
+                      value={disburseProposalId}
+                      onChange={e => {
+                        const id = e.target.value;
+                        setDisburseProposalId(id);
+                        setDisburseError('');
+                        // The vote approved a specific amount and recipient —
+                        // prefill from it rather than letting them diverge.
+                        const p = payableProposals.find(x => String(x.id) === id);
+                        if (p) {
+                          if (p.payment_amount_tzs) setDisburseAmount(String(p.payment_amount_tzs));
+                          if (p.recipient_phone) setDisbursePhone(String(p.recipient_phone));
+                          if (p.recipient_name) setDisburseName(String(p.recipient_name));
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-gold/60 [&>option]:bg-card [&>option]:text-foreground"
+                    >
+                      <option value="">{t('grp.disburse.selectProposal')}</option>
+                      {payableProposals.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.title} — TSh {Number(p.payment_amount_tzs || 0).toLocaleString()} ({p.yes_votes}/{p.required_yes} ✓)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs text-muted-foreground mb-1">{t('grp.recipientName')}</label>
@@ -1246,10 +1311,12 @@ export default function MemberGroupDetailsPage() {
                   </div>
                   {disburseError && <p className="text-xs text-red-400 mt-2">{disburseError}</p>}
                   {disburseSuccess && <p className="text-xs text-emerald-400 mt-2">{disburseSuccess}</p>}
-                  <button onClick={handleDisburse} disabled={disburseLoading}
+                  <button onClick={handleDisburse} disabled={disburseLoading || !disburseProposalId}
                     className="mt-4 px-5 py-2.5 rounded-lg bg-primary hover:bg-gold-deep text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {disburseLoading ? t('grp.sending') : t('grp.send')}
                   </button>
+                  </>
+                  )}
                 </div>
               )}
 

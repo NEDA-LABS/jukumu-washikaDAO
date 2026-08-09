@@ -2,18 +2,19 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { USERNAME_RE, normalizeUsername } from '@/lib/username';
 
 /**
- * One-time username claim for members who registered before usernames existed.
+ * Username claim for members who registered before signup asked for one.
  *
- * Shown once per member, on sign-in. It is skippable on purpose: a username is
- * a convenience for being paid by name, not a requirement to use your own
- * money, and a hard gate on the way into the app would be the wrong trade. The
- * "later" choice is remembered locally so it does not become a nag; Settings
- * carries the same field for anyone who dismisses it.
+ * Every account is meant to have a handle, so this keeps asking on each
+ * sign-in until one is actually claimed. "Later" is deliberately scoped to the
+ * current browser session rather than remembered forever: it stops the prompt
+ * re-firing while someone is mid-task, but the next sign-in asks again.
+ * Settings carries the same field for anyone who wants to do it there.
  */
 
-const STORAGE_KEY = 'wd-username-prompt-dismissed';
+const STORAGE_KEY = 'wd-username-prompt-snoozed';
 
 export default function ClaimUsernameModal({
   onClose, onClaimed,
@@ -40,7 +41,7 @@ export default function ClaimUsernameModal({
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     if (!value) { setStatus('idle'); return; }
-    if (!/^[a-z0-9_]{3,30}$/.test(value)) { setStatus('invalid'); return; }
+    if (!USERNAME_RE.test(value)) { setStatus('invalid'); return; }
     setStatus('checking');
     debounce.current = setTimeout(async () => {
       try {
@@ -55,7 +56,9 @@ export default function ClaimUsernameModal({
   }, [value]);
 
   const dismiss = () => {
-    try { localStorage.setItem(STORAGE_KEY, '1'); } catch { /* private mode */ }
+    // Session-scoped: cleared when the browser session ends, so the next
+    // sign-in asks again.
+    try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch { /* private mode */ }
     onClose();
   };
 
@@ -69,7 +72,6 @@ export default function ClaimUsernameModal({
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { setError(d.error || t('user.claim.failed')); return; }
-      try { localStorage.setItem(STORAGE_KEY, '1'); } catch { /* private mode */ }
       onClaimed(d.username || value);
     } catch {
       setError(t('user.claim.failed'));
@@ -98,7 +100,7 @@ export default function ClaimUsernameModal({
           <input
             autoFocus
             value={value}
-            onChange={(e) => setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30))}
+            onChange={(e) => setValue(normalizeUsername(e.target.value))}
             placeholder="juma_ally"
             className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-foreground"
           />
@@ -130,13 +132,17 @@ export default function ClaimUsernameModal({
   );
 }
 
-/** Whether this member should be offered the one-time prompt. */
+/**
+ * Whether to ask this member for a handle. Asks on every sign-in until one
+ * exists — only a snooze within the current session suppresses it.
+ */
 export function shouldPromptForUsername(currentUsername: string | null | undefined): boolean {
   if (currentUsername) return false;
   try {
-    return localStorage.getItem(STORAGE_KEY) !== '1';
+    return sessionStorage.getItem(STORAGE_KEY) !== '1';
   } catch {
-    // Private mode or storage disabled: skip rather than prompt on every load.
-    return false;
+    // Storage disabled: still ask. A handle is expected on every account, and
+    // the prompt is dismissible, so asking is the safer failure here.
+    return true;
   }
 }

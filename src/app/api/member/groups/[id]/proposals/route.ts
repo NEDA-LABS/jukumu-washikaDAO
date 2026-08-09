@@ -125,6 +125,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           p.payment_amount_tzs, p.recipient_member_id, p.recipient_phone,
           p.payment_status, p.payment_tx_id, p.executed_at,
           p.created_at, p.updated_at,
+          -- Vote standing, so callers can tell a passed proposal from an open
+          -- one without a second round trip per proposal.
+          (SELECT COUNT(*) FROM group_proposal_votes v
+            WHERE v.proposal_id = p.id AND v.vote = 'yes')::int AS yes_votes,
+          CEIL(
+            (SELECT COUNT(*) FROM group_members gmm
+              WHERE gmm.group_id = p.group_id AND gmm.status = 'active')::numeric
+            * (SELECT g2.voting_threshold_numerator FROM groups g2 WHERE g2.id = p.group_id)
+            / (SELECT g2.voting_threshold_denominator FROM groups g2 WHERE g2.id = p.group_id)
+          )::int AS required_yes,
           m.full_name AS created_by_name, m.id AS created_by_member_id,
           rm.full_name AS recipient_name
         FROM group_proposals p
@@ -256,6 +266,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           p.payment_amount_tzs, p.recipient_member_id, p.recipient_phone,
           p.payment_status, p.payment_tx_id, p.executed_at,
           p.created_at, p.updated_at,
+          -- Vote standing, so callers can tell a passed proposal from an open
+          -- one without a second round trip per proposal.
+          (SELECT COUNT(*) FROM group_proposal_votes v
+            WHERE v.proposal_id = p.id AND v.vote = 'yes')::int AS yes_votes,
+          CEIL(
+            (SELECT COUNT(*) FROM group_members gmm
+              WHERE gmm.group_id = p.group_id AND gmm.status = 'active')::numeric
+            * (SELECT g2.voting_threshold_numerator FROM groups g2 WHERE g2.id = p.group_id)
+            / (SELECT g2.voting_threshold_denominator FROM groups g2 WHERE g2.id = p.group_id)
+          )::int AS required_yes,
           m.full_name AS created_by_name, m.id AS created_by_member_id,
           rm.full_name AS recipient_name
         FROM group_proposals p

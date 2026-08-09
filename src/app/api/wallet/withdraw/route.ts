@@ -5,6 +5,7 @@ import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
 import { getMasterNtzsUserId, debit, credit, LedgerError } from '@/lib/wallet/ledger';
 import { withdrawalFeeTzs } from '@/lib/wallet/fees';
 import { notify } from '@/lib/notify';
+import { getActor } from '@/lib/wallet/authorize';
 
 /**
  * Off-ramp: member balance → mobile money.
@@ -21,10 +22,17 @@ import { notify } from '@/lib/notify';
  * Async status changes are handled by the webhook via settleExternalTransaction.
  */
 export async function POST(request: NextRequest) {
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const client = await pool.connect();
 
   try {
-    const { userId, amountTzs, phone, quoteId } = await request.json();
+    // Identity comes from the signed cookie, never the request body.
+    const userId = actor.userId;
+    const { amountTzs, phone, quoteId } = await request.json();
 
     if (!userId || !amountTzs || !phone) {
       return NextResponse.json({ error: 'userId, amountTzs, and phone are required' }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getOrCreateAccount } from '@/lib/wallet/ledger';
+import { getActor } from '@/lib/wallet/authorize';
 
 /**
  * In the custodial model every member has an implicit ledger account, so
@@ -9,13 +10,17 @@ import { getOrCreateAccount } from '@/lib/wallet/ledger';
  * endpoint for backward compatibility with the dashboard's wallet setup call.
  */
 export async function POST(request: NextRequest) {
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const client = await pool.connect();
 
   try {
-    const { userId } = await request.json();
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
+    // Identity comes from the signed cookie, never the request body.
+    const userId = actor.userId;
+    await request.json().catch(() => ({}));
 
     const memberRes = await client.query(
       `SELECT m.id, m.ntzs_wallet_address

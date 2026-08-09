@@ -3,6 +3,8 @@ import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { internalTransfer, LedgerError } from '@/lib/wallet/ledger';
 import { notify, notifyGroupMembers } from '@/lib/notify';
+import { getActor } from '@/lib/wallet/authorize';
+import { assertPayoutAuthorized, PayoutAuthorizationError } from '@/lib/groups/payout-authorization';
 
 /**
  * Internal ledger transfer between database accounts. Pure DB, atomic — no
@@ -10,14 +12,21 @@ import { notify, notifyGroupMembers } from '@/lib/notify';
  * (group→member), p2p (member→member).
  */
 export async function POST(request: NextRequest) {
+  // Identity comes from the signed cookie. A `userId` in the body is ignored.
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const userId = actor.userId;
+
   const client = await pool.connect();
   let inTx = false;
 
   try {
-    const { userId, purpose, amountTzs, toMemberId, toUsername, groupId: rawGroupId, groupCode } = await request.json();
+    const { purpose, amountTzs, toMemberId, toUsername, groupId: rawGroupId, groupCode, proposalId } = await request.json();
 
-    if (!userId || !amountTzs || !purpose) {
-      return NextResponse.json({ error: 'userId, amountTzs, and purpose are required' }, { status: 400 });
+    if (!amountTzs || !purpose) {
+      return NextResponse.json({ error: 'amountTzs and purpose are required' }, { status: 400 });
     }
     if (!['contribution', 'disbursement', 'p2p'].includes(purpose)) {
       return NextResponse.json({ error: 'purpose must be contribution, disbursement, or p2p' }, { status: 400 });
@@ -56,6 +65,8 @@ export async function POST(request: NextRequest) {
     let from: { ownerType: 'member' | 'group'; ownerId: number };
     let to: { ownerType: 'member' | 'group'; ownerId: number };
 
+    let disbursementProposalId: unknown = null;
+
     if (purpose === 'contribution') {
       if (!groupId) return NextResponse.json({ error: 'groupId is required for contributions' }, { status: 400 });
       const membershipRes = await client.query(
@@ -81,6 +92,9 @@ export async function POST(request: NextRequest) {
       if (leaderRes.rows.length === 0) {
         return NextResponse.json({ error: 'Only leadership can disburse funds' }, { status: 403 });
       }
+      // Leadership executes a payout; the members authorize it. The proposal
+      // itself is verified below, under the transaction's lock.
+      disbursementProposalId = proposalId;
       const recipientRes = await client.query(`SELECT id FROM members WHERE id = $1`, [toMemberId]);
       if (recipientRes.rows.length === 0) {
         return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
@@ -115,6 +129,11 @@ export async function POST(request: NextRequest) {
 
     await client.query('BEGIN');
     inTx = true;
+
+    if (purpose === 'disbursement') {
+      await assertPayoutAuthorized(client, Number(groupId), disbursementProposalId, amountTzs);
+    }
+
     const result = await internalTransfer(client, {
       from, to, amountTzs,
       purpose,
@@ -165,6 +184,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (inTx) await client.query('ROLLBACK').catch(() => {});
+    if (error instanceof PayoutAuthorizationError) {
+      return NextResponse.json({ error: error.message, details: error.details }, { status: error.status });
+    }
     if (error instanceof LedgerError) {
       const msg = error.code === 'insufficient_balance'
         ? 'Salio haitoshi (Insufficient balance)'

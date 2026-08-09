@@ -4,6 +4,7 @@ import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { notify } from '@/lib/notify';
+import { getActor } from '@/lib/wallet/authorize';
 
 /**
  * Polls nTZS for any pending deposit/withdrawal and settles status changes
@@ -12,11 +13,14 @@ import { notify } from '@/lib/notify';
  * double-apply.
  */
 export async function POST(request: NextRequest) {
-  const { userId } = await request.json();
-
-  if (!userId) {
-    return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Identity comes from the signed cookie, never the request body.
+    const userId = actor.userId;
+    await request.json().catch(() => ({}));
   if (!process.env.NTZS_API_KEY) {
     return NextResponse.json({ synced: 0 });
   }

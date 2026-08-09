@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
 import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
+import { getActor } from '@/lib/wallet/authorize';
 
 /**
  * On-ramp: mobile money → master wallet. Funds mint into the single master
@@ -10,10 +11,17 @@ import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
  * (webhook/sync), not here — so a never-confirmed deposit never credits.
  */
 export async function POST(request: NextRequest) {
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const client = await pool.connect();
 
   try {
-    const { userId, amountTzs, phone } = await request.json();
+    // Identity comes from the signed cookie, never the request body.
+    const userId = actor.userId;
+    const { amountTzs, phone } = await request.json();
 
     if (!userId || !amountTzs || !phone) {
       return NextResponse.json({ error: 'userId, amountTzs, and phone are required' }, { status: 400 });

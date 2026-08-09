@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { getBalanceTzs } from '@/lib/wallet/ledger';
 import { syncMemberDeposits } from '@/lib/wallet/settlement';
+import { getActor, actorInGroup } from '@/lib/wallet/authorize';
 
 /**
  * Balance is read from the custodial ledger (wallet_accounts), not the nTZS
@@ -10,13 +11,17 @@ import { syncMemberDeposits } from '@/lib/wallet/settlement';
  * master wallet. Response shape is unchanged so the UI is untouched.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  const groupId = searchParams.get('groupId');
-
-  if (!userId && !groupId) {
-    return NextResponse.json({ error: 'userId or groupId is required' }, { status: 400 });
+  // You can read your own balance, or that of a group you belong to. A
+  // `userId` in the query string is ignored — it used to let anyone read
+  // anyone else's balance.
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const { searchParams } = new URL(request.url);
+  const groupId = searchParams.get('groupId');
+  const userId = groupId ? null : String(actor.userId);
 
   const client = await pool.connect();
 
@@ -24,6 +29,9 @@ export async function GET(request: NextRequest) {
     await ensureNtzsSchema(client);
 
     if (groupId) {
+      if (!(await actorInGroup(client, actor, Number(groupId)))) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const res = await client.query(
         `SELECT id, ntzs_wallet_address, name FROM groups WHERE id = $1`,
         [groupId]

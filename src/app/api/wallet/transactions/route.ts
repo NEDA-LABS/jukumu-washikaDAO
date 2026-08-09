@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
+import { getActor, actorInGroup } from '@/lib/wallet/authorize';
 
 export async function GET(request: NextRequest) {
+  // Your own history, or a group's — never an arbitrary member's.
+  const actor = getActor(request);
+  if (!actor) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
   const groupId = searchParams.get('groupId');
+  const userId = groupId ? null : String(actor.userId);
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
   const offset = parseInt(searchParams.get('offset') || '0');
 
-  if (!userId && !groupId) {
-    return NextResponse.json({ error: 'userId or groupId is required' }, { status: 400 });
-  }
 
   const client = await pool.connect();
 
@@ -34,6 +38,9 @@ export async function GET(request: NextRequest) {
     let params: (number | string)[];
 
     if (groupId) {
+      if (!(await actorInGroup(client, actor, Number(groupId)))) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       whereClause = `(t.from_group_id = $1 OR t.to_group_id = $1)`;
       params = [parseInt(groupId)];
     } else {
