@@ -18,9 +18,13 @@ export async function GET(request: NextRequest) {
       await oncePerProcess('members-avatar-column', () => client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`));
       // Primary lookup: member linked to this user
       let result = await client.query(`
-        SELECT 
+        SELECT
           m.id,
           m.full_name,
+          -- Without this the dashboard sees username: undefined for everyone,
+          -- so the claim prompt reappears on every sign-in no matter how many
+          -- times you claim one, and Settings shows the field blank.
+          m.username,
           m.email,
           m.phone,
           m.location,

@@ -426,7 +426,7 @@ export default function MemberDashboard() {
     // Its own section id, not 'group' — sharing one would make the two tabs
     // indistinguishable and light both at once.
     governance: 'governance',
-    me: 'settings',
+    me: 'me',
   };
 
   const tab: MemberTab =
@@ -522,7 +522,19 @@ export default function MemberDashboard() {
       ) : tab === 'group' && groupDetailId === null ? (
         <GroupList
           groups={home?.groups ?? []}
-          onOpen={(id) => { setScreen(null); setOpenProposal(null); setActiveGroupId(id); setGroupDetailId(id); }}
+          onOpen={(id) => {
+            setOpenProposal(null);
+            setActiveGroupId(id);
+            setGroupDetailId(id);
+            // Drop a screen belonging to a different group so its data can't
+            // flash, but keep one that already matches.
+            setScreen((prev) => (prev && prev.group.id === id ? prev : null));
+            // Load explicitly. The effect below only reacts to home.group.id
+            // changing, so opening the group that is already the default would
+            // otherwise clear the screen and never refetch it — an endless
+            // spinner on exactly one of your groups.
+            loadScreen(id);
+          }}
         />
       ) : tab === 'group' && screen ? (
         <div className="animate-[wdIn_.22s_ease_both]">
@@ -564,7 +576,7 @@ export default function MemberDashboard() {
             {t('home.joinGroup')}
           </button>
         </div>
-      ) : tab === 'me' && activeSection === 'settings' ? (
+      ) : tab === 'me' && activeSection === 'me' ? (
         <MeScreen
           name={user.fullName || user.email}
           username={memberProfile?.username}
@@ -576,7 +588,10 @@ export default function MemberDashboard() {
             { id: 'investments', label: t('dash.nav.investments') },
             { id: 'learning', label: t('dash.nav.training') },
             { id: 'notifications', label: t('notif.title'), meta: unreadCount ? String(unreadCount) : undefined },
-            { id: 'profile', label: t('dash.nav.settings') },
+            { id: 'profile', label: t('dash.nav.profile') },
+            // Settings is where the username lives. This row used to point at
+            // 'profile', so the username editor was unreachable.
+            { id: 'settings', label: t('dash.nav.settings') },
           ]}
           onLink={setActiveSection}
           onLogout={handleLogout}

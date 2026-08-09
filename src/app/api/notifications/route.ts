@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureNotificationsSchema } from '@/lib/notifications-db';
+import { getActor } from '@/lib/wallet/authorize';
 
 // GET - Fetch notifications for a user
 export async function GET(request: NextRequest) {
   try {
+    // Your own notifications, always. A `userId` in the query string is
+    // ignored — it used to let any session read anyone's notifications, and
+    // callers that omitted it got a 400 instead of their own list.
+    const actor = getActor(request);
+    if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = String(actor.userId);
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
@@ -143,8 +150,11 @@ export async function POST(request: NextRequest) {
 // PUT - Mark notification(s) as read
 export async function PUT(request: NextRequest) {
   try {
+    const actor = getActor(request);
+    if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await request.json();
-    const { userId, notificationId, markAllRead } = body;
+    const { notificationId, markAllRead } = body;
+    const userId = String(actor.userId);
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
