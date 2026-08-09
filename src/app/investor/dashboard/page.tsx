@@ -440,6 +440,13 @@ export default function InvestorDashboard() {
   // Fund project state
   const [fundTarget, setFundTarget] = useState<Project | null>(null);
   const [fundAmount, setFundAmount] = useState('');
+  // Two ways to fund: spend the in-app balance, or declare an nTZS transfer
+  // sent on-chain to the WashikaDAU treasury from a wallet on any platform.
+  const [fundMode, setFundMode] = useState<'balance' | 'external'>('balance');
+  const [fundFromAddress, setFundFromAddress] = useState('');
+  const [fundTxHash, setFundTxHash] = useState('');
+  const [treasuryAddress, setTreasuryAddress] = useState<string | null>(null);
+  const [addressCopied, setAddressCopied] = useState(false);
   const [fundSubmitting, setFundSubmitting] = useState(false);
   const [fundMsg, setFundMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -629,24 +636,54 @@ export default function InvestorDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (fundMode !== 'external' || treasuryAddress) return;
+    fetch('/api/investor/wallet/fund-external')
+      .then(r => r.json())
+      .then(d => { if (d?.treasuryAddress) setTreasuryAddress(d.treasuryAddress); })
+      .catch(() => { /* the address is also shown by the server on submit */ });
+  }, [fundMode, treasuryAddress]);
+
+  const resetFundForm = () => {
+    setFundTarget(null); setFundMsg(null); setFundAmount('');
+    setFundMode('balance'); setFundFromAddress(''); setFundTxHash('');
+  };
+
   const handleFundProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fundTarget) return;
     const amount = Number(fundAmount);
     if (!amount || amount < 1000) { setFundMsg({ text: 'Minimum amount is TSH 1,000', ok: false }); return; }
+    if (fundMode === 'external' && !/^0x[a-fA-F0-9]{40}$/.test(fundFromAddress.trim())) {
+      setFundMsg({ text: 'Enter the wallet address you sent from (0x…, 42 characters)', ok: false });
+      return;
+    }
     setFundSubmitting(true);
     setFundMsg(null);
     try {
-      const res = await fetch('/api/investor/wallet/fund-project', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proposalId: fundTarget.id, amountTzs: amount }),
-      });
+      const external = fundMode === 'external';
+      const res = await fetch(
+        external ? '/api/investor/wallet/fund-external' : '/api/investor/wallet/fund-project',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            external
+              ? {
+                  proposalId: fundTarget.id,
+                  amountTzs: amount,
+                  fromAddress: fundFromAddress.trim(),
+                  txHash: fundTxHash.trim() || undefined,
+                }
+              : { proposalId: fundTarget.id, amountTzs: amount }
+          ),
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         setFundMsg({ text: data.message || 'Transfer sent!', ok: true });
         setFundAmount('');
-        setTimeout(() => { setFundTarget(null); setFundMsg(null); fetchWallet(); }, 2500);
+        setTimeout(() => { resetFundForm(); fetchWallet(); }, external ? 4000 : 2500);
       } else {
         setFundMsg({ text: data.error || 'Transfer failed', ok: false });
       }
@@ -1814,13 +1851,92 @@ export default function InvestorDashboard() {
                 </div>
               </div>
 
-              {/* Balance */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
-                <span className="text-xs" style={{ color: ink.muted }}>Your balance</span>
-                <span className="text-sm font-black font-mono" style={{ color: wallet.balanceTzs > 0 ? '#059669' : '#DC2626' }}>
-                  TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
-                </span>
+              {/* How the money gets here */}
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ['balance', 'My balance'],
+                  ['external', 'nTZS wallet'],
+                ] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => { setFundMode(mode); setFundMsg(null); }}
+                    className="py-2.5 rounded-xl text-xs font-semibold transition-colors"
+                    style={{
+                      background: fundMode === mode ? 'var(--ds-gold)' : 'transparent',
+                      color: fundMode === mode ? '#fff' : ink.muted,
+                      border: `1.5px solid ${fundMode === mode ? 'var(--ds-gold)' : ink.cardBorder}`,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
+
+              {fundMode === 'balance' ? (
+                /* Balance */
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
+                  <span className="text-xs" style={{ color: ink.muted }}>Your balance</span>
+                  <span className="text-sm font-black font-mono" style={{ color: wallet.balanceTzs > 0 ? '#059669' : '#DC2626' }}>
+                    TSH {wallet.balanceTzs.toLocaleString('en-TZ')}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {/* Send here from any nTZS wallet */}
+                  <div className="px-4 py-3 rounded-xl" style={{ background: ink.chip }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: ink.muted }}>
+                      Send nTZS to this address
+                    </p>
+                    <p className="text-[11px] font-mono break-all leading-relaxed" style={{ color: ink.heading }}>
+                      {treasuryAddress || 'Loading…'}
+                    </p>
+                    {treasuryAddress && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(treasuryAddress);
+                            setAddressCopied(true);
+                            setTimeout(() => setAddressCopied(false), 2000);
+                          } catch { /* clipboard blocked — the address is selectable above */ }
+                        }}
+                        className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-semibold"
+                        style={{ border: `1px solid ${ink.cardBorder}`, color: ink.body }}
+                      >
+                        {addressCopied ? 'Copied ✓' : 'Copy address'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
+                      Wallet you sent from *
+                    </label>
+                    <input
+                      value={fundFromAddress}
+                      onChange={e => setFundFromAddress(e.target.value)}
+                      placeholder="0x…"
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                      style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
+                      Transaction hash <span style={{ color: ink.mutedLight, fontWeight: 400 }}>(optional, speeds up confirmation)</span>
+                    </label>
+                    <input
+                      value={fundTxHash}
+                      onChange={e => setFundTxHash(e.target.value)}
+                      placeholder="0x…"
+                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                      style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Amount */}
               <div>
@@ -1862,10 +1978,17 @@ export default function InvestorDashboard() {
                 </div>
               )}
 
+              {fundMode === 'external' && (
+                <p className="text-[10px] leading-relaxed" style={{ color: ink.mutedLight }}>
+                  Send the nTZS first, then record it here. The group is credited once we
+                  confirm the transfer reached the treasury — not immediately.
+                </p>
+              )}
+
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => { setFundTarget(null); setFundMsg(null); setFundAmount(''); }}
+                  onClick={resetFundForm}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold"
                   style={{ border: `1.5px solid ${ink.cardBorder}`, color: ink.muted, background: 'transparent' }}
                 >
@@ -1873,15 +1996,19 @@ export default function InvestorDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={fundSubmitting || !wallet.provisioned}
+                  /* External funding spends no in-app balance, so an
+                     unprovisioned wallet is no reason to block it. */
+                  disabled={fundSubmitting || (fundMode === 'balance' && !wallet.provisioned)}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
                   style={{ background: 'var(--ds-gold)', color: '#fff' }}
                 >
-                  {fundSubmitting ? 'Sending...' : 'Send nTZS →'}
+                  {fundSubmitting
+                    ? 'Sending...'
+                    : fundMode === 'external' ? 'Record transfer →' : 'Send nTZS →'}
                 </button>
               </div>
 
-              {!wallet.provisioned && (
+              {fundMode === 'balance' && !wallet.provisioned && (
                 <p className="text-[10px] text-center" style={{ color: '#DC2626' }}>
                   Set up your wallet first before funding a project.
                 </p>
