@@ -658,9 +658,16 @@ export default function InvestorDashboard() {
     if (!fundTarget) return;
     const amount = Number(fundAmount);
     if (!amount || amount < 1000) { setFundMsg({ text: 'Minimum amount is TSH 1,000', ok: false }); return; }
-    if (fundMode === 'external' && !/^0x[a-fA-F0-9]{40}$/.test(fundFromAddress.trim())) {
-      setFundMsg({ text: 'Enter the wallet address you sent from (0x…, 42 characters)', ok: false });
-      return;
+    if (fundMode === 'external') {
+      if (!/^0x[a-fA-F0-9]{64}$/.test(fundTxHash.trim())) {
+        setFundMsg({ text: 'Enter the transaction hash from your wallet (0x…, 66 characters)', ok: false });
+        return;
+      }
+      // Optional, so only checked when something was actually typed.
+      if (fundFromAddress.trim() && !/^0x[a-fA-F0-9]{40}$/.test(fundFromAddress.trim())) {
+        setFundMsg({ text: 'That wallet address is not valid (0x…, 42 characters)', ok: false });
+        return;
+      }
     }
     setFundSubmitting(true);
     setFundMsg(null);
@@ -676,7 +683,7 @@ export default function InvestorDashboard() {
               ? {
                   proposalId: fundTarget.id,
                   amountTzs: amount,
-                  fromAddress: fundFromAddress.trim(),
+                  fromAddress: fundFromAddress.trim() || undefined,
                   txHash: fundTxHash.trim() || undefined,
                 }
               : { proposalId: fundTarget.id, amountTzs: amount }
@@ -1915,25 +1922,28 @@ export default function InvestorDashboard() {
 
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
-                      Wallet you sent from *
+                      Transaction hash *
                     </label>
                     <input
-                      value={fundFromAddress}
-                      onChange={e => setFundFromAddress(e.target.value)}
+                      value={fundTxHash}
+                      onChange={e => setFundTxHash(e.target.value)}
                       placeholder="0x…"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                       style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}
                       required
                     />
+                    <p className="text-[10px] mt-1.5" style={{ color: ink.mutedLight }}>
+                      Your wallet shows this after the transfer. It is how we identify your payment.
+                    </p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: '#4A3D2A' }}>
-                      Transaction hash <span style={{ color: ink.mutedLight, fontWeight: 400 }}>(optional, speeds up confirmation)</span>
+                      Wallet you sent from <span style={{ color: ink.mutedLight, fontWeight: 400 }}>(optional)</span>
                     </label>
                     <input
-                      value={fundTxHash}
-                      onChange={e => setFundTxHash(e.target.value)}
+                      value={fundFromAddress}
+                      onChange={e => setFundFromAddress(e.target.value)}
                       placeholder="0x…"
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                       style={{ background: ink.card, border: `1.5px solid ${ink.cardBorder}`, color: ink.heading, fontFamily: 'monospace' }}

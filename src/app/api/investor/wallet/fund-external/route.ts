@@ -68,15 +68,24 @@ export async function POST(request: NextRequest) {
   if (!Number.isFinite(amountTzs) || amountTzs < 1000) {
     return NextResponse.json({ error: 'Minimum amount is TSH 1,000' }, { status: 400 });
   }
-  if (!looksLikeWalletAddress(fromAddress)) {
+  // The hash is what makes a claim confirmable and what stops the same
+  // transfer being credited twice, so it is the one required identifier.
+  if (!txHash) {
     return NextResponse.json(
-      { error: 'Enter the wallet address you sent from (0x… , 42 characters)', field: 'fromAddress' },
+      {
+        error: body?.txHash
+          ? 'That transaction hash is not valid (expected 0x… , 66 characters)'
+          : 'Enter the transaction hash from your wallet so we can confirm the transfer',
+        field: 'txHash',
+      },
       { status: 400 }
     );
   }
-  if (body?.txHash && !txHash) {
+  // Optional: an unverified hint that helps reconcile the deposit. Rejected
+  // only if it is present and malformed, never for being absent.
+  if (fromAddress && !looksLikeWalletAddress(fromAddress)) {
     return NextResponse.json(
-      { error: 'That transaction hash is not valid (expected 0x… , 66 characters)', field: 'txHash' },
+      { error: 'That wallet address is not valid (expected 0x… , 42 characters)', field: 'fromAddress' },
       { status: 400 }
     );
   }
@@ -130,7 +139,7 @@ export async function POST(request: NextRequest) {
          (group_id, proposal_id, claimed_by_user_id, from_address, amount_tzs, tx_hash, note)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, status, created_at`,
-      [groupId, proposalId, auth.userId, fromAddress.toLowerCase(), amountTzs, txHash, note]
+      [groupId, proposalId, auth.userId, fromAddress ? fromAddress.toLowerCase() : null, amountTzs, txHash, note]
     );
     const claim = inserted.rows[0] as { id: number; status: string; created_at: string };
 
