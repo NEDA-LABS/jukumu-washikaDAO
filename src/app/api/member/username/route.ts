@@ -86,11 +86,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
     }
 
-    // Update username
-    await client.query(
-      `UPDATE members SET username = $1 WHERE id = $2`,
-      [username.toLowerCase(), member.id]
-    );
+    // Update username. The SELECT above is a courtesy that gives a clean
+    // message in the common case; the unique index is what actually guarantees
+    // it. Two people claiming the same handle at once both pass the check, so
+    // the constraint violation is caught below and reported as "taken" rather
+    // than surfacing as a 500.
+    try {
+      await client.query(
+        `UPDATE members SET username = $1 WHERE id = $2`,
+        [username.toLowerCase(), member.id]
+      );
+    } catch (e) {
+      if ((e as { code?: string }).code === '23505') {
+        return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
+      }
+      throw e;
+    }
 
     return NextResponse.json({
       success: true,

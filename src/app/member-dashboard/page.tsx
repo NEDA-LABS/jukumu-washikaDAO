@@ -31,6 +31,8 @@ import MemberAppShell, { type MemberTab } from '@/components/member/MemberAppShe
 import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
 import MeScreen from '@/components/member/MeScreen';
 import GroupScreen, { type GroupScreenData, type GroupMemberRow } from '@/components/member/GroupScreen';
+import GroupList from '@/components/member/GroupList';
+import ClaimUsernameModal, { shouldPromptForUsername } from '@/components/member/ClaimUsernameModal';
 import GovernanceScreen, { type ProposalRow } from '@/components/member/GovernanceScreen';
 import ProposalScreen, { type ProposalDetail } from '@/components/member/ProposalScreen';
 import ContributeScreen, { type PayMethod } from '@/components/member/ContributeScreen';
@@ -85,6 +87,12 @@ export default function MemberDashboard() {
   // Kikundi and Utawala read the same payload — one roster query serving both
   // beats two endpoints returning overlapping halves of the group.
   const [screen, setScreen] = useState<ScreenData | null>(null);
+  // Kikundi is a two-level view: null shows the list of groups, a set id opens
+  // that group's detail. Opening a group makes it the active group (the app
+  // speaks for one chama at a time, as the old switcher already did), so the
+  // detail, Home and Utawala all agree on which group they mean.
+  const [groupDetailId, setGroupDetailId] = useState<number | null>(null);
+  const [showClaimUsername, setShowClaimUsername] = useState(false);
   // Opening a proposal pushes it over the governance list rather than routing
   // away — the tab bar has to stay put for this to read as an app.
   const [openProposal, setOpenProposal] = useState<ProposalDetail | null>(null);
@@ -316,7 +324,13 @@ export default function MemberDashboard() {
         fetch(`/api/members/profile?userId=${userId}`).catch(() => null),
         fetch(`/api/members/investments?userId=${userId}`).catch(() => null),
       ]);
-      if (profileRes?.ok) setMemberProfile(await profileRes.json());
+      if (profileRes?.ok) {
+        const profile = await profileRes.json();
+        setMemberProfile(profile);
+        // Members who registered before usernames existed get one chance to
+        // claim theirs. shouldPromptForUsername owns the "only once" rule.
+        if (shouldPromptForUsername(profile?.username)) setShowClaimUsername(true);
+      }
       if (investmentsRes?.ok) setMemberInvestments(await investmentsRes.json());
     } catch (error) {
       console.error('Error loading member data:', error);
@@ -427,6 +441,9 @@ export default function MemberDashboard() {
   const onTab = (next: MemberTab) => {
     if (next !== 'governance') setOpenProposal(null);
     if (next === 'contribute') setPayError(null);
+    // Kikundi always opens on the list — tapping the tab is a "show me my
+    // groups" gesture, not "resume the last group I was inside".
+    if (next === 'group') setGroupDetailId(null);
     setActiveSection(TAB_SECTION[next]);
   };
 
@@ -502,15 +519,33 @@ export default function MemberDashboard() {
           onVote={castVote}
           onClose={() => router.push(`/member-dashboard/groups/${openProposal.groupId}/proposals/${openProposal.id}`)}
         />
-      ) : tab === 'group' && screen ? (
-        <GroupScreen
-          data={screen}
+      ) : tab === 'group' && groupDetailId === null ? (
+        <GroupList
           groups={home?.groups ?? []}
-          onSelectGroup={(id) => { setScreen(null); setOpenProposal(null); setActiveGroupId(id); }}
-          onInvite={inviteToGroup}
-          onRemind={remindUnpaid}
-          onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onOpen={(id) => { setScreen(null); setOpenProposal(null); setActiveGroupId(id); setGroupDetailId(id); }}
         />
+      ) : tab === 'group' && screen ? (
+        <div className="animate-[wdIn_.22s_ease_both]">
+          {/* Back to the group list. The tab bar stays put, so this is the
+              only way up a level, and it must be obvious. */}
+          <button
+            onClick={() => setGroupDetailId(null)}
+            className="wd-press flex items-center gap-1.5 border-b border-border px-5 py-2.5 text-[11px] font-semibold text-muted-foreground"
+          >
+            <span className="font-mono">←</span> {t('grp.myGroups')}
+          </button>
+          <GroupScreen
+            data={screen}
+            onInvite={inviteToGroup}
+            onRemind={remindUnpaid}
+            onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          />
+        </div>
+      ) : tab === 'group' && groupDetailId !== null ? (
+        // Detail requested but its screen is still loading.
+        <div className="flex h-40 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent wd-round" />
+        </div>
       ) : tab === 'governance' && screen ? (
         <GovernanceScreen
           open={screen.openProposals}
@@ -548,6 +583,17 @@ export default function MemberDashboard() {
         />
       ) : (
         <div className="px-4 py-5 pb-8">{renderContent()}</div>
+      )}
+
+      {showClaimUsername && (
+        <ClaimUsernameModal
+          onClose={() => setShowClaimUsername(false)}
+          onClaimed={(u) => {
+            setMemberProfile((prev: any) => (prev ? { ...prev, username: u } : prev));
+            setShowClaimUsername(false);
+            showToast(t('user.claim.available'), 'success');
+          }}
+        />
       )}
 
       {quick && user?.id && (

@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Header from '@/components/Header';
 import AvatarPicker from '@/components/AvatarPicker';
+import { isValidUsername, normalizeUsername, suggestUsername } from '@/lib/username';
 
 export default function RegistrationSection({ title }: { title?: string }) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: '',
+    username: '',
     email: '',
     phone: '',
     password: '',
@@ -28,12 +30,50 @@ export default function RegistrationSection({ title }: { title?: string }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  // Once someone edits the handle themselves we stop rewriting it from their
+  // name, otherwise typing a name after picking a handle would clobber it.
+  const [usernameTouched, setUsernameTouched] = useState(false);
+  const [usernameState, setUsernameState] =
+    useState<'idle' | 'checking' | 'free' | 'taken' | 'invalid'>('idle');
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      // Offer a handle derived from the name so most people never have to
+      // invent one. suggestUsername returns '' for names too short to build
+      // from, which leaves the field untouched.
+      ...(name === 'fullName' && !usernameTouched
+        ? { username: suggestUsername(value) || prev.username }
+        : {}),
+    }));
   };
+
+  // Debounced availability check against the public endpoint. The signup route
+  // re-checks server-side and is the real gate; this is only so people are not
+  // told "taken" after filling in the whole form.
+  useEffect(() => {
+    const u = formData.username;
+    if (!u) { setUsernameState('idle'); return; }
+    if (!isValidUsername(u)) { setUsernameState('invalid'); return; }
+
+    setUsernameState('checking');
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/username-available?u=${encodeURIComponent(u)}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setUsernameState(data.available ? 'free' : data.invalid ? 'invalid' : 'taken');
+      } catch {
+        // A failed check must not block signup; the server decides on submit.
+        if (!cancelled) setUsernameState('idle');
+      }
+    }, 400);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [formData.username]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +87,19 @@ export default function RegistrationSection({ title }: { title?: string }) {
       return;
     }
 
+    // The handle is required now. Browser validation catches an empty field,
+    // but not one that is too short or already claimed.
+    if (!isValidUsername(formData.username)) {
+      setError(t('register.err.username'));
+      setIsSubmitting(false);
+      return;
+    }
+    if (usernameState === 'taken') {
+      setError(t('register.user.taken'));
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const authResponse = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -56,6 +109,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
           phone: formData.phone,
           password: formData.password,
           fullName: formData.fullName,
+          username: normalizeUsername(formData.username),
           location: formData.location,
           businessType: formData.businessType,
           idType: formData.idType,
@@ -107,7 +161,7 @@ export default function RegistrationSection({ title }: { title?: string }) {
           <button
             onClick={() => {
               setIsSubmitted(false);
-              setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', location: '', businessType: '', idType: '', idNumber: '', gender: '', age: '' });
+              setFormData({ fullName: '', username: '', email: '', phone: '', password: '', confirmPassword: '', location: '', businessType: '', idType: '', idNumber: '', gender: '', age: '' });
             }}
             className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -198,6 +252,41 @@ export default function RegistrationSection({ title }: { title?: string }) {
                   <div>
                     <label htmlFor="phone" className={lbl}>{t('register.f.phone')} *</label>
                     <input type="tel" id="phone" name="phone" required value={formData.phone} onChange={handleChange} className={fi} placeholder="+255 7xx xxx xxx" />
+                  </div>
+                  <div>
+                    {/* Claimed here so members can be paid by name later.
+                        Lower-cased and stripped as you type, so what you see is
+                        exactly what gets stored. */}
+                    <label htmlFor="username" className={lbl}>
+                      {t('register.f.username')} *
+                    </label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      required
+                      value={formData.username}
+                      onChange={(e) => {
+                        setUsernameTouched(true);
+                        setFormData(prev => ({ ...prev, username: normalizeUsername(e.target.value) }));
+                      }}
+                      className={fi}
+                      placeholder="juma_ally"
+                      minLength={3}
+                      maxLength={30}
+                      aria-describedby="username-help"
+                    />
+                    <p id="username-help" className="mt-1 text-[11px] text-muted-foreground">
+                      {usernameState === 'checking' && t('register.user.checking')}
+                      {usernameState === 'taken' && (
+                        <span className="text-destructive">{t('register.user.taken')}</span>
+                      )}
+                      {usernameState === 'free' && (
+                        <span className="text-primary">{t('register.user.free')}</span>
+                      )}
+                      {usernameState === 'invalid' && t('register.help.username')}
+                      {usernameState === 'idle' && t('register.help.username')}
+                    </p>
                   </div>
                   <div>
                     <label htmlFor="email" className={lbl}>{t('register.f.email')} <span className="normal-case text-muted-foreground">{t('register.optional')}</span></label>

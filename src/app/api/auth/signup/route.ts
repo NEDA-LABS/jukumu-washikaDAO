@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, linkMemberWallet } from '@/lib/ntzs-db';
+import { USERNAME_RE, USERNAME_RULE_TEXT, normalizeUsername } from '@/lib/username';
 
 let cachedPasswordColumn: 'password_hash' | 'password' | null = null;
 let ntzsSchemaReady = false;
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   let client: PoolClient | null = null;
 
   try {
-    const { email, password, fullName, phone, memberId, location, businessType, idType, idNumber, gender, age, avatarUrl } = await request.json();
+    const { email, password, fullName, phone, memberId, location, businessType, idType, idNumber, gender, age, avatarUrl, username } = await request.json();
 
     if (!password || !fullName) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -86,6 +87,25 @@ export async function POST(request: NextRequest) {
       if (existingPhone.rows.length > 0) {
         return NextResponse.json({ error: 'User already exists' }, { status: 400 });
       }
+    }
+
+    // Every new account claims a handle, so people can be paid by name instead
+    // of by picking a row out of a list.
+    const desiredUsername = normalizeUsername(typeof username === 'string' ? username : '');
+    if (!USERNAME_RE.test(desiredUsername)) {
+      return NextResponse.json({ error: USERNAME_RULE_TEXT, field: 'username' }, { status: 400 });
+    }
+
+    // Reject a taken username BEFORE creating the account. members.username is
+    // uniquely indexed, so otherwise the member INSERT further down throws and
+    // is swallowed by its own try/catch — leaving a user with no member record
+    // at all, which is far worse than asking them to pick another handle.
+    const takenRes = await client.query(
+      `SELECT 1 FROM members WHERE lower(username) = $1 LIMIT 1`,
+      [desiredUsername]
+    );
+    if (takenRes.rows.length > 0) {
+      return NextResponse.json({ error: 'Username already taken', field: 'username' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -165,8 +185,8 @@ export async function POST(request: NextRequest) {
           : null;
         await client.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
         await client.query(
-          `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status, avatar_url)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11)`,
+          `INSERT INTO members (user_id, full_name, email, phone, location, business_type, id_type, id_number, gender, age, status, avatar_url, username)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)`,
           [
             user.id,
             fullName,
@@ -179,9 +199,25 @@ export async function POST(request: NextRequest) {
             gender || null,
             Number.isFinite(numericAge) ? numericAge : null,
             typeof avatarUrl === 'string' && avatarUrl.length > 0 ? avatarUrl : null,
+            // Already normalised above, so the stored value always matches what
+            // the uniqueness check and the p2p lookup compare against.
+            desiredUsername,
           ]
         );
         console.log(`Auto-created member record for user ${user.id}`);
+      } else {
+        // The member record already existed — pre-created by an admin or by a
+        // partner and linked above on phone/email. That path skips the INSERT,
+        // so without this the handle the person just claimed would be dropped
+        // on the floor. Only fill a blank one: an existing handle is theirs and
+        // other members may already know them by it.
+        await client.query(
+          `UPDATE members
+             SET username = $1
+           WHERE id = $2
+             AND (username IS NULL OR username = '')`,
+          [desiredUsername, memberRes.rows[0].id]
+        );
       }
     } catch (memberErr) {
       console.error('Member record setup failed:', memberErr);
