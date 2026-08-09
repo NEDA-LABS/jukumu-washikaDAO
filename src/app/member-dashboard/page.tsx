@@ -32,6 +32,7 @@ import HomeScreen, { type HomeProposal } from '@/components/member/HomeScreen';
 import MeScreen from '@/components/member/MeScreen';
 import GroupScreen, { type GroupScreenData, type GroupMemberRow } from '@/components/member/GroupScreen';
 import GroupList from '@/components/member/GroupList';
+import GroupDetail, { type GroupSection } from '@/components/member/GroupDetail';
 import ClaimUsernameModal, { shouldPromptForUsername } from '@/components/member/ClaimUsernameModal';
 import GovernanceScreen, { type ProposalRow } from '@/components/member/GovernanceScreen';
 import ProposalScreen, { type ProposalDetail } from '@/components/member/ProposalScreen';
@@ -92,6 +93,9 @@ export default function MemberDashboard() {
   // speaks for one chama at a time, as the old switcher already did), so the
   // detail, Home and Utawala all agree on which group they mean.
   const [groupDetailId, setGroupDetailId] = useState<number | null>(null);
+  // Which section of the open group is showing. Entering a group always starts
+  // on Overview rather than resuming wherever you last were.
+  const [groupSection, setGroupSection] = useState<GroupSection>('overview');
   const [showClaimUsername, setShowClaimUsername] = useState(false);
   // Opening a proposal pushes it over the governance list rather than routing
   // away — the tab bar has to stay put for this to read as an app.
@@ -526,6 +530,7 @@ export default function MemberDashboard() {
             setOpenProposal(null);
             setActiveGroupId(id);
             setGroupDetailId(id);
+            setGroupSection('overview');
             // Drop a screen belonging to a different group so its data can't
             // flash, but keep one that already matches.
             setScreen((prev) => (prev && prev.group.id === id ? prev : null));
@@ -546,11 +551,23 @@ export default function MemberDashboard() {
           >
             <span className="font-mono">←</span> {t('grp.myGroups')}
           </button>
-          <GroupScreen
+          <GroupDetail
             data={screen}
+            groups={home?.groups ?? []}
+            section={groupSection}
+            onSection={setGroupSection}
+            onSelectGroup={(id) => {
+              setActiveGroupId(id);
+              setGroupDetailId(id);
+              setGroupSection('overview');
+              setScreen((prev) => (prev && prev.group.id === id ? prev : null));
+              loadScreen(id);
+            }}
             onInvite={inviteToGroup}
             onRemind={remindUnpaid}
-            onMember={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+            onMember={() => {}}
+            onProposal={(pid) => openProposalById(screen.group.id, pid)}
+            onNewProposal={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
           />
         </div>
       ) : tab === 'group' && groupDetailId !== null ? (
