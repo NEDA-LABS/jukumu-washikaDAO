@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import GroupScreen, { type GroupScreenData, type GroupMemberRow, type GroupSummary } from './GroupScreen';
+import UkutaWall from '@/components/UkutaWall';
 
 /**
  * The whole of a group, in one place.
@@ -19,9 +20,15 @@ import GroupScreen, { type GroupScreenData, type GroupMemberRow, type GroupSumma
  */
 
 export type GroupSection =
-  | 'overview' | 'members' | 'requests' | 'leadership' | 'finances' | 'decisions';
+  | 'overview' | 'members' | 'requests' | 'leadership' | 'finances' | 'decisions' | 'settings';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+
+/** Only the fields the group sections read off a proposal. */
+interface ProposalRef {
+  id: number; title: string; yes?: number; no?: number;
+  amountTzs?: number; paymentStatus?: string | null; requiredYes?: number;
+}
 
 interface JoinRequest {
   id: number; member_id: number; message: string | null; status: string;
@@ -37,6 +44,11 @@ interface LeaderRow {
 interface PaymentRow {
   reference?: string; amount_tzs?: string | number; status?: string;
   payment_type?: string; customer_name?: string; created_at?: string;
+}
+
+interface FeedItem {
+  key: string; kind: string; date: string; status?: string;
+  amount_tzs: number | null; title_sw: string; title_en: string; href: string | null;
 }
 
 interface PaymentsPayload {
@@ -78,8 +90,8 @@ export default function GroupDetail({
   data, groups, section, onSection, onSelectGroup, onInvite, onRemind, onMember, onProposal, onNewProposal,
 }: {
   data: GroupScreenData & {
-    openProposals?: { id: number; title: string; yes?: number; no?: number }[];
-    closedProposals?: { id: number; title: string; yes?: number; no?: number }[];
+    openProposals?: ProposalRef[];
+    closedProposals?: ProposalRef[];
   };
   groups: GroupSummary[];
   section: GroupSection;
@@ -91,16 +103,35 @@ export default function GroupDetail({
   onProposal: (id: number) => void;
   onNewProposal: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language: lang } = useLanguage();
   const groupId = data.group.id;
 
   const [requests, setRequests] = useState<JoinRequest[] | null>(null);
   const [leaders, setLeaders] = useState<LeaderRow[] | null>(null);
   const [finances, setFinances] = useState<PaymentsPayload | null>(null);
+  const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
 
+  // Disbursement, leader-only and gated on a passed proposal.
+  const [dProposal, setDProposal] = useState('');
+  const [dName, setDName] = useState('');
+  const [dPhone, setDPhone] = useState('');
+  const [dAmount, setDAmount] = useState('');
+  const [dProvider, setDProvider] = useState('airtel');
+  const [dBusy, setDBusy] = useState(false);
+  const [dMsg, setDMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Group settings, leader-only.
+  const [sAmount, setSAmount] = useState('');
+  const [sFreq, setSFreq] = useState<'monthly' | 'weekly'>('monthly');
+  const [sPhone, setSPhone] = useState('');
+  const [sEmail, setSEmail] = useState('');
+  const [sBusy, setSBusy] = useState(false);
+  const [sMsg, setSMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [sLoaded, setSLoaded] = useState(false);
+
   // Switching group invalidates every section's data.
-  useEffect(() => { setRequests(null); setLeaders(null); setFinances(null); }, [groupId]);
+  useEffect(() => { setRequests(null); setLeaders(null); setFinances(null); setFeed(null); }, [groupId]);
 
   const load = useCallback(async (s: GroupSection) => {
     try {
@@ -116,12 +147,17 @@ export default function GroupDetail({
         const r = await fetch(`/api/member/groups/${groupId}/payments`);
         setFinances(r.ok ? await r.json() : null);
       }
+      if (s === 'overview' && feed === null) {
+        const r = await fetch(`/api/member/groups/${groupId}/feed?limit=8`);
+        setFeed(r.ok ? ((await r.json()).items ?? []) : []);
+      }
     } catch {
       // Leave the section empty rather than blank the whole group.
       if (s === 'requests') setRequests([]);
       if (s === 'leadership') setLeaders([]);
+      if (s === 'overview') setFeed([]);
     }
-  }, [groupId, requests, leaders, finances]);
+  }, [groupId, requests, leaders, finances, feed]);
 
   useEffect(() => { load(section); }, [section, load]);
 
@@ -154,6 +190,62 @@ export default function GroupDetail({
 
   const pendingCount = (requests ?? []).filter((r) => r.status === 'pending').length;
 
+  const payable = (data.openProposals ?? [])
+    .concat(data.closedProposals ?? [])
+    .filter((p) => (p.amountTzs ?? 0) > 0 && p.paymentStatus !== 'completed'
+      && (p.yes ?? 0) >= (p.requiredYes ?? Number.MAX_SAFE_INTEGER));
+
+  const disburse = async () => {
+    if (!dProposal) { setDMsg({ text: t('grp.disburse.needProposal'), ok: false }); return; }
+    const amt = Number(dAmount);
+    if (!amt || amt <= 0 || !dPhone.trim() || !dName.trim()) {
+      setDMsg({ text: t('prop.err.amountInvalid'), ok: false }); return;
+    }
+    setDBusy(true); setDMsg(null);
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}/disburse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientPhone: dPhone.trim(), recipientName: dName.trim(),
+          provider: dProvider, amount: amt, proposalId: Number(dProposal),
+        }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) { setDMsg({ text: d?.error || t('prop.err.genericFailed'), ok: false }); return; }
+      setDMsg({ text: `${fmt(amt)} TZS → ${dName.trim()}`, ok: true });
+      setDProposal(''); setDName(''); setDPhone(''); setDAmount('');
+      setFinances(null);
+    } catch {
+      setDMsg({ text: t('prop.err.genericFailed'), ok: false });
+    } finally {
+      setDBusy(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    const amt = Number(sAmount);
+    if (!amt || amt <= 0) { setSMsg({ text: t('prop.err.invalidAmount'), ok: false }); return; }
+    setSBusy(true); setSMsg(null);
+    try {
+      const res = await fetch(`/api/member/groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          monthlyContribution: amt, contributionFrequency: sFreq,
+          contactPhone: sPhone, contactEmail: sEmail,
+        }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) { setSMsg({ text: d?.error || t('grp.settings.leadershipOnly'), ok: false }); return; }
+      setSMsg({ text: t('grp.settings.saved'), ok: true });
+    } catch {
+      setSMsg({ text: t('grp.err.loadFailed'), ok: false });
+    } finally {
+      setSBusy(false);
+    }
+  };
+
   return (
     <div>
       {/* Section nav. Scrolls horizontally rather than wrapping, so the group
@@ -178,17 +270,87 @@ export default function GroupDetail({
             </button>
           );
         })}
+        {/* Settings sits apart from the sections — it is a destination, not a
+            view of the group. */}
+        <button
+          onClick={() => onSection('settings')}
+          aria-label={t('grp.settings.title')}
+          aria-current={section === 'settings' ? 'page' : undefined}
+          className={`wd-press relative ml-auto flex-none py-2.5 pl-3 text-[13px] leading-none ${
+            section === 'settings' ? 'text-foreground' : 'text-muted-foreground'
+          }`}
+        >
+          ⚙
+          {section === 'settings' && <span className="absolute inset-x-3 -bottom-px h-0.5 bg-foreground" />}
+        </button>
       </nav>
 
       {section === 'overview' && (
-        <GroupScreen
-          data={data}
-          groups={groups}
-          onSelectGroup={onSelectGroup}
-          onInvite={onInvite}
-          onRemind={onRemind}
-          onMember={onMember}
-        />
+        <>
+          <GroupScreen
+            data={data}
+            groups={groups}
+            onSelectGroup={onSelectGroup}
+            onInvite={onInvite}
+            onRemind={onRemind}
+            onMember={onMember}
+            showRoster={false}
+          />
+
+          {/* The wall answers "who has paid" faster than any table. It carries
+              its own heading and period toggle, so it gets no second one. */}
+          <section className="border-b border-border px-5 py-[18px]">
+            <UkutaWall groupId={groupId} />
+          </section>
+
+          <section className="px-5 pb-2 pt-4">
+            <h2 className="font-display text-[15px] font-bold leading-tight">{t('grp.recentActivity')}</h2>
+          </section>
+          <section className="px-5 pb-6">
+            {feed === null ? <Loading />
+              : feed.length === 0 ? <Empty text={t('grp.noActivity')} />
+              : feed.map((f) => {
+                const out = f.kind === 'disbursement' || f.kind === 'transfer_out';
+                const amt = Number(f.amount_tzs || 0);
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => {
+                      // Proposal rows carry an href ending in the id; open it
+                      // in place rather than routing away.
+                      const m = f.href && f.href.match(/proposals\/(\d+)/);
+                      if (m) onProposal(Number(m[1]));
+                    }}
+                    className="flex w-full items-center gap-3 border-b border-border py-2.5 text-left"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11.5px] font-medium leading-tight">
+                        {lang === 'sw' ? f.title_sw : f.title_en}
+                      </span>
+                      <span className="mt-0.5 block font-mono text-[8.5px] leading-none text-ink-3">
+                        {new Date(f.date).toLocaleDateString()}
+                      </span>
+                    </span>
+                    {amt > 0 && (
+                      <span className={`flex-none wd-figure text-[13px] ${out ? 'text-destructive' : 'text-success'}`}>
+                        {out ? '−' : '+'}{fmt(amt)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+          </section>
+
+          {/* The roster closes the overview, as it did before. */}
+          <GroupScreen
+            data={data}
+            groups={[]}
+            onInvite={onInvite}
+            onRemind={onRemind}
+            onMember={onMember}
+            showHeader={false}
+          />
+        </>
       )}
 
       {section === 'members' && (
@@ -280,6 +442,70 @@ export default function GroupDetail({
                 <span className="wd-kicker wd-kicker-gold flex-none">{l.role}</span>
               </div>
             ))}
+
+        </Panel>
+      )}
+
+      {section === 'settings' && (
+        <Panel title={t('grp.settings.title')}>
+          {/* The contact details here are what the Contact Us button on the
+              public pages actually reaches. */}
+          {!data.isLeader ? <Empty text={t('grp.settings.leadershipOnly')} /> : (
+            <div>
+
+              <label className="block">
+                <span className="wd-kicker">{t('grp.freq.contribAmount')}</span>
+                <input
+                  type="number" min="1" inputMode="numeric"
+                  value={sAmount || (sLoaded ? '' : String(data.group.monthlyContribution || ''))}
+                  onFocus={() => { if (!sLoaded) { setSAmount(String(data.group.monthlyContribution || '')); setSLoaded(true); } }}
+                  onChange={(e) => { setSAmount(e.target.value); setSLoaded(true); setSMsg(null); }}
+                  className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  font-mono"
+                />
+              </label>
+
+              <div className="mt-3">
+                <span className="wd-kicker">{t('grp.freq.label')}</span>
+                <div className="mt-1.5 flex gap-2">
+                  {(['monthly', 'weekly'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => { setSFreq(f); setSMsg(null); }}
+                      aria-pressed={sFreq === f}
+                      className={`wd-press flex-1 border px-3 py-2.5 text-[11px] font-semibold ${
+                        sFreq === f ? 'border-foreground bg-gold-tint' : 'border-border text-muted-foreground'
+                      }`}
+                    >
+                      {f === 'monthly' ? t('grp.freq.monthly') : t('grp.freq.weekly')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <p className="wd-kicker mt-4">{t('grp.contact.title')}</p>
+              <p className="mt-1 text-[10.5px] leading-snug text-muted-foreground">{t('grp.contact.hint')}</p>
+              <label className="mt-2 block">
+                <span className="wd-kicker">{t('grp.contact.phone')}</span>
+                <input value={sPhone} onChange={(e) => { setSPhone(e.target.value); setSMsg(null); }} className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  font-mono" />
+              </label>
+              <label className="mt-3 block">
+                <span className="wd-kicker">{t('grp.contact.email')}</span>
+                <input type="email" value={sEmail} onChange={(e) => { setSEmail(e.target.value); setSMsg(null); }} className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground " />
+              </label>
+
+              {sMsg && (
+                <p className={`mt-2 text-[11px] ${sMsg.ok ? 'text-success' : 'text-destructive'}`}>{sMsg.text}</p>
+              )}
+              <button
+                onClick={saveSettings}
+                disabled={sBusy}
+                className="wd-press mt-3 w-full bg-foreground py-2.5 text-[11.5px] font-semibold text-background disabled:opacity-40"
+              >
+                {sBusy ? t('grp.creating') : t('set.username.save')}
+              </button>
+            </div>
+          )}
         </Panel>
       )}
 
@@ -329,6 +555,79 @@ export default function GroupDetail({
                     );
                   })}
                 </>
+              )}
+
+              {/* Money only leaves on a passed vote — the picker offers exactly
+                  the proposals the server would accept, and nothing else. */}
+              {finances.isLeader && (
+                <div className="mt-6 border-t-2 border-rule pt-4">
+                  <h3 className="font-display text-[13px] font-bold">{t('grp.sendToMember')}</h3>
+                  <p className="mt-1 text-[10.5px] leading-snug text-muted-foreground">{t('grp.disburse.desc')}</p>
+
+                  {payable.length === 0 ? (
+                    <div className="mt-3 border border-border px-4 py-4">
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">{t('grp.disburse.noneApproved')}</p>
+                      <button
+                        onClick={() => onSection('decisions')}
+                        className="wd-press mt-3 border border-border px-3 py-2 text-[11px] font-semibold"
+                      >
+                        {t('grp.disburse.goToProposals')}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <label className="mt-3 block">
+                        <span className="wd-kicker">{t('grp.disburse.proposal')}</span>
+                        <select
+                          value={dProposal}
+                          onChange={(e) => {
+                            setDProposal(e.target.value); setDMsg(null);
+                            const pr = payable.find((x) => String(x.id) === e.target.value);
+                            if (pr?.amountTzs) setDAmount(String(pr.amountTzs));
+                          }}
+                          className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  [&>option]:bg-card [&>option]:text-foreground"
+                        >
+                          <option value="">{t('grp.disburse.selectProposal')}</option>
+                          {payable.map((pr) => (
+                            <option key={pr.id} value={pr.id}>
+                              {pr.title} — {fmt(pr.amountTzs || 0)} ({pr.yes}/{pr.requiredYes})
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="mt-3 block">
+                        <span className="wd-kicker">{t('grp.recipientName')}</span>
+                        <input value={dName} onChange={(e) => { setDName(e.target.value); setDMsg(null); }} className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground " />
+                      </label>
+                      <label className="mt-3 block">
+                        <span className="wd-kicker">{t('grp.phone')}</span>
+                        <input value={dPhone} onChange={(e) => { setDPhone(e.target.value); setDMsg(null); }} placeholder="255712345678" className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  font-mono" />
+                      </label>
+                      <label className="mt-3 block">
+                        <span className="wd-kicker">{t('prop.amount')}</span>
+                        <input type="number" min="1" inputMode="numeric" value={dAmount} onChange={(e) => { setDAmount(e.target.value); setDMsg(null); }} className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  font-mono" />
+                      </label>
+                      <label className="mt-3 block">
+                        <span className="wd-kicker">{t('grp.network')}</span>
+                        <select value={dProvider} onChange={(e) => setDProvider(e.target.value)} className="mt-1.5 w-full border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-ink-3 focus:border-foreground  [&>option]:bg-card [&>option]:text-foreground">
+                          <option value="airtel">Airtel Money</option>
+                          <option value="mpesa">Vodacom M-Pesa</option>
+                          <option value="tigopesa">Tigo Pesa</option>
+                          <option value="halopesa">Halo Pesa</option>
+                        </select>
+                      </label>
+
+                      {dMsg && <p className={`mt-2 text-[11px] ${dMsg.ok ? 'text-success' : 'text-destructive'}`}>{dMsg.text}</p>}
+                      <button
+                        onClick={disburse}
+                        disabled={dBusy || !dProposal}
+                        className="wd-press mt-3 w-full bg-foreground py-2.5 text-[11.5px] font-semibold text-background disabled:opacity-40"
+                      >
+                        {dBusy ? t('grp.sending') : t('grp.send')}
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </>
           )}

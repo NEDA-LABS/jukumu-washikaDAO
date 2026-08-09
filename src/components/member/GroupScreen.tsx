@@ -44,6 +44,7 @@ const PAGE = 10;
 
 export default function GroupScreen({
   data, groups = [], onSelectGroup, onInvite, onRemind, onMember,
+  showHeader = true, showRoster = true,
 }: {
   data: GroupScreenData;
   /** Every group the member belongs to. One or none hides the switcher. */
@@ -52,6 +53,9 @@ export default function GroupScreen({
   onInvite: () => void;
   onRemind: () => void;
   onMember: (m: GroupMemberRow) => void;
+  /** Overview splits this component around the wall, so each half renders once. */
+  showHeader?: boolean;
+  showRoster?: boolean;
 }) {
   const { t } = useLanguage();
   const [shown, setShown] = useState(PAGE);
@@ -62,7 +66,7 @@ export default function GroupScreen({
     <div className="animate-[wdIn_.22s_ease_both]">
       {/* Belonging to several chamas is normal. The row is only worth its
           space when there is actually something to switch between. */}
-      {groups.length > 1 && (
+      {showHeader && groups.length > 1 && (
         <section className="border-b border-border px-5 py-3">
           <span className="wd-kicker">{t('grp.myGroups')} · {groups.length}</span>
           <div className="scrollbar-none -mx-5 mt-2.5 flex gap-2 overflow-x-auto px-5">
@@ -92,6 +96,7 @@ export default function GroupScreen({
         </section>
       )}
 
+      {showHeader && (
       <section className="border-b border-border px-5 py-[18px]">
         <div className="flex border border-border">
           <div className="flex-1 border-r border-border px-3 py-2.5">
@@ -122,7 +127,10 @@ export default function GroupScreen({
           )}
         </div>
       </section>
+      )}
 
+      {showRoster && (
+      <>
       <div className="flex items-baseline justify-between px-5 pb-2 pt-4">
         <h2 className="font-display text-[15px] font-bold leading-tight">{t('grp.members')}</h2>
         <span className="font-mono text-[9px] font-medium text-ink-3">
@@ -163,6 +171,8 @@ export default function GroupScreen({
           </button>
         )}
       </section>
+      </>
+      )}
     </div>
   );
 }

@@ -64,7 +64,16 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       ),
       client.query(
         `SELECT p.id, p.title, p.status, p.proposal_type, p.created_at, p.funded_at,
+                p.payment_status,
                 COALESCE(p.payment_amount_tzs, 0)::bigint AS amount,
+                -- Yes votes needed to pass, so the disburse picker can offer
+                -- exactly the proposals the server would accept.
+                CEIL(
+                  (SELECT COUNT(*) FROM group_members gmm
+                    WHERE gmm.group_id = p.group_id AND gmm.status = 'active')::numeric
+                  * (SELECT g2.voting_threshold_numerator FROM groups g2 WHERE g2.id = p.group_id)
+                  / (SELECT g2.voting_threshold_denominator FROM groups g2 WHERE g2.id = p.group_id)
+                )::int AS required_yes,
                 a.full_name AS by_name,
                 (SELECT COUNT(*)::int FROM group_proposal_votes v
                   WHERE v.proposal_id = p.id AND v.vote IN ('yes','for','approve')) AS yes,
@@ -122,7 +131,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     const rows = propRes.rows as {
       id: number; title: string; status: string; proposal_type: string | null;
       created_at: string; funded_at: string | null; amount: string;
-      by_name: string | null; yes: number; no: number; my_vote: string | null;
+      by_name: string | null; yes: number; no: number; my_vote: string | null; payment_status: string | null; required_yes: number;
     }[];
 
     const shape = (p: (typeof rows)[number]) => ({
@@ -136,6 +145,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       pending: Math.max(0, total - (p.yes + p.no)),
       myVote: p.my_vote,
       status: p.status,
+      paymentStatus: p.payment_status,
+      requiredYes: p.required_yes,
       funded: !!p.funded_at,
       at: p.created_at,
     });

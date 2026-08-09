@@ -33,6 +33,7 @@ import MeScreen from '@/components/member/MeScreen';
 import GroupScreen, { type GroupScreenData, type GroupMemberRow } from '@/components/member/GroupScreen';
 import GroupList from '@/components/member/GroupList';
 import GroupDetail, { type GroupSection } from '@/components/member/GroupDetail';
+import CreateProposalModal from '@/components/member/CreateProposalModal';
 import ClaimUsernameModal, { shouldPromptForUsername } from '@/components/member/ClaimUsernameModal';
 import GovernanceScreen, { type ProposalRow } from '@/components/member/GovernanceScreen';
 import ProposalScreen, { type ProposalDetail } from '@/components/member/ProposalScreen';
@@ -96,6 +97,7 @@ export default function MemberDashboard() {
   // Which section of the open group is showing. Entering a group always starts
   // on Overview rather than resuming wherever you last were.
   const [groupSection, setGroupSection] = useState<GroupSection>('overview');
+  const [newProposalFor, setNewProposalFor] = useState<{ id: number; name: string } | null>(null);
   const [showClaimUsername, setShowClaimUsername] = useState(false);
   // Opening a proposal pushes it over the governance list rather than routing
   // away — the tab bar has to stay put for this to read as an app.
@@ -114,6 +116,27 @@ export default function MemberDashboard() {
   useEffect(() => {
     if (home?.group?.id) loadScreen(home.group.id);
   }, [home?.group?.id, loadScreen]);
+
+  // Deep links land here: notification actionUrls and the retired
+  // /member-dashboard/groups/[id] route both arrive as
+  // ?section=group&group=<id>. Read straight off the URL rather than through
+  // useSearchParams, which would force this prerendered page into a Suspense
+  // boundary purely to look at one query string.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const gid = Number(q.get('group'));
+    if (Number.isFinite(gid) && gid > 0) {
+      setActiveSection('group');
+      setActiveGroupId(gid);
+      setGroupDetailId(gid);
+      setGroupSection('overview');
+      loadScreen(gid);
+    } else if (q.get('section') === 'group') {
+      setActiveSection('group');
+    }
+    // Once only, on mount — later navigation is driven by state, not the URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openProposalById = React.useCallback(async (gid: number, pid: number) => {
     try {
@@ -516,12 +539,14 @@ export default function MemberDashboard() {
           error={payError}
           onSubmit={submitContribution}
         />
-      ) : tab === 'governance' && openProposal ? (
+      ) : (tab === 'governance' || tab === 'group') && openProposal ? (
         <ProposalScreen
           p={openProposal}
           submitting={voting}
           onVote={castVote}
-          onClose={() => router.push(`/member-dashboard/groups/${openProposal.groupId}/proposals/${openProposal.id}`)}
+          // Closing returns to wherever it was opened from rather than routing
+          // away, so the tab bar and the group you were in both stay put.
+          onClose={() => setOpenProposal(null)}
         />
       ) : tab === 'group' && groupDetailId === null ? (
         <GroupList
@@ -567,7 +592,7 @@ export default function MemberDashboard() {
             onRemind={remindUnpaid}
             onMember={() => {}}
             onProposal={(pid) => openProposalById(screen.group.id, pid)}
-            onNewProposal={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+            onNewProposal={() => setNewProposalFor({ id: screen.group.id, name: screen.group.name })}
           />
         </div>
       ) : tab === 'group' && groupDetailId !== null ? (
@@ -580,7 +605,7 @@ export default function MemberDashboard() {
           open={screen.openProposals}
           closed={screen.closedProposals}
           canPropose
-          onNewProposal={() => router.push(`/member-dashboard/groups/${screen.group.id}`)}
+          onNewProposal={() => setNewProposalFor({ id: screen.group.id, name: screen.group.name })}
           onProposal={(p) => openProposalById(screen.group.id, p.id)}
         />
       ) : (tab === 'group' || tab === 'governance') && !home?.group ? (
@@ -615,6 +640,21 @@ export default function MemberDashboard() {
         />
       ) : (
         <div className="px-4 py-5 pb-8">{renderContent()}</div>
+      )}
+
+      {newProposalFor && (
+        <CreateProposalModal
+          groupId={newProposalFor.id}
+          groupName={newProposalFor.name}
+          onClose={() => setNewProposalFor(null)}
+          onCreated={() => {
+            const gid = newProposalFor.id;
+            setNewProposalFor(null);
+            // Land on Decisions with the new proposal already in the list.
+            setGroupSection('decisions');
+            loadScreen(gid);
+          }}
+        />
       )}
 
       {showClaimUsername && (
