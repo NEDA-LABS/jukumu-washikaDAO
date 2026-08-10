@@ -86,6 +86,10 @@ type Project = {
     attachment?: { dataUrl: string; name: string; mime: string } | null;
   } | null;
   funded_at: string;
+  /** Confirmed funding for this project, from every route. */
+  raised_tzs?: number;
+  /** Declared but not yet confirmed — shown apart, never counted as raised. */
+  pending_tzs?: number;
   created_at: string;
   group_id: number;
   group_name: string;
@@ -238,7 +242,11 @@ function StatCard({ label, value, sub, accent, ink }: { label: string; value: st
 function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onContact: (p: Project) => void; onFund: (p: Project) => void; onOpen: (p: Project) => void; ink: Ink }) {
   const { t } = useLanguage();
   const goal = p.metadata?.funding_goal_tzs ?? 0;
-  const funded = Number(p.total_investment ?? 0);
+  // What has actually reached this project. total_investment stood in for this
+  // before, but it is a per-group column nothing about funding writes, so
+  // every card read 0% regardless of how much had come in.
+  const funded = Number(p.raised_tzs ?? 0);
+  const pendingTzs = Number(p.pending_tzs ?? 0);
   const pct = goal > 0 ? Math.min(100, Math.round((funded / goal) * 100)) : 0;
   const isApproved = !!p.funded_at;
 
@@ -321,7 +329,10 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
               Goal: <span style={{ color: ink.heading, fontFamily: 'monospace', fontWeight: 700 }}>{fmtShort(goal)}</span>
               <span style={{ marginLeft: 4 }}>{usd(goal)}</span>
             </span>
-            <span>{pct}% funded</span>
+            <span>
+              {pct}% funded
+              {funded > 0 && <span style={{ opacity: 0.75 }}> · {fmtShort(funded)}</span>}
+            </span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: ink.cardBorder }}>
             <div
@@ -329,6 +340,13 @@ function ProjectCard({ p, onContact, onFund, onOpen, ink }: { p: Project; onCont
               style={{ width: `${pct}%`, background: pct >= 80 ? '#0B3D2E' : 'var(--ds-gold)' }}
             />
           </div>
+          {/* Money declared but not yet verified against the treasury. Kept out
+              of the bar on purpose — it is not the group's until confirmed. */}
+          {pendingTzs > 0 && (
+            <p className="text-[10px]" style={{ color: ink.mutedLight }}>
+              {fmtShort(pendingTzs)} awaiting confirmation
+            </p>
+          )}
         </div>
       )}
 

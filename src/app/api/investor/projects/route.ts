@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureGroupContactColumns } from '@/lib/groups-schema';
+import { ensureExternalFundingSchema } from '@/lib/wallet/external-funding';
 
 /**
  * GET /api/investor/projects
@@ -18,6 +19,8 @@ export async function GET(request: NextRequest) {
     // The contact columns are created lazily; this route reads them, so it has
     // to guarantee they exist rather than assume another endpoint ran first.
     await ensureGroupContactColumns();
+    // The raised total reads external_funding_claims, which is created lazily.
+    await ensureExternalFundingSchema();
     client = await pool.connect();
 
     const res = await client.query(`
@@ -50,7 +53,32 @@ export async function GET(request: NextRequest) {
           SELECT COUNT(*)
           FROM group_proposal_votes gpv
           WHERE gpv.proposal_id = p.id
-        ) AS total_votes
+        ) AS total_votes,
+        -- What this project has actually raised. groups.total_investment used
+        -- to stand in for this, but it is a manually-set per-GROUP figure that
+        -- nothing about funding ever writes, so every project read 0% no
+        -- matter how much money had arrived. Both real routes count here:
+        -- investors spending an in-app balance, and nTZS sent on-chain to the
+        -- treasury and since confirmed.
+        (
+          COALESCE((
+            SELECT SUM(t.amount_tzs)
+            FROM ntzs_transactions t
+            WHERE t.purpose = 'funding'
+              AND t.metadata->>'proposal_id' = p.id::text
+          ), 0)
+          + COALESCE((
+            SELECT SUM(c.amount_tzs)
+            FROM external_funding_claims c
+            WHERE c.proposal_id = p.id AND c.status = 'confirmed'
+          ), 0)
+        )::bigint AS raised_tzs,
+        -- Shown to the group as "on its way", never counted as raised.
+        COALESCE((
+          SELECT SUM(c.amount_tzs)
+          FROM external_funding_claims c
+          WHERE c.proposal_id = p.id AND c.status = 'pending'
+        ), 0)::bigint AS pending_tzs
       FROM group_proposals p
       JOIN groups g ON g.id = p.group_id
       WHERE p.proposal_type = 'prodcast'

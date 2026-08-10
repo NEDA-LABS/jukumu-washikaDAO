@@ -17,6 +17,7 @@ import JoinRequestsSection from './components/JoinRequestsSection';
 import InvestmentsSection from './components/InvestmentsSection';
 import ContentSection from './components/ContentSection';
 import PartnersSection from './components/PartnersSection';
+import FundingSection from './components/FundingSection';
 import ReportsSection from './components/ReportsSection';
 import SettingsSection from './components/SettingsSection';
 
@@ -111,6 +112,7 @@ export default function AdminDashboard() {
     { id: 'groups',        name: t('adm.nav.groups'),       icon: UserGroupIcon },
     { id: 'join-requests', name: t('adm.nav.requests'),     icon: UserGroupIcon },
     { id: 'investments',   name: t('adm.nav.investments'),  icon: CurrencyDollarIcon },
+    { id: 'funding',       name: t('adm.nav.funding'),      icon: CurrencyDollarIcon },
     { id: 'content',       name: t('adm.nav.training'),     icon: BookOpenIcon },
     { id: 'reports',       name: t('adm.nav.reports'),      icon: DocumentTextIcon },
     { id: 'partners',      name: t('adm.nav.partners'),     icon: CodeBracketIcon },
@@ -128,6 +130,7 @@ export default function AdminDashboard() {
       case 'investments':   return <InvestmentsSection investments={investments} groups={groups} loadAdminData={loadAdminData} />;
       case 'content':       return <ContentSection educationalContent={educationalContent} user={user} loadAdminData={loadAdminData} showToast={showToast} />;
       case 'reports':       return <ReportsSection adminStats={adminStats} />;
+      case 'funding':       return <FundingSection showToast={showToast} />;
       case 'partners':      return <PartnersSection showToast={showToast} />;
       case 'settings':      return <SettingsSection />;
       default:              return <OverviewSection adminStats={adminStats} recentActivities={recentActivities} />;
