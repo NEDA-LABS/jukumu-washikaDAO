@@ -208,6 +208,47 @@ export const ntzsWithdrawals = {
     ntzsRequest<NtzsWithdrawal>('GET', `/withdrawals/${withdrawalId}`),
 };
 
+// ── Name lookup (mobile money account holder) ──
+
+/**
+ * The registered name behind a mobile-money number.
+ *
+ * nTZS exposes GET /withdrawals/name-lookup and /deposits/name-lookup — OPTIONS
+ * on both returns "Allow: GET, HEAD, OPTIONS", so the routes are deployed — but
+ * as of writing every call returns HTTP 500 with an empty body, for every
+ * parameter name tried (phoneNumber, phone, msisdn, accountNumber, number,
+ * with and without a provider), while the same credentials work on other
+ * endpoints. Whatever the cause, it is upstream.
+ *
+ * So this never throws. It returns the name when the service answers and null
+ * when it does not, and callers show a name only if one comes back. When nTZS
+ * fixes the endpoint — or tells us the parameter it wants — the only change
+ * needed is the query string below.
+ */
+export async function lookupMobileName(
+  phoneNumber: string,
+  direction: 'deposit' | 'withdraw' = 'deposit'
+): Promise<string | null> {
+  if (!NTZS_API_KEY) return null;
+  const base = direction === 'withdraw' ? '/withdrawals/name-lookup' : '/deposits/name-lookup';
+  try {
+    const res = await fetch(
+      `${NTZS_BASE_URL}/api/v1${base}?phoneNumber=${encodeURIComponent(phoneNumber)}`,
+      { headers: { Authorization: `Bearer ${NTZS_API_KEY}` } }
+    );
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text) return null;
+    const data = JSON.parse(text) as Record<string, unknown>;
+    // Accept whichever field the service uses for the holder's name.
+    const name = data.name ?? data.accountName ?? data.recipientName ?? data.fullName
+      ?? (data.data as Record<string, unknown> | undefined)?.name;
+    return typeof name === 'string' && name.trim() ? name.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Convenience: full client object ──
 
 export const ntzs = {

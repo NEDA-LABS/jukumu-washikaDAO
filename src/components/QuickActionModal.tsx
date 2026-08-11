@@ -75,12 +75,83 @@ export default function QuickActionModal({
   const [withdrawQuote, setWithdrawQuote] = useState<WithdrawQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
 
+  // Registered name behind the number. Shown when the lookup answers; the form
+  // works exactly the same when it does not.
+  const [lookupName, setLookupName] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  // A deposit is not money until the person approves the push on their handset
+  // and the webhook settles it. This is that wait.
+  const [pending, setPending] = useState<{ depositId: string; amountTzs: number } | null>(null);
+  const [waitedSec, setWaitedSec] = useState(0);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [onClose]);
+
+  useEffect(() => {
+    if (type !== 'deposit' && type !== 'withdraw') return;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 9) { setLookupName(null); return; }
+
+    let cancelled = false;
+    setLookingUp(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/wallet/name-lookup?phone=${encodeURIComponent(phone)}&direction=${type}`
+        );
+        const d = await res.json().catch(() => null);
+        if (!cancelled) setLookupName(d?.name ?? null);
+      } catch {
+        if (!cancelled) setLookupName(null);
+      } finally {
+        if (!cancelled) setLookingUp(false);
+      }
+    }, 500);
+
+    return () => { cancelled = true; clearTimeout(timer); setLookingUp(false); };
+  }, [phone, type]);
+
+  // Poll until the top-up settles. The webhook is the real settlement path;
+  // the status route also self-settles, so a delayed webhook is not a stuck
+  // spinner. Idempotent either way.
+  useEffect(() => {
+    if (!pending) return;
+    let alive = true;
+    const started = Date.now();
+
+    const tick = async () => {
+      if (!alive) return;
+      setWaitedSec(Math.round((Date.now() - started) / 1000));
+      try {
+        const res = await fetch(`/api/wallet/deposit/status?depositId=${encodeURIComponent(pending.depositId)}`);
+        const d = await res.json().catch(() => null);
+        if (!alive) return;
+        if (d?.settled) {
+          setPending(null);
+          setFeedback({ type: 'success', message: sw ? 'Malipo yamethibitishwa!' : 'Payment confirmed!' });
+          onSuccess?.();
+          setTimeout(onClose, 1400);
+          return;
+        }
+        if (d?.failed) {
+          setPending(null);
+          setFeedback({ type: 'error', message: sw ? 'Malipo hayakukamilika.' : 'The payment did not go through.' });
+          return;
+        }
+      } catch {
+        // Network blip — keep waiting rather than calling it a failure.
+      }
+      if (alive) timer = setTimeout(tick, 3000);
+    };
+
+    let timer = setTimeout(tick, 2000);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [pending, sw, onClose, onSuccess]);
 
   const fetchGroups = useCallback(async () => {
     setLoadingGroups(true);
@@ -187,6 +258,14 @@ export default function QuickActionModal({
       const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        // A deposit has only been *requested* at this point — the STK push is
+        // on its way to the handset. Saying "success" here and closing was
+        // telling people their money had arrived before they had even paid.
+        if (type === 'deposit' && data.depositId) {
+          setWaitedSec(0);
+          setPending({ depositId: String(data.depositId), amountTzs: parseInt(amount) || 0 });
+          return;
+        }
         setFeedback({ type: 'success', message: data.message || (sw ? 'Imefanikiwa!' : 'Success!') });
         setAmount(''); setPhone(''); setToUsername(''); setToMemberId(''); setGroupId(''); setWithdrawQuote(null);
         onSuccess?.();
@@ -206,8 +285,8 @@ export default function QuickActionModal({
     }
   };
 
-  const input = 'w-full px-4 py-3 rounded-xl bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all';
-  const label = 'block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5';
+  const input = 'w-full border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-ink-3 focus:border-foreground';
+  const label = 'wd-kicker mb-1.5 block';
 
   const fmtTzs = (n: number) => `TSh ${Math.round(n).toLocaleString()}`;
 
@@ -216,34 +295,69 @@ export default function QuickActionModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col animate-[wd-rise_0.25s_ease-out]"
+        className="relative flex w-full max-w-md flex-col border-2 border-rule bg-card animate-[wd-rise_0.25s_ease-out]"
         style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)' }}
       >
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-border shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white text-sm font-bold">
-              {type === 'deposit' ? '+' : type === 'withdraw' ? '−' : '⇄'}
+        <div className="flex shrink-0 items-start justify-between border-b border-border px-5 py-4">
+          <div className="min-w-0">
+            {/* Context, not a restatement of the title below it. */}
+            <span className="wd-kicker wd-kicker-gold">
+              {type === 'deposit' ? (sw ? 'Kwa simu' : 'Mobile money')
+                : type === 'withdraw' ? (sw ? 'Kwenda kwa simu' : 'To mobile money')
+                : (sw ? 'Pochi yangu' : 'My wallet')}
             </span>
-            <h3 className="font-display text-lg text-foreground truncate">
+            <h3 className="mt-1 truncate font-display text-[19px] font-bold leading-tight text-foreground">
               {title}
               {type === 'withdraw' && withdrawQuote && (
-                <span className="ml-1 text-xs font-normal text-muted-foreground">· {sw ? 'Thibitisha' : 'Confirm'}</span>
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">· {sw ? 'Thibitisha' : 'Confirm'}</span>
               )}
             </h3>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Close">
-            <XMarkIcon className="h-5 w-5" />
+          <button
+            onClick={onClose}
+            className="wd-press ml-3 shrink-0 border border-border px-2.5 py-1 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Close"
+          >
+            <XMarkIcon className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Withdrawal — confirmation step */}
-        {type === 'withdraw' && withdrawQuote ? (
+        {/* Waiting on the handset. The push has been sent; nothing has been
+            paid until they approve it and the webhook lands. */}
+        {pending ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+            <div className="wd-round h-10 w-10 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+            <p className="mt-5 font-display text-[17px] font-bold leading-tight">
+              {sw ? 'Inasubiri malipo' : 'Waiting for payment'}
+            </p>
+            <p className="mt-2 max-w-[280px] text-[12px] leading-relaxed text-muted-foreground">
+              {sw
+                ? 'Angalia simu yako na thibitisha malipo. Dirisha hili litafunga yenyewe.'
+                : 'Check your phone and approve the payment. This will close on its own.'}
+            </p>
+            <p className="mt-4 wd-figure text-[22px]">{fmtTzs(pending.amountTzs)}</p>
+            <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-ink-3">
+              {waitedSec}s
+            </p>
+            {/* After a while, let them leave without losing the deposit —
+                settlement continues server-side either way. */}
+            {waitedSec >= 45 && (
+              <button
+                onClick={onClose}
+                className="wd-press mt-6 border border-border px-4 py-2.5 text-[11px] font-semibold text-muted-foreground"
+              >
+                {sw ? 'Funga — itaendelea nyuma' : 'Close — it keeps going'}
+              </button>
+            )}
+          </div>
+        ) : /* Withdrawal — confirmation step */
+        type === 'withdraw' && withdrawQuote ? (
           <form
             onSubmit={handleSubmit}
             className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-3"
             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
           >
-            <div className="rounded-2xl border border-border bg-background p-4 space-y-3">
+            <div className="space-y-3 border border-border bg-background p-4">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{sw ? 'Utapokea' : 'You will receive'}</p>
                 <p className="text-2xl font-bold text-foreground tabular-nums mt-0.5">{fmtTzs(withdrawQuote.receiveAmountTzs)}</p>
@@ -274,7 +388,7 @@ export default function QuickActionModal({
             </p>
 
             {feedback && (
-              <div className={`text-sm rounded-xl px-4 py-3 ${feedback.type === 'success' ? 'bg-success/10 text-success border border-success/20' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
+              <div className={`border px-4 py-3 text-[12px] leading-snug ${feedback.type === 'success' ? 'border-success/30 bg-success/10 text-success' : 'border-destructive/30 bg-destructive/10 text-destructive'}`}>
                 {feedback.message}
               </div>
             )}
@@ -283,13 +397,13 @@ export default function QuickActionModal({
               <button
                 type="button"
                 onClick={() => { setWithdrawQuote(null); setFeedback(null); }}
-                className="px-4 py-3 rounded-xl bg-muted hover:bg-border text-foreground text-sm font-semibold transition-colors"
+                className="wd-press border border-border px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
                 ← {sw ? 'Rudi' : 'Back'}
               </button>
               <button
                 type="submit" disabled={submitting}
-                className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-gold text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
+                className="wd-press flex-1 bg-gold py-3.5 text-sm font-semibold text-[#1a1714] disabled:opacity-40"
               >
                 {submitting ? (sw ? 'Inatuma...' : 'Sending...') : (sw ? 'Thibitisha Kutoa' : 'Confirm Withdrawal')}
               </button>
@@ -317,7 +431,7 @@ export default function QuickActionModal({
                         key={p}
                         type="button"
                         onClick={() => setPurpose(p)}
-                        className={`px-2 py-2.5 rounded-xl text-xs font-semibold border transition-all leading-tight text-center ${
+                        className={`wd-press border px-2 py-2.5 text-center text-xs font-semibold leading-tight transition-colors ${
                           purpose === p
                             ? 'bg-primary/10 border-primary/60 text-primary'
                             : 'bg-background border-border text-muted-foreground hover:text-foreground'
@@ -401,18 +515,28 @@ export default function QuickActionModal({
               <div>
                 <label className={label}>{sw ? 'Nambari ya Simu' : 'Phone Number'}</label>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07xx xxx xxx" className={input} />
+                {/* Who the number belongs to, so it can be checked before
+                    committing. Absent when the lookup has nothing to say —
+                    it is a confirmation aid, never a gate. */}
+                <p className="mt-1.5 min-h-[15px] text-[11px] leading-none" aria-live="polite">
+                  {lookingUp ? (
+                    <span className="text-muted-foreground">{sw ? 'Inaangalia jina...' : 'Checking name...'}</span>
+                  ) : lookupName ? (
+                    <span className="font-semibold text-success">{lookupName}</span>
+                  ) : null}
+                </p>
               </div>
             )}
 
             {feedback && (
-              <div className={`text-sm rounded-xl px-4 py-3 ${feedback.type === 'success' ? 'bg-success/10 text-success border border-success/20' : 'bg-destructive/10 text-destructive border border-destructive/20'}`}>
+              <div className={`border px-4 py-3 text-[12px] leading-snug ${feedback.type === 'success' ? 'border-success/30 bg-success/10 text-success' : 'border-destructive/30 bg-destructive/10 text-destructive'}`}>
                 {feedback.message}
               </div>
             )}
 
             <button
               type="submit" disabled={submitting || quoting}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-gold text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:translate-y-0"
+              className="wd-press w-full bg-gold py-3.5 text-sm font-semibold text-[#1a1714] disabled:opacity-40"
             >
               {type === 'withdraw'
                 ? (quoting ? (sw ? 'Inapata bei...' : 'Getting quote...') : (sw ? 'Endelea' : 'Continue'))
