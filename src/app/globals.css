@@ -447,3 +447,24 @@ select:-webkit-autofill {
   caret-color: var(--ds-foreground);
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* ── Supporter ticker ────────────────────────────────────────────────────
+   A gift enters the way a brick is laid: up into its course, not fading in
+   from nowhere. The arrival flash is a separate animation so a genuinely new
+   donation reads differently from the rotation simply moving along. */
+@keyframes wdBrickIn {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wd-brick-in { animation: wdBrickIn 460ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes wdBrickArrive {
+  0%   { box-shadow: 0 0 0 0 rgba(224, 160, 46, 0.55); }
+  70%  { box-shadow: 0 0 0 11px rgba(224, 160, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(224, 160, 46, 0); }
+}
+.wd-brick-arrive { animation: wdBrickArrive 1400ms ease-out 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-brick-in, .wd-brick-arrive { animation: none; }
+}

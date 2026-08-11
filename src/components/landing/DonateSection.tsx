@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Logo from '@/components/Logo';
+import SupporterTicker from '@/components/landing/SupporterTicker';
 import TokenMark, { TOKENS, type TokenId } from '@/components/TokenMark';
 
 /**
@@ -222,7 +224,8 @@ export default function DonateSection() {
           {/* Raised so far. Real figures only — nothing is invented when the
               request fails, because a made-up total on a donation page is a
               lie about other people's generosity. */}
-          <div className="self-start border-2 border-rule">
+          <div className="self-start">
+          <div className="border-2 border-rule">
             <div className="border-b border-border px-6 py-6">
               <span className="wd-kicker">{sw ? 'Imechangwa hadi sasa' : 'Raised so far'}</span>
               <p className="mt-2.5 wd-figure text-[clamp(36px,6vw,60px)] leading-none">
@@ -242,6 +245,11 @@ export default function DonateSection() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Who has given, most recent first. Sits under the total because
+              the figure is the claim and the names are the evidence. */}
+          <SupporterTicker />
           </div>
         </div>
       </div>
@@ -288,9 +296,7 @@ export default function DonateSection() {
                     after it — it is the reason the name field asks for a
                     business name rather than just a first name. */}
                 <div className="flex items-start gap-3 border border-border bg-background px-3.5 py-3">
-                  <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center border border-gold text-[9px] font-bold text-gold-deep">
-                    WD
-                  </span>
+                  <Logo markOnly className="mt-0.5 h-8 w-8 flex-none" />
                   <p className="text-[11.5px] leading-relaxed text-muted-foreground">
                     {sw
                       ? 'Kila mchango hupata cheti cha shukrani chenye jina lako — tayari kupakua mara malipo yatakapokamilika.'
