@@ -1,6 +1,9 @@
 'use client';
 
 import React from 'react';
+import {
+  LOGO_HEX_PATH, LOGO_SWIRL_PATH, LOGO_SWIRL_ROTATE, LOGO_HEX_STROKE,
+} from '@/lib/logo-paths';
 
 interface LogoProps {
   className?: string;
@@ -48,25 +51,14 @@ export default function Logo({ className = '', markOnly = false }: LogoProps) {
       {/* ── Mark ── */}
       <g>
         <path
-          d="M31 8 H69 L92 50 L69 92 H31 L8 50 Z"
+          d={LOGO_HEX_PATH}
           stroke={`url(#gold-${uid})`}
-          strokeWidth="6.5"
+          strokeWidth={LOGO_HEX_STROKE}
           strokeLinejoin="round"
           fill="none"
         />
-        <path
-          d="M47 53 C42.5 44.5 47 33.5 58 31.5 C69 29.5 77.5 38.5 76 49
-             C74.8 57.5 67 62 58.5 60.5 C64 57.5 65.5 50 60 46.5
-             C53.5 42.5 46.5 47 47 53 Z"
-          fill={`url(#gold-${uid})`}
-        />
-        <path
-          d="M47 53 C42.5 44.5 47 33.5 58 31.5 C69 29.5 77.5 38.5 76 49
-             C74.8 57.5 67 62 58.5 60.5 C64 57.5 65.5 50 60 46.5
-             C53.5 42.5 46.5 47 47 53 Z"
-          transform="rotate(180 50 50)"
-          fill={`url(#light-${uid})`}
-        />
+        <path d={LOGO_SWIRL_PATH} fill={`url(#gold-${uid})`} />
+        <path d={LOGO_SWIRL_PATH} transform={LOGO_SWIRL_ROTATE} fill={`url(#light-${uid})`} />
       </g>
 
       {/* ── Wordmark ── */}

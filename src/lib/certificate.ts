@@ -11,6 +11,10 @@
  * people pay. A supporter's gift is drawn as gold bricks laid into it.
  */
 
+import {
+  LOGO_HEX_PATH, LOGO_SWIRL_PATH, LOGO_SWIRL_ROTATE, LOGO_HEX_STROKE,
+} from './logo-paths';
+
 const INK = '#1a1714';
 const CREAM = '#f4ede4';
 const GOLD = '#e0a02e';
@@ -148,12 +152,20 @@ export function renderCertificateSvg({
   <text x="${W - 180}" y="${H - 110}" text-anchor="end" font-family="${UI}" font-size="19"
         fill="${INK}">${esc(dateStr)}</text>
 
-  <!-- Seal -->
+  <!-- Seal. The mark itself, not initials standing in for it: this is the
+       one thing we make that someone prints and keeps. -->
   <g transform="translate(${W / 2}, ${H - 128})">
     <circle r="52" fill="url(#seal)"/>
     <circle r="43" fill="none" stroke="${CREAM}" stroke-width="1.5" opacity="0.85"/>
-    <text y="-6" text-anchor="middle" font-family="${DISPLAY}" font-size="30" font-weight="700" fill="${CREAM}">WD</text>
-    <text y="17" text-anchor="middle" font-family="${MONO}" font-size="8.5" letter-spacing="2" fill="${CREAM}">ASANTE</text>
+    <g transform="translate(-25, -33) scale(0.5)">
+      <path d="${LOGO_HEX_PATH}" fill="none" stroke="${CREAM}" stroke-width="${LOGO_HEX_STROKE}" stroke-linejoin="round"/>
+      <!-- The mark's two-tone, inverted for a gold ground: on the page the
+           swirls are gold against cream, so here they are deep gold against
+           the cream one, or the pair collapses into a single smudge. -->
+      <path d="${LOGO_SWIRL_PATH}" fill="${GOLD_DEEP}"/>
+      <path d="${LOGO_SWIRL_PATH}" transform="${LOGO_SWIRL_ROTATE}" fill="${CREAM}"/>
+    </g>
+    <text y="30" text-anchor="middle" font-family="${MONO}" font-size="8.5" letter-spacing="2" fill="${CREAM}">ASANTE</text>
   </g>
 </svg>`;
 }
