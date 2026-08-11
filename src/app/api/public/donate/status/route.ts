@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
     await ensureNtzsSchema(client);
 
     const res = await client.query(
-      `SELECT id, donor_name, amount_tzs, ntzs_id, status, certificate_code, created_at, settled_at
+      `SELECT id, donor_name, amount_tzs, ntzs_id, status, certificate_code, created_at, settled_at,
+              method, token
          FROM donations WHERE certificate_code = $1 LIMIT 1`,
       [reference]
     );
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
     const d = res.rows[0] as {
       donor_name: string; amount_tzs: string; ntzs_id: string | null;
       status: string; certificate_code: string; settled_at: string | null;
+      method: string; token: string | null;
     };
 
     if (d.status === 'completed') {
@@ -47,6 +49,23 @@ export async function GET(request: NextRequest) {
         status: 'completed', settled: true, failed: false,
         donorName: d.donor_name, amountTzs: Number(d.amount_tzs),
         reference: d.certificate_code, settledAt: d.settled_at,
+        method: d.method, token: d.token,
+      });
+    }
+
+    // A gift sent on chain has nothing to poll — it is waiting on a person to
+    // match the hash against the treasury. Say so plainly rather than spinning.
+    if (d.method === 'crypto') {
+      return NextResponse.json({
+        status: d.status,
+        settled: false,
+        failed: d.status === 'rejected',
+        awaitingReview: d.status === 'pending_review',
+        donorName: d.donor_name,
+        amountTzs: Number(d.amount_tzs),
+        reference: d.certificate_code,
+        method: 'crypto',
+        token: d.token,
       });
     }
 

@@ -24,7 +24,7 @@ export async function GET(
   const client = await pool.connect();
   try {
     const res = await client.query(
-      `SELECT donor_name, amount_tzs, certificate_code, status, settled_at, created_at
+      `SELECT donor_name, amount_tzs, token, token_amount, certificate_code, status, settled_at, created_at
          FROM donations WHERE certificate_code = $1 LIMIT 1`,
       [code]
     );
@@ -34,6 +34,7 @@ export async function GET(
     const d = res.rows[0] as {
       donor_name: string; amount_tzs: string; certificate_code: string;
       status: string; settled_at: string | null; created_at: string;
+      token: string | null; token_amount: string | null;
     };
     if (d.status !== 'completed') {
       return NextResponse.json({ error: 'This donation has not been completed' }, { status: 409 });
@@ -44,6 +45,8 @@ export async function GET(
       amountTzs: Number(d.amount_tzs),
       reference: d.certificate_code,
       date: new Date(d.settled_at || d.created_at),
+      token: d.token,
+      tokenAmount: d.token_amount != null ? Number(d.token_amount) : null,
     });
 
     const inline = new URL(request.url).searchParams.get('inline') === '1';

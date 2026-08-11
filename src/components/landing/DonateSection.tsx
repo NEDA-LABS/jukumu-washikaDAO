@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import TokenMark, { TOKENS, type TokenId } from '@/components/TokenMark';
 
 /**
  * Support for the platform itself, on the public page.
@@ -15,13 +16,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const PRESETS = [5000, 20000, 50000, 200000];
 
-type Stage = 'form' | 'waiting' | 'done' | 'failed';
+type Stage = 'form' | 'waiting' | 'review' | 'done' | 'failed';
+type Method = 'mobile' | 'crypto';
 
 export default function DonateSection() {
   const { t, language } = useLanguage();
   const sw = language === 'sw';
 
   const [totals, setTotals] = useState<{ totalTzs: number; supporters: number } | null>(null);
+  const [treasury, setTreasury] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<Stage>('form');
 
@@ -34,6 +37,13 @@ export default function DonateSection() {
   const [waited, setWaited] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  // Mobile money or a token sent on chain — the two have different evidence,
+  // so they ask for different things.
+  const [method, setMethod] = useState<Method>('mobile');
+  const [token, setToken] = useState<TokenId>('ntzs');
+  const [txHash, setTxHash] = useState('');
+  const [addrCopied, setAddrCopied] = useState(false);
+
   // Resolved after mount, not during render: reading window while rendering
   // makes the server and the first client render disagree.
   const [shareUrl, setShareUrl] = useState('https://washikadau.com/#changia');
@@ -42,7 +52,11 @@ export default function DonateSection() {
   const loadTotals = useCallback(async () => {
     try {
       const res = await fetch('/api/public/donate');
-      if (res.ok) setTotals(await res.json());
+      if (res.ok) {
+        const d = await res.json();
+        setTotals({ totalTzs: d.totalTzs, supporters: d.supporters });
+        setTreasury(d.treasuryAddress ?? null);
+      }
     } catch {
       // The section reads fine without a figure; better blank than invented.
     }
@@ -87,6 +101,7 @@ export default function DonateSection() {
   const reset = () => {
     setStage('form'); setName(''); setPhone(''); setAmount('20000');
     setError(''); setReference(''); setWaited(0);
+    setMethod('mobile'); setToken('ntzs'); setTxHash('');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -94,20 +109,31 @@ export default function DonateSection() {
     setError('');
     if (name.trim().length < 2) { setError(sw ? 'Andika jina lako' : 'Enter your name'); return; }
     const amt = Number(amount);
-    if (!amt || amt < 1000) { setError(sw ? 'Kiasi cha chini ni TSh 1,000' : 'Minimum is TSh 1,000'); return; }
+    if (!amt || amt <= 0) { setError(sw ? 'Weka kiasi' : 'Enter an amount'); return; }
+    if (method === 'mobile' && amt < 1000) {
+      setError(sw ? 'Kiasi cha chini ni TSh 1,000' : 'Minimum is TSh 1,000'); return;
+    }
+    if (method === 'crypto' && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim())) {
+      setError(sw ? 'Weka namba ya muamala (0x…)' : 'Enter the transaction hash (0x…)'); return;
+    }
 
     setBusy(true);
     try {
       const res = await fetch('/api/public/donate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ donorName: name.trim(), phone, amountTzs: amt }),
+        body: JSON.stringify(
+          method === 'crypto'
+            ? { donorName: name.trim(), amountTzs: amt, method: 'crypto', token, txHash: txHash.trim() }
+            : { donorName: name.trim(), phone, amountTzs: amt }
+        ),
       });
       const d = await res.json().catch(() => null);
       if (!res.ok) { setError(d?.error || (sw ? 'Imeshindikana' : 'That did not work')); return; }
       setReference(d.reference);
       setWaited(0);
-      setStage('waiting');
+      // A crypto gift has nothing to poll — it waits on a person.
+      setStage(d.pendingReview ? 'review' : 'waiting');
     } catch {
       setError(sw ? 'Tatizo la mtandao' : 'Network error');
     } finally {
@@ -202,7 +228,11 @@ export default function DonateSection() {
           >
             <div className="flex flex-none items-start justify-between border-b border-border px-5 py-4">
               <div className="min-w-0">
-                <span className="wd-kicker wd-kicker-gold">{sw ? 'Kwa simu' : 'Mobile money'}</span>
+                <span className="wd-kicker wd-kicker-gold">
+                  {method === 'crypto'
+                    ? (sw ? 'Kwa sarafu' : 'Stablecoin')
+                    : (sw ? 'Kwa simu' : 'Mobile money')}
+                </span>
                 <h3 id="donate-title" className="mt-1 font-display text-[19px] font-bold leading-tight">
                   {stage === 'done'
                     ? (sw ? 'Asante!' : 'Thank you!')
@@ -222,6 +252,24 @@ export default function DonateSection() {
 
             {stage === 'form' && (
               <form onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+                {/* How the gift arrives. It changes what we can ask for as
+                    proof, so it comes before everything else. */}
+                <div className="grid grid-cols-2 gap-2">
+                  {([['mobile', sw ? 'Kwa simu' : 'Mobile money'], ['crypto', sw ? 'Kwa sarafu' : 'Stablecoin']] as const).map(([m, lbl]) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => { setMethod(m); setError(''); }}
+                      aria-pressed={method === m}
+                      className={`wd-press border py-2.5 text-[11.5px] font-semibold ${
+                        method === m ? 'border-foreground bg-gold-tint' : 'border-border text-muted-foreground'
+                      }`}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+
                 <label className="block">
                   <span className="wd-kicker">{sw ? 'Jina lako au biashara' : 'Your name or business'}</span>
                   <input
@@ -232,18 +280,87 @@ export default function DonateSection() {
                   />
                 </label>
 
-                <label className="block">
-                  <span className="wd-kicker">{sw ? 'Nambari ya simu' : 'Phone number'}</span>
-                  <input
-                    required type="tel" value={phone}
-                    onChange={(e) => { setPhone(e.target.value); setError(''); }}
-                    placeholder="07xx xxx xxx"
-                    className={`${field} font-mono`}
-                  />
-                </label>
+                {method === 'mobile' ? (
+                  <label className="block">
+                    <span className="wd-kicker">{sw ? 'Nambari ya simu' : 'Phone number'}</span>
+                    <input
+                      required type="tel" value={phone}
+                      onChange={(e) => { setPhone(e.target.value); setError(''); }}
+                      placeholder="07xx xxx xxx"
+                      className={`${field} font-mono`}
+                    />
+                  </label>
+                ) : (
+                  <>
+                    <div>
+                      <span className="wd-kicker">{sw ? 'Sarafu' : 'Token'}</span>
+                      <div className="mt-1.5 grid grid-cols-3 gap-2">
+                        {TOKENS.map((tk) => (
+                          <button
+                            key={tk.id}
+                            type="button"
+                            onClick={() => { setToken(tk.id); setError(''); }}
+                            aria-pressed={token === tk.id}
+                            className={`wd-press flex flex-col items-center gap-1.5 border px-2 py-3 ${
+                              token === tk.id ? 'border-foreground bg-gold-tint' : 'border-border'
+                            }`}
+                          >
+                            <TokenMark token={tk.id} size={26} />
+                            <span className={`text-[11px] font-semibold leading-none ${
+                              token === tk.id ? '' : 'text-muted-foreground'
+                            }`}>{tk.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Where to send it. One address takes all three. */}
+                    <div className="border border-border bg-background px-3.5 py-3">
+                      <span className="wd-kicker">{sw ? 'Tuma kwenye anwani hii' : 'Send to this address'}</span>
+                      <p className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-foreground">
+                        {treasury || '…'}
+                      </p>
+                      {treasury && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(treasury);
+                              setAddrCopied(true);
+                              setTimeout(() => setAddrCopied(false), 2000);
+                            } catch { /* selectable above */ }
+                          }}
+                          className="wd-press mt-2 border border-border px-3 py-1.5 text-[10px] font-semibold text-muted-foreground"
+                        >
+                          {addrCopied ? (sw ? 'Imenakiliwa ✓' : 'Copied ✓') : (sw ? 'Nakili anwani' : 'Copy address')}
+                        </button>
+                      )}
+                    </div>
+
+                    <label className="block">
+                      <span className="wd-kicker">{sw ? 'Namba ya muamala' : 'Transaction hash'}</span>
+                      <input
+                        required value={txHash}
+                        onChange={(e) => { setTxHash(e.target.value); setError(''); }}
+                        placeholder="0x…"
+                        className={`${field} font-mono`}
+                      />
+                      <span className="mt-1.5 block text-[10.5px] leading-snug text-muted-foreground">
+                        {sw
+                          ? 'Tuma sarafu kwanza, kisha weka namba ya muamala hapa.'
+                          : 'Send the tokens first, then paste the hash your wallet shows.'}
+                      </span>
+                    </label>
+                  </>
+                )}
 
                 <div>
-                  <span className="wd-kicker">{sw ? 'Kiasi' : 'Amount'}</span>
+                  <span className="wd-kicker">
+                    {method === 'crypto'
+                      ? `${sw ? 'Kiasi' : 'Amount'} (${TOKENS.find((x) => x.id === token)?.label})`
+                      : (sw ? 'Kiasi' : 'Amount')}
+                  </span>
+                  {method === 'mobile' && (
                   <div className="mt-1.5 grid grid-cols-4 gap-2">
                     {PRESETS.map((p) => (
                       <button
@@ -259,8 +376,10 @@ export default function DonateSection() {
                       </button>
                     ))}
                   </div>
+                  )}
                   <input
-                    type="number" min="1000" inputMode="numeric" value={amount}
+                    type="number" min={method === 'crypto' ? '0' : '1000'} step="any"
+                    inputMode="decimal" value={amount}
                     onChange={(e) => { setAmount(e.target.value); setError(''); }}
                     className={`${field} font-mono`}
                   />
@@ -275,8 +394,12 @@ export default function DonateSection() {
                 >
                   {busy ? (sw ? 'Inatuma...' : 'Sending...') : (sw ? 'Changia' : 'Donate')}
                 </button>
-                <p className="text-center text-[10.5px] text-muted-foreground">
-                  {sw ? 'Utapokea ombi la malipo kwenye simu yako.' : 'You will get a payment request on your phone.'}
+                <p className="text-center text-[10.5px] leading-snug text-muted-foreground">
+                  {method === 'crypto'
+                    ? (sw
+                      ? 'Cheti kitakuwa tayari baada ya kuthibitisha muamala.'
+                      : 'Your certificate is ready once we confirm the transfer arrived.')
+                    : (sw ? 'Utapokea ombi la malipo kwenye simu yako.' : 'You will get a payment request on your phone.')}
                 </p>
               </form>
             )}
@@ -302,6 +425,29 @@ export default function DonateSection() {
                     {sw ? 'Funga' : 'Close'}
                   </button>
                 )}
+              </div>
+            )}
+
+            {stage === 'review' && (
+              <div className="flex-1 px-6 py-12 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center border-2 border-gold">
+                  <TokenMark token={token} size={26} />
+                </div>
+                <p className="mt-5 font-display text-[17px] font-bold leading-tight">
+                  {sw ? 'Imepokelewa' : 'Recorded'}
+                </p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                  {sw
+                    ? 'Tutathibitisha muamala kwenye pochi ya hazina. Cheti chako kitapatikana kwenye kiungo hiki.'
+                    : 'We will confirm the transfer reached the treasury. Your certificate will appear at this link.'}
+                </p>
+                <a
+                  href={`/shukrani/${encodeURIComponent(reference)}`}
+                  className="wd-press mt-5 block w-full border-2 border-foreground py-3 text-[12px] font-semibold"
+                >
+                  {sw ? 'Ukurasa wa cheti' : 'Certificate page'}
+                </a>
+                <p className="mt-4 font-mono text-[10px] text-ink-3">{reference}</p>
               </div>
             )}
 

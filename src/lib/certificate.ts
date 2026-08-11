@@ -49,14 +49,25 @@ export interface CertificateInput {
   amountTzs: number;
   reference: string;
   date: Date;
+  /** Set for a gift sent on chain, so the certificate names what was given. */
+  token?: string | null;
+  tokenAmount?: number | null;
 }
 
-export function renderCertificateSvg({ donorName, amountTzs, reference, date }: CertificateInput): string {
+export function renderCertificateSvg({
+  donorName, amountTzs, reference, date, token, tokenAmount,
+}: CertificateInput): string {
   const W = 1600;
   const H = 1131; // √2, so it prints to A4 landscape without cropping
 
   const name = esc(donorName.slice(0, 60));
-  const amount = `TSh ${Math.round(amountTzs).toLocaleString('en-US')}`;
+  // A crypto gift is recorded in the asset it was actually sent in; the
+  // shilling value sits underneath as the conversion it is.
+  const isToken = !!token && tokenAmount != null && tokenAmount > 0;
+  const amount = isToken
+    ? `${Number(tokenAmount).toLocaleString('en-US', { maximumFractionDigits: 6 })} ${String(token).toUpperCase()}`
+    : `TSh ${Math.round(amountTzs).toLocaleString('en-US')}`;
+  const subAmount = isToken ? `≈ TSh ${Math.round(amountTzs).toLocaleString('en-US')}` : null;
   const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // The gift as bricks. Capped so a large donation stays a composition rather
@@ -117,9 +128,11 @@ export function renderCertificateSvg({ donorName, amountTzs, reference, date }: 
 
   <text x="${W / 2}" y="590" text-anchor="middle" font-family="${UI}" font-size="21"
         fill="rgba(26,23,20,0.62)">whose gift of</text>
-  <text x="${W / 2}" y="668" text-anchor="middle" font-family="${DISPLAY}" font-size="66"
-        font-weight="700" fill="${INK}">${amount}</text>
-  <text x="${W / 2}" y="716" text-anchor="middle" font-family="${UI}" font-size="19"
+  <text x="${W / 2}" y="668" text-anchor="middle" font-family="${DISPLAY}" font-size="${isToken ? 54 : 66}"
+        font-weight="700" fill="${INK}">${esc(amount)}</text>
+  ${subAmount ? `<text x="${W / 2}" y="700" text-anchor="middle" font-family="${MONO}" font-size="16"
+        fill="rgba(26,23,20,0.5)">${esc(subAmount)}</text>` : ''}
+  <text x="${W / 2}" y="${subAmount ? 734 : 716}" text-anchor="middle" font-family="${UI}" font-size="19"
         fill="rgba(26,23,20,0.62)">helps Tanzanian savings groups build what they own.</text>
 
   ${wall}

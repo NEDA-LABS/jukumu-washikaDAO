@@ -6,7 +6,10 @@ import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
 import {
   ensureDonationsSchema, newCertificateCode,
   normalizeDonorPhone, isValidDonorPhone, getDonationTotals,
+  DONATION_TOKENS, toTzs, normalizeTxHash, looksLikeWalletAddress,
+  type DonationToken,
 } from '@/lib/donations';
+import { getTreasuryAddress } from '@/lib/wallet/external-funding';
 
 export const runtime = 'nodejs';
 
@@ -24,14 +27,20 @@ const MAX_TZS = 20_000_000;
  */
 
 export async function GET() {
+  const client = await pool.connect();
   try {
-    const totals = await getDonationTotals();
-    return NextResponse.json(totals, {
+    const [totals, treasuryAddress] = await Promise.all([
+      getDonationTotals(),
+      getTreasuryAddress(client),
+    ]);
+    return NextResponse.json({ ...totals, treasuryAddress }, {
       headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
     });
   } catch (error) {
     console.error('[public/donate GET]', error);
-    return NextResponse.json({ totalTzs: 0, supporters: 0 });
+    return NextResponse.json({ totalTzs: 0, supporters: 0, treasuryAddress: null });
+  } finally {
+    client.release();
   }
 }
 
@@ -42,8 +51,75 @@ export async function POST(request: NextRequest) {
   const amountTzs = Math.floor(Number(body?.amountTzs));
   const phone = normalizeDonorPhone(body?.phone ?? '');
 
+  const method = body?.method === 'crypto' ? 'crypto' : 'mobile';
+  const token = (typeof body?.token === 'string' ? body.token.toLowerCase() : '') as DonationToken;
+
   if (donorName.length < 2) {
     return NextResponse.json({ error: 'Tell us who to thank', field: 'donorName' }, { status: 400 });
+  }
+
+  // ── Gifts sent on chain ────────────────────────────────────────────────
+  // The transfer happens outside this application, so all we can record is
+  // what the donor says they sent. It waits for a human to match the hash
+  // against the treasury wallet before it becomes a confirmed gift — the
+  // same rule as external group funding, for the same reason.
+  if (method === 'crypto') {
+    if (!DONATION_TOKENS.includes(token)) {
+      return NextResponse.json({ error: 'Choose a token', field: 'token' }, { status: 400 });
+    }
+    const amount = Number(body?.amountTzs);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ error: 'Enter the amount you sent', field: 'amountTzs' }, { status: 400 });
+    }
+    const txHash = normalizeTxHash(body?.txHash);
+    if (!txHash) {
+      return NextResponse.json(
+        { error: 'Enter the transaction hash from your wallet (0x…, 66 characters)', field: 'txHash' },
+        { status: 400 }
+      );
+    }
+    const fromAddress = typeof body?.fromAddress === 'string' ? body.fromAddress.trim() : '';
+    if (fromAddress && !looksLikeWalletAddress(fromAddress)) {
+      return NextResponse.json({ error: 'That wallet address is not valid', field: 'fromAddress' }, { status: 400 });
+    }
+
+    await ensureDonationsSchema();
+    const c = await pool.connect();
+    try {
+      const dupe = await c.query(
+        `SELECT 1 FROM donations WHERE lower(tx_hash) = $1 AND status IN ('pending_review', 'completed') LIMIT 1`,
+        [txHash]
+      );
+      if (dupe.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'That transaction has already been submitted', field: 'txHash' },
+          { status: 409 }
+        );
+      }
+
+      const code = newCertificateCode();
+      await c.query(
+        `INSERT INTO donations
+           (donor_name, phone, amount_tzs, token_amount, status, certificate_code, message,
+            method, token, tx_hash, from_address)
+         VALUES ($1, NULL, $2, $3, 'pending_review', $4, $5, 'crypto', $6, $7, $8)`,
+        [donorName, toTzs(amount, token), amount, code, message, token, txHash,
+         fromAddress ? fromAddress.toLowerCase() : null]
+      );
+
+      const treasuryAddress = await getTreasuryAddress(c);
+      return NextResponse.json({
+        reference: code,
+        pendingReview: true,
+        treasuryAddress,
+        message: 'Recorded. Your certificate is ready once we confirm the transfer arrived.',
+      });
+    } catch (error) {
+      console.error('[public/donate crypto]', error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } finally {
+      c.release();
+    }
   }
   if (!Number.isFinite(amountTzs) || amountTzs < MIN_TZS) {
     return NextResponse.json({ error: `Minimum donation is TSh ${MIN_TZS.toLocaleString()}`, field: 'amountTzs' }, { status: 400 });
