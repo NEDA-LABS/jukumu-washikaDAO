@@ -26,6 +26,8 @@ export interface NtzsDeposit {
   phoneNumber: string;
   status: 'pending' | 'submitted' | 'processing' | 'minted' | 'failed';
   createdAt: string;
+  /** Present once minted — the on-chain transaction that created the nTZS. */
+  txHash?: string | null;
   /** Bank transfers only: what to pay, and the reference that matches it. */
   paymentMethod?: 'mobile_money' | 'bank_transfer';
   reference?: string;

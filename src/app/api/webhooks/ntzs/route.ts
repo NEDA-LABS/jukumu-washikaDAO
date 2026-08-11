@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
+import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 
 /**
  * nTZS webhook handler. Settles deposits/withdrawals against the ledger:
@@ -39,8 +40,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
+    await ensureDonationsSchema();
+
     await client.query('BEGIN');
     await settleExternalTransaction(client, resourceId, finalStatus, txHash);
+    // A donation is not held on anyone's behalf, so it has no ledger owner and
+    // settleExternalTransaction has nothing to credit for it. Its record still
+    // has to move — a bank donor is long gone from the page by the time this
+    // fires, and the webhook is the only thing left that knows the money came.
+    await settleDonationByNtzsId(client, resourceId, finalStatus, txHash);
     await client.query('COMMIT');
 
     return NextResponse.json({ received: true }, { status: 200 });

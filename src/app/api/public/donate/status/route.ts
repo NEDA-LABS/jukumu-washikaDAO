@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import { ntzs } from '@/lib/ntzs';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { isDepositSuccessStatus, settleExternalTransaction } from '@/lib/wallet/ledger';
-import { ensureDonationsSchema } from '@/lib/donations';
+import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 
 export const runtime = 'nodejs';
 
@@ -75,20 +75,15 @@ export async function GET(request: NextRequest) {
       try {
         const remote = await ntzs.deposits.get(d.ntzs_id);
         status = remote.status;
+        // The same settle step the webhook and the sweep use, rather than a
+        // second copy of the rule. The old inline version only failed a
+        // donation sitting at 'pending', so a bank transfer — which sits at
+        // 'submitted' — could never be marked failed here.
+        await settleDonationByNtzsId(client, d.ntzs_id, status, remote.txHash ?? null);
         if (isDepositSuccessStatus(status)) {
-          await client.query(
-            `UPDATE donations SET status = 'completed', settled_at = NOW()
-              WHERE certificate_code = $1 AND status <> 'completed'`,
-            [reference]
-          );
           // Mark the platform transaction settled too. Idempotent, so the
           // webhook arriving later changes nothing.
           await settleExternalTransaction(client, d.ntzs_id, status).catch(() => {});
-        } else if (status === 'failed') {
-          await client.query(
-            `UPDATE donations SET status = 'failed' WHERE certificate_code = $1 AND status = 'pending'`,
-            [reference]
-          );
         }
       } catch {
         // Lookup trouble is not a failed donation — keep waiting.

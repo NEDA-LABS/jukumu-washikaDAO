@@ -6,6 +6,7 @@ import { ensureSnippeSchema, creditSnippePaymentToLedger } from '@/lib/snippe-db
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ntzs } from '@/lib/ntzs';
 import { getPaymentStatus } from '@/lib/snippe';
+import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -54,8 +55,25 @@ async function settleNtzs(client: PoolClient, deadline: number) {
      ORDER BY created_at DESC LIMIT $1`,
     [NTZS_LIMIT]
   );
-  const rows = r.rows as { ntzs_id: string; amount_tzs: string; status: string }[];
-  let checked = 0, credited = 0, creditedTzs = 0;
+  // A donation's ledger row never becomes posted (nobody is credited), so the
+  // query above keeps returning it and it stays swept. What it does NOT cover
+  // is a donation whose ledger row already settled while the donation itself
+  // was left behind — the exact state the old code could strand. Both are
+  // gathered here so one pass fixes either.
+  const openDonations = await client.query(
+    `SELECT ntzs_id, amount_tzs, status FROM donations
+      WHERE ntzs_id IS NOT NULL AND status NOT IN ('completed', 'failed', 'rejected')
+        AND method <> 'crypto'
+      ORDER BY created_at DESC LIMIT $1`,
+    [NTZS_LIMIT]
+  );
+  const seen = new Set((r.rows as { ntzs_id: string }[]).map((x) => x.ntzs_id));
+  const rows = [
+    ...(r.rows as { ntzs_id: string; amount_tzs: string; status: string }[]),
+    ...(openDonations.rows as { ntzs_id: string; amount_tzs: string; status: string }[])
+      .filter((x) => !seen.has(x.ntzs_id)),
+  ];
+  let checked = 0, credited = 0, creditedTzs = 0, donationsSettled = 0;
   const liveStatusCounts: Record<string, number> = {};
   let apiError: string | null = null;
   for (let i = 0; i < rows.length; i += BATCH) {
@@ -77,8 +95,10 @@ async function settleNtzs(client: PoolClient, deadline: number) {
         // Also advances the stored status (e.g. submitted -> minted), so the
         // member's transaction list stops showing a stale state.
         const res = await settleExternalTransaction(client, row.ntzs_id, status);
+        const don = await settleDonationByNtzsId(client, row.ntzs_id, status);
         await client.query('COMMIT');
         if (res.applied) { credited++; creditedTzs += Math.round(Number(row.amount_tzs)); }
+        if (don === 'completed') donationsSettled++;
       } catch (e) {
         await client.query('ROLLBACK').catch(() => {});
         if (!apiError) apiError = errMsg(e);
@@ -86,7 +106,7 @@ async function settleNtzs(client: PoolClient, deadline: number) {
       }
     }
   }
-  return { checked, credited, creditedTzs, liveStatusCounts, apiError };
+  return { checked, credited, creditedTzs, donationsSettled, liveStatusCounts, apiError };
 }
 
 /** Reconcile Snippe pending payments, then credit all completed-but-unposted. */
@@ -156,6 +176,7 @@ async function run() {
   const client = await pool.connect();
   try {
     try { await ensureNtzsSchema(client); } catch (e) { errors.push(`schema(ntzs): ${errMsg(e)}`); }
+    try { await ensureDonationsSchema(); } catch (e) { errors.push(`schema(donations): ${errMsg(e)}`); }
     try { await ensureSnippeSchema(client); } catch (e) { errors.push(`schema(snippe): ${errMsg(e)}`); }
 
     let ntzsRes = null, snippeRes = null;

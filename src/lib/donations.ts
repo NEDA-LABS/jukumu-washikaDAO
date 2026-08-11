@@ -1,3 +1,5 @@
+import type { PoolClient } from 'pg';
+import { isDepositSuccessStatus } from '@/lib/wallet/ledger';
 import pool from '@/lib/db';
 import { oncePerProcess } from '@/lib/db-once';
 
@@ -129,4 +131,51 @@ export async function getDonationTotals(): Promise<DonationTotals> {
   );
   const row = res.rows[0] as { total: string; n: number };
   return { totalTzs: Number(row.total), supporters: row.n };
+}
+
+/**
+ * Settle a donation against what nTZS says about its deposit.
+ *
+ * This exists because a donation's completion used to depend entirely on the
+ * donor keeping the page open: `/api/public/donate/status` was the only code
+ * that ever wrote `completed`. Mobile money survives that, because the donor
+ * waits on the prompt. A bank transfer cannot — the donor is handed account
+ * details, closes the tab, and pays from their banking app hours later. The
+ * money minted, the ledger knew, and the donation sat at `submitted` forever
+ * with no certificate.
+ *
+ * So settlement is a shared step called from every path that learns a deposit
+ * moved: the webhook, the reconciliation sweep, and the status poll. Idempotent
+ * — the guards mean a second caller writes nothing.
+ */
+export async function settleDonationByNtzsId(
+  client: PoolClient,
+  ntzsId: string,
+  status: string,
+  txHash?: string | null
+): Promise<'completed' | 'failed' | null> {
+  if (!ntzsId) return null;
+
+  if (isDepositSuccessStatus(status)) {
+    const res = await client.query(
+      `UPDATE donations
+          SET status = 'completed', settled_at = NOW(), tx_hash = COALESCE($2, tx_hash)
+        WHERE ntzs_id = $1 AND status <> 'completed'`,
+      [ntzsId, txHash ?? null]
+    );
+    return (res.rowCount ?? 0) > 0 ? 'completed' : null;
+  }
+
+  // 'rejected' and 'cancelled' are terminal at nTZS too — a donation left at
+  // pending for one of those is a promise the page keeps making to nobody.
+  if (status === 'failed' || status === 'rejected' || status === 'cancelled') {
+    const res = await client.query(
+      `UPDATE donations SET status = 'failed'
+        WHERE ntzs_id = $1 AND status NOT IN ('completed', 'failed')`,
+      [ntzsId]
+    );
+    return (res.rowCount ?? 0) > 0 ? 'failed' : null;
+  }
+
+  return null;
 }

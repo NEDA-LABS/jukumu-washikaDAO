@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
-import { ensureDonationsSchema } from '@/lib/donations';
+import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
+import { ntzs } from '@/lib/ntzs';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,39 @@ export const runtime = 'nodejs';
  * wrong.
  */
 
+/**
+ * Bring any still-open bank or mobile donation up to date with nTZS before
+ * listing. The scheduled sweep is meant to do this, but it runs on the host's
+ * timer and a donation that reads `submitted` here while the money has already
+ * minted is exactly the thing this screen exists to disprove. A handful of
+ * lookups on a page an admin opens by hand is a cheap way to never show a
+ * stale gift — and it is the same idempotent step the sweep and webhook call.
+ */
+async function refreshOpenDonations() {
+  if (!process.env.NTZS_API_KEY) return;
+  const client = await pool.connect();
+  try {
+    const open = await client.query(
+      `SELECT ntzs_id FROM donations
+        WHERE ntzs_id IS NOT NULL AND method <> 'crypto'
+          AND status NOT IN ('completed', 'failed', 'rejected')
+        ORDER BY created_at DESC LIMIT 25`
+    );
+    await Promise.all((open.rows as { ntzs_id: string }[]).map(async ({ ntzs_id }) => {
+      try {
+        const remote = await ntzs.deposits.get(ntzs_id);
+        await settleDonationByNtzsId(client, ntzs_id, remote.status, remote.txHash ?? null);
+      } catch {
+        // One unreachable lookup must not stop the list from rendering.
+      }
+    }));
+  } catch {
+    // Same: a refresh failure is not a reason to show the admin nothing.
+  } finally {
+    client.release();
+  }
+}
+
 async function requireAdmin(request: NextRequest) {
   const auth = getAuthTokenPayload(request);
   if (!auth) return null;
@@ -34,6 +68,7 @@ export async function GET(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await ensureDonationsSchema();
+  await refreshOpenDonations();
   const sp = new URL(request.url).searchParams;
   const status = sp.get('status');
 
