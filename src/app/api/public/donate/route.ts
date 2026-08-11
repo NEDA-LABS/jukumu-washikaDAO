@@ -33,8 +33,11 @@ export async function GET() {
       getDonationTotals(),
       getTreasuryAddress(client),
     ]);
+    // Not cached at the edge. It carries the treasury address the crypto tab
+    // needs, and a stale copy from before that field existed left the form
+    // showing no address at all — two cheap aggregates are not worth that.
     return NextResponse.json({ ...totals, treasuryAddress }, {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
+      headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     console.error('[public/donate GET]', error);
@@ -51,7 +54,9 @@ export async function POST(request: NextRequest) {
   const amountTzs = Math.floor(Number(body?.amountTzs));
   const phone = normalizeDonorPhone(body?.phone ?? '');
 
-  const method = body?.method === 'crypto' ? 'crypto' : 'mobile';
+  const method = body?.method === 'crypto' ? 'crypto'
+    : body?.method === 'bank' ? 'bank'
+    : 'mobile';
   const token = (typeof body?.token === 'string' ? body.token.toLowerCase() : '') as DonationToken;
 
   if (donorName.length < 2) {
@@ -124,11 +129,24 @@ export async function POST(request: NextRequest) {
   if (!Number.isFinite(amountTzs) || amountTzs < MIN_TZS) {
     return NextResponse.json({ error: `Minimum donation is TSh ${MIN_TZS.toLocaleString()}`, field: 'amountTzs' }, { status: 400 });
   }
-  if (amountTzs > MAX_TZS) {
+  if (amountTzs > MAX_TZS && method !== 'bank') {
     return NextResponse.json({ error: 'That amount is too large for mobile money', field: 'amountTzs' }, { status: 400 });
   }
-  if (!isValidDonorPhone(phone)) {
+  // A bank transfer is paid from the donor's own banking app, so there is no
+  // number to push a prompt to.
+  if (method === 'mobile' && !isValidDonorPhone(phone)) {
     return NextResponse.json({ error: 'Enter a valid Tanzanian mobile number', field: 'phone' }, { status: 400 });
+  }
+
+  // nTZS identifies a bank credit by the account it came from — the narration
+  // does not survive TIPS — so this is not optional.
+  const payerAccountNumber = typeof body?.payerAccountNumber === 'string'
+    ? body.payerAccountNumber.replace(/\s+/g, '') : '';
+  if (method === 'bank' && !/^[0-9]{6,24}$/.test(payerAccountNumber)) {
+    return NextResponse.json(
+      { error: 'Enter the bank account number you will send from', field: 'payerAccountNumber' },
+      { status: 400 }
+    );
   }
 
   await ensureDonationsSchema();
@@ -137,12 +155,14 @@ export async function POST(request: NextRequest) {
     await ensureNtzsSchema(client);
 
     // One prompt at a time per number, so a double-tap cannot ring twice.
-    const inFlight = await client.query(
-      `SELECT certificate_code FROM donations
-        WHERE phone = $1 AND status = 'pending' AND created_at > NOW() - INTERVAL '3 minutes'
-        LIMIT 1`,
-      [phone]
-    );
+    const inFlight = method === 'mobile'
+      ? await client.query(
+        `SELECT certificate_code FROM donations
+          WHERE phone = $1 AND status = 'pending' AND created_at > NOW() - INTERVAL '3 minutes'
+          LIMIT 1`,
+        [phone]
+      )
+      : { rows: [] as { certificate_code: string }[] };
     if (inFlight.rows.length > 0) {
       return NextResponse.json({
         reference: (inFlight.rows[0] as { certificate_code: string }).certificate_code,
@@ -154,16 +174,17 @@ export async function POST(request: NextRequest) {
     const code = newCertificateCode();
     const masterUserId = await getMasterNtzsUserId(client);
 
-    const deposit = await ntzs.deposits.create({
-      userId: masterUserId,
-      amountTzs,
-      phoneNumber: phone,
-    });
+    const deposit = await ntzs.deposits.create(
+      method === 'bank'
+        ? { userId: masterUserId, amountTzs, paymentMethod: 'bank_transfer' as const, payerAccountNumber }
+        : { userId: masterUserId, amountTzs, phoneNumber: phone }
+    );
 
     await client.query(
-      `INSERT INTO donations (donor_name, phone, amount_tzs, ntzs_id, status, certificate_code, message)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [donorName, phone, amountTzs, deposit.id, deposit.status || 'pending', code, message]
+      `INSERT INTO donations (donor_name, phone, amount_tzs, ntzs_id, status, certificate_code, message, method)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [donorName, method === 'bank' ? null : phone, amountTzs, deposit.id,
+       deposit.status || 'pending', code, message, method]
     );
 
     // Visible in the platform's own transaction history. No member or group is
@@ -177,9 +198,23 @@ export async function POST(request: NextRequest) {
       phone,
       purpose: 'donation',
       note: `Donation from ${donorName}`,
-      metadata: { kind: 'donation', certificate_code: code, donor_name: donorName },
+      metadata: { kind: 'donation', certificate_code: code, donor_name: donorName, method },
       posted: false,
     });
+
+    // A bank transfer is not paid here — the donor takes these details to
+    // their bank. The reference is what ties the incoming credit to this
+    // deposit, so it has to reach them intact.
+    if (method === 'bank') {
+      return NextResponse.json({
+        reference: code,
+        status: deposit.status,
+        amountTzs,
+        bank: deposit.instructions ?? null,
+        bankReference: deposit.instructions?.reference ?? deposit.reference ?? null,
+        message: 'Transfer the amount using these details. Include the reference exactly.',
+      });
+    }
 
     return NextResponse.json({
       reference: code,

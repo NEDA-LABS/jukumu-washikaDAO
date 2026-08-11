@@ -26,6 +26,18 @@ export interface NtzsDeposit {
   phoneNumber: string;
   status: 'pending' | 'submitted' | 'processing' | 'minted' | 'failed';
   createdAt: string;
+  /** Bank transfers only: what to pay, and the reference that matches it. */
+  paymentMethod?: 'mobile_money' | 'bank_transfer';
+  reference?: string;
+  instructions?: {
+    institution: string;
+    accountNumber: string;
+    accountName: string;
+    reference: string;
+    amountTzs: number;
+    /** nTZS's own wording of the conditions — shown to the donor verbatim. */
+    note?: string;
+  };
 }
 
 export interface NtzsTransfer {
@@ -154,11 +166,26 @@ export const ntzsUsers = {
 // ── Deposits (On-Ramp: Mobile Money → nTZS) ──
 
 export const ntzsDeposits = {
-  /** Initiate M-Pesa deposit. User gets STK push. */
+  /**
+   * Start a deposit.
+   *
+   * Mobile money pushes a prompt to `phoneNumber`. A bank transfer returns
+   * `instructions` — the account to pay into — and requires
+   * `payerAccountNumber`, the account the money will come FROM. nTZS matches
+   * on the sending account rather than the narration, because the narration
+   * does not survive TIPS. The published docs describe the reference as the
+   * matching key; the API disagrees, and the API is what runs.
+   *
+   * Either way nTZS mints once the money lands, so both settle through the
+   * same webhook.
+   */
   create: (params: {
     userId: string;
     amountTzs: number;
-    phoneNumber: string;
+    phoneNumber?: string;
+    paymentMethod?: 'mobile_money' | 'bank_transfer';
+    /** Required for bank_transfer: the account the transfer is sent from. */
+    payerAccountNumber?: string;
   }) => ntzsRequest<NtzsDeposit>('POST', '/deposits', params),
 
   /** Check deposit status */

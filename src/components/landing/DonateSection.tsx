@@ -16,8 +16,8 @@ import TokenMark, { TOKENS, type TokenId } from '@/components/TokenMark';
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const PRESETS = [5000, 20000, 50000, 200000];
 
-type Stage = 'form' | 'waiting' | 'review' | 'done' | 'failed';
-type Method = 'mobile' | 'crypto';
+type Stage = 'form' | 'waiting' | 'bank' | 'review' | 'done' | 'failed';
+type Method = 'mobile' | 'bank' | 'crypto';
 
 export default function DonateSection() {
   const { t, language } = useLanguage();
@@ -44,10 +44,30 @@ export default function DonateSection() {
   const [txHash, setTxHash] = useState('');
   const [addrCopied, setAddrCopied] = useState(false);
 
+  // Bank details come back from nTZS when the deposit is created — the
+  // reference in particular, which is the only thing tying an incoming credit
+  // to this gift.
+  const [bank, setBank] = useState<{
+    institution: string; accountNumber: string; accountName: string;
+    reference: string; amountTzs: number; note?: string;
+  } | null>(null);
+  const [refCopied, setRefCopied] = useState(false);
+  const [payerAccount, setPayerAccount] = useState('');
+
   // Resolved after mount, not during render: reading window while rendering
   // makes the server and the first client render disagree.
   const [shareUrl, setShareUrl] = useState('https://washikadau.com/#changia');
   useEffect(() => { setShareUrl(`${window.location.origin}/#changia`); }, []);
+
+  // Arriving on the shared link opens the form. Checked once on mount rather
+  // than on every hash change, so scrolling here from the page's own nav does
+  // not force a modal on someone who was only browsing.
+  useEffect(() => {
+    if (window.location.hash === '#changia') {
+      const id = setTimeout(() => setOpen(true), 600);
+      return () => clearTimeout(id);
+    }
+  }, []);
 
   const loadTotals = useCallback(async () => {
     try {
@@ -101,7 +121,7 @@ export default function DonateSection() {
   const reset = () => {
     setStage('form'); setName(''); setPhone(''); setAmount('20000');
     setError(''); setReference(''); setWaited(0);
-    setMethod('mobile'); setToken('ntzs'); setTxHash('');
+    setMethod('mobile'); setToken('ntzs'); setTxHash(''); setBank(null); setPayerAccount('');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -110,8 +130,11 @@ export default function DonateSection() {
     if (name.trim().length < 2) { setError(sw ? 'Andika jina lako' : 'Enter your name'); return; }
     const amt = Number(amount);
     if (!amt || amt <= 0) { setError(sw ? 'Weka kiasi' : 'Enter an amount'); return; }
-    if (method === 'mobile' && amt < 1000) {
+    if (method !== 'crypto' && amt < 1000) {
       setError(sw ? 'Kiasi cha chini ni TSh 1,000' : 'Minimum is TSh 1,000'); return;
+    }
+    if (method === 'bank' && !/^[0-9]{6,24}$/.test(payerAccount.replace(/\s+/g, ''))) {
+      setError(sw ? 'Weka namba ya akaunti utakayotumia' : 'Enter the account you will send from'); return;
     }
     if (method === 'crypto' && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim())) {
       setError(sw ? 'Weka namba ya muamala (0x…)' : 'Enter the transaction hash (0x…)'); return;
@@ -125,15 +148,19 @@ export default function DonateSection() {
         body: JSON.stringify(
           method === 'crypto'
             ? { donorName: name.trim(), amountTzs: amt, method: 'crypto', token, txHash: txHash.trim() }
-            : { donorName: name.trim(), phone, amountTzs: amt }
+            : method === 'bank'
+              ? { donorName: name.trim(), amountTzs: amt, method: 'bank', payerAccountNumber: payerAccount.trim() }
+              : { donorName: name.trim(), phone, amountTzs: amt }
         ),
       });
       const d = await res.json().catch(() => null);
       if (!res.ok) { setError(d?.error || (sw ? 'Imeshindikana' : 'That did not work')); return; }
       setReference(d.reference);
       setWaited(0);
-      // A crypto gift has nothing to poll — it waits on a person.
-      setStage(d.pendingReview ? 'review' : 'waiting');
+      if (d.bank) setBank(d.bank);
+      // A crypto gift waits on a person; a bank transfer waits on the donor
+      // to go and pay it; only mobile money is already in flight.
+      setStage(d.pendingReview ? 'review' : d.bank ? 'bank' : 'waiting');
     } catch {
       setError(sw ? 'Tatizo la mtandao' : 'Network error');
     } finally {
@@ -229,8 +256,8 @@ export default function DonateSection() {
             <div className="flex flex-none items-start justify-between border-b border-border px-5 py-4">
               <div className="min-w-0">
                 <span className="wd-kicker wd-kicker-gold">
-                  {method === 'crypto'
-                    ? (sw ? 'Kwa sarafu' : 'Stablecoin')
+                  {method === 'crypto' ? (sw ? 'Kwa sarafu' : 'Stablecoin')
+                    : method === 'bank' ? (sw ? 'Kwa benki' : 'Bank transfer')
                     : (sw ? 'Kwa simu' : 'Mobile money')}
                 </span>
                 <h3 id="donate-title" className="mt-1 font-display text-[19px] font-bold leading-tight">
@@ -254,14 +281,18 @@ export default function DonateSection() {
               <form onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
                 {/* How the gift arrives. It changes what we can ask for as
                     proof, so it comes before everything else. */}
-                <div className="grid grid-cols-2 gap-2">
-                  {([['mobile', sw ? 'Kwa simu' : 'Mobile money'], ['crypto', sw ? 'Kwa sarafu' : 'Stablecoin']] as const).map(([m, lbl]) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    ['mobile', sw ? 'Simu' : 'Mobile'],
+                    ['bank', sw ? 'Benki' : 'Bank'],
+                    ['crypto', sw ? 'Sarafu' : 'Stablecoin'],
+                  ] as const).map(([m, lbl]) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => { setMethod(m); setError(''); }}
                       aria-pressed={method === m}
-                      className={`wd-press border py-2.5 text-[11.5px] font-semibold ${
+                      className={`wd-press border py-2.5 text-[11px] font-semibold ${
                         method === m ? 'border-foreground bg-gold-tint' : 'border-border text-muted-foreground'
                       }`}
                     >
@@ -280,7 +311,23 @@ export default function DonateSection() {
                   />
                 </label>
 
-                {method === 'mobile' ? (
+                {method === 'bank' ? (
+                  <label className="block">
+                    <span className="wd-kicker">{sw ? 'Akaunti utakayotumia' : 'Account you will send from'}</span>
+                    <input
+                      required value={payerAccount}
+                      onChange={(e) => { setPayerAccount(e.target.value); setError(''); }}
+                      placeholder="0150312345678"
+                      inputMode="numeric"
+                      className={`${field} font-mono`}
+                    />
+                    <span className="mt-1.5 block text-[10.5px] leading-snug text-muted-foreground">
+                      {sw
+                        ? 'Benki hutambua malipo kwa akaunti inayotuma, si maelezo.'
+                        : 'The bank credit is identified by the sending account, not the description.'}
+                    </span>
+                  </label>
+                ) : method === 'mobile' ? (
                   <label className="block">
                     <span className="wd-kicker">{sw ? 'Nambari ya simu' : 'Phone number'}</span>
                     <input
@@ -360,7 +407,7 @@ export default function DonateSection() {
                       ? `${sw ? 'Kiasi' : 'Amount'} (${TOKENS.find((x) => x.id === token)?.label})`
                       : (sw ? 'Kiasi' : 'Amount')}
                   </span>
-                  {method === 'mobile' && (
+                  {method !== 'crypto' && (
                   <div className="mt-1.5 grid grid-cols-4 gap-2">
                     {PRESETS.map((p) => (
                       <button
@@ -399,7 +446,9 @@ export default function DonateSection() {
                     ? (sw
                       ? 'Cheti kitakuwa tayari baada ya kuthibitisha muamala.'
                       : 'Your certificate is ready once we confirm the transfer arrived.')
-                    : (sw ? 'Utapokea ombi la malipo kwenye simu yako.' : 'You will get a payment request on your phone.')}
+                    : method === 'bank'
+                      ? (sw ? 'Tutakupa maelezo ya malipo hatua inayofuata.' : 'We will show you the payment details next.')
+                      : (sw ? 'Utapokea ombi la malipo kwenye simu yako.' : 'You will get a payment request on your phone.')}
                 </p>
               </form>
             )}
@@ -425,6 +474,76 @@ export default function DonateSection() {
                     {sw ? 'Funga' : 'Close'}
                   </button>
                 )}
+              </div>
+            )}
+
+            {stage === 'bank' && bank && (
+              <div className="flex-1 overflow-y-auto px-5 py-5">
+                <p className="text-[12.5px] leading-relaxed text-muted-foreground">
+                  {sw
+                    ? 'Tuma kiasi kwa maelezo haya. Kumbukumbu lazima iwe kwenye maelezo ya malipo.'
+                    : 'Transfer the amount using these details. The reference must appear in the payment description.'}
+                </p>
+
+                <div className="mt-4 border border-border">
+                  {[
+                    [sw ? 'Benki' : 'Bank', bank.institution],
+                    [sw ? 'Jina la akaunti' : 'Account name', bank.accountName],
+                    [sw ? 'Namba ya akaunti' : 'Account number', bank.accountNumber],
+                    [sw ? 'Kiasi' : 'Amount', fmt(bank.amountTzs)],
+                  ].map(([k, v], i) => (
+                    <div key={k} className={`flex items-baseline justify-between gap-3 px-3.5 py-2.5 ${i > 0 ? 'border-t border-border' : ''}`}>
+                      <span className="wd-kicker">{k}</span>
+                      <span className="text-right font-mono text-[12px] font-semibold text-foreground">{v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* The reference is the whole mechanism — without it in the
+                    description the credit cannot be matched to this gift. */}
+                <div className="mt-3 border-2 border-gold bg-gold-tint px-3.5 py-3">
+                  <span className="wd-kicker wd-kicker-gold">{sw ? 'Kumbukumbu' : 'Reference'}</span>
+                  <p className="mt-1.5 font-mono text-[17px] font-bold tracking-wide text-foreground">{bank.reference}</p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(bank.reference);
+                        setRefCopied(true);
+                        setTimeout(() => setRefCopied(false), 2000);
+                      } catch { /* selectable above */ }
+                    }}
+                    className="wd-press mt-2 border border-foreground px-3 py-1.5 text-[10px] font-semibold"
+                  >
+                    {refCopied ? (sw ? 'Imenakiliwa ✓' : 'Copied ✓') : (sw ? 'Nakili kumbukumbu' : 'Copy reference')}
+                  </button>
+                  <p className="mt-2 text-[10.5px] leading-snug text-muted-foreground">
+                    {sw
+                      ? 'Weka kumbukumbu hii kwenye maelezo ya malipo, na tuma kiasi hicho hasa.'
+                      : 'Put this in the transfer description and send exactly that amount.'}
+                  </p>
+                </div>
+
+                {/* nTZS's own conditions, verbatim — the validity window and
+                    the exact-amount rule are theirs to state, not ours to
+                    paraphrase. */}
+                {bank.note && (
+                  <p className="mt-4 border-l-2 border-border pl-3 text-[10.5px] leading-relaxed text-muted-foreground">
+                    {bank.note}
+                  </p>
+                )}
+                <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+                  {sw
+                    ? 'Cheti chako kitapatikana kwenye kiungo hiki mara malipo yatakapofika.'
+                    : 'Your certificate appears at this link once the transfer lands.'}
+                </p>
+                <a
+                  href={`/shukrani/${encodeURIComponent(reference)}`}
+                  className="wd-press mt-3 block w-full border-2 border-foreground py-3 text-center text-[12px] font-semibold"
+                >
+                  {sw ? 'Ukurasa wa cheti' : 'Certificate page'}
+                </a>
+                <p className="mt-3 text-center font-mono text-[10px] text-ink-3">{reference}</p>
               </div>
             )}
 

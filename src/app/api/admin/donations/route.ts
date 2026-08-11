@@ -6,13 +6,17 @@ import { ensureDonationsSchema } from '@/lib/donations';
 export const runtime = 'nodejs';
 
 /**
- * Review queue for gifts sent on chain.
+ * Every donation, and the review queue for the ones that need a person.
  *
- * Mobile-money donations settle themselves — nTZS tells us whether the donor
- * approved the prompt. A crypto transfer happens entirely outside this
- * application, so the only evidence is a hash the donor typed. Confirming is
- * what turns that into a recognised gift and releases the certificate, so it
- * is a human decision: check the hash against the treasury wallet first.
+ * Mobile money and bank transfers settle themselves — nTZS tells us when the
+ * money lands. A transfer sent on chain happens entirely outside this
+ * application, so the only evidence is a hash the donor typed; confirming one
+ * is what releases the certificate, so it stays a human decision. Check the
+ * hash against the treasury wallet first.
+ *
+ * The list is not filtered by method: a donation that settled on its own still
+ * needs to be visible, or the only gifts anyone can see are the ones that went
+ * wrong.
  */
 
 async function requireAdmin(request: NextRequest) {
@@ -30,23 +34,52 @@ export async function GET(request: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await ensureDonationsSchema();
-  const status = new URL(request.url).searchParams.get('status') || 'pending_review';
+  const sp = new URL(request.url).searchParams;
+  const status = sp.get('status');
 
   try {
+    // `status` narrows the list; without it, everything, newest first. Pending
+    // reviews are floated to the top of that view because they are the only
+    // rows anyone has to act on.
     const res = await pool.query(
-      `SELECT id, donor_name, amount_tzs, token, tx_hash, from_address, status,
-              certificate_code, message, review_reason, created_at, settled_at
-         FROM donations
-        WHERE method = 'crypto' AND status = $1
-        ORDER BY created_at ASC
-        LIMIT 200`,
-      [status]
+      status
+        ? `SELECT id, donor_name, phone, amount_tzs, token, token_amount, tx_hash, from_address,
+                  status, method, certificate_code, message, review_reason, created_at, settled_at
+             FROM donations WHERE status = $1
+            ORDER BY created_at DESC LIMIT 300`
+        : `SELECT id, donor_name, phone, amount_tzs, token, token_amount, tx_hash, from_address,
+                  status, method, certificate_code, message, review_reason, created_at, settled_at
+             FROM donations
+            ORDER BY (status = 'pending_review') DESC, created_at DESC LIMIT 300`,
+      status ? [status] : []
     );
+
+    const totals = await pool.query(
+      `SELECT
+         COALESCE(SUM(amount_tzs) FILTER (WHERE status = 'completed'), 0)::bigint AS raised,
+         COUNT(*) FILTER (WHERE status = 'completed')::int AS supporters,
+         COUNT(*) FILTER (WHERE status = 'pending_review')::int AS awaiting,
+         -- nTZS reports a started deposit as pending, submitted or
+         -- processing depending on the rail; all three mean "not yet paid".
+         COUNT(*) FILTER (WHERE status IN ('pending','submitted','processing'))::int AS in_flight
+       FROM donations`
+    );
+    const t = totals.rows[0] as { raised: string; supporters: number; awaiting: number; in_flight: number };
+
     return NextResponse.json({
       donations: res.rows.map((r) => ({
         ...(r as object),
         amount_tzs: Number((r as { amount_tzs: string }).amount_tzs),
+        token_amount: (r as { token_amount: string | null }).token_amount != null
+          ? Number((r as { token_amount: string }).token_amount)
+          : null,
       })),
+      totals: {
+        raisedTzs: Number(t.raised),
+        supporters: t.supporters,
+        awaitingReview: t.awaiting,
+        inFlight: t.in_flight,
+      },
     });
   } catch (error) {
     console.error('[admin/donations GET]', error);
