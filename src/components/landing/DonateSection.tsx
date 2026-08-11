@@ -187,13 +187,18 @@ export default function DonateSection() {
           <div>
             <span className="wd-kicker wd-kicker-gold">{sw ? 'Changia' : 'Support us'}</span>
             <h2 className="mt-3 font-display text-[clamp(30px,4.6vw,60px)] font-bold leading-[1.04] tracking-[-0.03em]">
-              {sw ? 'Saidia vikundi' : 'Help chamas'}<br />
-              <span className="italic">{sw ? 'kujenga vyao' : 'build what they own'}</span>
+              {sw ? 'Weka tofali' : 'Lay a brick'}<br />
+              <span className="italic">{sw ? 'kwenye ukuta wao' : 'in someone else’s wall'}</span>
             </h2>
             <p className="mt-6 max-w-[46ch] text-[13.5px] leading-[1.65] text-muted-foreground">
               {sw
-                ? 'WashikaDAU ni bure kwa vikundi. Michango husaidia mafunzo, msaada na gharama za mfumo — si faida ya mtu.'
-                : 'WashikaDAU is free for the groups that use it. Donations cover training, support and the cost of running the platform — not anyone’s profit.'}
+                ? 'Kila wiki mwanachama huweka tofali lake kwenye ukuta wa kikundi. Vikundi hutumia WashikaDAU bure — unachotoa huenda kwenye mafunzo, msaada na uendeshaji, si gawio la mtu.'
+                : 'Every week a member lays their brick in the group’s wall. Groups use WashikaDAU free — what you give goes to training, support and keeping it running, never to anyone’s dividend.'}
+            </p>
+            <p className="mt-3 max-w-[46ch] text-[13.5px] leading-[1.65] text-muted-foreground">
+              {sw
+                ? 'Nawe utapata ukuta wako: cheti chenye jina lako na tofali za dhahabu kwa kila mchango.'
+                : 'You get a wall of your own: a certificate in your name, your gift laid into it in gold.'}
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -279,6 +284,20 @@ export default function DonateSection() {
 
             {stage === 'form' && (
               <form onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+                {/* What they get back. Worth saying before the form rather than
+                    after it — it is the reason the name field asks for a
+                    business name rather than just a first name. */}
+                <div className="flex items-start gap-3 border border-border bg-background px-3.5 py-3">
+                  <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center border border-gold text-[9px] font-bold text-gold-deep">
+                    WD
+                  </span>
+                  <p className="text-[11.5px] leading-relaxed text-muted-foreground">
+                    {sw
+                      ? 'Kila mchango hupata cheti cha shukrani chenye jina lako — tayari kupakua mara malipo yatakapokamilika.'
+                      : 'Every gift earns a certificate of support in your name — yours to download the moment the payment lands.'}
+                  </p>
+                </div>
+
                 {/* How the gift arrives. It changes what we can ask for as
                     proof, so it comes before everything else. */}
                 <div className="grid grid-cols-3 gap-2">
