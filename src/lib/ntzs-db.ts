@@ -95,7 +95,7 @@ async function _runEnsureNtzsSchema(client: PoolClient) {
     DO $$ BEGIN
       ALTER TABLE ntzs_transactions DROP CONSTRAINT IF EXISTS ntzs_transactions_purpose_check;
       ALTER TABLE ntzs_transactions ADD CONSTRAINT ntzs_transactions_purpose_check
-        CHECK (purpose IN ('deposit','withdrawal','contribution','disbursement','p2p','fee','expense','funding','topup'));
+        CHECK (purpose IN ('deposit','withdrawal','contribution','disbursement','p2p','fee','expense','funding','topup','donation'));
     EXCEPTION WHEN undefined_table THEN NULL;
     END $$;
   `);

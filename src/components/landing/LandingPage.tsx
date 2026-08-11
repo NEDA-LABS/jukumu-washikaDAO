@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
+import DonateSection from './DonateSection';
 
 /**
  * The WashikaDAU landing page, built to the imported design.
@@ -566,6 +567,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <DonateSection />
 
       {/* ── Close ── */}
       <section id="pakua" className="border-t-2 border-rule bg-gold text-[#1a1714]">
