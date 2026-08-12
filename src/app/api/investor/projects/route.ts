@@ -60,19 +60,17 @@ export async function GET(request: NextRequest) {
         -- matter how much money had arrived. Both real routes count here:
         -- investors spending an in-app balance, and nTZS sent on-chain to the
         -- treasury and since confirmed.
-        (
-          COALESCE((
-            SELECT SUM(t.amount_tzs)
-            FROM ntzs_transactions t
-            WHERE t.purpose = 'funding'
-              AND t.metadata->>'proposal_id' = p.id::text
-          ), 0)
-          + COALESCE((
-            SELECT SUM(c.amount_tzs)
-            FROM external_funding_claims c
-            WHERE c.proposal_id = p.id AND c.status = 'confirmed'
-          ), 0)
-        )::bigint AS raised_tzs,
+        -- The ledger alone, because confirming an external claim writes a
+        -- funding row into it. Adding the claims table back counted every
+        -- on-chain gift twice: this project read 90% funded on 45% of the
+        -- money. Checked against the data — every confirmed claim has its
+        -- ledger row, so nothing is lost by trusting one source.
+        COALESCE((
+          SELECT SUM(t.amount_tzs)
+          FROM ntzs_transactions t
+          WHERE t.purpose = 'funding'
+            AND t.metadata->>'proposal_id' = p.id::text
+        ), 0)::bigint AS raised_tzs,
         -- Shown to the group as "on its way", never counted as raised.
         COALESCE((
           SELECT SUM(c.amount_tzs)

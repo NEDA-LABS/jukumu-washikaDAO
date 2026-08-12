@@ -1640,6 +1640,12 @@ export default function InvestorDashboard() {
         const d = detailTarget;
         const dApproved = !!d.funded_at;
         const dGoal = d.metadata?.funding_goal_tzs ?? 0;
+        const dRaised = Number(d.raised_tzs ?? 0);
+        const dPending = Number(d.pending_tzs ?? 0);
+        const dPct = dGoal > 0 ? Math.min(100, Math.round((dRaised / dGoal) * 100)) : 0;
+        // Drawn only as far as the bar has room, so a large pending amount
+        // cannot render past the end of the track.
+        const dPendPct = dGoal > 0 ? Math.min(100 - dPct, Math.round((dPending / dGoal) * 100)) : 0;
         const votePct = d.total_votes > 0 ? Math.round((d.yes_votes / d.total_votes) * 100) : 0;
         return (
           <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: ink.bg }}>
@@ -1703,6 +1709,51 @@ export default function InvestorDashboard() {
                   </div>
                 )}
               </div>
+
+              {/* How much has actually reached the project. Money confirmed and
+                  money still only declared are drawn as different things —
+                  a group counting on a claim nobody has verified is how a
+                  budget goes wrong. */}
+              {dGoal > 0 && (
+                <div className="mt-8 rounded-2xl p-5" style={{ background: ink.card, border: `1px solid ${ink.cardBorder}` }}>
+                  <div className="flex justify-between items-baseline mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: ink.muted }}>
+                      {t('inv.raisedSoFar')}
+                    </span>
+                    <span className="text-sm font-bold font-mono" style={{ color: ink.heading }}>
+                      {fmtShort(dRaised)} / {fmtShort(dGoal)} · {dPct}%
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full flex" style={{ background: ink.chip }}>
+                    <div className="h-full transition-all duration-700" style={{ width: `${dPct}%`, background: 'var(--ds-gold)' }} />
+                    {dPendPct > 0 && (
+                      <div
+                        className="h-full transition-all duration-700"
+                        style={{
+                          width: `${dPendPct}%`,
+                          backgroundImage: 'repeating-linear-gradient(45deg, var(--ds-gold) 0 4px, transparent 4px 8px)',
+                          opacity: 0.5,
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="text-[11px] font-mono" style={{ color: ink.muted }}>
+                      {usd(dRaised)} {t('inv.confirmed')}
+                    </span>
+                    {dPending > 0 && (
+                      <span className="text-[11px] font-mono" style={{ color: ink.muted }}>
+                        + {fmtShort(dPending)} {t('inv.awaitingConfirmation')}
+                      </span>
+                    )}
+                    {dRaised < dGoal && (
+                      <span className="text-[11px] font-mono" style={{ color: ink.muted }}>
+                        {fmtShort(dGoal - dRaised)} {t('inv.toGo')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Vote progress */}
               {!dApproved && (d.yes_votes > 0 || d.total_votes > 0) && (
