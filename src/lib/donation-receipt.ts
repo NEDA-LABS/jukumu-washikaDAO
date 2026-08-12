@@ -15,7 +15,33 @@ import { ensureDonationsSchema } from '@/lib/donations';
  * not.
  */
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://washikadau.com').replace(/\/$/, '');
+/**
+ * Where to point a donor. This is the one URL in the codebase that is read by
+ * someone who is not us, on a machine that is not ours, so a developer's
+ * NEXT_PUBLIC_APP_URL of http://localhost:3000 is not merely unhelpful here —
+ * it is a dead link in a stranger's inbox, and the certificate it points at is
+ * the whole reason they gave us an address.
+ *
+ * A local or private host is therefore refused outright in favour of the
+ * canonical domain, and Netlify's own URL is preferred over a guess.
+ */
+const CANONICAL = 'https://washikadau.com';
+
+function publicBase(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.URL,           // Netlify sets this to the live site URL
+    process.env.DEPLOY_PRIME_URL,
+  ];
+  for (const raw of candidates) {
+    if (!raw) continue;
+    const url = raw.trim().replace(/\/$/, '');
+    if (!/^https?:\/\//i.test(url)) continue;
+    if (/localhost|127\.0\.0\.1|0\.0\.0\.0|\.local(?::|$)/i.test(url)) continue;
+    return url;
+  }
+  return CANONICAL;
+}
 
 const INK = '#1a1714';
 const CREAM = '#f4ede4';
@@ -51,7 +77,7 @@ export function buildReceipt(r: ReceiptRow) {
   const sw = r.lang === 'sw';
   const amount = money(r);
   const name = r.donor_name;
-  const url = `${APP_URL}/shukrani/${encodeURIComponent(r.certificate_code)}`;
+  const url = `${publicBase()}/shukrani/${encodeURIComponent(r.certificate_code)}`;
 
   const subject = sw
     ? `Asante ${name} — mchango wako umethibitishwa`
