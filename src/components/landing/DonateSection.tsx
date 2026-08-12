@@ -600,6 +600,23 @@ export default function DonateSection() {
                     ? 'Cheti chako kitapatikana kwenye kiungo hiki mara malipo yatakapofika.'
                     : 'Your certificate appears at this link once the transfer lands.'}
                 </p>
+
+                {/* This is the stage where the donor leaves: they take the
+                    details to their bank and pay later, with the page long
+                    closed. The mail is what will actually reach them, so it is
+                    worth saying here — and showing the address back catches a
+                    typo now, rather than by silence a day later. */}
+                {email.trim() && (
+                  <p className="mt-2.5 flex items-start gap-2 border border-gold-deep/40 bg-gold/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground">
+                    <span aria-hidden className="mt-px font-mono text-[11px] text-gold-deep">✉</span>
+                    <span>
+                      {sw ? 'Pia tutakitumia kwa ' : 'We will also email it to '}
+                      <span className="break-all font-mono font-semibold">{email.trim()}</span>
+                      {sw ? ' mara malipo yatakapothibitishwa.' : ' once the payment is confirmed.'}
+                    </span>
+                  </p>
+                )}
+
                 <a
                   href={`/shukrani/${encodeURIComponent(reference)}`}
                   className="wd-press mt-3 block w-full border-2 border-foreground py-3 text-center text-[12px] font-semibold"
