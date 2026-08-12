@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
+import { deliverDonationReceipts } from '@/lib/donation-receipt';
 
 /**
  * nTZS webhook handler. Settles deposits/withdrawals against the ledger:
@@ -50,6 +51,10 @@ export async function POST(request: NextRequest) {
     // fires, and the webhook is the only thing left that knows the money came.
     await settleDonationByNtzsId(client, resourceId, finalStatus, txHash);
     await client.query('COMMIT');
+
+    // After the commit, never inside it: reaching an SMTP server is slow and
+    // can fail, and neither is a reason to roll back money that has landed.
+    await deliverDonationReceipts({ ntzsId: resourceId }).catch(() => {});
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {

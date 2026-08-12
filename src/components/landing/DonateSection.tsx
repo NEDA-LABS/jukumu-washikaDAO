@@ -56,6 +56,12 @@ export default function DonateSection() {
   const [refCopied, setRefCopied] = useState(false);
   const [payerAccount, setPayerAccount] = useState('');
 
+  // Optional, and only offered when the server says a receipt can actually be
+  // sent. Asking for an address we cannot write to would be collecting it for
+  // nothing.
+  const [email, setEmail] = useState('');
+  const [emailEnabled, setEmailEnabled] = useState(false);
+
   // Resolved after mount, not during render: reading window while rendering
   // makes the server and the first client render disagree.
   const [shareUrl, setShareUrl] = useState('https://washikadau.com/#changia');
@@ -78,6 +84,7 @@ export default function DonateSection() {
         const d = await res.json();
         setTotals({ totalTzs: d.totalTzs, supporters: d.supporters });
         setTreasury(d.treasuryAddress ?? null);
+        setEmailEnabled(!!d.emailEnabled);
       }
     } catch {
       // The section reads fine without a figure; better blank than invented.
@@ -124,6 +131,7 @@ export default function DonateSection() {
     setStage('form'); setName(''); setPhone(''); setAmount('20000');
     setError(''); setReference(''); setWaited(0);
     setMethod('mobile'); setToken('ntzs'); setTxHash(''); setBank(null); setPayerAccount('');
+    setEmail('');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -138,6 +146,9 @@ export default function DonateSection() {
     if (method === 'bank' && !/^[0-9]{6,24}$/.test(payerAccount.replace(/\s+/g, ''))) {
       setError(sw ? 'Weka namba ya akaunti utakayotumia' : 'Enter the account you will send from'); return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      setError(sw ? 'Barua pepe si sahihi' : 'That email address is not valid'); return;
+    }
     if (method === 'crypto' && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim())) {
       setError(sw ? 'Weka namba ya muamala (0x…)' : 'Enter the transaction hash (0x…)'); return;
     }
@@ -151,8 +162,11 @@ export default function DonateSection() {
           method === 'crypto'
             ? { donorName: name.trim(), amountTzs: amt, method: 'crypto', token, txHash: txHash.trim() }
             : method === 'bank'
-              ? { donorName: name.trim(), amountTzs: amt, method: 'bank', payerAccountNumber: payerAccount.trim() }
-              : { donorName: name.trim(), phone, amountTzs: amt }
+              ? { donorName: name.trim(), amountTzs: amt, method: 'bank',
+                  payerAccountNumber: payerAccount.trim(),
+                  email: email.trim() || undefined, lang: sw ? 'sw' : 'en' }
+              : { donorName: name.trim(), phone, amountTzs: amt,
+                  email: email.trim() || undefined, lang: sw ? 'sw' : 'en' }
         ),
       });
       const d = await res.json().catch(() => null);
@@ -424,6 +438,30 @@ export default function DonateSection() {
                       </span>
                     </label>
                   </>
+                )}
+
+                {/* Optional, and only when a receipt can actually be sent. A
+                    gift sent on chain is not offered one: it settles on a
+                    person's review rather than on a payment confirming, so it
+                    would not be the same promise. */}
+                {emailEnabled && method !== 'crypto' && (
+                  <label className="block">
+                    <span className="wd-kicker">
+                      {sw ? 'Barua pepe (si lazima)' : 'Email (optional)'}
+                    </span>
+                    <input
+                      type="email" value={email}
+                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                      placeholder={sw ? 'jina@mfano.com' : 'you@example.com'}
+                      autoComplete="email"
+                      className={field}
+                    />
+                    <span className="mt-1.5 block text-[10.5px] leading-snug text-muted-foreground">
+                      {sw
+                        ? 'Tutakutumia cheti chako malipo yatakapothibitishwa.'
+                        : 'We will send your certificate here once the payment is confirmed.'}
+                    </span>
+                  </label>
                 )}
 
                 <div>

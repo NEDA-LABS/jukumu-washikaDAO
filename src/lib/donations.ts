@@ -48,6 +48,15 @@ export function ensureDonationsSchema() {
       await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS from_address VARCHAR(120)`);
       await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS reviewed_by_user_id INTEGER`);
       await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS review_reason TEXT`);
+      // Optional: a donor who wants the certificate sent to them.
+      await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS email VARCHAR(200)`);
+      // The language they were reading when they gave, so the receipt arrives
+      // in it rather than in whatever the server happens to default to.
+      await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS lang VARCHAR(2)`);
+      // Claimed before sending, not written after. Settlement is reached from
+      // the webhook, the sweep, the status poll and the admin list, any two of
+      // which can arrive at once; without a claim the donor gets duplicates.
+      await client.query(`ALTER TABLE donations ADD COLUMN IF NOT EXISTS receipt_sent_at TIMESTAMPTZ`);
       // A mobile donation has a number; a crypto one does not.
       await client.query(`ALTER TABLE donations ALTER COLUMN phone DROP NOT NULL`);
       // One confirmed donation per on-chain transaction.

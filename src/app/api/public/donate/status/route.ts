@@ -4,6 +4,7 @@ import { ntzs } from '@/lib/ntzs';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { isDepositSuccessStatus, settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
+import { deliverDonationReceipts } from '@/lib/donation-receipt';
 
 export const runtime = 'nodejs';
 
@@ -84,6 +85,9 @@ export async function GET(request: NextRequest) {
           // Mark the platform transaction settled too. Idempotent, so the
           // webhook arriving later changes nothing.
           await settleExternalTransaction(client, d.ntzs_id, status).catch(() => {});
+          // The donor is on the page right now, so the receipt should already
+          // be in their inbox when they go and look.
+          await deliverDonationReceipts({ ntzsId: d.ntzs_id }).catch(() => {});
         }
       } catch {
         // Lookup trouble is not a failed donation — keep waiting.

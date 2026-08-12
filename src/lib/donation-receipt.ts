@@ -1,0 +1,221 @@
+import pool from '@/lib/db';
+import { sendMail, isMailConfigured } from '@/lib/mailer';
+import { renderCertificateSvg } from '@/lib/certificate';
+import { ensureDonationsSchema } from '@/lib/donations';
+
+/**
+ * The note that goes out when a gift is confirmed.
+ *
+ * Sent only after the money has actually landed. A donor who is told their
+ * gift arrived when it has not is worse off than one told nothing, because
+ * they stop watching for it.
+ *
+ * The certificate travels with the message as an attachment as well as a
+ * link: the link needs our site to be up years from now, and the file does
+ * not.
+ */
+
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://washikadau.com').replace(/\/$/, '');
+
+const INK = '#1a1714';
+const CREAM = '#f4ede4';
+const GOLD_DEEP = '#a97416';
+
+export interface ReceiptRow {
+  donor_name: string;
+  email: string;
+  amount_tzs: string;
+  token: string | null;
+  token_amount: string | null;
+  certificate_code: string;
+  method: string;
+  lang: string | null;
+  settled_at: string | null;
+  created_at: string;
+}
+
+function money(r: ReceiptRow): string {
+  const isToken = !!r.token && r.token_amount != null && Number(r.token_amount) > 0;
+  if (isToken) {
+    return `${Number(r.token_amount).toLocaleString('en-US', { maximumFractionDigits: 6 })} ${String(r.token).toUpperCase()}`;
+  }
+  return `TSh ${Math.round(Number(r.amount_tzs)).toLocaleString('en-US')}`;
+}
+
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Exported so the message can be rendered and looked at without sending it. */
+export function buildReceipt(r: ReceiptRow) {
+  const sw = r.lang === 'sw';
+  const amount = money(r);
+  const name = r.donor_name;
+  const url = `${APP_URL}/shukrani/${encodeURIComponent(r.certificate_code)}`;
+
+  const subject = sw
+    ? `Asante ${name} — mchango wako umethibitishwa`
+    : `Thank you ${name} — your gift is confirmed`;
+
+  const lines = sw
+    ? {
+      lede: 'Mchango wako umefika.',
+      body: `Tumepokea ${amount}. Cheti chako cha shukrani kimeambatishwa hapa, na unaweza kukipakua wakati wowote.`,
+      cta: 'Ona cheti chako',
+      wall: 'Kila mchango ni tofali kwenye ukuta wa vikundi vya akiba Tanzania. Asante kwa kuweka lako.',
+      refLabel: 'Kumbukumbu',
+      foot: 'Umepokea barua hii kwa sababu uliomba uthibitisho ulipochangia WashikaDAU.',
+    }
+    : {
+      lede: 'Your gift has arrived.',
+      body: `We have received ${amount}. Your certificate of support is attached, and you can download it again at any time.`,
+      cta: 'View your certificate',
+      wall: 'Every gift is a brick in the wall Tanzanian savings groups are building. Thank you for laying yours.',
+      refLabel: 'Reference',
+      foot: 'You are receiving this because you asked for confirmation when you donated to WashikaDAU.',
+    };
+
+  const text = [
+    lines.lede,
+    '',
+    lines.body,
+    '',
+    `${lines.refLabel}: ${r.certificate_code}`,
+    url,
+    '',
+    lines.wall,
+    '',
+    lines.foot,
+  ].join('\n');
+
+  // Table layout and inline styles: mail clients are not browsers, and a
+  // flexbox receipt arrives as a stack of unstyled text in Outlook.
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${CREAM};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:28px 12px;">
+<tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffdf9;border:2px solid ${INK};">
+    <tr><td style="padding:26px 30px 18px;border-bottom:1px solid rgba(26,23,20,0.16);">
+      <div style="font-family:'DM Mono',Menlo,monospace;font-size:11px;letter-spacing:5px;color:${GOLD_DEEP};">W A S H I K A &nbsp;D A U</div>
+    </td></tr>
+    <tr><td style="padding:30px 30px 8px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:700;color:${INK};line-height:1.2;">
+        ${esc(lines.lede)}
+      </div>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:rgba(26,23,20,0.72);margin:16px 0 0;">
+        ${esc(lines.body)}
+      </p>
+    </td></tr>
+    <tr><td style="padding:22px 30px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(26,23,20,0.16);">
+        <tr>
+          <td style="padding:16px 18px;">
+            <div style="font-family:'DM Mono',Menlo,monospace;font-size:9px;letter-spacing:2px;color:rgba(26,23,20,0.5);text-transform:uppercase;">${esc(lines.refLabel)}</div>
+            <div style="font-family:'DM Mono',Menlo,monospace;font-size:15px;color:${INK};margin-top:5px;">${esc(r.certificate_code)}</div>
+          </td>
+          <td align="right" style="padding:16px 18px;">
+            <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:${GOLD_DEEP};">${esc(amount)}</div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:22px 30px 0;">
+      <a href="${url}" style="display:inline-block;background:${INK};color:${CREAM};font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;padding:15px 26px;">
+        ${esc(lines.cta)}
+      </a>
+    </td></tr>
+    <tr><td style="padding:24px 30px 30px;">
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:rgba(26,23,20,0.6);margin:0;border-top:1px solid rgba(26,23,20,0.16);padding-top:18px;">
+        ${esc(lines.wall)}
+      </p>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:rgba(26,23,20,0.45);margin:14px 0 0;">
+        ${esc(lines.foot)}
+      </p>
+    </td></tr>
+  </table>
+</td></tr></table>
+</body></html>`;
+
+  return { subject, text, html, url };
+}
+
+/**
+ * Send receipts for confirmed gifts that have an address and have not had one.
+ *
+ * Pass an ntzsId to settle a single donation right after its payment
+ * confirmed; pass nothing to sweep whatever was missed.
+ *
+ * The row is claimed with an UPDATE before the send, so two callers arriving
+ * together cannot both win it — the loser's UPDATE matches nothing. A failed
+ * send releases the claim so the next sweep tries again.
+ */
+export async function deliverDonationReceipts(
+  opts: { ntzsId?: string; limit?: number } = {}
+): Promise<{ sent: number; failed: number }> {
+  if (!isMailConfigured()) return { sent: 0, failed: 0 };
+
+  const { ntzsId, limit = 20 } = opts;
+  let sent = 0, failed = 0;
+
+  await ensureDonationsSchema();
+  const client = await pool.connect();
+  try {
+    const claimed = await client.query(
+      `UPDATE donations SET receipt_sent_at = NOW()
+        WHERE id IN (
+          SELECT id FROM donations
+           WHERE status = 'completed'
+             AND email IS NOT NULL
+             AND receipt_sent_at IS NULL
+             ${ntzsId ? 'AND ntzs_id = $2' : ''}
+           ORDER BY COALESCE(settled_at, created_at) DESC
+           LIMIT $1
+           FOR UPDATE SKIP LOCKED
+        )
+        RETURNING id, donor_name, email, amount_tzs, token, token_amount,
+                  certificate_code, method, lang, settled_at, created_at`,
+      ntzsId ? [limit, ntzsId] : [limit]
+    );
+
+    for (const row of claimed.rows as (ReceiptRow & { id: number })[]) {
+      const { subject, text, html } = buildReceipt(row);
+      const svg = renderCertificateSvg({
+        donorName: row.donor_name,
+        amountTzs: Number(row.amount_tzs),
+        reference: row.certificate_code,
+        date: new Date(row.settled_at || row.created_at),
+        token: row.token,
+        tokenAmount: row.token_amount != null ? Number(row.token_amount) : null,
+      });
+
+      const ok = await sendMail({
+        to: row.email,
+        subject,
+        text,
+        html,
+        attachments: [{
+          filename: `WashikaDAU-Certificate-${row.certificate_code}.svg`,
+          content: svg,
+          contentType: 'image/svg+xml',
+        }],
+      });
+
+      if (ok) {
+        sent += 1;
+      } else {
+        failed += 1;
+        // Hand the row back rather than marking a receipt nobody received.
+        await client.query(
+          `UPDATE donations SET receipt_sent_at = NULL WHERE id = $1`,
+          [row.id]
+        );
+      }
+    }
+  } catch (error) {
+    console.error('[donation-receipt]', error);
+  } finally {
+    client.release();
+  }
+
+  return { sent, failed };
+}

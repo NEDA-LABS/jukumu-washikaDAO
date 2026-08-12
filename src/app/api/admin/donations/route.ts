@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 import { ntzs } from '@/lib/ntzs';
+import { deliverDonationReceipts } from '@/lib/donation-receipt';
 
 export const runtime = 'nodejs';
 
@@ -171,6 +172,12 @@ export async function POST(request: NextRequest) {
     );
 
     await client.query('COMMIT');
+
+    // Confirming here completes a gift too. It has no nTZS deposit behind it,
+    // so there is no id to scope by — the unfiltered sweep picks it up along
+    // with anything else still owed a receipt.
+    if (confirmed) await deliverDonationReceipts().catch(() => {});
+
     return NextResponse.json({
       success: true,
       status: action === 'confirm' ? 'completed' : 'rejected',

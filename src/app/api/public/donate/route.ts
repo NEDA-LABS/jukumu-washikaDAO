@@ -10,6 +10,7 @@ import {
   type DonationToken,
 } from '@/lib/donations';
 import { getTreasuryAddress } from '@/lib/wallet/external-funding';
+import { isMailConfigured, normalizeEmail } from '@/lib/mailer';
 
 export const runtime = 'nodejs';
 
@@ -36,12 +37,14 @@ export async function GET() {
     // Not cached at the edge. It carries the treasury address the crypto tab
     // needs, and a stale copy from before that field existed left the form
     // showing no address at all — two cheap aggregates are not worth that.
-    return NextResponse.json({ ...totals, treasuryAddress }, {
+    // The form only offers a receipt when one can actually be sent; without
+    // this it would promise mail that no configured account could deliver.
+    return NextResponse.json({ ...totals, treasuryAddress, emailEnabled: isMailConfigured() }, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     console.error('[public/donate GET]', error);
-    return NextResponse.json({ totalTzs: 0, supporters: 0, treasuryAddress: null });
+    return NextResponse.json({ totalTzs: 0, supporters: 0, treasuryAddress: null, emailEnabled: false });
   } finally {
     client.release();
   }
@@ -53,6 +56,10 @@ export async function POST(request: NextRequest) {
   const message = typeof body?.message === 'string' ? body.message.trim().slice(0, 280) : null;
   const amountTzs = Math.floor(Number(body?.amountTzs));
   const phone = normalizeDonorPhone(body?.phone ?? '');
+  // Optional throughout. A donor who does not want to give an address still
+  // gets everything else — the receipt is a convenience, not a receipt gate.
+  const email = normalizeEmail(body?.email);
+  const lang = body?.lang === 'sw' ? 'sw' : 'en';
 
   const method = body?.method === 'crypto' ? 'crypto'
     : body?.method === 'bank' ? 'bank'
@@ -138,6 +145,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Enter a valid Tanzanian mobile number', field: 'phone' }, { status: 400 });
   }
 
+  if (body?.email && !email) {
+    return NextResponse.json({ error: 'That email address is not valid', field: 'email' }, { status: 400 });
+  }
+
   // nTZS identifies a bank credit by the account it came from — the narration
   // does not survive TIPS — so this is not optional.
   const payerAccountNumber = typeof body?.payerAccountNumber === 'string'
@@ -181,10 +192,11 @@ export async function POST(request: NextRequest) {
     );
 
     await client.query(
-      `INSERT INTO donations (donor_name, phone, amount_tzs, ntzs_id, status, certificate_code, message, method)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO donations (donor_name, phone, amount_tzs, ntzs_id, status, certificate_code,
+                              message, method, email, lang)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [donorName, method === 'bank' ? null : phone, amountTzs, deposit.id,
-       deposit.status || 'pending', code, message, method]
+       deposit.status || 'pending', code, message, method, email, lang]
     );
 
     // Visible in the platform's own transaction history. No member or group is

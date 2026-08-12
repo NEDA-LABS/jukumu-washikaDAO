@@ -7,6 +7,7 @@ import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ntzs } from '@/lib/ntzs';
 import { getPaymentStatus } from '@/lib/snippe';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
+import { deliverDonationReceipts } from '@/lib/donation-receipt';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -183,7 +184,12 @@ async function run() {
     try { ntzsRes = await settleNtzs(client, deadline); } catch (e) { errors.push(`ntzs: ${errMsg(e)}`); }
     try { snippeRes = await settleSnippe(client, deadline); } catch (e) { errors.push(`snippe: ${errMsg(e)}`); }
 
-    return { success: true, ntzs: ntzsRes, snippe: snippeRes, errors };
+    // Anything the webhook could not reach a mailbox for, or that settled
+    // before a donor's address was worth sending to, goes out here.
+    let receipts = null;
+    try { receipts = await deliverDonationReceipts(); } catch (e) { errors.push(`receipts: ${errMsg(e)}`); }
+
+    return { success: true, ntzs: ntzsRes, snippe: snippeRes, receipts, errors };
   } finally {
     client.release();
   }
