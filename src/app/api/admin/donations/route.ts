@@ -52,6 +52,14 @@ async function refreshOpenDonations() {
   } finally {
     client.release();
   }
+
+  // Settling a donation here is what makes it completed, so this is also the
+  // moment its receipt becomes owed. Without this a gift could go completed on
+  // screen while the donor was never written to — which is exactly what
+  // happened to the first real bank donation: the webhook never arrived, the
+  // donor had long closed the page so nothing was polling, and opening this
+  // list quietly finished the job without finishing the promise.
+  await deliverDonationReceipts().catch(() => {});
 }
 
 async function requireAdmin(request: NextRequest) {

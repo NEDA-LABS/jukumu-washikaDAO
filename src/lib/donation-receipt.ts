@@ -167,6 +167,48 @@ export function buildReceipt(r: ReceiptRow) {
 }
 
 /**
+ * Whether the rasteriser has a real font, or will draw every character as the
+ * same empty box.
+ *
+ * The first production receipts went out with a certificate whose text was
+ * rows of tofu. Locally it was perfect — a Mac has Georgia and Times, and the
+ * certificate falls back to them. The Linux container the site actually runs
+ * on has neither, nor any other font, so every glyph came out as the notdef
+ * box while the rules, seal and brick wall drew perfectly. The rendering did
+ * not fail; it succeeded at drawing nothing legible.
+ *
+ * That is hard to assert on directly — a tofu box has ink in it, so "are there
+ * dark pixels" says yes. But it is the SAME box for every character, so two
+ * different letters rasterise to byte-identical images exactly when no real
+ * font is present. That is the test.
+ */
+let fontProbe: Promise<boolean> | null = null;
+
+function canRenderText(): Promise<boolean> {
+  if (fontProbe) return fontProbe;
+  fontProbe = (async () => {
+    const glyph = (ch: string) =>
+      `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">`
+      + `<rect width="40" height="40" fill="#fff"/>`
+      + `<text x="4" y="30" font-family="Georgia, serif" font-size="30" fill="#000">${ch}</text></svg>`;
+    try {
+      const [m, w] = await Promise.all([
+        sharp(Buffer.from(glyph('M'))).png().toBuffer(),
+        sharp(Buffer.from(glyph('W'))).png().toBuffer(),
+      ]);
+      if (m.equals(w)) {
+        console.error('[donation-receipt] no usable font for rasterising; sending the receipt without the certificate image');
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  return fontProbe;
+}
+
+/**
  * The certificate as something a mail client is happy to receive.
  *
  * It is drawn as SVG, and an SVG attachment is a poor thing to send: the
@@ -185,6 +227,10 @@ async function certificateAttachment(row: ReceiptRow) {
     token: row.token,
     tokenAmount: row.token_amount != null ? Number(row.token_amount) : null,
   });
+  // A certificate of illegible boxes is worse than no certificate: it is the
+  // one thing the donor was promised, arriving broken and bearing their name.
+  if (!(await canRenderText())) return null;
+
   try {
     const png = await sharp(Buffer.from(svg)).resize({ width: 1600 }).png().toBuffer();
     return {
