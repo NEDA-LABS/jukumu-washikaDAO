@@ -78,6 +78,20 @@ export interface Mail {
 }
 
 /**
+ * Headers that tell a filter this is one-to-one correspondence rather than a
+ * campaign. A List-Unsubscribe that goes nowhere would be worse than none, so
+ * it points at a real mailbox a person reads.
+ */
+function transactionalHeaders(): Record<string, string> {
+  const address = (process.env.SMTP_REPLY_TO || cfg().user || '').trim();
+  if (!address) return {};
+  return {
+    'List-Unsubscribe': `<mailto:${address}?subject=unsubscribe>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
+
+/**
  * Send one message. Resolves false rather than throwing — every caller is in
  * the middle of something more important than the mail.
  */
@@ -88,7 +102,14 @@ export async function sendMail(mail: Mail): Promise<boolean> {
     return false;
   }
   try {
-    await t.sendMail({ from: mailFrom(), ...mail });
+    await t.sendMail({
+      from: mailFrom(),
+      // A reply that reaches a person is itself a deliverability signal, and
+      // a donor replying to a receipt should not be shouting into a void.
+      replyTo: process.env.SMTP_REPLY_TO || cfg().user,
+      headers: transactionalHeaders(),
+      ...mail,
+    });
     return true;
   } catch (error) {
     console.error('[mailer] send failed:', error);

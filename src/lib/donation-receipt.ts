@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { sendMail, isMailConfigured } from '@/lib/mailer';
 import { renderCertificateSvg } from '@/lib/certificate';
+import sharp from 'sharp';
 import { ensureDonationsSchema } from '@/lib/donations';
 
 /**
@@ -166,6 +167,40 @@ export function buildReceipt(r: ReceiptRow) {
 }
 
 /**
+ * The certificate as something a mail client is happy to receive.
+ *
+ * It is drawn as SVG, and an SVG attachment is a poor thing to send: the
+ * format can carry script, so filters treat it with suspicion and it is a
+ * plausible reason a receipt lands in spam. Most phones will not preview one
+ * either. So it goes as PNG, which every client shows inline, and the SVG
+ * stays available from the certificate page for anyone who wants to print it
+ * large.
+ */
+async function certificateAttachment(row: ReceiptRow) {
+  const svg = renderCertificateSvg({
+    donorName: row.donor_name,
+    amountTzs: Number(row.amount_tzs),
+    reference: row.certificate_code,
+    date: new Date(row.settled_at || row.created_at),
+    token: row.token,
+    tokenAmount: row.token_amount != null ? Number(row.token_amount) : null,
+  });
+  try {
+    const png = await sharp(Buffer.from(svg)).resize({ width: 1600 }).png().toBuffer();
+    return {
+      filename: `WashikaDAU-Certificate-${row.certificate_code}.png`,
+      content: png,
+      contentType: 'image/png',
+    };
+  } catch (error) {
+    // Rasterising is the nicety, not the point. A receipt with a working link
+    // and no attachment still tells the donor what they need to know.
+    console.error('[donation-receipt] could not rasterise certificate:', error);
+    return null;
+  }
+}
+
+/**
  * Send receipts for confirmed gifts that have an address and have not had one.
  *
  * Pass an ntzsId to settle a single donation right after its payment
@@ -205,25 +240,14 @@ export async function deliverDonationReceipts(
 
     for (const row of claimed.rows as (ReceiptRow & { id: number })[]) {
       const { subject, text, html } = buildReceipt(row);
-      const svg = renderCertificateSvg({
-        donorName: row.donor_name,
-        amountTzs: Number(row.amount_tzs),
-        reference: row.certificate_code,
-        date: new Date(row.settled_at || row.created_at),
-        token: row.token,
-        tokenAmount: row.token_amount != null ? Number(row.token_amount) : null,
-      });
+      const attachment = await certificateAttachment(row);
 
       const ok = await sendMail({
         to: row.email,
         subject,
         text,
         html,
-        attachments: [{
-          filename: `WashikaDAU-Certificate-${row.certificate_code}.svg`,
-          content: svg,
-          contentType: 'image/svg+xml',
-        }],
+        attachments: attachment ? [attachment] : undefined,
       });
 
       if (ok) {
