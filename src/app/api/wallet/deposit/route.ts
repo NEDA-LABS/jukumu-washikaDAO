@@ -4,6 +4,7 @@ import { ntzs, NtzsApiError } from '@/lib/ntzs';
 import { ensureNtzsSchema, recordTransaction } from '@/lib/ntzs-db';
 import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
 import { getActor } from '@/lib/wallet/authorize';
+import { classifyNtzsError } from '@/lib/ntzs-errors';
 
 /**
  * On-ramp: mobile money → master wallet. Funds mint into the single master
@@ -18,10 +19,19 @@ export async function POST(request: NextRequest) {
 
   const client = await pool.connect();
 
+  // Declared out here so the catch can still record a deposit that nTZS may
+  // have taken payment for. Inside the try they are out of scope exactly when
+  // recovering the payment matters most.
+  let member: { id: number; full_name: string } | null = null;
+  let normalizedPhone = '';
+  let amountTzs = 0;
+
   try {
     // Identity comes from the signed cookie, never the request body.
     const userId = actor.userId;
-    const { amountTzs, phone } = await request.json();
+    const parsed = await request.json();
+    const phone = parsed?.phone;
+    amountTzs = Number(parsed?.amountTzs);
 
     if (!userId || !amountTzs || !phone) {
       return NextResponse.json({ error: 'userId, amountTzs, and phone are required' }, { status: 400 });
@@ -43,10 +53,10 @@ export async function POST(request: NextRequest) {
     if (memberRes.rows.length === 0) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
-    const member = memberRes.rows[0] as { id: number; full_name: string };
+    member = memberRes.rows[0] as { id: number; full_name: string };
 
     // Normalize phone to 255XXXXXXXXX
-    let normalizedPhone = String(phone).replace(/\D/g, '');
+    normalizedPhone = String(phone).replace(/\D/g, '');
     if (normalizedPhone.length === 10 && normalizedPhone.startsWith('0')) {
       normalizedPhone = `255${normalizedPhone.slice(1)}`;
     } else if (normalizedPhone.length === 9) {
@@ -87,11 +97,46 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof NtzsApiError) {
       console.error('nTZS deposit error:', error.status, error.body);
-      return NextResponse.json({
-        error: error.body.message || error.body.error || 'Deposit failed',
-        details: error.body,
-        ntzsStatus: error.status,
-      }, { status: error.status });
+      const c = classifyNtzsError(error);
+
+      // nTZS could not confirm the prompt was delivered but may already have
+      // taken the money, and asks the integrator to poll rather than retry.
+      // That instruction is ours to follow, not the member's to read: the
+      // deposit is recorded and handed back as pending, so the same polling
+      // that settles every other top-up settles this one. Telling the member
+      // it failed would invite them to pay a second time.
+      if (c.kind === 'unconfirmed_delivery' && c.depositId && member) {
+        try {
+          await recordTransaction(client, {
+            ntzsId: c.depositId,
+            type: 'deposit',
+            status: 'pending',
+            toMemberId: member.id,
+            amountTzs,
+            netTzs: amountTzs,
+            phone: normalizedPhone,
+            purpose: 'deposit',
+            note: `Mobile money deposit by ${member.full_name} (delivery unconfirmed)`,
+            posted: false,
+          });
+        } catch (e) {
+          console.error('could not record unconfirmed deposit', c.depositId, e);
+        }
+        return NextResponse.json({
+          depositId: c.depositId,
+          status: 'pending',
+          amountTzs,
+          unconfirmed: true,
+          message: c.message,
+        });
+      }
+
+      // Everything else: our words, not theirs. The provider's own sentence
+      // stays in the log above, where it is useful.
+      return NextResponse.json(
+        { error: c.message, code: c.kind, safeToRetry: c.safeToRetry },
+        { status: error.status >= 500 ? 502 : error.status }
+      );
     }
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error('Deposit error:', errMsg, error);

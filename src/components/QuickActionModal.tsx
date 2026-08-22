@@ -83,6 +83,10 @@ export default function QuickActionModal({
   // A deposit is not money until the person approves the push on their handset
   // and the webhook settles it. This is that wait.
   const [pending, setPending] = useState<{ depositId: string; amountTzs: number } | null>(null);
+  // Set when the provider could not confirm the prompt reached the handset.
+  // The deposit is still real and still worth waiting on; what changes is what
+  // we tell the member while they wait.
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const [waitedSec, setWaitedSec] = useState(0);
 
   useEffect(() => {
@@ -206,6 +210,7 @@ export default function QuickActionModal({
     setFeedback(null);
     const err = validateBase();
     if (err) { setFeedback({ type: 'error', message: err }); return; }
+    setUnconfirmed(false);
     if (!phone.trim()) { setFeedback({ type: 'error', message: sw ? 'Weka nambari ya simu' : 'Enter a phone number' }); return; }
     setQuoting(true);
     try {
@@ -224,6 +229,26 @@ export default function QuickActionModal({
     } finally {
       setQuoting(false);
     }
+  };
+
+  /**
+   * The server classifies a provider failure and sends back a code plus its
+   * English wording. Swahili lives here, because only the client knows which
+   * language the reader chose. An unrecognised code falls through to whatever
+   * the server said, which is already the friendly text rather than nTZS's.
+   */
+  const ntzsMessage = (data: { error?: string; code?: string }): string => {
+    if (!sw) return data?.error || '';
+    const swahili: Record<string, string> = {
+      unconfirmed_delivery: 'Hatukuweza kuthibitisha ombi la malipo limefika kwenye simu yako. Kama umekatwa, salio litaonekana lenyewe — tafadhali usilipe tena.',
+      insufficient_funds: 'Salio halitoshi kwenye akaunti hiyo ya simu.',
+      invalid_phone: 'Nambari hiyo ya simu haikukubaliwa. Iangalie kisha jaribu tena.',
+      limit_exceeded: 'Kiasi hicho kiko nje ya kikomo cha akaunti hii. Jaribu kiasi kidogo.',
+      duplicate: 'Malipo hayo tayari yameanzishwa. Angalia simu yako.',
+      unavailable: 'Huduma ya malipo haipatikani kwa sasa. Tafadhali jaribu tena baada ya dakika chache.',
+      unknown: 'Malipo hayakuweza kuanzishwa. Tafadhali jaribu tena baada ya dakika chache.',
+    };
+    return (data?.code && swahili[data.code]) || data?.error || '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,6 +288,10 @@ export default function QuickActionModal({
         // telling people their money had arrived before they had even paid.
         if (type === 'deposit' && data.depositId) {
           setWaitedSec(0);
+          // `unconfirmed` means nTZS could not tell whether the prompt was
+          // delivered but may already have collected. It is still a deposit to
+          // wait on, not a failure — the waiting screen says so in the copy.
+          setUnconfirmed(!!data.unconfirmed);
           setPending({ depositId: String(data.depositId), amountTzs: parseInt(amount) || 0 });
           return;
         }
@@ -276,7 +305,7 @@ export default function QuickActionModal({
         if (data.code === 'invalid_quote' || data.code === 'quote_stale' || data.code === 'quote_mismatch') {
           setWithdrawQuote(null);
         }
-        setFeedback({ type: 'error', message: data.error || (sw ? 'Imeshindikana' : 'Failed') });
+        setFeedback({ type: 'error', message: ntzsMessage(data) || (sw ? 'Imeshindikana' : 'Failed') });
       }
     } catch {
       setFeedback({ type: 'error', message: sw ? 'Tatizo la mtandao' : 'Network error' });
@@ -331,10 +360,22 @@ export default function QuickActionModal({
               {sw ? 'Inasubiri malipo' : 'Waiting for payment'}
             </p>
             <p className="mt-2 max-w-[280px] text-[12px] leading-relaxed text-muted-foreground">
-              {sw
-                ? 'Angalia simu yako na thibitisha malipo. Dirisha hili litafunga yenyewe.'
-                : 'Check your phone and approve the payment. This will close on its own.'}
+              {unconfirmed
+                ? (sw
+                  ? 'Hatukuweza kuthibitisha ombi limefika kwenye simu yako, lakini malipo yanaweza kuwa yamechukuliwa. Tunaangalia sasa.'
+                  : 'We could not confirm the prompt reached your phone, but the payment may already have been taken. We are checking now.')
+                : (sw
+                  ? 'Angalia simu yako na thibitisha malipo. Dirisha hili litafunga yenyewe.'
+                  : 'Check your phone and approve the payment. This will close on its own.')}
             </p>
+
+            {/* The one thing they must not do is pay twice. Said plainly, and
+                only when it applies. */}
+            {unconfirmed && (
+              <p className="mt-3 max-w-[280px] border border-gold-deep/40 bg-gold/10 px-3 py-2 text-[11px] leading-relaxed text-foreground">
+                {sw ? 'Usilipe tena.' : 'Please do not pay again.'}
+              </p>
+            )}
             <p className="mt-4 wd-figure text-[22px]">{fmtTzs(pending.amountTzs)}</p>
             <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-ink-3">
               {waitedSec}s
