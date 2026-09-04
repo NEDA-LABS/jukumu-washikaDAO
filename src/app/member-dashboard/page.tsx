@@ -1755,6 +1755,49 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Password
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwDone, setPwDone] = useState(false);
+
+  const changePassword = async () => {
+    setPwError('');
+    if (newPw.length < 8) { setPwError(t('set.pw.tooShort')); return; }
+    // Checked here as well as on the server, because the confirmation field
+    // exists only to catch a typo and the server never sees it.
+    if (newPw !== confirmPw) { setPwError(t('set.pw.mismatch')); return; }
+    setPwSaving(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) {
+        const byCode: Record<string, string> = {
+          wrong_password: t('set.pw.wrong'),
+          too_short: t('set.pw.tooShort'),
+          unchanged: t('set.pw.same'),
+          no_password: t('set.pw.noPassword'),
+        };
+        setPwError((d?.code && byCode[d.code]) || d?.error || t('set.pw.failed'));
+        return;
+      }
+      setPwDone(true);
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      setTimeout(() => { setPwDone(false); setPwOpen(false); }, 2200);
+    } catch {
+      setPwError(t('set.pw.failed'));
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
   // Profile photo
   const [avatar, setAvatar] = useState<string | null>(memberProfile?.avatar_url ?? null);
   const [avatarSaving, setAvatarSaving] = useState(false);
@@ -1959,11 +2002,70 @@ function MemberSettingsSection({ onNavigate, user, memberProfile, loadMemberData
         )}
       </div>
 
+      {/* Password. A real row above the not-yet-built ones, because being
+          unable to change your own password is not a missing nicety — it is
+          the thing you need on the day the phone is lost. */}
+      <div className="rounded-2xl bg-card border border-border p-4">
+        <button
+          onClick={() => { setPwOpen((v) => !v); setPwError(''); }}
+          className="flex w-full items-center gap-3 text-left"
+        >
+          <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
+            <CogIcon className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground">{t('set.pw.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('set.pw.desc')}</p>
+          </div>
+          <span className="text-muted-foreground text-sm">{pwOpen ? '−' : '+'}</span>
+        </button>
+
+        {pwOpen && (
+          <div className="mt-4 space-y-3 border-t border-border pt-4">
+            <div>
+              <label className="text-xs text-muted-foreground">{t('set.pw.current')}</label>
+              <input
+                type="password" value={currentPw} autoComplete="current-password"
+                onChange={(e) => { setCurrentPw(e.target.value); setPwError(''); }}
+                className="mt-1 w-full rounded-xl bg-background border border-border px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">{t('set.pw.new')}</label>
+              <input
+                type="password" value={newPw} autoComplete="new-password"
+                onChange={(e) => { setNewPw(e.target.value); setPwError(''); }}
+                className="mt-1 w-full rounded-xl bg-background border border-border px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-foreground"
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">{t('set.pw.rule')}</p>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">{t('set.pw.confirm')}</label>
+              <input
+                type="password" value={confirmPw} autoComplete="new-password"
+                onChange={(e) => { setConfirmPw(e.target.value); setPwError(''); }}
+                className="mt-1 w-full rounded-xl bg-background border border-border px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-foreground"
+              />
+            </div>
+
+            {pwError && <p className="text-xs text-destructive">{pwError}</p>}
+            {pwDone && <p className="text-xs text-emerald-500">✓ {t('set.pw.done')}</p>}
+
+            <button
+              onClick={changePassword}
+              disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+              className="w-full rounded-xl bg-foreground py-2.5 text-sm font-semibold text-background disabled:opacity-40"
+            >
+              {pwSaving ? t('set.pw.saving') : t('set.pw.submit')}
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Settings menu items */}
       <div className="rounded-2xl bg-card border border-border divide-y divide-white/[0.04]">
         {[
           { label: t('set.menu.account'), desc: t('set.menu.account.desc'), icon: UserIcon },
-          { label: t('set.menu.security'), desc: t('set.menu.security.desc'), icon: CogIcon },
           { label: t('set.menu.notifications'), desc: t('set.menu.notifications.desc'), icon: DocumentTextIcon },
           { label: t('set.menu.language'), desc: 'Kiswahili / English', icon: BookOpenIcon },
         ].map((item) => (
