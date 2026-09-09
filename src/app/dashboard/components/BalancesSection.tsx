@@ -52,6 +52,10 @@ export default function BalancesSection() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'groups' | 'members' | 'activity'>('groups');
   const [q, setQ] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    checked: number; corrected: number; refundedTzs: number; creditedTzs: number; receiptsSent: number;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -65,6 +69,27 @@ export default function BalancesSection() {
   }, [t]);
 
   useEffect(() => { load(); }, [load]);
+
+  /**
+   * Ask nTZS about everything unfinished and apply the answers. The schedule
+   * is supposed to make this unnecessary; until it does, this is how a stuck
+   * balance gets unstuck without anyone opening a database.
+   */
+  const sync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/ledger/sync', { method: 'POST' });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) { setError(d?.error || t('adm.bal.syncFailed')); return; }
+      setSyncResult(d);
+      await load();
+    } catch {
+      setError(t('adm.bal.syncFailed'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const groups = useMemo(
     () => (data?.groups ?? []).filter((g) => g.name?.toLowerCase().includes(q.toLowerCase())),
@@ -100,13 +125,39 @@ export default function BalancesSection() {
           <h2 className="text-base font-semibold text-foreground">{t('adm.bal.title')}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{t('adm.bal.subtitle')}</p>
         </div>
-        <button
-          onClick={() => { setData(null); load(); }}
-          className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground"
-        >
-          {t('adm.bal.refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setData(null); load(); }}
+            className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground"
+          >
+            {t('adm.bal.refresh')}
+          </button>
+          <button
+            onClick={sync}
+            disabled={syncing}
+            title={t('adm.bal.syncDesc')}
+            className="rounded-lg bg-foreground px-3.5 py-2 text-xs font-semibold text-background disabled:opacity-40"
+          >
+            {syncing ? t('adm.bal.syncing') : t('adm.bal.sync')}
+          </button>
+        </div>
       </div>
+
+      {/* Refresh only re-reads what we already believe. This says what changed
+          when we asked nTZS what is actually true. */}
+      {syncResult && (
+        <div className="rounded-xl border border-border bg-card p-4 text-xs">
+          <p className="font-semibold text-foreground">
+            {syncResult.corrected > 0 ? t('adm.bal.syncFixed') : t('adm.bal.syncClean')}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {t('adm.bal.syncChecked')}: {syncResult.checked} · {t('adm.bal.syncCorrected')}: {syncResult.corrected}
+            {syncResult.refundedTzs > 0 && <> · {t('adm.bal.syncRefunded')}: {tsh(syncResult.refundedTzs)}</>}
+            {syncResult.creditedTzs > 0 && <> · {t('adm.bal.syncCredited')}: {tsh(syncResult.creditedTzs)}</>}
+            {syncResult.receiptsSent > 0 && <> · {t('adm.bal.syncReceipts')}: {syncResult.receiptsSent}</>}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {cards.map(([label, value, note]) => (
