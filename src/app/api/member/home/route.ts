@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { scheduleSettleTick } from '@/lib/settle-tick';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,13 @@ export const dynamic = 'force-dynamic';
  * on a savings screen is a promise; it has to come from somewhere real.
  */
 export async function GET(request: NextRequest) {
+  // Every member opening the app nudges settlement along. Nobody waits for
+  // it: the call returns immediately and the sweep, if one is even due, runs
+  // beside this request rather than in front of it. This is the busiest
+  // authenticated route in the product, which makes it the most reliable
+  // heartbeat available without a working cron.
+  scheduleSettleTick();
+
   const auth = getAuthTokenPayload(request);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

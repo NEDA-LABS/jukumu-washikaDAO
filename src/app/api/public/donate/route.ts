@@ -11,6 +11,7 @@ import {
 } from '@/lib/donations';
 import { getTreasuryAddress } from '@/lib/wallet/external-funding';
 import { isMailConfigured, normalizeEmail } from '@/lib/mailer';
+import { scheduleSettleTick } from '@/lib/settle-tick';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +29,9 @@ const MAX_TZS = 20_000_000;
  */
 
 export async function GET() {
+  // Settlement rides ordinary traffic so it does not depend on a cron.
+  scheduleSettleTick();
+
   const client = await pool.connect();
   try {
     const [totals, treasuryAddress] = await Promise.all([

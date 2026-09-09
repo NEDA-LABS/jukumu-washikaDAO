@@ -8,6 +8,7 @@ import { ntzs } from '@/lib/ntzs';
 import { getPaymentStatus } from '@/lib/snippe';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 import { deliverDonationReceipts } from '@/lib/donation-receipt';
+import { reconcileLedger } from '@/lib/reconcile';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -184,12 +185,19 @@ async function run() {
     try { ntzsRes = await settleNtzs(client, deadline); } catch (e) { errors.push(`ntzs: ${errMsg(e)}`); }
     try { snippeRes = await settleSnippe(client, deadline); } catch (e) { errors.push(`snippe: ${errMsg(e)}`); }
 
+    // Withdrawals too, which settleNtzs above never covered: it only looks at
+    // deposits, so a withdrawal that failed after the debit was refunded by
+    // nobody. Shared with the admin button and the traffic tick.
+    let ledger = null;
+    try { ledger = await reconcileLedger({ limit: 60, budgetMs: 6_000 }); }
+    catch (e) { errors.push(`ledger: ${errMsg(e)}`); }
+
     // Anything the webhook could not reach a mailbox for, or that settled
     // before a donor's address was worth sending to, goes out here.
     let receipts = null;
     try { receipts = await deliverDonationReceipts(); } catch (e) { errors.push(`receipts: ${errMsg(e)}`); }
 
-    return { success: true, ntzs: ntzsRes, snippe: snippeRes, receipts, errors };
+    return { success: true, ntzs: ntzsRes, snippe: snippeRes, ledger, receipts, errors };
   } finally {
     client.release();
   }
