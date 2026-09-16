@@ -119,6 +119,11 @@ export async function POST(
         : { userId: masterUserId, amountTzs, phoneNumber: phone }
     );
 
+    // Both writes together. The first version left them loose, so when the
+    // ledger insert failed the contribution row survived without one — a
+    // payment the reconciliation could never find, because it sweeps the
+    // ledger.
+    await client.query('BEGIN');
     await client.query(
       `INSERT INTO harambee_contributions
          (harambee_id, contributor_name, phone, email, amount_tzs, method, ntzs_id,
@@ -144,6 +149,7 @@ export async function POST(
       metadata: { kind: 'harambee', harambee_id: h.id, code, reference, contributor: name },
       posted: false,
     });
+    await client.query('COMMIT');
 
     if (method === 'bank') {
       return NextResponse.json({
@@ -164,6 +170,8 @@ export async function POST(
       message: 'Check your phone and approve the payment.',
     });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+
     if (error instanceof NtzsApiError) {
       console.error('[harambee/contribute] nTZS', error.status, error.body);
       const c = classifyNtzsError(error);
@@ -172,8 +180,20 @@ export async function POST(
         { status: error.status >= 500 ? 502 : error.status }
       );
     }
-    console.error('[harambee/contribute]', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Everything below this point happens AFTER nTZS accepted the deposit,
+    // which means a prompt may already be on someone's phone. Telling them it
+    // failed is how a person pays twice, so the failure is loud in the log and
+    // careful on the screen.
+    console.error('[harambee/contribute] after deposit creation', error);
+    return NextResponse.json(
+      {
+        error: 'We could not finish recording this. If a payment prompt reached your phone, '
+             + 'do not pay again — we are checking it.',
+        code: 'record_failed',
+        safeToRetry: false,
+      },
+      { status: 502 }
+    );
   } finally {
     client.release();
   }

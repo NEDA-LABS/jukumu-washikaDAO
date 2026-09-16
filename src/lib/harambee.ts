@@ -91,6 +91,15 @@ export function ensureHarambeeSchema() {
         UNIQUE (harambee_id, member_id)
       )
     `);
+    // The ledger's purpose column is a closed list, and 'harambee' was not on
+    // it: a contribution created a real STK push, wrote its own row, then died
+    // inserting the ledger entry — the giver was shown "Internal server error"
+    // while their phone was asking them to pay. 'harambee' was added to that
+    // list in ensureNtzsSchema, where the constraint is actually defined.
+    // Adding it from here as well meant two places fighting over one
+    // constraint, and ensureNtzsSchema won by recreating it without the new
+    // value — which then failed outright once a harambee row existed.
+
     await pool.query(`CREATE INDEX IF NOT EXISTS harambee_contrib_by_pool ON harambee_contributions (harambee_id, status)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS harambee_contrib_by_ntzs ON harambee_contributions (ntzs_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS harambees_by_organiser ON harambees (organiser_member_id)`);

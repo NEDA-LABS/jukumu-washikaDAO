@@ -80,6 +80,13 @@ export default function MemberDashboard() {
   // Home is one request; the wall is its own so a slow roster query never
   // holds up the balance, which is the first thing anyone looks at.
   const [home, setHome] = useState<HomeData | null>(null);
+  // Shown on Home so a collection you opened is visible without going looking
+  // for it — the same reasoning as the wall: the thing you are watching should
+  // be on the screen you land on.
+  const [myHarambees, setMyHarambees] = useState<{
+    id: number; code: string; title: string; kind: string; status: string;
+    target_tzs: string | null; raised_tzs: string; contributors: number; has_cover?: boolean;
+  }[]>([]);
   const [wall, setWall] = useState<WallData | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   // Home's money buttons open the real action directly. Sending someone to a
@@ -242,6 +249,11 @@ export default function MemberDashboard() {
   }, [screen?.group.id, router, t]);
 
   const reloadHome = React.useCallback(() => {
+    fetch('/api/member/harambees')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.harambees) setMyHarambees(d.harambees); })
+      .catch(() => { /* Home reads fine without them */ });
+
     fetch('/api/member/home')
       .then((r) => (r.ok ? r.json() : null))
       .then((d: HomeData | null) => { if (d) setHome(d); })
@@ -253,6 +265,18 @@ export default function MemberDashboard() {
   // Week / month / year zoom on the Ukuta. Lives here because changing it
   // refetches the wall, which Home only renders.
   const [wallPeriod, setWallPeriod] = useState<WallPeriod>('month');
+
+  // On mount, not only after an action: reloadHome is called when something
+  // changes, so hanging this off it alone meant Home never showed a collection
+  // until you had already done something else on the page.
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/member/harambees')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.harambees) setMyHarambees(d.harambees); })
+      .catch(() => { /* Home reads fine without them */ });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -532,7 +556,9 @@ export default function MemberDashboard() {
           onWithdraw={() => setQuick({ type: 'withdraw' })}
           onWallet={() => setActiveSection('wallet')}
           onWhoPaid={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
+          harambees={myHarambees}
           onHarambee={() => { setHarambeeAutoCreate(true); setActiveSection('harambee'); }}
+          onOpenHarambees={() => { setHarambeeAutoCreate(false); setActiveSection('harambee'); }}
           onGovernance={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}

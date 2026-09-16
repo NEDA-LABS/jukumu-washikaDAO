@@ -45,7 +45,7 @@ export default function HomeScreen({
   paidThisMonth = false, dueTzs = 0,
   group, wall, wallPeriod, onWallPeriod, collectedTzs, targetTzs,
   proposal, activity,
-  onContribute, onDeposit, onTransfer, onWithdraw, onWallet, onHarambee,
+  onContribute, onDeposit, onTransfer, onWithdraw, onWallet, onHarambee, onOpenHarambees, harambees,
   onWhoPaid, onGovernance, onProposal, onActivity,
 }: {
   firstName: string;
@@ -67,6 +67,11 @@ export default function HomeScreen({
   onContribute: () => void;
   onDeposit: () => void;
   onHarambee?: () => void;
+  onOpenHarambees?: () => void;
+  harambees?: {
+    id: number; code: string; title: string; kind: string; status: string;
+    target_tzs: string | null; raised_tzs: string; contributors: number; has_cover?: boolean;
+  }[];
   onTransfer: () => void;
   onWithdraw: () => void;
   onWallet: () => void;
@@ -207,24 +212,71 @@ export default function HomeScreen({
           row is four equal cells of one-word labels, and this needs a sentence
           to be understood at all. It also is not a wallet action — the other
           four move your own money, this one asks other people for theirs. */}
-      {onHarambee && (
+      {onHarambee && (() => {
+        // Closed collections are history; Home shows what is still running.
+        const open = (harambees ?? []).filter((h) => h.status === 'open');
+        return (
         <section className="border-b border-border px-5 pb-5 pt-[18px]">
-          <button onClick={onHarambee} className="wd-press w-full text-left">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="font-display text-[15px] font-bold leading-tight">{t('home.harambee.title')}</h2>
-                <p className="mt-1.5 max-w-[280px] text-[10.5px] leading-[1.5] text-muted-foreground">
-                  {t('home.harambee.blurb')}
-                </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-[15px] font-bold leading-tight">{t('home.harambee.title')}</h2>
+            {open.length > 0 && onOpenHarambees && (
+              <button onClick={onOpenHarambees} className="wd-press text-[10.5px] font-semibold text-gold-deep underline underline-offset-4">
+                {t('home.harambee.all')}
+              </button>
+            )}
+          </div>
+
+          {open.length === 0 ? (
+            <>
+              <p className="mt-1.5 max-w-[280px] text-[10.5px] leading-[1.5] text-muted-foreground">
+                {t('home.harambee.blurb')}
+              </p>
+              <button onClick={onHarambee}
+                className="wd-press mt-3 border border-gold-deep/50 bg-gold/10 px-3 py-1.5 text-[10.5px] font-semibold text-foreground">
+                {t('home.harambee.cta')}
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Each collection as a line with its own bar — the same reading
+                  as the wall above: how far along, at a glance, no tapping. */}
+              <div className="mt-3 space-y-2.5">
+                {open.slice(0, 3).map((h) => {
+                  const raised = Number(h.raised_tzs);
+                  const goal = h.target_tzs ? Number(h.target_tzs) : null;
+                  const pct = goal ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+                  return (
+                    <button key={h.id} onClick={onOpenHarambees} className="wd-press block w-full border border-border p-3 text-left">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] font-semibold text-foreground">{h.title}</span>
+                          <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.1em] text-ink-3">
+                            {h.contributors} {h.contributors === 1 ? t('home.harambee.giver') : t('home.harambee.givers')}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block wd-figure text-[13px] leading-none">{`TSh ${fmt(raised)}`}</span>
+                          {goal && <span className="mt-1 block font-mono text-[9px] text-ink-3">{pct}%</span>}
+                        </span>
+                      </div>
+                      {goal && (
+                        <span className="mt-2 block h-1.5 w-full overflow-hidden bg-foreground/10">
+                          <span className="block h-full bg-gold transition-all" style={{ width: `${pct}%` }} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              <span aria-hidden className="mt-0.5 shrink-0 text-[15px] text-gold-deep">→</span>
-            </div>
-            <span className="mt-3 inline-block border border-gold-deep/50 bg-gold/10 px-3 py-1.5 text-[10.5px] font-semibold text-foreground">
-              {t('home.harambee.cta')}
-            </span>
-          </button>
+              <button onClick={onHarambee}
+                className="wd-press mt-3 border border-gold-deep/50 bg-gold/10 px-3 py-1.5 text-[10.5px] font-semibold text-foreground">
+                {t('home.harambee.cta')}
+              </button>
+            </>
+          )}
         </section>
-      )}
+        );
+      })()}
 
       {/* ── Needs your vote ── */}
       {proposal && (
