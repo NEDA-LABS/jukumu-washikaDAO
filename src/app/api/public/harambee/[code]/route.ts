@@ -27,6 +27,7 @@ export async function GET(
     const res = await pool.query(
       `SELECT h.id, h.code, h.title, h.kind, h.story, h.beneficiary, h.target_tzs,
               h.deadline, h.status, h.created_at, h.closed_at,
+              (h.cover_image IS NOT NULL) AS has_cover,
               g.name AS group_name, m.full_name AS organiser_name
          FROM harambees h
          LEFT JOIN groups g ON g.id = h.group_id
@@ -59,6 +60,7 @@ export async function GET(
         beneficiary: h.beneficiary, targetTzs: h.target_tzs != null ? Number(h.target_tzs) : null,
         deadline: h.deadline, status: h.status, createdAt: h.created_at, closedAt: h.closed_at,
         groupName: h.group_name, organiserName: h.organiser_name,
+        hasCover: !!h.has_cover,
       },
       totals,
       // The form only offers a receipt when one can actually be sent.

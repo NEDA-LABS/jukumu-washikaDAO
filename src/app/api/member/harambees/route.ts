@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
   await ensureHarambeeSchema();
   try {
     const res = await pool.query(
-      `SELECT h.*, g.name AS group_name,
+      `SELECT h.id, h.code, h.title, h.kind, h.story, h.beneficiary, h.target_tzs,
+              h.deadline, h.status, h.created_at, h.closed_at,
+              -- Not the image itself: a list of ten collections would carry a
+              -- megabyte of base64 nobody on that screen is going to look at.
+              (h.cover_image IS NOT NULL) AS has_cover,
+              g.name AS group_name,
               COALESCE((SELECT SUM(c.amount_tzs) FILTER (WHERE c.status = 'settled')
                           FROM harambee_contributions c WHERE c.harambee_id = h.id), 0)::bigint AS raised_tzs,
               (SELECT count(*) FILTER (WHERE c.status = 'settled')
@@ -70,6 +75,20 @@ export async function POST(request: NextRequest) {
     ? body.deadline : null;
   const groupId = Number.isFinite(Number(body?.groupId)) && Number(body.groupId) > 0
     ? Number(body.groupId) : null;
+
+  // Accepted only as an image data URL, and only within a size the column and
+  // a link preview can both live with. The browser resizes before sending, so
+  // anything arriving larger than this did not come from our form.
+  const rawCover = typeof body?.coverImage === 'string' ? body.coverImage.trim() : '';
+  const cover = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(rawCover)
+    && rawCover.length <= 2_000_000
+    ? rawCover : null;
+  if (rawCover && !cover) {
+    return NextResponse.json(
+      { error: 'That image could not be used. Try a smaller one.', field: 'coverImage' },
+      { status: 400 }
+    );
+  }
 
   if (title.length < 3) {
     return NextResponse.json({ error: 'Give the collection a name', field: 'title' }, { status: 400 });
@@ -106,10 +125,11 @@ export async function POST(request: NextRequest) {
 
     const res = await client.query(
       `INSERT INTO harambees
-         (code, title, kind, story, beneficiary, target_tzs, deadline, organiser_member_id, group_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [code, title, kind, story, beneficiary, target, deadline, member.id, groupId]
+         (code, title, kind, story, beneficiary, target_tzs, deadline, organiser_member_id, group_id, cover_image)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, code, title, kind, story, beneficiary, target_tzs, deadline, status, created_at,
+                 (cover_image IS NOT NULL) AS has_cover`,
+      [code, title, kind, story, beneficiary, target, deadline, member.id, groupId, cover]
     );
 
     return NextResponse.json({ harambee: res.rows[0] }, { status: 201 });

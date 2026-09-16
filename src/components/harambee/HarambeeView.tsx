@@ -28,7 +28,7 @@ type Data = {
   harambee: {
     code: string; title: string; kind: string; story: string | null; beneficiary: string | null;
     targetTzs: number | null; deadline: string | null; status: string;
-    groupName: string | null; organiserName: string | null;
+    groupName: string | null; organiserName: string | null; hasCover?: boolean;
   };
   totals: { raisedTzs: number; contributors: number; pendingTzs: number };
   emailEnabled?: boolean;
@@ -153,6 +153,17 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
       <h1 className="mt-3 font-display text-[clamp(26px,5vw,44px)] font-bold leading-[1.08] tracking-[-0.02em]">
         {h.title}
       </h1>
+
+      {/* eslint-disable-next-line @next/next/no-img-element -- served as raw
+          bytes from our own route; the optimiser adds nothing here. */}
+      {h.hasCover && (
+        <img
+          src={`/api/public/harambee/${encodeURIComponent(code)}/cover`}
+          alt=""
+          className="mt-5 w-full border border-border object-cover"
+          style={{ maxHeight: 320 }}
+        />
+      )}
       {h.beneficiary && (
         <p className="mt-2 text-sm text-muted-foreground">
           {sw ? 'Kwa ajili ya' : 'For'} <span className="font-semibold text-foreground">{h.beneficiary}</span>

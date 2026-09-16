@@ -19,7 +19,10 @@ async function ownerOf(request: NextRequest, id: number) {
   const auth = getAuthTokenPayload(request);
   if (!auth) return null;
   const res = await pool.query(
-    `SELECT h.* FROM harambees h
+    `SELECT h.id, h.code, h.title, h.kind, h.story, h.beneficiary, h.target_tzs,
+            h.deadline, h.status, h.created_at, h.closed_at, h.group_id,
+            (h.cover_image IS NOT NULL) AS has_cover
+       FROM harambees h
        JOIN members m ON m.id = h.organiser_member_id
       WHERE h.id = $1 AND m.user_id = $2 LIMIT 1`,
     [id, auth.userId]
@@ -59,6 +62,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!h) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const body = await request.json().catch(() => null);
+
+  // Changing the picture is its own request; it does not touch the status.
+  if (typeof body?.coverImage === 'string') {
+    const raw = body.coverImage.trim();
+    const ok = raw === ''
+      || (/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(raw) && raw.length <= 2_000_000);
+    if (!ok) {
+      return NextResponse.json({ error: 'That image could not be used. Try a smaller one.' }, { status: 400 });
+    }
+    await pool.query(`UPDATE harambees SET cover_image = $1 WHERE id = $2`, [raw || null, Number(id)]);
+    return NextResponse.json({ success: true, hasCover: raw !== '' });
+  }
+
   const status = body?.status === 'closed' ? 'closed' : body?.status === 'open' ? 'open' : null;
   if (!status) return NextResponse.json({ error: "status must be 'open' or 'closed'" }, { status: 400 });
 

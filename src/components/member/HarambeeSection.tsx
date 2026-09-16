@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HARAMBEE_KINDS } from '@/lib/harambee-kinds';
+import { readAttachmentAsDataUrl } from '@/lib/imageResize';
 
 /**
  * A member's collections: the ones they have opened, and the form to open one.
@@ -17,6 +18,7 @@ type Harambee = {
   id: number; code: string; title: string; kind: string; story: string | null;
   beneficiary: string | null; target_tzs: string | null; deadline: string | null;
   status: string; group_name: string | null; raised_tzs: string; contributors: number;
+  has_cover?: boolean;
 };
 type Contribution = {
   id: number; contributor_name: string; phone: string | null; amount_tzs: string;
@@ -62,6 +64,10 @@ export default function HarambeeSection({ autoCreate = false }: { autoCreate?: b
   const [target, setTarget] = useState('');
   const [deadline, setDeadline] = useState('');
   const [groupId, setGroupId] = useState('');
+  // Resized in the browser before it is ever sent, so the column holds tens of
+  // kilobytes and the link preview loads before the chat app gives up on it.
+  const [cover, setCover] = useState<string | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -138,6 +144,7 @@ export default function HarambeeSection({ autoCreate = false }: { autoCreate?: b
           title: title.trim(), kind, story: story.trim() || undefined,
           beneficiary: beneficiary.trim() || undefined,
           targetTzs: target ? Number(target) : undefined,
+          coverImage: cover || undefined,
           deadline: deadline || undefined,
           groupId: groupId ? Number(groupId) : undefined,
         }),
@@ -145,7 +152,7 @@ export default function HarambeeSection({ autoCreate = false }: { autoCreate?: b
       const d = await res.json().catch(() => null);
       if (!res.ok) { setError(d?.error || (sw ? 'Imeshindikana' : 'That did not work')); return; }
       setCreating(false);
-      setTitle(''); setStory(''); setBeneficiary(''); setTarget(''); setDeadline(''); setGroupId(''); setKind('other');
+      setTitle(''); setStory(''); setBeneficiary(''); setTarget(''); setDeadline(''); setGroupId(''); setKind('other'); setCover(null);
       await load();
     } catch { setError(sw ? 'Tatizo la mtandao' : 'Network error'); }
     finally { setBusy(false); }
@@ -195,6 +202,43 @@ export default function HarambeeSection({ autoCreate = false }: { autoCreate?: b
             <input value={title} onChange={(e) => { setTitle(e.target.value); setError(''); }}
               placeholder={sw ? 'Mfano: Msiba wa Mzee Juma' : 'e.g. Mzee Juma funeral'} className={field} />
           </label>
+          <div>
+            <span className={kicker}>{sw ? 'Picha (si lazima)' : 'Photo (optional)'}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {cover ? (
+              <div className="mt-1.5">
+                <img src={cover} alt="" className="w-full rounded-xl border border-border object-cover" style={{ maxHeight: 180 }} />
+                <button type="button" onClick={() => setCover(null)}
+                  className="mt-2 rounded-lg border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+                  {sw ? 'Ondoa picha' : 'Remove photo'}
+                </button>
+              </div>
+            ) : (
+              <label className="mt-1.5 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-border px-4 py-6 text-center">
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setCoverBusy(true); setError('');
+                    try {
+                      const { dataUrl } = await readAttachmentAsDataUrl(f, 1200, 0.82);
+                      setCover(dataUrl);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : (sw ? 'Picha haikupakika' : 'That image could not be read'));
+                    } finally {
+                      setCoverBusy(false);
+                      e.target.value = '';
+                    }
+                  }} />
+                <span className="text-[12px] text-muted-foreground">
+                  {coverBusy
+                    ? (sw ? 'Inapakia…' : 'Reading…')
+                    : (sw ? 'Ongeza picha — itaonekana kiungo kitakaposambazwa' : 'Add a photo — it shows when the link is shared')}
+                </span>
+              </label>
+            )}
+          </div>
+
           <div>
             <span className={kicker}>{sw ? 'Ni kwa ajili ya nini?' : 'What is it for?'}</span>
             <div className="mt-1.5 flex flex-wrap gap-2">
@@ -259,7 +303,12 @@ export default function HarambeeSection({ autoCreate = false }: { autoCreate?: b
             return (
               <div key={h.id} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {h.has_cover && (
+                    <img src={`/api/public/harambee/${encodeURIComponent(h.code)}/cover`} alt=""
+                      className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
+                  )}
+                  <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-deep">
                       {(KIND_LABEL[h.kind] ?? KIND_LABEL.other)[sw ? 0 : 1]}
                       {h.group_name ? ` · ${h.group_name}` : ''}

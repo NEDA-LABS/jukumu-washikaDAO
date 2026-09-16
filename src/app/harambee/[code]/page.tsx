@@ -29,14 +29,34 @@ type Row = {
   id: number; code: string; title: string; kind: string; story: string | null;
   beneficiary: string | null; target_tzs: string | null; deadline: string | null;
   status: string; created_at: string; closed_at: string | null;
+  has_cover: boolean;
   group_name: string | null; organiser_name: string | null;
 };
+
+/**
+ * Where a crawler should fetch the preview image from.
+ *
+ * Absolute and public, because WhatsApp and Facebook resolve og:image from
+ * their own servers with no session and no notion of our origin. A relative
+ * path works in a browser and produces no preview at all in a chat.
+ */
+function absoluteBase(): string {
+  for (const raw of [process.env.NEXT_PUBLIC_APP_URL, process.env.URL, process.env.DEPLOY_PRIME_URL]) {
+    if (!raw) continue;
+    const url = raw.trim().replace(/\/$/, '');
+    if (!/^https?:\/\//i.test(url)) continue;
+    if (/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(url)) continue;
+    return url;
+  }
+  return 'https://washikadau.com';
+}
 
 async function load(code: string) {
   await ensureHarambeeSchema();
   const res = await pool.query(
     `SELECT h.id, h.code, h.title, h.kind, h.story, h.beneficiary, h.target_tzs,
             h.deadline, h.status, h.created_at, h.closed_at,
+            (h.cover_image IS NOT NULL) AS has_cover,
             g.name AS group_name, m.full_name AS organiser_name
        FROM harambees h
        LEFT JOIN groups g ON g.id = h.group_id
@@ -67,6 +87,7 @@ async function load(code: string) {
       targetTzs: h.target_tzs != null ? Number(h.target_tzs) : null,
       deadline: h.deadline, status: h.status,
       groupName: h.group_name, organiserName: h.organiser_name,
+      hasCover: !!h.has_cover,
     },
     totals,
     contributions: contributions.rows.map((r) => {
@@ -88,11 +109,28 @@ export async function generateMetadata(
     ? `TSh ${raised} raised of TSh ${Math.round(data.harambee.targetTzs).toLocaleString('en-US')}. Give by mobile money or bank — no account needed.`
     : `TSh ${raised} raised so far. Give by mobile money or bank — no account needed.`;
 
+  // A photo of the person or the occasion is most of why a forwarded link
+  // gets opened, so the card gets the large format when there is one to show.
+  const image = data.harambee.hasCover
+    ? `${absoluteBase()}/api/public/harambee/${encodeURIComponent(code)}/cover`
+    : null;
+
   return {
     title: `${data.harambee.title} — Harambee`,
     description,
-    openGraph: { title: data.harambee.title, description, type: 'website' },
-    twitter: { card: 'summary', title: data.harambee.title, description },
+    openGraph: {
+      title: data.harambee.title,
+      description,
+      type: 'website',
+      url: `${absoluteBase()}/harambee/${encodeURIComponent(code)}`,
+      ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: data.harambee.title }] } : {}),
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title: data.harambee.title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
   };
 }
 

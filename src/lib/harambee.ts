@@ -69,6 +69,11 @@ export function ensureHarambeeSchema() {
         settled_at       TIMESTAMPTZ
       )
     `);
+    // Stored inline, the same way avatars and group logos are: resized and
+    // JPEG-encoded in the browser first, so a cover is tens of kilobytes and
+    // needs no object store to exist.
+    await pool.query(`ALTER TABLE harambees ADD COLUMN IF NOT EXISTS cover_image TEXT`);
+
     // Claimed before sending, never written after. Settlement is reached from
     // the webhook, the sweep and the contributor's own page at once.
     await pool.query(`ALTER TABLE harambee_contributions ADD COLUMN IF NOT EXISTS receipt_sent_at TIMESTAMPTZ`);
