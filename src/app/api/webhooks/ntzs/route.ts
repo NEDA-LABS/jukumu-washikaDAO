@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
+import { ensureHarambeeSchema, settleHarambeeByNtzsId } from '@/lib/harambee';
 import { deliverDonationReceipts } from '@/lib/donation-receipt';
 
 /**
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     await ensureDonationsSchema();
+    await ensureHarambeeSchema();
 
     await client.query('BEGIN');
     await settleExternalTransaction(client, resourceId, finalStatus, txHash);
@@ -50,6 +52,7 @@ export async function POST(request: NextRequest) {
     // has to move — a bank donor is long gone from the page by the time this
     // fires, and the webhook is the only thing left that knows the money came.
     await settleDonationByNtzsId(client, resourceId, finalStatus, txHash);
+    await settleHarambeeByNtzsId(client, resourceId, finalStatus);
     await client.query('COMMIT');
 
     // After the commit, never inside it: reaching an SMTP server is slow and

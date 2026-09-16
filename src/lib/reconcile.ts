@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
 import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { settleDonationByNtzsId } from '@/lib/donations';
+import { settleHarambeeByNtzsId } from '@/lib/harambee';
 import { deliverDonationReceipts } from '@/lib/donation-receipt';
 import { ntzs } from '@/lib/ntzs';
 
@@ -94,7 +95,10 @@ export async function reconcileLedger(
         try {
           const res = await settleExternalTransaction(client, row.ntzs_id, status);
           if (row.type === 'deposit') {
+            // A donation and a harambee contribution both ride a deposit but
+            // keep their own record; neither is reached by the ledger step.
             await settleDonationByNtzsId(client, row.ntzs_id, status).catch(() => {});
+            await settleHarambeeByNtzsId(client, row.ntzs_id, status).catch(() => {});
           }
           await client.query('COMMIT');
 

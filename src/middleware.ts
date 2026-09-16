@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server"
 const PUBLIC_PAGES = ['/', '/login', '/register', '/investor', '/investor/signup', '/investor/login', '/portal']
 
 // Page prefixes that are fully public
-const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn', '/developers', '/shukrani']
+const PUBLIC_PAGE_PREFIXES = ['/jifunze', '/learn', '/developers', '/shukrani', '/harambee']
 
 // API prefixes that are publicly accessible
 const PUBLIC_API_PREFIXES = [

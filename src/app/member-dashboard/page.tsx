@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import HarambeeSection from '@/components/member/HarambeeSection';
 import { useToast } from '@/components/ToastProvider';
 import {
   ChartBarIcon,
@@ -408,6 +409,7 @@ export default function MemberDashboard() {
     { id: 'overview', name: t('dash.nav.overview'), icon: ChartBarIcon },
     { id: 'wallet', name: t('dash.nav.wallet'), icon: WalletIcon },
     { id: 'group', name: t('dash.nav.group'), icon: UserGroupIcon },
+    { id: 'harambee', name: t('dash.nav.harambee'), icon: UserGroupIcon },
     { id: 'investments', name: t('dash.nav.investments'), icon: CurrencyDollarIcon },
     { id: 'learning', name: t('dash.nav.training'), icon: AcademicCapIcon },
     { id: 'notifications', name: t('notif.title'), icon: BellIcon },
@@ -424,6 +426,8 @@ export default function MemberDashboard() {
         return <ProfileSection memberProfile={memberProfile} user={user} loadMemberData={() => loadMemberData(user?.id || 0)} />;
       case 'group':
         return <MyGroupSection memberProfile={memberProfile} />;
+      case 'harambee':
+        return <HarambeeSection />;
       case 'investments':
         return <MyInvestmentsSection memberInvestments={memberInvestments} />;
       case 'learning':
@@ -627,6 +631,7 @@ export default function MemberDashboard() {
           groupCount={home?.group ? 1 : 0}
           links={[
             { id: 'wallet', label: t('dash.nav.wallet') },
+            { id: 'harambee', label: t('dash.nav.harambee') },
             { id: 'investments', label: t('dash.nav.investments') },
             { id: 'learning', label: t('dash.nav.training') },
             { id: 'notifications', label: t('notif.title'), meta: unreadCount ? String(unreadCount) : undefined },

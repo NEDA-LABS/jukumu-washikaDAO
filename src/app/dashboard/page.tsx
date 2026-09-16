@@ -13,6 +13,7 @@ import NotificationCenter from '@/components/NotificationCenter';
 import OverviewSection from './components/OverviewSection';
 import MembersSection from './components/MembersSection';
 import BalancesSection from './components/BalancesSection';
+import HarambeesSection from './components/HarambeesSection';
 import GroupsSection from './components/GroupsSection';
 import JoinRequestsSection from './components/JoinRequestsSection';
 import InvestmentsSection from './components/InvestmentsSection';
@@ -116,6 +117,7 @@ export default function AdminDashboard() {
     { id: 'balances',      name: t('adm.nav.balances'),     icon: CurrencyDollarIcon },
     { id: 'investments',   name: t('adm.nav.investments'),  icon: CurrencyDollarIcon },
     { id: 'funding',       name: t('adm.nav.funding'),      icon: CurrencyDollarIcon },
+    { id: 'harambees',     name: t('adm.nav.harambees'),    icon: UserGroupIcon },
     { id: 'donations',     name: t('adm.nav.donations'),    icon: CurrencyDollarIcon },
     { id: 'content',       name: t('adm.nav.training'),     icon: BookOpenIcon },
     { id: 'reports',       name: t('adm.nav.reports'),      icon: DocumentTextIcon },
@@ -132,6 +134,7 @@ export default function AdminDashboard() {
       case 'groups':        return <GroupsSection groups={groups} loadAdminData={loadAdminData} showToast={showToast} />;
       case 'join-requests': return <JoinRequestsSection joinRequests={joinRequests} loadAdminData={loadAdminData} showToast={showToast} />;
       case 'balances':      return <BalancesSection />;
+      case 'harambees':     return <HarambeesSection />;
       case 'investments':   return <InvestmentsSection investments={investments} groups={groups} loadAdminData={loadAdminData} />;
       case 'content':       return <ContentSection educationalContent={educationalContent} user={user} loadAdminData={loadAdminData} showToast={showToast} />;
       case 'reports':       return <ReportsSection adminStats={adminStats} />;
