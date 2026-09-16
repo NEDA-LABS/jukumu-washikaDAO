@@ -45,7 +45,7 @@ export default function HomeScreen({
   paidThisMonth = false, dueTzs = 0,
   group, wall, wallPeriod, onWallPeriod, collectedTzs, targetTzs,
   proposal, activity,
-  onContribute, onDeposit, onTransfer, onWithdraw, onWallet,
+  onContribute, onDeposit, onTransfer, onWithdraw, onWallet, onHarambee,
   onWhoPaid, onGovernance, onProposal, onActivity,
 }: {
   firstName: string;
@@ -66,6 +66,7 @@ export default function HomeScreen({
   activity: HomeActivity[];
   onContribute: () => void;
   onDeposit: () => void;
+  onHarambee?: () => void;
   onTransfer: () => void;
   onWithdraw: () => void;
   onWallet: () => void;
@@ -198,6 +199,30 @@ export default function HomeScreen({
               {t('home.whoPaid')} →
             </button>
           </div>
+        </section>
+      )}
+
+      {/* ── Harambee ──
+          Its own block rather than a fifth cell in the action row above: that
+          row is four equal cells of one-word labels, and this needs a sentence
+          to be understood at all. It also is not a wallet action — the other
+          four move your own money, this one asks other people for theirs. */}
+      {onHarambee && (
+        <section className="border-b border-border px-5 pb-5 pt-[18px]">
+          <button onClick={onHarambee} className="wd-press w-full text-left">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-[15px] font-bold leading-tight">{t('home.harambee.title')}</h2>
+                <p className="mt-1.5 max-w-[280px] text-[10.5px] leading-[1.5] text-muted-foreground">
+                  {t('home.harambee.blurb')}
+                </p>
+              </div>
+              <span aria-hidden className="mt-0.5 shrink-0 text-[15px] text-gold-deep">→</span>
+            </div>
+            <span className="mt-3 inline-block border border-gold-deep/50 bg-gold/10 px-3 py-1.5 text-[10.5px] font-semibold text-foreground">
+              {t('home.harambee.cta')}
+            </span>
+          </button>
         </section>
       )}
 

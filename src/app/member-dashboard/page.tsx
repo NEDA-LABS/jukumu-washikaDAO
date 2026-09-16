@@ -530,6 +530,7 @@ export default function MemberDashboard() {
           onWithdraw={() => setQuick({ type: 'withdraw' })}
           onWallet={() => setActiveSection('wallet')}
           onWhoPaid={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
+          onHarambee={() => setActiveSection('harambee')}
           onGovernance={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}
