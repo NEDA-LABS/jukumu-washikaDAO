@@ -5,6 +5,7 @@ import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ensureDonationsSchema, settleDonationByNtzsId } from '@/lib/donations';
 import { ensureHarambeeSchema, settleHarambeeByNtzsId } from '@/lib/harambee';
 import { deliverDonationReceipts } from '@/lib/donation-receipt';
+import { deliverHarambeeReceipts } from '@/lib/harambee-receipt';
 
 /**
  * nTZS webhook handler. Settles deposits/withdrawals against the ledger:
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
     // After the commit, never inside it: reaching an SMTP server is slow and
     // can fail, and neither is a reason to roll back money that has landed.
     await deliverDonationReceipts({ ntzsId: resourceId }).catch(() => {});
+    await deliverHarambeeReceipts({ ntzsId: resourceId }).catch(() => {});
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {

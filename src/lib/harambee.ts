@@ -69,6 +69,23 @@ export function ensureHarambeeSchema() {
         settled_at       TIMESTAMPTZ
       )
     `);
+    // Claimed before sending, never written after. Settlement is reached from
+    // the webhook, the sweep and the contributor's own page at once.
+    await pool.query(`ALTER TABLE harambee_contributions ADD COLUMN IF NOT EXISTS receipt_sent_at TIMESTAMPTZ`);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS harambee_invites (
+        id           SERIAL PRIMARY KEY,
+        harambee_id  INTEGER NOT NULL REFERENCES harambees(id) ON DELETE CASCADE,
+        member_id    INTEGER NOT NULL,
+        invited_by   INTEGER NOT NULL,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        -- One ask per person per collection. Being invited twice to the same
+        -- funeral reads as nagging, and the unique index is a cheaper guard
+        -- than remembering to check.
+        UNIQUE (harambee_id, member_id)
+      )
+    `);
     await pool.query(`CREATE INDEX IF NOT EXISTS harambee_contrib_by_pool ON harambee_contributions (harambee_id, status)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS harambee_contrib_by_ntzs ON harambee_contributions (ntzs_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS harambees_by_organiser ON harambees (organiser_member_id)`);

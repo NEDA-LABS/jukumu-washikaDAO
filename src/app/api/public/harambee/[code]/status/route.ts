@@ -4,6 +4,7 @@ import { ntzs } from '@/lib/ntzs';
 import { isDepositSuccessStatus, settleExternalTransaction } from '@/lib/wallet/ledger';
 import { ensureHarambeeSchema, settleHarambeeByNtzsId } from '@/lib/harambee';
 import { ensureNtzsSchema } from '@/lib/ntzs-db';
+import { deliverHarambeeReceipts } from '@/lib/harambee-receipt';
 
 export const runtime = 'nodejs';
 
@@ -47,6 +48,8 @@ export async function GET(request: NextRequest) {
         await settleHarambeeByNtzsId(client, c.ntzs_id, remote.status);
         if (isDepositSuccessStatus(remote.status)) {
           await settleExternalTransaction(client, c.ntzs_id, remote.status).catch(() => {});
+          // They are on the page now; the receipt should already be waiting.
+          await deliverHarambeeReceipts({ ntzsId: c.ntzs_id }).catch(() => {});
         }
       } catch {
         // A lookup that fails is not a failed payment — keep waiting.

@@ -31,6 +31,7 @@ type Data = {
     groupName: string | null; organiserName: string | null;
   };
   totals: { raisedTzs: number; contributors: number; pendingTzs: number };
+  emailEnabled?: boolean;
   contributions: Contribution[];
 };
 
@@ -49,6 +50,7 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
   const [amount, setAmount] = useState('5000');
   const [message, setMessage] = useState('');
   const [anonymous, setAnonymous] = useState(false);
+  const [email, setEmail] = useState('');
   const [method, setMethod] = useState<'mobile' | 'bank'>('mobile');
   const [payerAccount, setPayerAccount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -111,6 +113,9 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
     if (method === 'bank' && !/^[0-9]{6,24}$/.test(payerAccount.replace(/\s+/g, ''))) {
       setError(sw ? 'Weka namba ya akaunti utakayotumia' : 'Enter the account you will send from'); return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      setError(sw ? 'Barua pepe si sahihi' : 'That email address is not valid'); return;
+    }
     setBusy(true);
     try {
       const res = await fetch(`/api/public/harambee/${encodeURIComponent(code)}/contribute`, {
@@ -118,6 +123,7 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(), phone, amountTzs: amt, method, anonymous,
+          email: email.trim() || undefined,
           message: message.trim() || undefined,
           payerAccountNumber: method === 'bank' ? payerAccount.trim() : undefined,
           lang: sw ? 'sw' : 'en',
@@ -289,6 +295,20 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
                   <input value={message} onChange={(e) => setMessage(e.target.value)} className={field} maxLength={280} />
                 </label>
 
+                {data.emailEnabled && (
+                  <label className="block">
+                    <span className={label}>{sw ? 'Barua pepe (si lazima)' : 'Email (optional)'}</span>
+                    <input type="email" value={email} autoComplete="email"
+                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                      placeholder={sw ? 'jina@mfano.com' : 'you@example.com'} className={field} />
+                    <span className="mt-1.5 block text-[10.5px] leading-snug text-muted-foreground">
+                      {sw
+                        ? 'Tutakutumia uthibitisho mchango wako utakapofika.'
+                        : 'We will confirm by email once your contribution arrives.'}
+                    </span>
+                  </label>
+                )}
+
                 <label className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
                   <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-4 w-4 accent-current" />
                   {sw ? 'Usionyeshe jina langu kwenye orodha' : 'Do not show my name on the list'}
@@ -340,6 +360,16 @@ export default function HarambeeView({ code, initial }: { code: string; initial:
                   <p className="mt-1 font-mono text-[16px] font-bold">{bank.reference}</p>
                 </div>
                 {bank.note && <p className="mt-3 border-l-2 border-border pl-3 text-[10.5px] leading-relaxed text-muted-foreground">{bank.note}</p>}
+                {email.trim() && (
+                  <p className="mt-3 flex items-start gap-2 border border-gold-deep/40 bg-gold/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground">
+                    <span aria-hidden className="mt-px font-mono text-gold-deep">✉</span>
+                    <span>
+                      {sw ? 'Tutakuthibitishia kwa ' : 'We will confirm to '}
+                      <span className="break-all font-mono font-semibold">{email.trim()}</span>
+                      {sw ? ' pesa zitakapofika.' : ' once the money arrives.'}
+                    </span>
+                  </p>
+                )}
                 <button onClick={() => { setOpen(false); reload(); }} className="wd-press mt-4 w-full border-2 border-foreground py-3 text-[13px] font-semibold">
                   {sw ? 'Nimemaliza' : 'Done'}
                 </button>

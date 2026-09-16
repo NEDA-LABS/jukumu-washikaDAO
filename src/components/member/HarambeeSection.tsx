@@ -44,6 +44,13 @@ export default function HarambeeSection() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [detail, setDetail] = useState<{ contributions: Contribution[]; totals: { raisedTzs: number; pendingTzs: number } } | null>(null);
   const [copied, setCopied] = useState('');
+  // Inviting is its own panel per collection: who can be asked, who already
+  // was, and who has since given.
+  const [inviteFor, setInviteFor] = useState<number | null>(null);
+  const [candidates, setCandidates] = useState<{ id: number; full_name: string; username: string | null; invited: boolean; contributed: boolean }[] | null>(null);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [inviting, setInviting] = useState(false);
+  const [inviteNote, setInviteNote] = useState('');
 
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState('other');
@@ -84,6 +91,37 @@ export default function HarambeeSection() {
       const res = await fetch(`/api/member/harambees/${id}`);
       if (res.ok) setDetail(await res.json());
     } catch { /* the list still stands */ }
+  };
+
+  const openInvite = async (id: number) => {
+    if (inviteFor === id) { setInviteFor(null); return; }
+    setInviteFor(id); setCandidates(null); setPicked([]); setInviteNote('');
+    try {
+      const res = await fetch(`/api/member/harambees/${id}/invite`);
+      if (res.ok) { const d = await res.json(); setCandidates(d.candidates ?? []); }
+      else setCandidates([]);
+    } catch { setCandidates([]); }
+  };
+
+  const sendInvites = async (id: number) => {
+    if (picked.length === 0) return;
+    setInviting(true); setInviteNote('');
+    try {
+      const res = await fetch(`/api/member/harambees/${id}/invite`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberIds: picked }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) { setInviteNote(d?.error || (sw ? 'Imeshindikana' : 'That did not work')); return; }
+      setInviteNote(
+        sw ? `Wamealikwa ${d.invited}${d.skipped ? ` · ${d.skipped} tayari walialikwa` : ''}`
+           : `Invited ${d.invited}${d.skipped ? ` · ${d.skipped} already asked` : ''}`
+      );
+      setPicked([]);
+      await openInvite(id); await openInvite(id); // refresh the list in place
+    } catch {
+      setInviteNote(sw ? 'Tatizo la mtandao' : 'Network error');
+    } finally { setInviting(false); }
   };
 
   const create = async (e: React.FormEvent) => {
@@ -246,6 +284,10 @@ export default function HarambeeSection() {
                     className="rounded-lg border border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
                     {sw ? 'Ona ukurasa' : 'View page'}
                   </a>
+                  <button onClick={() => openInvite(h.id)}
+                    className="rounded-lg border border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+                    {sw ? 'Alika' : 'Invite'}
+                  </button>
                   <button onClick={() => (openId === h.id ? setOpenId(null) : openDetail(h.id))}
                     className="rounded-lg border border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
                     {h.contributors} {sw ? 'wamechangia' : 'given'}
@@ -255,6 +297,56 @@ export default function HarambeeSection() {
                     {h.status === 'open' ? (sw ? 'Funga' : 'Close') : (sw ? 'Fungua' : 'Reopen')}
                   </button>
                 </div>
+
+                {inviteFor === h.id && (
+                  <div className="mt-4 border-t border-border pt-3">
+                    {candidates === null ? (
+                      <p className="py-4 text-center text-xs text-muted-foreground">{sw ? 'Inapakia…' : 'Loading…'}</p>
+                    ) : candidates.length === 0 ? (
+                      <p className="py-4 text-center text-xs text-muted-foreground">
+                        {sw
+                          ? 'Hakuna wa kualika — jiunge na kikundi, au sambaza kiungo tu.'
+                          : 'Nobody to invite yet — join a group, or just share the link.'}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mb-2 text-[11px] text-muted-foreground">
+                          {sw ? 'Wanachama wa vikundi vyako' : 'People in your groups'}
+                        </p>
+                        <div className="max-h-56 space-y-1 overflow-y-auto">
+                          {candidates.map((p) => {
+                            const on = picked.includes(p.id);
+                            return (
+                              <button key={p.id} type="button"
+                                onClick={() => setPicked((v) => on ? v.filter((x) => x !== p.id) : [...v, p.id])}
+                                disabled={p.invited}
+                                className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-[12px] ${
+                                  p.invited ? 'border-border opacity-50'
+                                    : on ? 'border-foreground bg-foreground/5' : 'border-border'}`}>
+                                <span className="min-w-0 truncate text-foreground">
+                                  {p.full_name}
+                                  {p.username && <span className="ml-1.5 font-mono text-[10px] text-muted-foreground">@{p.username}</span>}
+                                </span>
+                                <span className="shrink-0 text-[10px] text-muted-foreground">
+                                  {p.contributed ? (sw ? 'amechangia' : 'gave')
+                                    : p.invited ? (sw ? 'amealikwa' : 'asked')
+                                    : on ? '✓' : ''}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {inviteNote && <p className="mt-2 text-[11px] text-muted-foreground">{inviteNote}</p>}
+                        <button onClick={() => sendInvites(h.id)} disabled={inviting || picked.length === 0}
+                          className="mt-3 w-full rounded-xl bg-foreground py-2.5 text-xs font-semibold text-background disabled:opacity-40">
+                          {inviting
+                            ? (sw ? 'Inatuma…' : 'Sending…')
+                            : (sw ? `Alika ${picked.length || ''}`.trim() : `Invite ${picked.length || ''}`.trim())}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {openId === h.id && (
                   <div className="mt-4 border-t border-border pt-3">

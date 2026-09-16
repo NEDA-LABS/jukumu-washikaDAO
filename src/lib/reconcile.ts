@@ -4,6 +4,7 @@ import { settleExternalTransaction } from '@/lib/wallet/ledger';
 import { settleDonationByNtzsId } from '@/lib/donations';
 import { settleHarambeeByNtzsId } from '@/lib/harambee';
 import { deliverDonationReceipts } from '@/lib/donation-receipt';
+import { deliverHarambeeReceipts } from '@/lib/harambee-receipt';
 import { ntzs } from '@/lib/ntzs';
 
 /**
@@ -123,7 +124,10 @@ export async function reconcileLedger(
     client.release();
   }
 
-  const receipts = await deliverDonationReceipts().catch(() => ({ sent: 0, failed: 0 }));
-  out.receiptsSent = receipts.sent;
+  const [donationReceipts, harambeeReceipts] = await Promise.all([
+    deliverDonationReceipts().catch(() => ({ sent: 0, failed: 0 })),
+    deliverHarambeeReceipts().catch(() => ({ sent: 0, failed: 0 })),
+  ]);
+  out.receiptsSent = donationReceipts.sent + harambeeReceipts.sent;
   return out;
 }

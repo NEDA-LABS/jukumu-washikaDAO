@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ensureHarambeeSchema, harambeeTotals } from '@/lib/harambee';
+import { isMailConfigured } from '@/lib/mailer';
 
 export const runtime = 'nodejs';
 
@@ -60,6 +61,8 @@ export async function GET(
         groupName: h.group_name, organiserName: h.organiser_name,
       },
       totals,
+      // The form only offers a receipt when one can actually be sent.
+      emailEnabled: isMailConfigured(),
       contributions: contributions.rows.map((r) => {
         const row = r as { name: string | null; amount_tzs: string; message: string | null; anonymous: boolean; at: string };
         return {
