@@ -32,7 +32,7 @@ const KIND_LABEL: Record<string, [string, string]> = {
   community: ['Jamii', 'Community'], other: ['Nyingine', 'Other'],
 };
 
-export default function HarambeeSection() {
+export default function HarambeeSection({ autoCreate = false }: { autoCreate?: boolean }) {
   const { language } = useLanguage();
   const sw = language === 'sw';
   const [rows, setRows] = useState<Harambee[] | null>(null);
@@ -40,7 +40,10 @@ export default function HarambeeSection() {
   // component's business, and threading it through the dashboard would couple
   // two screens that otherwise share nothing.
   const [groups, setGroups] = useState<{ id: number; name: string }[]>([]);
-  const [creating, setCreating] = useState(false);
+  // Opened straight into the form when the caller was a "start a collection"
+  // button. Landing on a list of collections you have not made yet, with the
+  // button you just pressed sitting there again, is the app asking twice.
+  const [creating, setCreating] = useState(autoCreate);
   const [openId, setOpenId] = useState<number | null>(null);
   const [detail, setDetail] = useState<{ contributions: Contribution[]; totals: { raisedTzs: number; pendingTzs: number } } | null>(null);
   const [copied, setCopied] = useState('');

@@ -102,6 +102,8 @@ export default function MemberDashboard() {
   const [showClaimUsername, setShowClaimUsername] = useState(false);
   // Opening a proposal pushes it over the governance list rather than routing
   // away — the tab bar has to stay put for this to read as an app.
+  // True only when arriving from a button that promised to start one.
+  const [harambeeAutoCreate, setHarambeeAutoCreate] = useState(false);
   const [openProposal, setOpenProposal] = useState<ProposalDetail | null>(null);
   const [voting, setVoting] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -427,7 +429,7 @@ export default function MemberDashboard() {
       case 'group':
         return <MyGroupSection memberProfile={memberProfile} />;
       case 'harambee':
-        return <HarambeeSection />;
+        return <HarambeeSection autoCreate={harambeeAutoCreate} />;
       case 'investments':
         return <MyInvestmentsSection memberInvestments={memberInvestments} />;
       case 'learning':
@@ -530,7 +532,7 @@ export default function MemberDashboard() {
           onWithdraw={() => setQuick({ type: 'withdraw' })}
           onWallet={() => setActiveSection('wallet')}
           onWhoPaid={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
-          onHarambee={() => setActiveSection('harambee')}
+          onHarambee={() => { setHarambeeAutoCreate(true); setActiveSection('harambee'); }}
           onGovernance={() => home.group && router.push(`/member-dashboard/groups/${home.group.id}`)}
           onProposal={(pr) => router.push(`/member-dashboard/groups/${pr.groupId}/proposals/${pr.id}`)}
           onActivity={() => setActiveSection('wallet')}
@@ -641,7 +643,7 @@ export default function MemberDashboard() {
             // 'profile', so the username editor was unreachable.
             { id: 'settings', label: t('dash.nav.settings') },
           ]}
-          onLink={setActiveSection}
+          onLink={(id) => { setHarambeeAutoCreate(false); setActiveSection(id); }}
           onLogout={handleLogout}
         />
       ) : (
