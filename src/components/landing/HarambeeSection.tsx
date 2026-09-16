@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -15,6 +15,55 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export default function LandingHarambeeSection() {
   const { language } = useLanguage();
   const sw = language === 'sw';
+
+  /**
+   * Four collections, cycling. One example makes the feature look like it is
+   * for hospital bills; four make the point that it is for whatever the month
+   * brings — which is the actual claim. Every figure is illustrative and the
+   * card says so, because a made-up total presented as real would be the one
+   * lie this page cannot afford.
+   */
+  const EXAMPLES = [
+    {
+      kind: sw ? 'Matibabu' : 'Medical',
+      title: sw ? 'Matibabu ya Mama Neema' : 'Mama Neema’s treatment',
+      raised: 1_840_000, target: 2_500_000, people: 37,
+      givers: [['Asha R.', 50_000], ['Fatuma M.', 20_000], [sw ? 'Asiyetajwa' : 'Anonymous', 100_000]] as [string, number][],
+    },
+    {
+      kind: sw ? 'Harusi' : 'Wedding',
+      title: sw ? 'Harusi ya Neema na Juma' : 'Neema and Juma’s wedding',
+      raised: 3_250_000, target: 4_000_000, people: 64,
+      givers: [['Salma K.', 200_000], ['Baraka N.', 75_000], ['Grace M.', 50_000]] as [string, number][],
+    },
+    {
+      kind: sw ? 'Msiba' : 'Funeral',
+      title: sw ? 'Msiba wa Mzee Juma' : 'Mzee Juma’s funeral',
+      raised: 920_000, target: 1_200_000, people: 48,
+      givers: [[sw ? 'Asiyetajwa' : 'Anonymous', 150_000], ['Hamisi S.', 30_000], ['Rehema A.', 25_000]] as [string, number][],
+    },
+    {
+      kind: sw ? 'Ada ya shule' : 'School fees',
+      title: sw ? 'Ada ya Amina — kidato cha tano' : 'Amina’s school fees',
+      raised: 610_000, target: 900_000, people: 22,
+      givers: [['Neema P.', 100_000], ['Joseph M.', 40_000], ['Zainabu H.', 20_000]] as [string, number][],
+    },
+  ];
+
+  const [i, setI] = useState(0);
+  const reduced = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = setInterval(() => setI((n) => (n + 1) % EXAMPLES.length), 4200);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced, EXAMPLES.length]);
+
+  const ex = EXAMPLES[i];
+  const pct = Math.round((ex.raised / ex.target) * 100);
+  const tsh = (n: number) => `TSh ${n.toLocaleString('en-US')}`;
 
   const kinds = sw
     ? ['Harusi', 'Msiba', 'Matibabu', 'Ada ya shule', 'Dharura']
@@ -56,41 +105,51 @@ export default function LandingHarambeeSection() {
             </div>
           </div>
 
-          {/* A collection mid-flight. Fixed numbers, and labelled as an
-              example — a made-up total dressed as a real one would be the
-              same lie the rest of this page refuses to tell. */}
+          {/* A collection mid-flight, cycling through four. Fixed numbers and
+              labelled as examples — a made-up total dressed as a real one
+              would be the same lie the rest of this page refuses to tell. */}
           <div className="self-start border-2 border-rule">
             <div className="border-b border-border px-6 py-5">
-              <span className="wd-kicker">{sw ? 'Mfano' : 'Example'}</span>
-              <p className="mt-2 font-display text-[20px] font-bold leading-tight">
-                {sw ? 'Matibabu ya Mama Neema' : 'Mama Neema’s treatment'}
+              <div className="flex items-center justify-between gap-3">
+                <span className="wd-kicker">{sw ? 'Mfano' : 'Example'}</span>
+                <span className="flex gap-1.5" aria-hidden>
+                  {EXAMPLES.map((_, n) => (
+                    <button
+                      key={n}
+                      onClick={() => setI(n)}
+                      aria-label={EXAMPLES[n].title}
+                      className={`h-1.5 w-5 border transition-colors ${
+                        n === i ? 'border-gold-deep bg-gold' : 'border-rule bg-transparent hover:border-gold-deep'
+                      }`}
+                    />
+                  ))}
+                </span>
+              </div>
+              <p key={`t-${i}`} className="mt-2 font-display text-[20px] font-bold leading-tight wd-brick-in">
+                {ex.title}
               </p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-gold-deep">
-                {sw ? 'Matibabu' : 'Medical'}
-              </p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-gold-deep">{ex.kind}</p>
             </div>
             <div className="px-6 py-5">
               <div className="flex items-end justify-between gap-2">
-                <p className="wd-figure text-[30px] leading-none">TSh 1,840,000</p>
-                <p className="font-mono text-[10px] text-muted-foreground">{sw ? 'lengo' : 'of'} 2.5M · 74%</p>
+                <p key={`a-${i}`} className="wd-figure text-[30px] leading-none wd-brick-in">{tsh(ex.raised)}</p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {sw ? 'lengo' : 'of'} {tsh(ex.target)} · {pct}%
+                </p>
               </div>
               <div className="mt-3 h-2.5 w-full overflow-hidden bg-foreground/10">
-                <div className="h-full bg-gold" style={{ width: '74%' }} />
+                <div className="h-full bg-gold transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
-              <ul className="mt-5 divide-y divide-border border-t border-border">
-                {[
-                  [sw ? 'Asha R.' : 'Asha R.', '50,000'],
-                  [sw ? 'Fatuma M.' : 'Fatuma M.', '20,000'],
-                  [sw ? 'Asiyetajwa' : 'Anonymous', '100,000'],
-                ].map(([who, amt]) => (
+              <ul key={`l-${i}`} className="mt-5 divide-y divide-border border-t border-border wd-brick-in">
+                {ex.givers.map(([who, amt]) => (
                   <li key={who} className="flex items-center justify-between py-2.5">
                     <span className="text-[13px] text-foreground">{who}</span>
-                    <span className="wd-figure text-[13px] text-gold-deep">TSh {amt}</span>
+                    <span className="wd-figure text-[13px] text-gold-deep">{tsh(amt)}</span>
                   </li>
                 ))}
               </ul>
               <p className="mt-4 text-[11px] leading-snug text-ink-3">
-                {sw ? '37 wamechangia · kiungo kimoja kilichosambazwa' : '37 people · one shared link'}
+                {ex.people} {sw ? 'wamechangia · kiungo kimoja' : 'people · one shared link'}
               </p>
             </div>
           </div>

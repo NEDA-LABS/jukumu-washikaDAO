@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import pool from '@/lib/db';
 import { ensureHarambeeSchema, harambeeTotals } from '@/lib/harambee';
+import { isMailConfigured } from '@/lib/mailer';
 import HarambeeView from '@/components/harambee/HarambeeView';
 
 export const dynamic = 'force-dynamic';
@@ -90,6 +91,11 @@ async function load(code: string) {
       hasCover: !!h.has_cover,
     },
     totals,
+    // The API route reported this and the page did not, so after the page
+    // switched to reading the database directly the email field vanished from
+    // the form: the component asks `data.emailEnabled`, and undefined is not
+    // true. Two loaders for one screen, and only one of them complete.
+    emailEnabled: isMailConfigured(),
     contributions: contributions.rows.map((r) => {
       const row = r as { name: string | null; amount_tzs: string; message: string | null; anonymous: boolean; at: string };
       return { name: row.name, amountTzs: Number(row.amount_tzs), message: row.message, anonymous: row.anonymous, at: row.at };

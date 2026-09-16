@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DonateSection from './DonateSection';
 import LandingHarambeeSection from './HarambeeSection';
+import CapabilitiesSection from './CapabilitiesSection';
 
 /**
  * The WashikaDAU landing page, built to the imported design.
@@ -569,6 +570,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <CapabilitiesSection />
       <LandingHarambeeSection />
       <DonateSection />
 

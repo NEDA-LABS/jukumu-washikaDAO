@@ -59,7 +59,7 @@ type HomeData = {
   collectedTzs: number;
   targetTzs: number;
   proposal: HomeProposal | null;
-  activity: { id: string; type: string; purpose: string | null; amountTzs: number; groupName: string | null; at: string }[];
+  activity: { id: string; type: string; purpose: string | null; amountTzs: number; groupName: string | null; note?: string | null; at: string }[];
 };
 
 export default function MemberDashboard() {
@@ -546,8 +546,21 @@ export default function MemberDashboard() {
           proposal={home.proposal}
           activity={home.activity.map((a) => ({
             id: a.id,
-            glyph: a.type === 'deposit' ? '↓' : a.type === 'withdrawal' ? '↑' : a.purpose === 'contribution' ? '◧' : '⇄',
-            text: `${a.purpose === 'contribution' ? t('home.contribute') : a.type === 'deposit' ? t('wal.deposit') : a.type === 'withdrawal' ? t('wal.withdraw') : t('wal.transfer')}${a.groupName ? ` · ${a.groupName}` : ''} — TSh ${Math.round(a.amountTzs).toLocaleString('en-US')}`,
+            // A harambee contribution is a deposit on the rails and something
+            // else entirely to the person reading it: money someone sent to a
+            // collection. Labelling it "Deposit" told the organiser only that
+            // an amount had appeared, with no hint of what it was for.
+            glyph: a.purpose === 'harambee' ? '❖'
+              : a.type === 'deposit' ? '↓' : a.type === 'withdrawal' ? '↑'
+              : a.purpose === 'contribution' ? '◧' : '⇄',
+            text: `${
+              a.purpose === 'harambee'
+                ? (a.note?.replace(/^Harambee\s+/, '').replace(/"/g, '') || t('home.harambee.title'))
+                : a.purpose === 'contribution' ? t('home.contribute')
+                : a.type === 'deposit' ? t('wal.deposit')
+                : a.type === 'withdrawal' ? t('wal.withdraw')
+                : t('wal.transfer')
+            }${a.groupName && a.purpose !== 'harambee' ? ` · ${a.groupName}` : ''} — TSh ${Math.round(a.amountTzs).toLocaleString('en-US')}`,
             time: new Date(a.at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
           }))}
           onContribute={() => setQuick({ type: 'transfer', purpose: 'contribution' })}

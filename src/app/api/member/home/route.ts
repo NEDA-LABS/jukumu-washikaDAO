@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
     }
 
     const actRes = await client.query(
-      `SELECT t.id, t.type, t.purpose, t.amount_tzs, t.created_at,
+      `SELECT t.id, t.type, t.purpose, t.amount_tzs, t.created_at, t.note,
               g.name AS group_name
          FROM ntzs_transactions t
          LEFT JOIN groups g ON g.id = COALESCE(t.to_group_id, t.from_group_id)
@@ -199,13 +199,16 @@ export async function GET(request: NextRequest) {
       proposal,
       activity: (actRes.rows as {
         id: number; type: string; purpose: string | null; amount_tzs: string;
-        created_at: string; group_name: string | null;
+        created_at: string; group_name: string | null; note: string | null;
       }[]).map((r) => ({
         id: String(r.id),
         type: r.type,
         purpose: r.purpose,
         amountTzs: Number(r.amount_tzs),
         groupName: r.group_name,
+        // Carried for the rows whose group name says nothing — a harambee
+        // contribution's note is what names the collection and the giver.
+        note: r.note,
         at: r.created_at,
       })),
     });

@@ -319,8 +319,28 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
       contribution: 'Mchango',
       disbursement: 'Malipo',
       p2p: 'Uhamisho',
+      // Money that arrived through a collection. Without this it fell through
+      // to the raw column value, so a wedding contribution read "harambee" —
+      // or worse, "Amana", which says money appeared and nothing about why.
+      harambee: 'Mchango wa harambee',
+      donation: 'Msaada',
+      funding: 'Ufadhili',
+      expense: 'Matumizi',
+      topup: 'Amana',
     };
     return labels[purpose] || purpose;
+  };
+
+  /**
+   * The line under the label. A counterparty name when there is one; for a
+   * harambee the note carries both the collection and who gave, which is the
+   * only place that detail exists on this screen.
+   */
+  const txDetail = (tx: Transaction) => {
+    if (tx.purpose === 'harambee' && tx.note) {
+      return tx.note.replace(/^Harambee\s+/, '').replace(/"/g, '');
+    }
+    return tx.to_group_name || tx.to_member_name || tx.from_group_name || tx.from_member_name || '';
   };
 
   if (loading) {
@@ -418,8 +438,8 @@ export default function WalletDashboard({ userId, username }: WalletDashboardPro
                   <div>
                     <p className="text-sm font-medium text-foreground">{purposeLabel(tx.purpose)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {tx.to_group_name || tx.to_member_name || tx.from_group_name || tx.from_member_name || ''}
-                      {' · '}{formatDate(tx.created_at)}
+                      {txDetail(tx)}
+                      {txDetail(tx) ? ' · ' : ''}{formatDate(tx.created_at)}
                     </p>
                   </div>
                 </div>

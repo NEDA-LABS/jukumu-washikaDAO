@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg';
 import pool from '@/lib/db';
 import { oncePerProcess } from '@/lib/db-once';
 import { isDepositSuccessStatus } from '@/lib/wallet/ledger';
+import { notify } from '@/lib/notify';
 
 /**
  * Harambee — pooled funding for one occasion.
@@ -143,10 +144,52 @@ export async function settleHarambeeByNtzsId(
     const res = await client.query(
       `UPDATE harambee_contributions
           SET status = 'settled', settled_at = NOW()
-        WHERE ntzs_id = $1 AND status <> 'settled'`,
+        WHERE ntzs_id = $1 AND status <> 'settled'
+      RETURNING id, harambee_id, contributor_name, amount_tzs, anonymous`,
       [ntzsId]
     );
-    return (res.rowCount ?? 0) > 0 ? 'settled' : null;
+    if ((res.rowCount ?? 0) === 0) return null;
+
+    // The organiser is the one person who needs to know a contribution
+    // arrived, and until now nobody told them: money landed in their wallet
+    // with no indication of what it was or who sent it. Sent from inside the
+    // same guarded UPDATE, so a contribution that settles twice cannot
+    // announce itself twice.
+    const row = res.rows[0] as {
+      harambee_id: number; contributor_name: string; amount_tzs: string; anonymous: boolean;
+    };
+    try {
+      const h = await client.query(
+        `SELECT h.title, h.code, m.user_id,
+                COALESCE((SELECT SUM(c.amount_tzs) FILTER (WHERE c.status = 'settled')
+                            FROM harambee_contributions c WHERE c.harambee_id = h.id), 0)::bigint AS raised
+           FROM harambees h JOIN members m ON m.id = h.organiser_member_id
+          WHERE h.id = $1 LIMIT 1`,
+        [row.harambee_id]
+      );
+      const o = h.rows[0] as { title: string; code: string; user_id: number | null; raised: string } | undefined;
+      if (o?.user_id) {
+        const who = row.anonymous ? 'Asiyetajwa' : row.contributor_name;
+        const whoEn = row.anonymous ? 'Someone' : row.contributor_name;
+        const amount = `TSh ${Math.round(Number(row.amount_tzs)).toLocaleString('en-US')}`;
+        const total = `TSh ${Math.round(Number(o.raised)).toLocaleString('en-US')}`;
+        await notify(client, o.user_id, {
+          title: `${who} amechangia ${amount}`,
+          titleEn: `${whoEn} gave ${amount}`,
+          message: `"${o.title}" — sasa jumla ni ${total}.`,
+          messageEn: `“${o.title}” — the collection now stands at ${total}.`,
+          type: 'success',
+          category: 'harambee',
+          actionUrl: `/harambee/${o.code}`,
+          actionText: 'Ona mchango',
+          metadata: { harambee_id: row.harambee_id, code: o.code },
+        });
+      }
+    } catch (error) {
+      // A notification that fails must never undo a settlement.
+      console.error('[harambee] could not notify organiser', error);
+    }
+    return 'settled';
   }
   if (status === 'failed' || status === 'rejected' || status === 'cancelled') {
     const res = await client.query(
