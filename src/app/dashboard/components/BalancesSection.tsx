@@ -27,6 +27,9 @@ type RecentRow = {
   id: number; type: string; status: string; amount_tzs: string; phone: string | null;
   purpose: string | null; created_at: string; member_name: string | null; group_name: string | null;
 };
+type Float = {
+  liveTzs: number | null; ourRecordTzs: number; driftTzs: number | null; wallet: string | null;
+};
 type Totals = {
   memberBalances: number; groupBalances: number; platformBalances: number;
   heldTzs: number; depositedTzs: number; withdrawnTzs: number; openCount: number;
@@ -44,10 +47,11 @@ function statusTone(status: string): string {
 }
 
 export default function BalancesSection() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const sw = language === 'sw';
   const [data, setData] = useState<{
     totals: Totals; groups: GroupRow[]; members: MemberRow[];
-    statuses: StatusRow[]; recent: RecentRow[];
+    statuses: StatusRow[]; recent: RecentRow[]; float?: Float;
   } | null>(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'groups' | 'members' | 'activity'>('groups');
@@ -158,6 +162,60 @@ export default function BalancesSection() {
           </p>
         </div>
       )}
+
+      {/* The payout account, before anything else. Whether people can cash
+          out today is not a detail among five totals — it is the first thing
+          an operator needs to know, and it was previously discoverable only
+          by watching a member's withdrawal fail. */}
+      {data.float && data.float.liveTzs !== null && (() => {
+        const live = data.float.liveTzs;
+        const owed = totals.heldTzs;
+        const short = live < owed;
+        return (
+          <div className={`rounded-xl border p-4 ${short ? 'border-destructive/50 bg-destructive/[0.04]' : 'border-border bg-card'}`}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {sw ? 'Akaunti ya malipo (nTZS)' : 'Payout account (live from nTZS)'}
+                </p>
+                <p className={`mt-1.5 text-2xl font-bold tabular-nums ${short ? 'text-destructive' : 'text-foreground'}`}>
+                  {tsh(live)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {sw ? 'Tunadaiwa na wanachama na vikundi' : 'Owed to members and groups'}: {tsh(owed)}
+                  {short && (
+                    <> · <span className="font-semibold text-destructive">
+                      {sw ? 'pungufu' : 'short by'} {tsh(owed - live)}
+                    </span></>
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {sw ? 'Kutoa kubwa zaidi' : 'Largest cash-out'}
+                </p>
+                {/* Roughly: nTZS burns the amount plus its own fees, so the
+                    most a member can take out is a little under the balance. */}
+                <p className="mt-1.5 text-lg font-bold tabular-nums text-foreground">
+                  ~{tsh(Math.max(0, Math.floor(live * 0.96)))}
+                </p>
+                {data.float.driftTzs !== null && data.float.driftTzs !== 0 && (
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {sw ? 'kumbukumbu yetu' : 'our record'}: {tsh(data.float.ourRecordTzs)}
+                  </p>
+                )}
+              </div>
+            </div>
+            {short && (
+              <p className="mt-3 border-t border-destructive/30 pt-3 text-[11px] leading-relaxed text-foreground">
+                {sw
+                  ? 'Kutoa pesa kunashindikana kwa kiasi kikubwa kuliko salio hili. Ongeza salio kwenye akaunti ya malipo.'
+                  : 'Cash-outs above this balance are failing. Top up the payout account to restore them.'}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {cards.map(([label, value, note]) => (

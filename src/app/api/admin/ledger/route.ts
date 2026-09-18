@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getAuthTokenPayload } from '@/lib/auth';
+import { ntzs } from '@/lib/ntzs';
+import { getMasterNtzsUserId } from '@/lib/wallet/ledger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -122,6 +124,39 @@ export async function GET(request: NextRequest) {
 
     const t = totals.rows[0] as Record<string, string>;
 
+    /**
+     * What the payout account actually holds, asked of nTZS rather than read
+     * from our own row.
+     *
+     * These two numbers had drifted a long way apart — our record said the
+     * master account held 1,355,000 while nTZS held 10,190 — and nothing on
+     * any screen showed it. What people saw instead was cash-outs failing one
+     * at a time with a message about pricing. A float that only reveals itself
+     * through failed withdrawals is a float nobody is watching.
+     */
+    let float: {
+      liveTzs: number | null; ourRecordTzs: number; driftTzs: number | null; wallet: string | null;
+    } = { liveTzs: null, ourRecordTzs: Number(t.platform_balances), driftTzs: null, wallet: null };
+    try {
+      const client = await pool.connect();
+      try {
+        const masterUserId = await getMasterNtzsUserId(client);
+        const u = await ntzs.users.get(masterUserId);
+        const live = Number((u as { balanceTzs?: number }).balanceTzs ?? 0);
+        float = {
+          liveTzs: live,
+          ourRecordTzs: Number(t.platform_balances),
+          driftTzs: Number(t.platform_balances) - live,
+          wallet: (u as { walletAddress?: string }).walletAddress ?? null,
+        };
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      // A screen that cannot reach nTZS still shows every other figure.
+      console.error('[admin/ledger] could not read the live float', error);
+    }
+
     return NextResponse.json({
       totals: {
         memberBalances: Number(t.member_balances),
@@ -132,6 +167,7 @@ export async function GET(request: NextRequest) {
         withdrawnTzs: Number(t.withdrawn_tzs),
         openCount: Number(t.open_count),
       },
+      float,
       groups: groups.rows,
       members: members.rows,
       statuses: statuses.rows,
