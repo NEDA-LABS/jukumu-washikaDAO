@@ -83,6 +83,8 @@ export interface NtzsWithdrawalQuote {
     availableTzs: number;
     sufficient: boolean;
   };
+  /** Present when the quote could not be filled — nTZS explains why here. */
+  message?: string;
 }
 
 export interface NtzsBalance {

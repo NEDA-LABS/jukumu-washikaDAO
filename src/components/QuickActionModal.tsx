@@ -220,7 +220,13 @@ export default function QuickActionModal({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.quoteId) {
-        setFeedback({ type: 'error', message: data.error || (sw ? 'Imeshindikana kupata bei' : 'Could not price this withdrawal') });
+        // ntzsMessage carries the Swahili for the codes the server sends; the
+        // old line went straight to a generic fallback and threw away a
+        // sentence that explained exactly what was wrong.
+        setFeedback({
+          type: 'error',
+          message: ntzsMessage(data) || (sw ? 'Imeshindikana kupata bei' : 'Could not price this withdrawal'),
+        });
         return;
       }
       setWithdrawQuote(data as WithdrawQuote);
@@ -237,10 +243,24 @@ export default function QuickActionModal({
    * language the reader chose. An unrecognised code falls through to whatever
    * the server said, which is already the friendly text rather than nTZS's.
    */
-  const ntzsMessage = (data: { error?: string; code?: string }): string => {
+  const ntzsMessage = (data: {
+    error?: string; code?: string; availableTzs?: number; requiredTzs?: number;
+  }): string => {
     if (!sw) return data?.error || '';
+
+    // Carries figures, so it is composed rather than looked up — the English
+    // the server sends would otherwise be the only version with the numbers
+    // in it, which is the version a Swahili reader would get.
+    if (data?.code === 'member_insufficient' && typeof data.availableTzs === 'number') {
+      return `Una TSh ${Math.round(data.availableTzs).toLocaleString('en-US')}. `
+        + `Kutoa huku kunahitaji TSh ${Math.round(data.requiredTzs ?? 0).toLocaleString('en-US')} pamoja na ada.`;
+    }
     const swahili: Record<string, string> = {
       unconfirmed_delivery: 'Hatukuweza kuthibitisha ombi la malipo limefika kwenye simu yako. Kama umekatwa, salio litaonekana lenyewe — tafadhali usilipe tena.',
+      // The pooled payout account is short. Not the member's doing, and the
+      // wording says so: their money is where they left it.
+      reserve_unavailable: 'Kutoa pesa kumesimama kwa muda tunapoongeza salio kwenye akaunti ya malipo. Pesa zako zipo salama — tafadhali jaribu tena baadaye.',
+      quote_unavailable: 'Hatukuweza kupata bei ya kutoa kwa sasa. Tafadhali jaribu tena baada ya dakika chache.',
       insufficient_funds: 'Salio halitoshi kwenye akaunti hiyo ya simu.',
       invalid_phone: 'Nambari hiyo ya simu haikukubaliwa. Iangalie kisha jaribu tena.',
       limit_exceeded: 'Kiasi hicho kiko nje ya kikomo cha akaunti hii. Jaribu kiasi kidogo.',

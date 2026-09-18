@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     if (memberRes.rows.length === 0) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
+    const memberId = (memberRes.rows[0] as { id: number }).id;
 
     let normalizedPhone = String(phone).replace(/\D/g, '');
     if (normalizedPhone.length === 10 && normalizedPhone.startsWith('0')) {
@@ -55,6 +56,26 @@ export async function POST(request: NextRequest) {
 
     const platformFeeTzs = withdrawalFeeTzs(amount);
     const totalDebitTzs = amount + platformFeeTzs;
+
+    // What this member actually holds, checked before anything is asked of
+    // nTZS. Without it, a member requesting more than they have was told the
+    // pooled reserve was short — a sentence about our problem, in answer to
+    // theirs.
+    const balRes = await client.query(
+      `SELECT COALESCE(balance_tzs, 0)::bigint AS b FROM wallet_accounts
+        WHERE owner_type = 'member' AND owner_id = $1 LIMIT 1`,
+      [memberId]
+    );
+    const available = Number((balRes.rows[0] as { b: string } | undefined)?.b ?? 0);
+    if (totalDebitTzs > available) {
+      return NextResponse.json({
+        error: `You have TSh ${available.toLocaleString('en-US')}. This withdrawal needs TSh ${totalDebitTzs.toLocaleString('en-US')} including the fee.`,
+        code: 'member_insufficient',
+        availableTzs: available,
+        requiredTzs: totalDebitTzs,
+      }, { status: 400 });
+    }
+
     const masterUserId = await getMasterNtzsUserId(client);
 
     const quote = await ntzs.withdrawals.quote({
@@ -62,6 +83,42 @@ export async function POST(request: NextRequest) {
       amountTzs: amount,
       phoneNumber: normalizedPhone,
     });
+
+    // nTZS answers 200 with quoteId null when the pooled reserve cannot cover
+    // the payout. The route used to pass that straight through, so the client
+    // saw a success with no quote in it and fell back to "could not price this
+    // withdrawal" — true, uninformative, and silent about the fact that the
+    // float was short while the member's own balance was fine.
+    if (!quote.quoteId) {
+      const shortfall = quote.balance && quote.balance.sufficient === false;
+      if (shortfall) {
+        // An operations problem, not the member's. Loud here because nothing
+        // else will notice: every cash-out fails until the reserve is topped
+        // up, and each one looks like a one-off to the person it happens to.
+        console.error(
+          '[withdraw/quote] POOLED RESERVE SHORT — payouts are failing.',
+          JSON.stringify({
+            requestedTzs: amount,
+            needsTzs: quote.burnAmountTzs,
+            reserveAvailableTzs: quote.balance?.availableTzs,
+            memberId,
+          })
+        );
+        return NextResponse.json({
+          error: 'Cash-outs are paused right now while we top up the payout account. '
+               + 'Your balance is safe — please try again a little later.',
+          code: 'reserve_unavailable',
+          // Deliberately not the reserve figure: how much float the platform
+          // is holding is not a member's business, and printing it on a phone
+          // invites a run on it.
+          safeToRetry: true,
+        }, { status: 503 });
+      }
+      return NextResponse.json({
+        error: quote.message || 'Could not price this withdrawal right now.',
+        code: 'quote_unavailable',
+      }, { status: 502 });
+    }
 
     return NextResponse.json({
       quoteId: quote.quoteId,
