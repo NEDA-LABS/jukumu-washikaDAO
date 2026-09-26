@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthRateLimit } from '@/lib/rate-limiter';
 import pool from '@/lib/db';
+import { isConnectivityError, SERVICE_UNAVAILABLE } from '@/lib/db-errors';
 import bcrypt from 'bcryptjs';
 import type { PoolClient } from 'pg';
 import { ntzs, NtzsApiError } from '@/lib/ntzs';
@@ -242,6 +243,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Signup error:', error);
+    // A database we cannot reach is the service being down, not the person's
+    // form being wrong. Someone halfway through creating an account should be
+    // told to come back shortly, not shown "Internal server error".
+    if (isConnectivityError(error)) {
+      return NextResponse.json(
+        {
+          error: SERVICE_UNAVAILABLE.message,
+          errorSw: SERVICE_UNAVAILABLE.messageSw,
+          code: SERVICE_UNAVAILABLE.code,
+        },
+        { status: SERVICE_UNAVAILABLE.status, headers: { 'Retry-After': '60' } }
+      );
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   } finally {
     client?.release();

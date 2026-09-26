@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthRateLimit } from '@/lib/rate-limiter';
 import pool from '@/lib/db';
+import { isConnectivityError, SERVICE_UNAVAILABLE } from '@/lib/db-errors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { PoolClient, QueryResult } from 'pg';
@@ -69,6 +70,26 @@ function makeRequestId() {
   }
 }
 
+/**
+ * A database we cannot reach is the service being down, not an internal
+ * error. Different words, different status, and the request id kept for
+ * support rather than shown as the headline.
+ */
+function unavailable(requestId: string) {
+  const response = NextResponse.json(
+    {
+      error: SERVICE_UNAVAILABLE.message,
+      errorSw: SERVICE_UNAVAILABLE.messageSw,
+      code: SERVICE_UNAVAILABLE.code,
+      requestId,
+    },
+    { status: SERVICE_UNAVAILABLE.status }
+  );
+  response.headers.set('x-request-id', requestId);
+  response.headers.set('Retry-After', '60');
+  return response;
+}
+
 function serverError(code: string, requestId: string, details?: string) {
   const response = NextResponse.json(
     {
@@ -107,6 +128,7 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('Signin error (DB_CONNECT_FAILED):', requestId, e);
+      if (isConnectivityError(e)) return unavailable(requestId);
       return serverError('DB_CONNECT_FAILED', requestId, msg);
     }
 
