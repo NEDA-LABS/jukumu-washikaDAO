@@ -87,6 +87,15 @@ export default function QuickActionModal({
   // The deposit is still real and still worth waiting on; what changes is what
   // we tell the member while they wait.
   const [unconfirmed, setUnconfirmed] = useState(false);
+  /**
+   * A contribution waits for a second look before it is sent.
+   *
+   * A member who chairs two chamas picked the wrong one from the dropdown and
+   * 65,000 went to the other group, with nothing between the choice and the
+   * money. A select is a weak confirmation: it looks the same whichever row is
+   * highlighted. Naming the group in a sentence, on its own screen, is not.
+   */
+  const [contribConfirm, setContribConfirm] = useState<{ groupName: string; amountTzs: number } | null>(null);
   const [waitedSec, setWaitedSec] = useState(0);
 
   useEffect(() => {
@@ -271,6 +280,26 @@ export default function QuickActionModal({
     return (data?.code && swahili[data.code]) || data?.error || '';
   };
 
+  /**
+   * Step one for a contribution: validate, then show what is about to happen
+   * in words. Nothing is sent from here.
+   */
+  const handleReviewContribution = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFeedback(null);
+    const err = validateBase();
+    if (err) { setFeedback({ type: 'error', message: err }); return; }
+    if (!groupId) {
+      setFeedback({ type: 'error', message: sw ? 'Chagua kundi' : 'Choose a group' });
+      return;
+    }
+    const g = groups.find(x => String(x.id) === String(groupId));
+    setContribConfirm({
+      groupName: g?.name ?? (sw ? 'kundi lililochaguliwa' : 'the selected group'),
+      amountTzs: parseInt(amount) || 0,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
@@ -316,6 +345,8 @@ export default function QuickActionModal({
           return;
         }
         setFeedback({ type: 'success', message: data.message || (sw ? 'Imefanikiwa!' : 'Success!') });
+        // Sent: drop the confirmation so a reopened modal starts at the form.
+        setContribConfirm(null);
         setAmount(''); setPhone(''); setToUsername(''); setToMemberId(''); setGroupId(''); setWithdrawQuote(null);
         onSuccess?.();
         setTimeout(onClose, 1800);
@@ -411,6 +442,60 @@ export default function QuickActionModal({
               </button>
             )}
           </div>
+        ) : /* Contribution — confirmation step */
+        contribConfirm ? (
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-3"
+            style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+          >
+            {/* The group's name is the headline, not a row in a table. It is
+                the single fact that was wrong last time. */}
+            <div className="border border-border bg-background p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {sw ? 'Unachangia kwa' : 'You are contributing to'}
+              </p>
+              <p className="mt-1 font-display text-[20px] font-bold leading-tight text-foreground">
+                {contribConfirm.groupName}
+              </p>
+              <p className="mt-3 border-t border-border pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {sw ? 'Kiasi' : 'Amount'}
+              </p>
+              <p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">
+                {fmtTzs(contribConfirm.amountTzs)}
+              </p>
+            </div>
+
+            <p className="text-center text-[11px] text-muted-foreground">
+              {sw
+                ? 'Angalia jina la kundi kabla ya kuthibitisha. Pesa haziwezi kurudishwa wewe mwenyewe.'
+                : 'Check the group name before confirming. You cannot move it back yourself.'}
+            </p>
+
+            {feedback && (
+              <div className={`border px-4 py-3 text-[12px] leading-snug ${feedback.type === 'success' ? 'border-success/30 bg-success/10 text-success' : 'border-destructive/30 bg-destructive/10 text-destructive'}`}>
+                {feedback.message}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setContribConfirm(null); setFeedback(null); }}
+                className="wd-press border border-border px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ← {sw ? 'Rudi' : 'Back'}
+              </button>
+              <button
+                type="submit" disabled={submitting}
+                className="wd-press flex-1 bg-gold py-3.5 text-sm font-semibold text-[#1a1714] disabled:opacity-40"
+              >
+                {submitting
+                  ? (sw ? 'Inatuma...' : 'Sending...')
+                  : (sw ? 'Thibitisha Mchango' : 'Confirm Contribution')}
+              </button>
+            </div>
+          </form>
         ) : /* Withdrawal — confirmation step */
         type === 'withdraw' && withdrawQuote ? (
           <form
@@ -473,7 +558,11 @@ export default function QuickActionModal({
         ) : (
           /* Scrollable form step */
           <form
-            onSubmit={type === 'withdraw' ? handleGetQuote : handleSubmit}
+            onSubmit={
+              type === 'withdraw' ? handleGetQuote
+              : (type === 'transfer' && purpose === 'contribution') ? handleReviewContribution
+              : handleSubmit
+            }
             className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-4"
             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
           >
